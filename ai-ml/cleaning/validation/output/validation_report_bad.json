@@ -1,0 +1,103 @@
+{
+    "dataset_name": "dummy_input_bad.csv",
+    "total_rows": 5,
+    "total_columns": 6,
+    "checks_run": 6,
+    "total_issues": 12,
+    "status": "FAIL",
+    "issue_summary_by_column": {
+        "event_id": 3,
+        "event_type": 2,
+        "region": 1,
+        "source": 2,
+        "severity": 2,
+        "date": 2
+    },
+    "issues": [
+        {
+            "row": 3,
+            "column": "event_id",
+            "rule": "required_value",
+            "value": null,
+            "message": "Missing required value in column 'event_id'"
+        },
+        {
+            "row": 1,
+            "column": "event_type",
+            "rule": "required_value",
+            "value": null,
+            "message": "Missing required value in column 'event_type'"
+        },
+        {
+            "row": 2,
+            "column": "region",
+            "rule": "required_value",
+            "value": null,
+            "message": "Missing required value in column 'region'"
+        },
+        {
+            "row": 2,
+            "column": "source",
+            "rule": "required_value",
+            "value": null,
+            "message": "Missing required value in column 'source'"
+        },
+        {
+            "row": 1,
+            "column": "event_id",
+            "rule": "unique",
+            "value": "2.0",
+            "message": "Duplicate value found in unique column 'event_id'"
+        },
+        {
+            "row": 2,
+            "column": "event_id",
+            "rule": "unique",
+            "value": "2.0",
+            "message": "Duplicate value found in unique column 'event_id'"
+        },
+        {
+            "row": 4,
+            "column": "event_type",
+            "rule": "allowed_values",
+            "value": "alienstorm",
+            "message": "Invalid value. Allowed values: ['bushfire', 'flood', 'storm', 'cyclone']"
+        },
+        {
+            "row": 4,
+            "column": "source",
+            "rule": "allowed_values",
+            "value": "Unknown",
+            "message": "Invalid value. Allowed values: ['BoM', 'NASA']"
+        },
+        {
+            "row": 1,
+            "column": "severity",
+            "rule": "max",
+            "value": "7",
+            "message": "Value above maximum allowed (5)"
+        },
+        {
+            "row": 2,
+            "column": "severity",
+            "rule": "min",
+            "value": "-1",
+            "message": "Value below minimum allowed (1)"
+        },
+        {
+            "row": 1,
+            "column": "date",
+            "rule": "date_format",
+            "value": "2026/03/21",
+            "message": "Invalid date format. Expected format: %Y-%m-%d"
+        },
+        {
+            "row": 2,
+            "column": "date",
+            "rule": "date_format",
+            "value": "not_a_date",
+            "message": "Invalid date format. Expected format: %Y-%m-%d"
+        }
+    ],
+    "error_rate": 2.4
+}

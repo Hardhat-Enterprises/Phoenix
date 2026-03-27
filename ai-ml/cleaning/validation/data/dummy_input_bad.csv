@@ -1,0 +1,6 @@
+event_id,event_type,severity,region,date,source
+1,bushfire,4,Victoria,2026-03-20,BoM
+2,,7,NSW,2026/03/21,NASA
+2,flood,-1,,not_a_date,
+,storm,2,Queensland,2026-03-22,BoM
+5,alienstorm,3,Tasmania,2026-03-25,Unknown

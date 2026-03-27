@@ -1,7 +1,7 @@
 
 # **Project Phoenix 🐦‍🔥**
 
-**AI-Driven Disaster & Cyber Threat Intelligence Platform (Web Application)**
+## AI-Driven Disaster & Cyber Threat Intelligence Platform (Web Application)
 
 ---
 
@@ -86,7 +86,7 @@ Phoenix provides a unified system for:
 
 ## **System Architecture (High-Level)**
 
-```
+``` text
 Data Sources → Data Pipeline → AI/ML Models → Risk Engine → API → Web Dashboard
                                           ↓
                                    Alert System

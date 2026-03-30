@@ -2,7 +2,7 @@
 
 ## Overview
 The PHOENIX system uses role-based access control (RBAC) to ensure that only authorised users can perform specific actions within the TEAVS system.
----
+
 
 ## Roles
 
@@ -17,7 +17,6 @@ Can view alerts for response and coordination.
 
 ### 4. Public User
 Can view and verify alerts.
----
 
 ## Role Permissions
 

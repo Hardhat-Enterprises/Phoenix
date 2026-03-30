@@ -1,0 +1,26 @@
+missing_values:
+  drop:
+    - event_type
+    - location
+    - timestamp
+  fill:
+    severity: 0
+    cyber_threat_type: "unknown"
+    threat_url: "unknown"
+    threat_severity: "unknown"
+
+duplicates:
+  subset:
+    - event_id
+
+type_conversion:
+  int:
+    - severity
+  datetime:
+    - timestamp
+
+string_standardisation:
+  - event_type
+  - location
+  - cyber_threat_type
+  - threat_severity

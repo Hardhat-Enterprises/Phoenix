@@ -57,6 +57,49 @@ Input included in logs must be sanitised to prevent log injection. System error 
 | disaster_type | Enum | Must be one of: bushfire, flood, both |
 | location | Text | Letters, spaces, and approved punctuation only |
 
+## Format Validation Rules
+
+### Overview
+The PHOENIX system enforces strict format validation to ensure that all inputs follow expected data types, structures, and allowed values. This prevents invalid data entry and reduces security risks.
+
+
+
+### Field Format Requirements
+
+| Field | Type | Allowed Format | Example |
+|---|---|---|---|
+| title | string | Plain text (max 100 characters) | "Flood Warning" |
+| message | string | Plain text (max 500 characters) | "Heavy rainfall expected" |
+| disaster_type | enum | bushfire, flood, both | "flood" |
+| threat_type | enum | phishing, scam, ransomware, misinformation | "phishing" |
+| severity | enum | low, medium, high, critical | "high" |
+| location | string | Letters and spaces only | "Melbourne" |
+| source | string | Valid source name | "Scamwatch" |
+
+
+### Validation Rules
+
+- Inputs must match defined data types.
+- Enum fields must only contain predefined values.
+- Input length must not exceed specified limits.
+- Invalid or unexpected formats must be rejected.
+- Only safe characters are allowed in text fields.
+
+
+### Error Handling for Invalid Format
+
+Invalid inputs should result in:
+- `400 Bad Request`
+- Clear error message indicating the incorrect field
+
+Example:
+
+```json
+{
+  "error_code": 400,
+  "error_message": "Invalid format",
+  "details": "Severity must be one of: low, medium, high, critical"
+}
 
 ## Conclusion
 Injection prevention in PHOENIX is achieved by validating inputs, sanitising content, restricting allowed formats, using parameterised queries, and ensuring that untrusted input is never executed as code or commands.

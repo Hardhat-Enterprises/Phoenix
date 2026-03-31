@@ -53,3 +53,10 @@ The system uses JSON Web Tokens (JWT) for authentication.
 - Token is issued at login.
 - Token expires after a defined time.
 - Expired tokens require re-authentication.
+
+## Purpose of RBAC
+RBAC reduces the risk of misuse, prevents unauthorised changes to alerts, and protects sensitive parts of the system by ensuring that permissions are granted according to role and responsibility.
+
+
+## Conclusion
+Role-Based Access Control is an essential part of the PHOENIX secure design because it ensures that critical actions within TEAVS are limited to the appropriate authorised users.

@@ -1,0 +1,19 @@
+event_id,event_type,location,severity,timestamp,cyber_threat_type,threat_url,threat_severity
+1,Bushfire,Vic,4.0,2024-01-15 08:30:00,Phishing,http://fake-relief.com,High
+2,Flood,Nsw,2.0,2024-02-15 00:00:00,Misinformation,unknown,Low
+3,Bushfire,Tas,5.0,2024-03-10 14:00:00,Unknown,http://scam-bushfire.org,Unknown
+7,Earthquake,Vic,3.0,2024-04-01 09:15:00,Phishing,http://quake-scam.com,High
+8,Bushfire,Sa,999.0,2024-04-05 10:00:00,Misinformation,https://fake-news-fire.org,Medium
+10,Severe thunderstorm,Qld,4.0,2024-05-10 16:30:00,Phishing,http://storm-warning-fake.com,High
+11,Bushfire,Vic,4.0,2024-01-15 08:30:00,Phishing,http://fake-relief.com,High
+12,Flood,Nsw,0.0,2024-06-01 11:00:00,Unknown,unknown,Unknown
+14,Flood,Nsw,0.0,2024-06-03 14:00:00,Misinformation,http://fake-flood-news.com,Low
+16,Bushfire,Tas,2.0,2024-06-05 18:45:00,Sql injection,http://attack-vector.com,Severe
+17,Flood,Nsw,4.0,2024-06-06 20:00:00,Xss,http://xss-scam.com,High
+18,Severe thunderstorm,Vic,4.0,2024-06-07 21:15:00,Phishing, http://spaces.com ,Medium
+19,Bushfire,Vic,0.0,2024-06-08 10:10:10,Misinformation,http://nullseverity.com,Low
+20,Flood,Nsw,5.0,2024-06-09 12:00:00+00:00,Phishing,http://iso-date.com,High
+22,Bushfire,Vic,4.0,2024-06-10 09:00:00,Phishing,not_a_url,High
+23,Flood,Nsw,4.0,2024-06-10 09:00:00,Phishing,http://duplicate-test.com,High
+24,Bushfire,Vic,5.0,2024-06-11 08:00:00,Phishing,http://unicode-🔥.com,High
+25,Flood,Nsw,0.0,2024-06-12 11:00:00,Unknown,unknown,Unknown

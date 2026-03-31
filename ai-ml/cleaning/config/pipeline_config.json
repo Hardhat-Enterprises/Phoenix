@@ -1,0 +1,83 @@
+{
+  "paths": {
+    "input_csv": "data/input/sample_raw.csv",
+    "cleaned_csv": "data/output/cleaned_data.csv",
+    "comparison_report": "data/reports/comparison_report.json",
+    "validation_report": "data/reports/validation_report.json",
+    "pipeline_log": "data/logs/pipeline.log"
+  },
+  "cleaning": {
+    "missing_values": {
+      "drop": [
+        "event_type",
+        "location",
+        "timestamp"
+      ],
+      "fill": {
+        "severity": 0,
+        "cyber_threat_type": "unknown",
+        "threat_url": "unknown",
+        "threat_severity": "unknown"
+      }
+    },
+    "duplicates": {
+      "subset": [
+        "event_id"
+      ]
+    },
+    "type_conversion": {
+      "int": [
+        "severity"
+      ],
+      "datetime": [
+        "timestamp"
+      ]
+    },
+    "string_standardisation": [
+      "event_type",
+      "location",
+      "cyber_threat_type",
+      "threat_severity"
+    ]
+  },
+  "validation": {
+    "required_columns": [
+      "event_id",
+      "event_type",
+      "location",
+      "severity",
+      "timestamp"
+    ],
+    "column_rules": {
+      "event_id": {
+        "required": true,
+        "type": "int",
+        "unique": true
+      },
+      "event_type": {
+        "required": true,
+        "type": "str",
+        "allowed_values": [
+          "Bushfire",
+          "Flood",
+          "Severe thunderstorm"
+        ]
+      },
+      "location": {
+        "required": true,
+        "type": "str"
+      },
+      "severity": {
+        "required": true,
+        "type": "int",
+        "min": 0,
+        "max": 5
+      },
+      "timestamp": {
+        "required": true,
+        "type": "date",
+        "format": "%Y-%m-%d"
+      }
+    }
+  }
+}

@@ -1,11 +1,5 @@
 /*PROJECT PHOENIX BACKEND DATABASE CREATION SCRIPT
   Implementing backend structured data schema for Project Phoenix
- 
-  Cleaned and corrected version
-  to do in future sprints:
-    - refine varchar lengths further if required
-    - review whether both geo_location_id and joining tables are needed together
-    - expand user table as frontend/auth requirements become clearer
 */
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -195,8 +189,7 @@ CREATE TABLE threat_location (
 
 
 /*USER TABLE
-  New addition to schema to support front end
-  Just build the shell, amend and add fields later */
+  New addition to schema to support front end */
 CREATE TABLE user_account (
     user_id                         UUID
         PRIMARY KEY

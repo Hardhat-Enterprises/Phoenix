@@ -6,112 +6,105 @@ import sys
 def load_data(file_path):
     try:
         df = pd.read_csv(file_path)
-        print(df.head())
         return df
-    except FileNotFoundError:
-        print(f"Error: The file '{file_path}' was not found")
-        sys.exit(1)
-    except pd.errors.EmptyDataError:
-        print(f"Error: The file '{file_path}' is empty")
-    except pd.errors.ParserError as e:
-        print(f"Error parsing file '{file_path}': {e}")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"Error loading {file_path}: {e}")
+        sys.exit(1)
 
 def load_config(config_path):
     try:
         with open(config_path, 'r') as file:
-            data = yaml.safe_load(file)
-        print("Config file has been successfully loaded")
-        return data
+            return yaml.safe_load(file)
+    except Exception as exc:
+        print(f"Error loading {config_path}: {exc}")
+        sys.exit(1)
 
-    except FileNotFoundError:
-        print(f"File wasnt found: {config_path}")
-    except yaml.YAMLError as exc:
-        print(f"Error parsing YAML file: {exc}")
+def apply_schema_mapping(df, config):
+    if 'schema_mapping' in config:
+        mapping = config['schema_mapping']
+
+        rename_dict = {k: v for k, v in mapping.items() if k in df.columns}
+        df = df.rename(columns=rename_dict)
+        print(f"[LOG] Mapped columns to schema: {rename_dict}")
+    return df
 
 def handle_missing_values(df, config):
-    initial_rows = len(df)
-    columns_to_drop = config['missing_values']['drop']
-    columns_to_fill = config['missing_values']['fill']
-
+    if 'missing_values' not in config: return df
+    
     df = df.replace(r'^\s*$', np.nan, regex=True)
-
-    df = df.dropna(subset = columns_to_drop)
-    df = df.fillna(value=columns_to_fill)
-
-    dropped = initial_rows - len(df)
-    print(f"[LOG] handle_missing_values: Dropped {dropped} rows containing nulls in critical columns.")
-
+    
+    if 'drop' in config['missing_values']:
+        cols = [c for c in config['missing_values']['drop'] if c in df.columns]
+        df = df.dropna(subset=cols)
+        
+    if 'fill' in config['missing_values']:
+        for col, val in config['missing_values']['fill'].items():
+            if col not in df.columns:
+                df[col] = val # Create column if it doesn't exist
+            else:
+                df[col] = df[col].fillna(val)
     return df
 
 def handle_duplicates(df, config):
-    initial_rows = len(df)
-    columns_with_duplicates = config['duplicates']['subset']
-
-    df = df.drop_duplicates(subset=columns_with_duplicates, keep='first')
-
-    removed = initial_rows - len(df)
-    print(f"[LOG] handle_duplicates: Removed {removed} duplicate rows based on {columns_with_duplicates}.")
+    if 'duplicates' in config and 'subset' in config['duplicates']:
+        cols = [c for c in config['duplicates']['subset'] if c in df.columns]
+        if cols:
+            df = df.drop_duplicates(subset=cols, keep='first')
     return df
 
 def handle_type_conversion(df, config):
-
-    initial_nulls = df.isnull().sum().sum()
-
-    colulmns_to_int = config['type_conversion']['int']
-
-    for col in colulmns_to_int:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-
-    columns_to_time = config['type_conversion']['datetime']
-    for col in columns_to_time:
-        df[col] = pd.to_datetime(df[col], format='mixed', errors = 'coerce')
-
-    new_nulls = df.isnull().sum().sum() - initial_nulls
-    if new_nulls > 0:
-        print(f"[LOG] handle_type_conversion: {new_nulls} invalid values were coerced to NULL/NaT.")
+    if 'type_conversion' not in config: return df
+    
+    if 'int' in config['type_conversion']:
+        for col in config['type_conversion']['int']:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').astype('Int64')
+                
+    if 'datetime' in config['type_conversion']:
+        for col in config['type_conversion']['datetime']:
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], format='mixed', errors='coerce')
     return df
 
-def handle_string_standardisation(df,config):
-    columns_to_standardise = config['string_standardisation']
-    for col in columns_to_standardise:
-        df[col] =df[col].str.strip().str.capitalize()
+def handle_string_standardisation(df, config):
+    if 'string_standardisation' not in config: return df
+    
+    rules = config['string_standardisation']
+    if 'lower' in rules:
+        for col in rules['lower']:
+            if col in df.columns:
+                df[col] = df[col].astype(str).str.strip().str.lower()
+                
+    if 'capitalize' in rules:
+        for col in rules['capitalize']:
+            if col in df.columns:
+                df[col] = df[col].astype(str).str.strip().str.capitalize()
+    return df
+
+def enforce_validation(df, config):
+    if 'validation' not in config: return df
+    
+    for col, allowed_values in config['validation'].items():
+        if col in df.columns:
+
+            invalid_mask = ~df[col].isin(allowed_values)
+            invalid_count = invalid_mask.sum()
+            if invalid_count > 0:
+                print(f"[LOG] Validation: Coerced {invalid_count} invalid values in '{col}' to NaN.")
+                df.loc[invalid_mask, col] = np.nan
+    return df
+
+def run_pipeline(df, config):
+    print(f"\n--- Starting Pipeline for: {config.get('dataset_type', 'Unknown')} ---")
+    df = apply_schema_mapping(df, config)
+    df = handle_type_conversion(df, config)
+    df = handle_string_standardisation(df, config)
+    df = enforce_validation(df, config)
+    df = handle_missing_values(df, config)
+    df = handle_duplicates(df, config)
     return df
 
 def verify_clean_data(df):
-    print("--- Null Values ---")
-    print(df.isnull().sum())
-    print("\n--- Data Info ---")
-    df.info()
-    print("\n--- Statistics ---")
-    print(df.describe())
-
-def run_pipeline(df,config):
-    print("Starting pipeline...")
-    start_rows = len(df)
-
-    df = handle_type_conversion(df, config)
-    df = handle_missing_values(df, config)
-    df = handle_duplicates(df, config)
-    df = handle_string_standardisation(df, config)
-
-    end_rows = len(df)
-    print("Pipeline sequence complete.")
-    return df
-
-
-if __name__ == "__main__":
-    raw_df = load_data('messy_data.csv')
-    pipeline_config = load_config('config.yaml')
-
-    cleaned_df = run_pipeline(raw_df, pipeline_config)
-
-    verify_clean_data(cleaned_df)
-    cleaned_df.to_csv('cleaned_data.csv', index=False)
-    print("Cleaning Complete")
-
-
-
-    
-
+    print("\n--- Final Cleaned Data ---")
+    print(df.head())
+    print(f"\nShape: {df.shape}")

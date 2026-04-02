@@ -1,0 +1,38 @@
+dataset_type: "cyber_threat"
+
+
+schema_mapping:
+  id: "threat_id"
+  type_of_threat: "threat_type"
+  risk: "risk_level"
+  time_detected: "detected_at"
+
+missing_values:
+  drop:
+    - "threat_id"
+    - "detected_at"
+  fill:
+    threat_type: "unknown"
+    risk_level: "low"
+    status: "monitoring"
+
+duplicates:
+  subset:
+    - "threat_id"
+
+type_conversion:
+  datetime:
+    - "detected_at"
+  int:
+    - "threat_id"
+
+string_standardisation:
+  lower:
+    - "risk_level"
+    - "status"
+  capitalize:
+    - "threat_type"
+
+validation:
+  risk_level: ["low", "medium", "high", "critical"]
+  status: ["active", "monitoring", "resolved", "archived"]

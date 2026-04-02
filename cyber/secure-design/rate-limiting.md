@@ -1,7 +1,7 @@
 # Rate Limiting and Abuse Prevention Design
 
 ## Overview
-The PHOENIX system applies rate limiting to prevent brute-force attacks, spam alerts, API abuse, and excessive requests that could affect system availability.
+The PHOENIX system applies rate limiting to prevent brute-force attacks, spam alerts, API abuse, and excessive requests that could affect system availability. In addition to rate limiting, the system includes behaviour-based abuse prevention mechanisms. These mechanisms detect repeated failures, suspicious activity patterns, and misuse of system features
 
 
 ## Rate Limiting Rules
@@ -9,10 +9,16 @@ The PHOENIX system applies rate limiting to prevent brute-force attacks, spam al
 ### 1. Login Endpoint
 - Limit: 5 requests per 15 minutes per user/IP
 - Purpose: Prevent brute-force login attempts
+- Failed login attempts are tracked
+- Temporary lock applied after threshold (15 minutes)
+- Repeated violations trigger extended lock duration
+- Suspicious IPs may be blocked or monitored
 
 ### 2. Create Alert Endpoint
 - Limit: 10 requests per minute per authenticated user
 - Purpose: Prevent spam alert creation and misuse of the TEAVS system
+- Duplicate or repeated alerts are detected
+- Similar alert content within short time is flagged
 
 ### 3. Get Alert / List Alerts
 - Limit: 60 requests per minute per user
@@ -33,9 +39,44 @@ The PHOENIX system applies rate limiting to prevent brute-force attacks, spam al
 - Repeated failed login attempts trigger temporary blocking
 - Account or IP may be locked for a limited period after too many failures
 
+### Protection Mechanisms
+
+- Limit failed login attempts per user/IP
+- Temporary account lock after repeated failures
+- IP blocking for suspicious activity
+
+### Failed Login Handling
+
+- After 5 failed attempts - temporary lock (15 minutes)
+- Repeated violations - extended lock duration
+
+### Account Lock Strategy
+
+- Short-term lock applied for initial abuse
+- Longer lock duration for repeated violations
+- Admin override available if required
+
 ### 2. Spam Alert Prevention
 - Alert creation is restricted to authorised roles only
 - Excessive alert creation attempts trigger throttling or review
+
+### Spam Prevention Controls
+
+- Only authorised roles can create alerts
+- Duplicate or repeated alerts are flagged
+- High-frequency alert creation is monitored
+
+### Behaviour Monitoring
+The system detects:
+- Multiple alerts with similar content
+- Rapid alert submissions
+- Unusual activity patterns
+
+### Response to Spam
+
+- Alert creation temporarily restricted
+- Alerts flagged for review
+- User activity logged for investigation
 
 ### 3. API Throttling
 - Requests above the allowed threshold are temporarily rejected
@@ -45,6 +86,18 @@ The PHOENIX system applies rate limiting to prevent brute-force attacks, spam al
 - Excessive requests must be logged
 - Suspicious behaviour should be flagged for review
 
+### Logging and Audit
+All suspicious activities are:
+
+- Logged securely
+- Time-stamped
+- Stored for audit and analysis
+
+Logs help:
+
+- Identify attackers
+- Support investigations
+- Improve system security
 
 ## Example Rate Limit Table
 
@@ -63,6 +116,32 @@ If a rate limit is exceeded, the API should return:
 - a message explaining that the request limit has been exceeded
 - a retry time if applicable
 
+## Abuse Detection Strategy
+The system monitors:
+
+- High request frequency
+- Repeated failed actions
+- Suspicious usage patterns
+
+Actions taken:
+
+- Temporary blocking
+- Activity logging
+- Security alerts triggered
+
+## Security Response Actions
+When abuse is detected:
+
+- Access may be temporarily restricted
+- Requests may be rejected
+- System administrators may be notified
+
+This design ensures:
+
+- Protection against brute-force attacks
+- Prevention of spam alert misuse
+- Detection of abnormal behaviour
+- Improved system trust and reliability
 
 ## Conclusion
 Rate limiting in PHOENIX helps maintain system availability, prevents abuse, and protects critical alert functionality from brute-force, spam, and overload attacks.

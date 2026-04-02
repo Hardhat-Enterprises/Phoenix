@@ -3,6 +3,10 @@
 ## Overview
 The PHOENIX system must validate and sanitise all user and system inputs to prevent injection attacks. Injection prevention is important to ensure that alert data, API inputs, and external data feeds are treated only as data and not executed as commands, queries, or scripts.
 
+## Validation Enforcement
+
+- Validation is enforced at the API layer before request processing
+- Invalid requests are rejected early to reduce system load and attack surface
 
 ## Injection Risks
 Potential injection risks in the PHOENIX system include:
@@ -20,6 +24,7 @@ All input fields must be checked before processing.
 - Reject malformed input
 - Ensure required fields are present
 - Enforce correct data types
+- Repeated invalid inputs are tracked and flagged
 
 ### 2. Use Allowed Input Formats
 Each field should only accept expected formats.
@@ -45,6 +50,25 @@ Data received from external systems such as BoM, Scamwatch, or other feeds must 
 
 ### 7. Protect Logging and Error Messages
 Input included in logs must be sanitised to prevent log injection. System error messages should not expose internal query structures or sensitive implementation details.
+
+### 8. Input Limits
+- Maximum API request size: 2 KB – 10 KB (depending on endpoint)
+- Prevents large payload attacks and system overload
+
+### 9. Field Length Constraints
+- title - max 100 characters
+- message - max 500 characters
+- location - max 100 characters
+- source - max 50 characters
+
+### 10. Logging for Suspicious Inputs
+
+- Suspicious or repeated invalid inputs are logged with:
+timestamp
+  - IP address
+  - action attempted
+- Supports monitoring and security audits
+
 
 
 ## Example Validation Rules
@@ -85,12 +109,33 @@ The PHOENIX system enforces strict format validation to ensure that all inputs f
 - Invalid or unexpected formats must be rejected.
 - Only safe characters are allowed in text fields.
 
+### Validation Workflow
+
+- Request received by API
+- Required fields checked
+- Data type validation applied
+- Allowed values verified
+- Input length checked
+- Request accepted or rejected
+
+
+### Security Impact
+
+- Reduces attack surface at early stages
+- Prevents system overload from invalid requests
+- Detects malicious patterns before deeper processing
+- Improves system reliability and trust
+
 
 ### Error Handling for Invalid Format
 
 Invalid inputs should result in:
 - `400 Bad Request`
 - Clear error message indicating the incorrect field
+
+Repeated invalid requests may result in:
+  - `429 Too Many Requests`
+Suspicious activity is flagged and logged.
 
 Example:
 
@@ -103,3 +148,4 @@ Example:
 
 ## Conclusion
 Injection prevention in PHOENIX is achieved by validating inputs, sanitising content, restricting allowed formats, using parameterised queries, and ensuring that untrusted input is never executed as code or commands.
+

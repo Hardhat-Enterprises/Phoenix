@@ -9,6 +9,7 @@ interface Config {
   GATEWAY_JWT_EXPIRES_IN: string;
   LOG_LEVEL: string;
   USER_SERVICE_PORT: number;
+  NOTIFICATION_SERVICE_PORT: number;
 }
 
 export const config: Config = {
@@ -22,4 +23,5 @@ export const config: Config = {
   GATEWAY_JWT_EXPIRES_IN: process.env.GATEWAY_JWT_EXPIRES_IN || "1m",
   LOG_LEVEL: process.env.LOG_LEVEL || "info",
   USER_SERVICE_PORT: Number(process.env.USER_SERVICE_PORT) || 50051,
+  NOTIFICATION_SERVICE_PORT: Number(process.env.NOTIFICATION_SERVICE_PORT) || 50052,
 };

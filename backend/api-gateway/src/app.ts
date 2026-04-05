@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { config, logger } from "@phoenix/common";
 import userRoutes from "./routes/user.routes";
+import notificationRoutes from "./routes/notification.routes";
 // import authRoutes from "./routes/auth.routes";
 
 dotenv.config();
@@ -21,6 +22,7 @@ app.get("/health", (_, res) => {
 });
 
 app.use("/api/users", userRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 const startServer = () => {
   try {

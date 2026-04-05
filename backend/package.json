@@ -4,11 +4,14 @@
   "scripts": {
     "dev:gateway": "nodemon --watch api-gateway/src --watch libs/common/src --ext ts --exec \"ts-node -r tsconfig-paths/register -P api-gateway/tsconfig.json api-gateway/src/app.ts\"",
     "dev:user": "nodemon --watch user-service/src --watch proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P user-service/tsconfig.json user-service/src/app.ts\"",
+    "dev:notification": "nodemon --watch notification-service/src --watch proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P notification-service/tsconfig.json notification-service/src/app.ts\"",
     "build:gateway": "tsc -p api-gateway/tsconfig.json",
     "build:user": "tsc -p user-service/tsconfig.json",
-    "build": "npm run build:gateway && npm run build:user",
+    "build:notification": "tsc -p notification-service/tsconfig.json",
+    "build": "npm run build:gateway && npm run build:user && npm run build:notification",
     "start:gateway": "node dist/api-gateway/server.js",
-    "start:user": "node dist/user-service/server.js"
+    "start:user": "node dist/user-service/server.js",
+    "start:notification": "node dist/notification-service/server.js"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.0",

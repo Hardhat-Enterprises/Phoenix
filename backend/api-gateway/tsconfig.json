@@ -3,12 +3,20 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
-    "outDir": "../../dist/api-gateway",
+    "rootDir": ".",
+    "outDir": "../dist/api-gateway",
+    "composite": true,
     "strict": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
     "skipLibCheck": true,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "noEmit": false,
+    "incremental": true,
+    "tsBuildInfoFile": "../../.tsbuildinfo/api-gateway.tsbuildinfo"
   },
-  "include": ["src/**/*"]
+  "include": ["src"],
+   "references": [
+    { "path": "../libs/common" }   // path **must point to folder with tsconfig.json**
+  ]
 }

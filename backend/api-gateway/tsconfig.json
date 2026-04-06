@@ -8,15 +8,13 @@
     "composite": true,
     "strict": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "skipLibCheck": true,
     "strictPropertyInitialization": false,
     "noEmit": false,
-    "incremental": true,
-    "tsBuildInfoFile": "../../.tsbuildinfo/api-gateway.tsbuildinfo"
+    "incremental": true
   },
   "include": ["src"],
-   "references": [
-    { "path": "../libs/common" }   // path **must point to folder with tsconfig.json**
-  ]
+  "references": [{ "path": "../libs/common" }]
 }

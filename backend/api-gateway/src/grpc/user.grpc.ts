@@ -1,7 +1,7 @@
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import { logger } from "@phoenix/common";
-import path from "path";
+import * as path from "path";
 
 const PROTO_PATH = path.resolve(process.cwd(), "libs/proto/user.proto");
 logger.info(`Loading gRPC proto file from: ${PROTO_PATH}`);

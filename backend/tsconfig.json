@@ -1,9 +1,6 @@
 {
   "files": [],
-  "references": [
-    { "path": "libs/common" },
-    { "path": "api-gateway" }
-  ],
+  "references": [{ "path": "libs/common" }, { "path": "api-gateway" }],
   "compilerOptions": {
     "skipLibCheck": true,
     "noEmit": false,
@@ -13,7 +10,7 @@
       "@phoenix/database": ["libs/database/src"],
       "@phoenix/database/*": ["libs/database/src/*"],
       "@phoenix/common/*": ["libs/common/src/*"],
-      "@phoenix/common": ["libs/common/src"],
+      "@phoenix/common": ["libs/common/src/index.ts"],
       "@phoenix/*": ["libs/*/src"]
     }
   },

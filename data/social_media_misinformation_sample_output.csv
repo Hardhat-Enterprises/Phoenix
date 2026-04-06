@@ -1,0 +1,101 @@
+hazard_event_id,threat_id,hazard_type,threat_type,state_region,suburb,alert_level,misinformation_level,social_media_spike,cyber_frequency_level,risk_score
+HZ_00005,TH_00001,heatwave,false_notice,Queensland,Rocklea,advice,1,no,2,0.54
+HZ_00071,TH_00002,storm,social_media_spike,Northern Territory,Darwin,warning,2,yes,4,0.66
+HZ_00099,TH_00003,cyclone,social_media_spike,Northern Territory,Darwin,warning,5,yes,4,0.67
+HZ_00036,TH_00004,heatwave,fake_alert_phishing,Queensland,Townsville,warning,2,no,3,0.58
+HZ_00068,TH_00005,heatwave,fake_alert_phishing,Queensland,Cairns,warning,3,no,5,0.68
+HZ_00071,TH_00006,storm,fake_alert_phishing,Northern Territory,Darwin,warning,3,no,3,0.63
+HZ_00086,TH_00007,cyclone,fake_alert_phishing,Australian Capital Territory,Canberra,warning,3,yes,3,0.66
+HZ_00017,TH_00008,storm,social_media_spike,Victoria,Geelong,warning,5,yes,4,0.69
+HZ_00092,TH_00009,flood,false_notice,Western Australia,Perth,warning,3,yes,5,0.81
+HZ_00024,TH_00010,flood,social_media_spike,Victoria,Geelong,warning,4,yes,5,0.74
+HZ_00050,TH_00011,bushfire,fake_alert_phishing,South Australia,Adelaide,warning,3,yes,5,0.78
+HZ_00075,TH_00012,heatwave,misinformation,South Australia,Adelaide,emergency_warning,4,yes,5,0.85
+HZ_00049,TH_00013,heatwave,misinformation,Tasmania,Hobart,advice,2,yes,4,0.55
+HZ_00006,TH_00014,flood,fake_alert_phishing,Victoria,Sale,advice,4,no,3,0.68
+HZ_00082,TH_00015,cyclone,fake_alert_phishing,New South Wales,Windsor,warning,3,yes,5,0.93
+HZ_00093,TH_00016,heatwave,social_media_spike,Victoria,Sale,warning,4,yes,5,0.73
+HZ_00099,TH_00017,cyclone,misinformation,Northern Territory,Darwin,emergency_warning,4,yes,5,0.75
+HZ_00089,TH_00018,flood,misinformation,Northern Territory,Darwin,emergency_warning,5,yes,5,0.83
+HZ_00031,TH_00019,bushfire,misinformation,Australian Capital Territory,Canberra,warning,4,no,3,0.63
+HZ_00020,TH_00020,heatwave,misinformation,Australian Capital Territory,Canberra,warning,5,yes,5,0.82
+HZ_00047,TH_00021,cyclone,social_media_spike,Victoria,Wycheproof,warning,5,yes,5,0.77
+HZ_00081,TH_00022,flood,fake_alert_phishing,Tasmania,Hobart,emergency_warning,4,yes,5,0.92
+HZ_00088,TH_00023,heatwave,fake_alert_phishing,Victoria,Footscray,warning,2,no,4,0.57
+HZ_00024,TH_00024,flood,misinformation,Victoria,Geelong,advice,5,no,2,0.64
+HZ_00079,TH_00025,cyclone,misinformation,Victoria,Bairnsdale,warning,3,yes,5,0.68
+HZ_00034,TH_00026,cyclone,false_notice,Victoria,Footscray,emergency_warning,4,yes,5,0.89
+HZ_00059,TH_00027,flood,false_notice,Victoria,Bairnsdale,warning,2,yes,4,0.78
+HZ_00010,TH_00028,heatwave,fake_alert_phishing,Queensland,Townsville,warning,3,yes,5,0.83
+HZ_00031,TH_00029,bushfire,misinformation,Australian Capital Territory,Canberra,advice,3,yes,3,0.6
+HZ_00072,TH_00030,cyclone,fake_alert_phishing,Queensland,Townsville,emergency_warning,4,yes,5,0.9
+HZ_00004,TH_00031,cyclone,misinformation,Queensland,Cairns,advice,2,yes,4,0.52
+HZ_00035,TH_00032,cyclone,misinformation,Western Australia,Broome,warning,3,no,3,0.6
+HZ_00064,TH_00033,cyclone,social_media_spike,Queensland,Rocklea,advice,3,yes,2,0.57
+HZ_00014,TH_00034,cyclone,fake_alert_phishing,Northern Territory,Darwin,emergency_warning,3,no,4,0.81
+HZ_00100,TH_00035,cyclone,social_media_spike,Victoria,Wycheproof,advice,3,no,2,0.49
+HZ_00067,TH_00036,heatwave,fake_alert_phishing,Western Australia,Perth,warning,2,no,5,0.78
+HZ_00073,TH_00037,storm,social_media_spike,Victoria,Bairnsdale,emergency_warning,4,yes,5,0.82
+HZ_00004,TH_00038,cyclone,misinformation,Queensland,Cairns,warning,4,yes,3,0.69
+HZ_00018,TH_00039,bushfire,false_notice,Northern Territory,Darwin,advice,2,no,1,0.57
+HZ_00020,TH_00040,heatwave,fake_alert_phishing,Australian Capital Territory,Canberra,warning,5,yes,5,0.83
+HZ_00045,TH_00041,cyclone,social_media_spike,Victoria,Footscray,warning,4,yes,5,0.77
+HZ_00091,TH_00042,bushfire,fake_alert_phishing,Northern Territory,Darwin,advice,3,no,2,0.54
+HZ_00041,TH_00043,flood,social_media_spike,Western Australia,Broome,warning,5,yes,5,0.87
+HZ_00028,TH_00044,bushfire,fake_alert_phishing,Tasmania,Hobart,warning,3,no,5,0.78
+HZ_00008,TH_00045,bushfire,false_notice,Victoria,Geelong,emergency_warning,3,no,5,0.91
+HZ_00030,TH_00046,storm,social_media_spike,Western Australia,Perth,advice,2,no,3,0.55
+HZ_00054,TH_00047,bushfire,social_media_spike,New South Wales,Windsor,emergency_warning,5,yes,5,0.85
+HZ_00066,TH_00048,storm,social_media_spike,Western Australia,Broome,warning,3,yes,4,0.64
+HZ_00060,TH_00049,heatwave,misinformation,Queensland,Rocklea,warning,4,yes,5,0.74
+HZ_00030,TH_00050,storm,social_media_spike,Western Australia,Perth,advice,4,no,1,0.48
+HZ_00057,TH_00051,cyclone,social_media_spike,Northern Territory,Darwin,emergency_warning,5,yes,5,0.81
+HZ_00049,TH_00052,heatwave,fake_alert_phishing,Tasmania,Hobart,warning,2,yes,3,0.67
+HZ_00023,TH_00053,heatwave,misinformation,Australian Capital Territory,Canberra,emergency_warning,3,yes,5,0.77
+HZ_00090,TH_00054,cyclone,social_media_spike,Victoria,Wycheproof,advice,4,yes,4,0.69
+HZ_00016,TH_00055,flood,misinformation,Victoria,Wycheproof,warning,2,yes,5,0.67
+HZ_00079,TH_00056,cyclone,fake_alert_phishing,Victoria,Bairnsdale,warning,2,no,3,0.67
+HZ_00008,TH_00057,bushfire,fake_alert_phishing,Victoria,Geelong,emergency_warning,4,yes,5,0.93
+HZ_00050,TH_00058,bushfire,misinformation,South Australia,Adelaide,warning,4,no,4,0.68
+HZ_00088,TH_00059,heatwave,false_notice,Victoria,Footscray,advice,3,yes,3,0.54
+HZ_00081,TH_00060,flood,social_media_spike,Tasmania,Hobart,emergency_warning,4,yes,5,0.87
+HZ_00041,TH_00061,flood,misinformation,Western Australia,Broome,emergency_warning,5,yes,5,0.88
+HZ_00018,TH_00062,bushfire,social_media_spike,Northern Territory,Darwin,warning,4,yes,3,0.57
+HZ_00034,TH_00063,cyclone,false_notice,Victoria,Footscray,emergency_warning,3,yes,5,0.87
+HZ_00093,TH_00064,heatwave,social_media_spike,Victoria,Sale,warning,4,yes,5,0.7
+HZ_00041,TH_00065,flood,false_notice,Western Australia,Broome,emergency_warning,4,yes,5,0.89
+HZ_00003,TH_00066,bushfire,misinformation,Victoria,Sale,advice,4,no,2,0.57
+HZ_00081,TH_00067,flood,misinformation,Tasmania,Hobart,emergency_warning,5,yes,5,0.89
+HZ_00077,TH_00068,bushfire,misinformation,Australian Capital Territory,Canberra,emergency_warning,5,yes,5,0.87
+HZ_00080,TH_00069,cyclone,social_media_spike,Western Australia,Broome,warning,4,yes,4,0.68
+HZ_00011,TH_00070,flood,misinformation,Tasmania,Hobart,emergency_warning,5,no,5,0.86
+HZ_00036,TH_00071,heatwave,fake_alert_phishing,Queensland,Townsville,advice,1,no,1,0.6
+HZ_00006,TH_00072,flood,misinformation,Victoria,Sale,advice,5,no,2,0.7
+HZ_00044,TH_00073,bushfire,fake_alert_phishing,Victoria,Bairnsdale,warning,4,no,4,0.71
+HZ_00003,TH_00074,bushfire,social_media_spike,Victoria,Sale,advice,4,yes,3,0.56
+HZ_00021,TH_00075,bushfire,fake_alert_phishing,Northern Territory,Darwin,emergency_warning,4,yes,5,0.89
+HZ_00037,TH_00076,cyclone,misinformation,Victoria,Wycheproof,warning,3,no,5,0.67
+HZ_00059,TH_00077,flood,false_notice,Victoria,Bairnsdale,advice,4,yes,5,0.74
+HZ_00019,TH_00078,cyclone,social_media_spike,Western Australia,Perth,warning,2,no,4,0.53
+HZ_00024,TH_00079,flood,false_notice,Victoria,Geelong,warning,2,yes,5,0.77
+HZ_00032,TH_00080,heatwave,fake_alert_phishing,Victoria,Wycheproof,warning,2,no,3,0.72
+HZ_00062,TH_00081,bushfire,misinformation,Tasmania,Hobart,advice,5,yes,4,0.65
+HZ_00033,TH_00082,cyclone,false_notice,Victoria,Sale,warning,3,no,5,0.75
+HZ_00063,TH_00083,flood,social_media_spike,New South Wales,Windsor,warning,3,yes,5,0.77
+HZ_00069,TH_00084,cyclone,social_media_spike,Western Australia,Broome,warning,4,yes,5,0.82
+HZ_00039,TH_00085,cyclone,fake_alert_phishing,South Australia,Adelaide,advice,2,no,1,0.6
+HZ_00086,TH_00086,cyclone,fake_alert_phishing,Australian Capital Territory,Canberra,advice,2,yes,3,0.57
+HZ_00092,TH_00087,flood,fake_alert_phishing,Western Australia,Perth,warning,4,yes,5,0.91
+HZ_00089,TH_00088,flood,misinformation,Northern Territory,Darwin,warning,5,yes,5,0.88
+HZ_00069,TH_00089,cyclone,social_media_spike,Western Australia,Broome,emergency_warning,5,yes,5,0.9
+HZ_00097,TH_00090,heatwave,misinformation,Victoria,Wycheproof,warning,5,yes,5,0.86
+HZ_00033,TH_00091,cyclone,false_notice,Victoria,Sale,warning,3,no,3,0.71
+HZ_00064,TH_00092,cyclone,misinformation,Queensland,Rocklea,advice,3,no,3,0.52
+HZ_00064,TH_00093,cyclone,misinformation,Queensland,Rocklea,warning,4,no,2,0.61
+HZ_00074,TH_00094,heatwave,social_media_spike,Northern Territory,Darwin,warning,5,yes,5,0.75
+HZ_00076,TH_00095,heatwave,fake_alert_phishing,Queensland,Cairns,warning,2,yes,5,0.79
+HZ_00039,TH_00096,cyclone,false_notice,South Australia,Adelaide,advice,3,no,2,0.6
+HZ_00075,TH_00097,heatwave,false_notice,South Australia,Adelaide,warning,4,yes,5,0.8
+HZ_00008,TH_00098,bushfire,misinformation,Victoria,Geelong,emergency_warning,5,yes,5,0.87
+HZ_00019,TH_00099,cyclone,misinformation,Western Australia,Perth,warning,3,no,2,0.55
+HZ_00086,TH_00100,cyclone,false_notice,Australian Capital Territory,Canberra,advice,2,yes,3,0.54

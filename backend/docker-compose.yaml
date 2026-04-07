@@ -1,10 +1,19 @@
 services:
   api-gateway:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     container_name: api-gateway
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - SERVICE=api-gateway
+    depends_on:
+      - user-service
+
+  user-service:
+    build: .
+    container_name: user-service
+    ports:
+      - "50051:50051"
+    environment:
+      - SERVICE=user-service
+    command: sh -c "node -r tsconfig-paths/register dist/user-service/src/app.js"

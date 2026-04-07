@@ -1,83 +1,63 @@
 {
-  "paths": {
-    "input_csv": "data/input/sample_raw.csv",
-    "cleaned_csv": "data/output/cleaned_data.csv",
-    "comparison_report": "data/reports/comparison_report.json",
-    "validation_report": "data/reports/validation_report.json",
-    "pipeline_log": "data/logs/pipeline.log"
-  },
-  "cleaning": {
+  "hazard_event": {
+    "schema_mapping": {
+      "event_id": "hazard_event_id",
+      "event_type": "hazard_type",
+      "severity": "severity_level",
+      "timestamp": "start_time"
+    },
     "missing_values": {
-      "drop": [
-        "event_type",
-        "location",
-        "timestamp"
-      ],
+      "drop": ["hazard_event_id", "start_time"],
       "fill": {
-        "severity": 0,
-        "cyber_threat_type": "unknown",
-        "threat_url": "unknown",
-        "threat_severity": "unknown"
+        "hazard_type": "unknown",
+        "severity_level": "low",
+        "event_status": "monitoring"
       }
     },
     "duplicates": {
-      "subset": [
-        "event_id"
-      ]
+      "subset": ["hazard_event_id"]
     },
     "type_conversion": {
-      "int": [
-        "severity"
-      ],
-      "datetime": [
-        "timestamp"
-      ]
+      "datetime": ["start_time"]
     },
-    "string_standardisation": [
-      "event_type",
-      "location",
-      "cyber_threat_type",
-      "threat_severity"
-    ]
+    "string_standardisation": {
+      "lower": ["severity_level", "event_status"],
+      "capitalize": ["hazard_type"]
+    },
+    "validation": {
+      "severity_level": ["low", "medium", "high", "critical"],
+      "event_status": ["active", "resolved", "monitoring"]
+    }
   },
-  "validation": {
-    "required_columns": [
-      "event_id",
-      "event_type",
-      "location",
-      "severity",
-      "timestamp"
-    ],
-    "column_rules": {
-      "event_id": {
-        "required": true,
-        "type": "int",
-        "unique": true
-      },
-      "event_type": {
-        "required": true,
-        "type": "str",
-        "allowed_values": [
-          "Bushfire",
-          "Flood",
-          "Severe thunderstorm"
-        ]
-      },
-      "location": {
-        "required": true,
-        "type": "str"
-      },
-      "severity": {
-        "required": true,
-        "type": "int",
-        "min": 0,
-        "max": 5
-      },
-      "timestamp": {
-        "required": true,
-        "type": "date",
-        "format": "%Y-%m-%d"
+  "cyber_threat": {
+    "schema_mapping": {
+      "id": "threat_id",
+      "type_of_threat": "threat_type",
+      "risk": "risk_level",
+      "time_detected": "detected_at"
+    },
+    "missing_values": {
+      "drop": ["threat_id", "detected_at"],
+      "fill": {
+        "threat_type": "unknown",
+        "risk_level": "low",
+        "status": "monitoring"
       }
+    },
+    "duplicates": {
+      "subset": ["threat_id"]
+    },
+    "type_conversion": {
+      "datetime": ["detected_at"],
+      "int": ["threat_id"]
+    },
+    "string_standardisation": {
+      "lower": ["risk_level", "status"],
+      "capitalize": ["threat_type"]
+    },
+    "validation": {
+      "risk_level": ["low", "medium", "high", "critical"],
+      "status": ["active", "monitoring", "resolved", "archived"]
     }
   }
 }

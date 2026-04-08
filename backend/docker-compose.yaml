@@ -1,19 +1,23 @@
 services:
   api-gateway:
-    build: .
+    build: ./backend/api-gateway
     container_name: api-gateway
     ports:
       - "3000:3000"
+    env_file:
+    - ./.env
     environment:
       - SERVICE=api-gateway
     depends_on:
       - user-service
 
   user-service:
-    build: .
+    build: ./backend/user-service
     container_name: user-service
     ports:
       - "50051:50051"
+    env_file:
+    - ./.env
     environment:
       - SERVICE=user-service
     command: sh -c "node -r tsconfig-paths/register dist/user-service/src/app.js"

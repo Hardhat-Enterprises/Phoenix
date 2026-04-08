@@ -4,10 +4,9 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY tsconfig.runtime.json ./
-RUN npm install
- 
 COPY . .
- 
+
+RUN npm install 
 RUN npm run build:common
 RUN npm run build:proto
 RUN npm run build:gateway
@@ -18,7 +17,7 @@ RUN echo "=== DIST ===" && ls -R dist
 FROM node:25 AS runner
 WORKDIR /app
  
-ENV NODE_ENV=production
+ENV USER_PROTO_PATH=/app/dist/libs/proto/user.proto
  
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules

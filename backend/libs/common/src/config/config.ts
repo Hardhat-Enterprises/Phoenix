@@ -1,3 +1,5 @@
+import * as path from "path";
+
 interface Config {
   SERVICE_NAME: string;
   PORT: number;

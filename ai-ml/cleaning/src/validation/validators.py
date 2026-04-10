@@ -76,7 +76,11 @@ def check_allowed_values(df, rules):
         allowed_values = rule.get("allowed_values")
         if not allowed_values:
             continue
-        invalid_rows = df[df[column].notna() & ~df[column].isin(allowed_values)].index
+        allowed_lookup = {str(value).strip().lower() for value in allowed_values}
+        normalised = df[column].apply(
+            lambda value: str(value).strip().lower() if pd.notna(value) else value
+        )
+        invalid_rows = df[df[column].notna() & ~normalised.isin(allowed_lookup)].index
         for row in invalid_rows:
             issues.append(
                 make_issue(
@@ -161,7 +165,10 @@ def check_data_types(df, rules):
         expected_type = rule.get("type")
         if expected_type == "int":
             converted = pd.to_numeric(df[column], errors="coerce")
-            invalid_rows = df[df[column].notna() & converted.isna()].index
+            invalid_mask = (
+                df[column].notna() & (converted.isna() | (converted % 1 != 0))
+            )
+            invalid_rows = df[invalid_mask].index
             for row in invalid_rows:
                 issues.append(
                     make_issue(
@@ -170,6 +177,19 @@ def check_data_types(df, rules):
                         rule="type",
                         value=df.loc[row, column],
                         message="Expected integer type",
+                    )
+                )
+        elif expected_type == "float":
+            converted = pd.to_numeric(df[column], errors="coerce")
+            invalid_rows = df[df[column].notna() & converted.isna()].index
+            for row in invalid_rows:
+                issues.append(
+                    make_issue(
+                        row=row,
+                        column=column,
+                        rule="type",
+                        value=df.loc[row, column],
+                        message="Expected float type",
                     )
                 )
         elif expected_type == "str":

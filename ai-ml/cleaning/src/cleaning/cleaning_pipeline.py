@@ -9,15 +9,25 @@ def _log(events, step, details):
 def handle_type_conversion(df, config, events):
     initial_nulls = int(df.isna().sum().sum())
     int_columns = config.get("int", [])
+    float_columns = config.get("float", [])
     datetime_columns = config.get("datetime", [])
 
     for col in int_columns:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
+    for col in float_columns:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
     for col in datetime_columns:
         if col in df.columns:
-            df[col] = pd.to_datetime(df[col], format="mixed", errors="coerce")
+            try:
+                df[col] = pd.to_datetime(
+                    df[col], format="mixed", errors="coerce", utc=True
+                )
+            except (TypeError, ValueError):
+                df[col] = pd.to_datetime(df[col], errors="coerce", utc=True)
 
     new_nulls = int(df.isna().sum().sum()) - initial_nulls
     if new_nulls > 0:
@@ -58,12 +68,30 @@ def handle_duplicates(df, config, events):
 
 
 def handle_string_standardisation(df, columns, events):
+    case_mode = "capitalize"
+    if isinstance(columns, dict):
+        case_mode = columns.get("case", "capitalize")
+        columns = columns.get("columns", [])
+
     transformed = []
     for col in columns:
         if col in df.columns:
-            df[col] = df[col].astype("string").str.strip().str.capitalize()
+            series = df[col].astype("string").str.strip()
+            if case_mode == "lower":
+                series = series.str.lower()
+            elif case_mode == "upper":
+                series = series.str.upper()
+            elif case_mode == "title":
+                series = series.str.title()
+            elif case_mode == "capitalize":
+                series = series.str.capitalize()
+            df[col] = series
             transformed.append(col)
-    _log(events, "transformation", f"standardised_columns={transformed}")
+    _log(
+        events,
+        "transformation",
+        f"standardised_columns={transformed}; case={case_mode}",
+    )
     return df
 
 

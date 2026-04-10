@@ -3,20 +3,12 @@
   "total_rows": 18,
   "total_columns": 8,
   "checks_run": 7,
-  "total_issues": 2,
+  "total_issues": 1,
   "status": "FAIL",
   "issue_summary_by_column": {
-    "event_type": 1,
     "severity": 1
   },
   "issues": [
-    {
-      "row": 7,
-      "column": "event_type",
-      "rule": "allowed_values",
-      "value": "Earthquake",
-      "message": "Invalid value. Allowed values: ['Bushfire', 'Flood', 'Severe thunderstorm']"
-    },
     {
       "row": 8,
       "column": "severity",
@@ -25,5 +17,5 @@
       "message": "Value above maximum allowed (5)"
     }
   ],
-  "error_rate": 0.1111111111111111
+  "error_rate": 0.05555555555555555
 }

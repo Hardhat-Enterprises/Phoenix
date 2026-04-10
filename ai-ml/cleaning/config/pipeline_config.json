@@ -1,5 +1,5 @@
 {
-  "dataset_type": "hazard_event",
+  "dataset_type": "generic",
   "paths": {
     "input_csv": "data/input/sample_raw.csv",
     "cleaned_csv": "data/output/cleaned_data.csv",
@@ -177,7 +177,7 @@
       "event_type": {
         "required": true,
         "type": "str",
-        "allowed_values": ["Bushfire", "Flood", "Severe thunderstorm"]
+        "allowed_values": ["Bushfire", "Flood", "Severe thunderstorm", "Earthquake"]
       },
       "location": {
         "required": true,

@@ -21,6 +21,30 @@ def _write_json(path, data):
     output_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
+def _dataset_rules_match_columns(validation_config, columns):
+    required = set(validation_config.get("required_columns", []))
+    return required.issubset(set(columns))
+
+
+def _select_rules(config, raw_columns):
+    datasets = config.get("datasets", {})
+    dataset_type = config.get("dataset_type", "generic")
+
+    if dataset_type in datasets:
+        selected = datasets[dataset_type]
+        cleaning_config = selected["cleaning"]
+        validation_config = selected["validation"]
+        if _dataset_rules_match_columns(validation_config, raw_columns):
+            return cleaning_config, validation_config, dataset_type
+
+    for name, dataset_config in datasets.items():
+        validation_config = dataset_config.get("validation", {})
+        if _dataset_rules_match_columns(validation_config, raw_columns):
+            return dataset_config["cleaning"], validation_config, name
+
+    return config["cleaning"], config["validation"], "generic"
+
+
 def run_pipeline(config_path):
     config_file = Path(config_path).resolve()
     with config_file.open("r", encoding="utf-8") as file:
@@ -29,18 +53,10 @@ def run_pipeline(config_path):
     base_dir = config_file.parent.parent
     paths = _resolve_paths(base_dir, config["paths"])
 
-
-    dataset_type = config.get("dataset_type", "generic")
-    datasets_config = config.get("datasets", {})
-
-    if dataset_type in datasets_config:
-        cleaning_config = datasets_config[dataset_type]["cleaning"]
-        validation_config = datasets_config[dataset_type]["validation"]
-    else:
-        cleaning_config = config["cleaning"]
-        validation_config = config["validation"]
-
     raw_df = pd.read_csv(paths["input_csv"])
+    cleaning_config, validation_config, effective_dataset_type = _select_rules(
+        config, raw_df.columns
+    )
     cleaned_df, cleaning_events = run_cleaning_pipeline(raw_df, cleaning_config)
     comparison_report = compare_before_after(raw_df, cleaned_df)
     validation_report = run_validation_df(
@@ -60,5 +76,6 @@ def run_pipeline(config_path):
         "output_rows": int(cleaned_df.shape[0]),
         "issues_found": validation_report["total_issues"],
         "status": validation_report["status"],
+        "dataset_type": effective_dataset_type,
         "outputs": paths,
     }

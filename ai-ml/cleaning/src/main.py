@@ -26,6 +26,7 @@ def main():
 
     summary = run_pipeline(args.config)
     print("Pipeline complete")
+    print(f"Dataset type: {summary['dataset_type']}")
     print(f"Rows: {summary['input_rows']} -> {summary['output_rows']}")
     print(f"Validation: {summary['status']} ({summary['issues_found']} issues)")
     print(f"Cleaned CSV: {summary['outputs']['cleaned_csv']}")

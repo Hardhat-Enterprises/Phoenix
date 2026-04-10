@@ -8,14 +8,16 @@
     "build:user": "tsc -p user-service/tsconfig.json",
     "build": "npm run build:gateway && npm run build:user",
     "start:gateway": "node dist/api-gateway/server.js",
-    "start:user": "node dist/user-service/server.js"
+    "start:user": "node dist/user-service/server.js",
+    "dev:ingestion": "nodemon --watch data-ingestion-service/src --watch libs/proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P data-ingestion-service/tsconfig.json data-ingestion-service/src/app.ts\"",
+    "build:ingestion": "tsc -p data-ingestion-service/tsconfig.json"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.14.0",
+    "@grpc/grpc-js": "^1.14.3",
     "@grpc/proto-loader": "^0.8.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
+    "dotenv": "^17.4.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
@@ -26,7 +28,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.3.0",
+    "@types/node": "^24.12.2",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",

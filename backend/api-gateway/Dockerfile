@@ -22,6 +22,7 @@ FROM node:25 AS runner
 WORKDIR /app
  
 ENV USER_PROTO_PATH=/app/dist/libs/proto/user.proto
+ENV USER_SERVICE_URL=user-service:50051
  
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules

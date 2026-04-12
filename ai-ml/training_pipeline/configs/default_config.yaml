@@ -1,0 +1,18 @@
+experiment_name: baseline_run
+model_type: random_forest
+random_seed: 42
+
+dataset:
+  path: data/sample.csv
+  target_column: label
+  test_size: 0.2
+  validation_size: 0.2
+
+training:
+  batch_size: 32
+  epochs: 10
+  learning_rate: 0.001
+
+output:
+  logs_dir: logs/
+  checkpoints_dir: checkpoints/

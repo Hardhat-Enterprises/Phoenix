@@ -1,17 +1,10 @@
-"""Main entry point for the AI008 training pipeline scaffold."""
+from utils.config_loader import load_config
 
-try:
-    from src.utils.paths import ensure_runtime_dirs
-except ModuleNotFoundError:
-    # Support direct script execution: `python src/main.py`
-    from utils.paths import ensure_runtime_dirs
+def main():
+    config = load_config("configs/default_config.yaml")
 
-
-def main() -> None:
-    """Initialize runtime folders for the scaffold."""
-    ensure_runtime_dirs()
-    print("AI008 training pipeline scaffold is ready.")
-
+    print("Model:", config["model"]["type"])
+    print("Epochs:", config["training"]["epochs"])
 
 if __name__ == "__main__":
     main()

@@ -10,14 +10,7 @@ Validates a loaded config dict against CONFIG_SCHEMA:
   - validates split ratios sum to ~1.0
 """
 
-<<<<<<< HEAD
-try:
-    from .config_schema import CONFIG_SCHEMA
-except ImportError:
-    from utils.config_schema import CONFIG_SCHEMA
-=======
 from utils.config_schema import CONFIG_SCHEMA
->>>>>>> ec7427de4acf0511212cc4a33805349566fc7b1f
 
 
 class ConfigValidationError(Exception):

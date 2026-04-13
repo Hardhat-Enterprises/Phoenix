@@ -26,14 +26,7 @@ import copy
 from pathlib import Path
 from typing import Union
 
-<<<<<<< HEAD
-try:
-    from .config_validator import validate_config, ConfigValidationError
-except ImportError:
-    from utils.config_validator import validate_config, ConfigValidationError
-=======
 from utils.config_validator import validate_config, ConfigValidationError
->>>>>>> ec7427de4acf0511212cc4a33805349566fc7b1f
 
 try:
     import yaml

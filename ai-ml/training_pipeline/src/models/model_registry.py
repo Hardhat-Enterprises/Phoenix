@@ -26,7 +26,7 @@ def load_sklearn_model(model_name: str, model_params: Dict[str, Any]) -> Any:
 
 
 # PyTorch Model Load
-class SimpleMLP(nn.Module if nn is not None else object):
+class SimpleMLP(nn.Module if nn is not None else object): # type: ignore
     def __init__(self, input_dim: int, hidden_dim: int = 64, output_dim: int = 2):
         if nn is None:
             raise ImportError("PyTorch is not installed.")

@@ -13,10 +13,10 @@ except Exception:
     DataLoader = None
     TensorDataset = None
 
-from training_pipeline.src.models.model_registry import (
-    load_sklearn_model,
-    load_pytorch_model
-)
+try:
+    from ..models.model_registry import load_sklearn_model, load_pytorch_model
+except ImportError:
+    from models.model_registry import load_sklearn_model, load_pytorch_model
 
 
 @dataclass
@@ -36,6 +36,40 @@ class TrainingConfig:
     loss_fn: Optional[Any] = None
     device: Optional[str] = None
     shuffle: bool = True
+
+    @classmethod
+    def from_pipeline_config(cls, config: Dict[str, Any], verbose: bool = True) -> "TrainingConfig":
+        """Build TrainingConfig from training_pipeline config schema."""
+        model_cfg = config.get("model", {})
+        training_cfg = config.get("training", {})
+
+        model_type_raw = str(model_cfg.get("type", "")).strip().lower()
+        model_type, model_name = _map_pipeline_model(model_type_raw)
+
+        return cls(
+            model_type=model_type,
+            model_name=model_name,
+            model_params=dict(model_cfg.get("hyperparameters", {})),
+            epochs=int(training_cfg.get("epochs", 10)),
+            batch_size=int(training_cfg.get("batch_size", 32)),
+            learning_rate=float(training_cfg.get("learning_rate", 0.001)),
+            verbose=verbose,
+        )
+
+
+def _map_pipeline_model(model_type: str) -> tuple[str, str]:
+    """Map pipeline config model.type values to engine model_type/model_name."""
+    mapping = {
+        "random_forest": ("sklearn", "random_forest"),
+        "isolation_forest": ("sklearn", "isolation_forest"),
+        "pytorch_mlp": ("pytorch", "simple_mlp"),
+    }
+    if model_type not in mapping:
+        raise ValueError(
+            "Unsupported model.type in pipeline config: "
+            f"{model_type!r}. Expected one of: {list(mapping.keys())}"
+        )
+    return mapping[model_type]
 
 
 class GenericTrainingEngine:
@@ -93,17 +127,17 @@ class GenericTrainingEngine:
         optimizer_class = self.config.optimizer_class or torch.optim.Adam
         optimizer = optimizer_class(self.model.parameters(), lr=self.config.learning_rate)
 
-        loss_fn = self.config.loss_fn or nn.CrossEntropyLoss()
+        loss_fn = self.config.loss_fn or nn.CrossEntropyLoss() # type: ignore
 
         X_train_tensor = self._to_tensor(X_train, dtype=torch.float32)
         y_train_tensor = self._to_tensor(y_train, dtype=torch.long)
 
-        train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+        train_dataset = TensorDataset(X_train_tensor, y_train_tensor) # type: ignore
         train_loader = DataLoader(
             train_dataset,
             batch_size=self.config.batch_size,
             shuffle=self.config.shuffle
-        )
+        ) # type: ignore
 
         # Fit Loop
         for epoch in range(self.config.epochs):

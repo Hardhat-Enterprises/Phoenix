@@ -1,7 +1,0 @@
-event_id,event_type,location,severity,timestamp,cyber_threat_type,threat_url,threat_severity
-1,Bushfire,VIC,4,2024-01-15 08:30:00,Phishing,http://fake-relief.com,HIGH
-2,FLOOD,nsw,2,15/02/2024,MISINFORMATION,,low
-3,bushfire,TAS,5,2024-03-10 14:00:00,,http://scam-bushfire.org,
-4,Severe Thunderstorm, ,,7:45 p.m,phishing, ,High
-5,,Unknown Location,3,,Donation Scam,,MEDIUM
-3,bushfire,TAS,5,2024-03-10 14:00:00,,http://scam-bushfire.org,low

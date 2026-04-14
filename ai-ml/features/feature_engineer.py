@@ -197,9 +197,9 @@ class FeatureEngineer:
    
     def save_outputs(self, mapping):
 
-        self.df.to_csv("ai004_features_output.csv", index=False)
+        self.df.to_csv("ai-ml/features/ai004_features_output.csv", index=False)
 
-        with open("feature_mapping.json", "w") as f:
+        with open("ai-ml/features/feature_mapping.json", "w") as f:
             json.dump(mapping, f, indent=4)
 
   

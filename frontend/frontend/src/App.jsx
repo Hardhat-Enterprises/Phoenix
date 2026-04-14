@@ -1,10 +1,11 @@
+import AboutUs from "./AboutUs";
+import "./App.css";
+
+// I am rendering the About Us page here for now
+// so I can test my assigned sidebar task directly.
+
 function App() {
-  return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>Cybersecurity Dashboard</h1>
-      <p>Frontend setup</p>
-    </div>
-  );
+  return <AboutUs />;
 }
 
 export default App;

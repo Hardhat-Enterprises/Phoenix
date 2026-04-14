@@ -21,7 +21,7 @@ except ImportError:
 
 @dataclass
 class TrainingConfig:
-    model_type: str  # "sklearn" or "pytorch"
+    model_type: str  # "sklearn"/"pytorch" or pipeline aliases like "random_forest"
     model_name: str
     model_params: Dict[str, Any] = field(default_factory=dict)
 
@@ -36,6 +36,27 @@ class TrainingConfig:
     loss_fn: Optional[Any] = None
     device: Optional[str] = None
     shuffle: bool = True
+
+    def __post_init__(self) -> None:
+        """
+        Normalize config for both direct engine usage and pipeline config usage.
+        Allows either:
+          - model_type in {"sklearn", "pytorch"} + explicit model_name
+          - model_type as pipeline alias, e.g. "random_forest"
+        """
+        raw_model_type = str(self.model_type).strip().lower()
+
+        if raw_model_type in {"sklearn", "pytorch"}:
+            self.model_type = raw_model_type
+            self.model_name = str(self.model_name).strip().lower()
+            return
+
+        normalized_type, normalized_name = _map_pipeline_model(raw_model_type)
+        self.model_type = normalized_type
+
+        # If caller passed an explicit model_name, keep it when consistent.
+        candidate_name = str(self.model_name).strip().lower() if self.model_name else ""
+        self.model_name = candidate_name or normalized_name
 
     @classmethod
     def from_pipeline_config(cls, config: Dict[str, Any], verbose: bool = True) -> "TrainingConfig":
@@ -87,10 +108,12 @@ class GenericTrainingEngine:
             raise ValueError("model_type must be 'sklearn' or 'pytorch'")
 
     # Training Interface
-    def fit(self, X_train, y_train, X_val=None, y_val=None):
+    def fit(self, X_train, y_train=None, X_val=None, y_val=None):
         if self.config.model_type == "sklearn":
             return self._fit_sklearn(X_train, y_train)
         elif self.config.model_type == "pytorch":
+            if y_train is None:
+                raise ValueError("y_train is required for PyTorch training.")
             return self._fit_pytorch(X_train, y_train, X_val, y_val)
         else:
             raise ValueError("Unsupported model type")
@@ -106,7 +129,11 @@ class GenericTrainingEngine:
 
     # Training Implementation Sklearn
     def _fit_sklearn(self, X_train, y_train):
-        self.model.fit(X_train, y_train)
+        # IsolationForest and similar estimators can fit without labels.
+        if y_train is None:
+            self.model.fit(X_train)
+        else:
+            self.model.fit(X_train, y_train)
 
         if self.config.verbose:
             print(f"Finished training sklearn model: {self.config.model_name}")

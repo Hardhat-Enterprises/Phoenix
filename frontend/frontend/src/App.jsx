@@ -1,8 +1,11 @@
+import {useState} from "react";
 import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
 
 function App() {
+  const [showAbout, setShowAbout] = useState(false);
+  
   return (
     <div className="login-page">
       <div className="temp-header">
@@ -14,13 +17,24 @@ function App() {
       </div>
 
       <div className="page-content">
-        <LoginForm />
+        {showAbout ? (
+          <>
+            <AboutUs />
+            <button onClick={() => setShowAbout(false)}>
+              Login Back Button Placeholder
+            </button>
+          </>
+        ) : (
+          <>
+            <LoginForm />
+            <button onClick={() => setShowAbout(true)}>
+              About Us
+            </button>
+          </>
+        )}
       </div>
-
     </div>
-
   );
-
 }
 
 export default App;

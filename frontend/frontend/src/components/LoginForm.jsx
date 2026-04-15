@@ -1,4 +1,4 @@
-export default function LoginForm() {
+export default function LoginForm({ setPage }) {
   return (
     <div className="login-form">
       <label>Username or Email</label>
@@ -7,9 +7,10 @@ export default function LoginForm() {
       <label>Password</label>
       <input type="password" placeholder="Enter your password" />
 
-      <button type="button">Sign In</button>
+      <button type="button" onClick={() => setPage("dashboard")}>
+        Sign In
+      </button>
 
-      {/* NEW PART */}
       <div className="login-extra">
         <span className="forgot">Forgotten Password?</span>
 
@@ -18,6 +19,10 @@ export default function LoginForm() {
           Remember Me
         </label>
       </div>
+
+      <button onClick={() => setPage("about")}>
+        About Us
+      </button>
     </div>
   );
 }

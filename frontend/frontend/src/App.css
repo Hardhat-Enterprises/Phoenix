@@ -110,3 +110,37 @@ body {
   border-radius: 8px;
   border: 1px solid #ddd;
 }
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #edf2f8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.about-page {
+  display: flex;
+  min-height: 100vh;
+}
+
+.about-content {
+  flex: 1;
+  padding: 28px 40px;
+  background-color: #ffffff;
+}
+
+.about-content h1 {
+  margin-top: 0;
+  font-size: 32px;
+  color: #17345f;
+  text-align: center;
+}
+
+.about-content p {
+  max-width: 900px;
+  margin: 24px auto 0;
+  font-size: 16px;
+  color: #4d6480;
+  line-height: 1.7;
+  text-align: center;
+}

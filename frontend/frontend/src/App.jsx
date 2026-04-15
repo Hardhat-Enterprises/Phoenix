@@ -1,5 +1,6 @@
 import LoginForm from "./components/LoginForm";
 import "./App.css";
+import AboutUs from "./AboutUs";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
     </div>
 
   );
+
 }
 
 export default App;

@@ -21,7 +21,7 @@ function App() {
           <>
             <AboutUs />
             <button onClick={() => setShowAbout(false)}>
-              Login Back Button Placeholder
+              back button login
             </button>
           </>
         ) : (

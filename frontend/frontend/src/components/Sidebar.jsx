@@ -1,10 +1,6 @@
 import "./Sidebar.css";
 
-// I created this sidebar component for the About Us page.
-// My aim was to keep it close to the approved high-fidelity design.
-// Only the About Us option is highlighted because that is the current page.
-
-function Sidebar() {
+function Sidebar({ setPage, page }) {
   const menuItems = [
     "Dashboard",
     "Alerts",
@@ -24,7 +20,16 @@ function Sidebar() {
             <button
               key={item}
               type="button"
-              className={`sidebar-item ${item === "About Us" ? "active" : ""}`}
+              className={`sidebar-item ${
+                (page === "dashboard" && item === "Dashboard") ||
+                (page === "about" && item === "About Us")
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() => {
+                if (item === "Dashboard") setPage("dashboard");
+                if (item === "About Us") setPage("about");
+              }}
             >
               <span className="sidebar-icon"></span>
               <span className="sidebar-text">{item}</span>

@@ -1,11 +1,12 @@
-import {useState} from "react";
+import { useState } from "react";
 import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
+import Sidebar from "./components/Sidebar";
 
 function App() {
-  const [showAbout, setShowAbout] = useState(false);
-  
+  const [page, setPage] = useState("login");
+
   return (
     <div className="login-page">
       <div className="temp-header">
@@ -17,21 +18,28 @@ function App() {
       </div>
 
       <div className="page-content">
-        {showAbout ? (
-          <>
-            <AboutUs />
-            <button onClick={() => setShowAbout(false)}>
-              Login Back Button Placeholder
-            </button>
-          </>
-        ) : (
-          <>
-            <LoginForm />
-            <button onClick={() => setShowAbout(true)}>
-              About Us
-            </button>
-          </>
+
+        {page === "login" && (
+          <LoginForm setPage={setPage} />
         )}
+
+        {page === "dashboard" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={setPage} />
+
+            <div style={{ padding: "20px" }}>
+              <h1>Dashboard</h1>
+            </div>
+          </div>
+        )}
+
+        {page === "about" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={setPage} />
+            <AboutUs />
+          </div>
+        )}
+
       </div>
     </div>
   );

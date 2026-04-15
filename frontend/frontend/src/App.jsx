@@ -1,11 +1,26 @@
-import AboutUs from "./AboutUs";
+import LoginForm from "./components/LoginForm";
 import "./App.css";
-
-// I am rendering the About Us page here for now
-// so I can test my assigned sidebar task directly.
+import AboutUs from "./AboutUs";
 
 function App() {
-  return <AboutUs />;
+  return (
+    <div className="login-page">
+      <div className="temp-header">
+        <div className="temp-logo">🔥</div>
+        <div>
+          <h2>Phoenix</h2>
+          <p>Disaster and Cyber Risk Monitoring Dashboard</p>
+        </div>
+      </div>
+
+      <div className="page-content">
+        <LoginForm />
+      </div>
+
+    </div>
+
+  );
+
 }
 
 export default App;

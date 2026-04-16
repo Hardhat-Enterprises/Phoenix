@@ -194,7 +194,7 @@ def export_csv(filename="synthetic_disaster_10k.csv", total_rows=10000):
         writer.writeheader()
         writer.writerows(rows)
 
-    print(f"\n✅ Generated {total_rows} rows → {filename}")
+    print(f"\nGenerated {total_rows} rows → {filename}")
 
 
 # ─────────────────────────────────────────

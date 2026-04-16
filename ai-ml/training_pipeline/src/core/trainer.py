@@ -133,6 +133,21 @@ class GenericTrainingEngine:
         if y_train is None:
             self.model.fit(X_train)
         else:
+            if getattr(self.model, "_estimator_type", None) == "classifier":
+                y_np = np.asarray(y_train)
+                if np.issubdtype(y_np.dtype, np.floating):
+                    finite_mask = np.isfinite(y_np)
+                    finite_values = y_np[finite_mask]
+                    if finite_values.size > 0 and np.allclose(
+                        finite_values, np.round(finite_values)
+                    ):
+                        y_train = np.round(y_np).astype(int)
+                    else:
+                        raise ValueError(
+                            "Classifier received continuous labels. "
+                            "Set a discrete target column (e.g. 0/1 classes) and ensure "
+                            "the target is excluded from normalization/encoding."
+                        )
             self.model.fit(X_train, y_train)
 
         if self.config.verbose:

@@ -26,7 +26,10 @@ import copy
 from pathlib import Path
 from typing import Union
 
-from utils.config_validator import validate_config, ConfigValidationError
+try:
+    from .config_validator import validate_config, ConfigValidationError
+except ImportError:
+    from utils.config_validator import validate_config, ConfigValidationError
 
 try:
     import yaml

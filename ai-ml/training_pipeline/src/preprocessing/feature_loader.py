@@ -53,4 +53,4 @@ if __name__ == "__main__":
     default_csv = project_root / "ai-ml" / "features" / "ai004_features_output.csv"
 
     loaded = load_feature_set(default_csv)
-    print("Feature loader test passed.")
+    print(f"Feature loader test passed. Shape: {loaded['data'].shape}")

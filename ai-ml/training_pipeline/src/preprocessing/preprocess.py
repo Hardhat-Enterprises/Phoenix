@@ -2,11 +2,30 @@
 
 from __future__ import annotations
 
+import json
+import sys
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+
+
+def find_project_root(start: Path) -> Path:
+    """Dynamically locate project root by finding the ai-ml folder."""
+    for parent in [start, *start.parents]:
+        if (parent / "ai-ml").exists():
+            return parent
+    raise FileNotFoundError("Could not locate project root (ai-ml folder not found)")
+
+
+PROJECT_ROOT = find_project_root(Path(__file__).resolve())
+CLEANING_SRC = PROJECT_ROOT / "ai-ml" / "cleaning" / "src"
+
+if str(CLEANING_SRC) not in sys.path:
+    sys.path.insert(0, str(CLEANING_SRC))
+
+from cleaning.cleaning_pipeline import run_cleaning_pipeline
 
 
 def _log(events: list[dict[str, str]], step: str, details: str) -> None:
@@ -31,52 +50,13 @@ def _get_categorical_columns(df: pd.DataFrame) -> list[str]:
     return df.select_dtypes(include=["object", "string", "category"]).columns.tolist()
 
 
-def apply_missing_value_handling(
-    df: pd.DataFrame,
-    config: dict[str, Any],
-    events: list[dict[str, str]],
-) -> pd.DataFrame:
-    """Apply missing value handling."""
-    if not config.get("enabled", True):
-        _log(events, "missing_values", "skipped_disabled")
-        return df
+def load_preprocessing_config(config_path: Path) -> dict[str, Any]:
+    """Load cleaning and preprocessing config from a JSON file."""
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config file not found: {config_path}")
 
-    df = df.copy()
-
-    before_nulls = int(df.isna().sum().sum())
-
-    fill_values = {
-        key: value
-        for key, value in config.get("fill_values", {}).items()
-        if key in df.columns
-    }
-    if fill_values:
-        df = df.fillna(fill_values)
-
-    numeric_strategy = str(config.get("numeric_strategy", "median")).lower()
-    numeric_columns = _get_numeric_columns(df)
-
-    for col in numeric_columns:
-        if df[col].isna().any():
-            if numeric_strategy == "mean":
-                df[col] = df[col].fillna(df[col].mean())
-            else:
-                df[col] = df[col].fillna(df[col].median())
-
-    categorical_columns = _get_categorical_columns(df)
-    for col in categorical_columns:
-        if df[col].isna().any():
-            mode = df[col].mode(dropna=True)
-            if not mode.empty:
-                df[col] = df[col].fillna(mode.iloc[0])
-
-    after_nulls = int(df.isna().sum().sum())
-    _log(
-        events,
-        "missing_values",
-        f"before={before_nulls}; after={after_nulls}; handled={before_nulls - after_nulls}",
-    )
-    return df
+    with open(config_path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def apply_normalization(
@@ -90,7 +70,6 @@ def apply_normalization(
         return df
 
     method = str(config.get("method", "standard")).lower()
-
     configured_columns = config.get("columns")
     exclude_columns = set(config.get("exclude_columns", []))
 
@@ -112,7 +91,9 @@ def apply_normalization(
     elif method == "minmax":
         scaler = MinMaxScaler()
     else:
-        raise ValueError(f"Unsupported normalization method: {method}")
+        raise ValueError(
+            f"Unsupported normalization method: {method}. Use 'standard' or 'minmax'."
+        )
 
     df[columns] = scaler.fit_transform(df[columns])
 
@@ -131,7 +112,6 @@ def apply_encoding(
         return df
 
     method = str(config.get("method", "one_hot")).lower()
-
     configured_columns = config.get("columns")
     exclude_columns = set(config.get("exclude_columns", []))
 
@@ -149,7 +129,9 @@ def apply_encoding(
     df = df.copy()
 
     if method != "one_hot":
-        raise ValueError(f"Unsupported encoding method: {method}")
+        raise ValueError(
+            f"Unsupported encoding method: {method}. Only 'one_hot' is supported."
+        )
 
     df = pd.get_dummies(
         df,
@@ -188,12 +170,16 @@ def apply_feature_selection(
 
 def preprocess_features(
     data: Any,
+    cleaning_config: dict[str, Any] | None = None,
     preprocessing_config: dict[str, Any] | None = None,
     selected_features: list[str] | None = None,
     target_column: str | None = None,
 ) -> tuple[pd.DataFrame, list[dict[str, str]]]:
+    """
+    Apply cleaning pipeline first, then preprocessing steps.
+    """
+    cleaning_config = cleaning_config or {}
     preprocessing_config = preprocessing_config or {}
-    events: list[dict[str, str]] = []
 
     if isinstance(data, dict):
         df = data.get("data")
@@ -205,14 +191,8 @@ def preprocess_features(
     if not isinstance(df, pd.DataFrame):
         raise TypeError("Loaded data must contain a pandas DataFrame")
 
-    processed = df.copy()
-    _log(events, "start", f"input_shape={processed.shape}")
-
-    processed = apply_missing_value_handling(
-        processed,
-        preprocessing_config.get("missing_values", {}),
-        events,
-    )
+    processed, events = run_cleaning_pipeline(df, cleaning_config)
+    _log(events, "start", f"post_cleaning_shape={processed.shape}")
 
     processed = apply_encoding(
         processed,
@@ -236,59 +216,29 @@ def preprocess_features(
     _log(events, "end", f"output_shape={processed.shape}")
     return processed, events
 
-def find_project_root(start: Path) -> Path:
-    """Dynamically locate project root by finding 'ai-ml' folder."""
-    for parent in [start, *start.parents]:
-        if (parent / "ai-ml").exists():
-            return parent
-    raise FileNotFoundError("Could not locate project root (ai-ml folder not found)")
-
 
 def run_pipeline() -> tuple[pd.DataFrame, list[dict[str, str]]]:
     """Simple local test runner."""
-    from pathlib import Path
-
     from feature_loader import load_feature_set
 
-    project_root = find_project_root(Path(__file__).resolve())
-    feature_csv = project_root / "ai-ml" / "features" / "ai004_features_output.csv"
+    feature_csv = PROJECT_ROOT / "ai-ml" / "features" / "ai004_features_output.csv"
+    config_path = (
+        PROJECT_ROOT
+        / "ai-ml"
+        / "training_pipeline"
+        / "configs"
+        / "preprocessing_config.json"
+    )
 
     loaded = load_feature_set(feature_csv)
+    config = load_preprocessing_config(config_path)
 
-    preprocessing_config = {
-        "missing_values": {
-            "enabled": True,
-            "numeric_strategy": "median",
-            "fill_values": {},
-        },
-        "encoding": {
-            "enabled": True,
-            "method": "one_hot",
-            "exclude_columns": ["timestamp"],
-            "drop_first": False,
-        },
-        "normalization": {
-            "enabled": True,
-            "method": "standard",
-            "exclude_columns": [ 
-                "location_encoded", # Encoded categorical column, no need to normalize
-                "multi_event_overlap_flag", # Flags are binary, no need to normalize
-                "incident_peak_flag", # Flags are binary, no need to normalize
-                "outlier_flag", # Flags are binary, no need to normalize
-                "z_score", # Already standardized (mean=0, std=1) in AI004
-                "time_decay_factor", # Bounded/scaled
-                "hazard_normalized", # Bounded/scaled
-                "cyber_intensity_score", # Bounded/scaled
-                "geo_risk_zone_score", # Ordinal mapping
-                "cyber_attack_frequency", # Not continuous, scaling could distort
-                "regional_event_count", # Not continuous, scaling could distort
-
-            ],
-        },
-    }
+    cleaning_config = config.get("cleaning", {})
+    preprocessing_config = config.get("preprocessing", {})
 
     processed_df, events = preprocess_features(
         data=loaded,
+        cleaning_config=cleaning_config,
         preprocessing_config=preprocessing_config,
         selected_features=None,
         target_column=None,

@@ -4,7 +4,7 @@
 
 # --- Data ---
 dataset:
-  path: "data/raw/dataset.csv"              # Path to main dataset
+  path: "data/raw/example.csv"              # Path to main dataset
   abnormal_path: "data/raw/abnormal.csv"    # Optional abnormal / edge-case dataset
   target_column: "label"                    # Optional target column for supervised tasks
   train_split: 0.7

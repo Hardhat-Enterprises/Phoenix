@@ -194,15 +194,27 @@ def preprocess_features(
     processed, events = run_cleaning_pipeline(df, cleaning_config)
     _log(events, "start", f"post_cleaning_shape={processed.shape}")
 
+    encoding_config = dict(preprocessing_config.get("encoding", {}))
+    normalization_config = dict(preprocessing_config.get("normalization", {}))
+
+    if target_column and target_column in processed.columns:
+        encoding_exclude = set(encoding_config.get("exclude_columns", []))
+        normalization_exclude = set(normalization_config.get("exclude_columns", []))
+        encoding_exclude.add(target_column)
+        normalization_exclude.add(target_column)
+        encoding_config["exclude_columns"] = sorted(encoding_exclude)
+        normalization_config["exclude_columns"] = sorted(normalization_exclude)
+        _log(events, "target_protection", f"excluded_from_transform={target_column}")
+
     processed = apply_encoding(
         processed,
-        preprocessing_config.get("encoding", {}),
+        encoding_config,
         events,
     )
 
     processed = apply_normalization(
         processed,
-        preprocessing_config.get("normalization", {}),
+        normalization_config,
         events,
     )
 

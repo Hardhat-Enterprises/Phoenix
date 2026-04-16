@@ -13,10 +13,13 @@ Defines the full expected structure of a config, including:
 CONFIG_SCHEMA = {
     "dataset": {
         "path":         (str,   True,  None,                                 None),
+        "abnormal_path": (str,  False, None,                                 ""),
+        "target_column": (str,  False, None,                                 ""),
         "train_split":  (float, True,  None,                                 None),
         "val_split":    (float, True,  None,                                 None),
         "test_split":   (float, True,  None,                                 None),
         "random_seed":  (int,   False, None,                                 42),
+        "stratify":     (bool,  False, None,                                 True),
     },
     "preprocessing": {
         "missing_value_strategy": (str,  False, ["mean", "median", "drop", "constant"], "mean"),

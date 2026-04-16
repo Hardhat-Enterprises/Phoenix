@@ -1,5 +1,5 @@
 ## Team Members  
-**Count:** 3/17  
+**Count:** 4/17  
 
 - **Sunain Mushtaq**  
   *13/04/2026*
@@ -9,5 +9,8 @@
   
 - **BHARADWAJ**  
   *14/04/2026*
+
+  **Faisal Ibrahim Syed**
+  *16/04/2026*
 
  

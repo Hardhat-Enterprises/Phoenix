@@ -210,21 +210,24 @@ def enrich_from_parent(child_df: pd.DataFrame, parent_df: pd.DataFrame,
                        child_fk: str) -> pd.DataFrame:
     """
     Left-join child rows to parent on child_fk → parent.hazard_event_id.
-    Only PARENT_ENRICH_COLS are pulled in; existing child columns are preserved.
+    Keep existing child values, but fill child nulls from the parent copy.
     """
-    # Only pull enrich cols that actually exist on the parent
     available = [c for c in PARENT_ENRICH_COLS if c in parent_df.columns]
     parent_subset = parent_df[["hazard_event_id"] + available].rename(
         columns={"hazard_event_id": child_fk}
     )
 
-    # Keep track of child-side columns before merge so we can resolve conflicts
-    child_cols_before = set(child_df.columns)
-
     merged = child_df.merge(parent_subset, on=child_fk, how="left", suffixes=("", "_parent"))
 
-    # Drop _parent columns — child values already take priority
-    merged = merged[[c for c in merged.columns if not c.endswith("_parent")]]
+    for col in available:
+        parent_col = f"{col}_parent"
+        if parent_col in merged.columns:
+            if col in merged.columns:
+                merged[col] = merged[col].where(merged[col].notna(), merged[parent_col])
+            else:
+                merged[col] = merged[parent_col]
+            merged.drop(columns=[parent_col], inplace=True)
+
     return merged
 
 

@@ -1,15 +1,16 @@
 # AI005 Validation Report
 
-Generated: 2026-04-14T10:48:08.825358+00:00
+Reviewed and fixed based on the uploaded final AI005 files.
 
 - Master row count              : 66
 - Master columns                : 76
-- Unique hazard_event_id         : 66
-- Linked parent rows exported    : 39
-- Missing hazard_event_id        : 0
-- Missing threat_stream          : 0
-- Missing parent link (cyber)    : 0
-- Duplicate rows                 : 0
+- Unique hazard_event_id        : 66
+- Linked parent rows exported   : 39
+- Missing hazard_event_id       : 0
+- Missing threat_stream         : 0
+- Missing parent link (cyber)   : 0
+- Duplicate rows                : 0
+- Missing severity_level        : 0
 
 ## Threat stream counts
 
@@ -18,11 +19,17 @@ Generated: 2026-04-14T10:48:08.825358+00:00
 
 ## Severity level distribution
 
-- <NA>: 33
-- medium: 12
-- high: 12
-- critical: 5
-- low: 4
+- medium: 25
+- high: 24
+- critical: 9
+- low: 8
+
+## Key cleanup completed
+
+- Filled 33 missing `severity_level` values in misinformation rows using the linked parent hazard records.
+- Required validation fields remain complete.
+- No duplicate rows were found.
+- No cyber rows are missing `parent_hazard_event_id`.
 
 ## Schema alignment
 

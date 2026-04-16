@@ -7,6 +7,7 @@ interface Config {
   GATEWAY_JWT_EXPIRES_IN: string;
   LOG_LEVEL: string;
   USER_SERVICE_PORT: number;
+  SQLITE_STORAGE_PATH: string;
 }
 
 export const config: Config = {
@@ -20,4 +21,6 @@ export const config: Config = {
   GATEWAY_JWT_EXPIRES_IN: process.env.GATEWAY_JWT_EXPIRES_IN || "1m",
   LOG_LEVEL: process.env.LOG_LEVEL || "info",
   USER_SERVICE_PORT: Number(process.env.USER_SERVICE_PORT) || 50051,
+  SQLITE_STORAGE_PATH:
+    process.env.SQLITE_STORAGE_PATH || "./database/phoenix.sqlite",
 };

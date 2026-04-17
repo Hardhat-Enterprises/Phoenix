@@ -43,7 +43,13 @@ def get_logger(
     logger.propagate = False
 
     if logger.handlers:
-        return logger
+        # Rebuild handlers on each call so each run_id gets its own file.
+        for handler in list(logger.handlers):
+            logger.removeHandler(handler)
+            try:
+                handler.close()
+            except Exception:
+                pass
 
     formatter = logging.Formatter(
         "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
@@ -68,9 +74,22 @@ def get_logger(
     return logger
 
 
+def _format_value(value: Any) -> str:
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return str(value)
+    return json.dumps(value, default=str)
+
+
+def _format_key_values(values: dict[str, Any]) -> str:
+    if not values:
+        return ""
+    parts = [f"{key}={_format_value(val)}" for key, val in values.items()]
+    return " | ".join(parts)
+
+
 def log_run_event(logger: logging.Logger, message: str, **context: Any) -> None:
     if context:
-        logger.info("%s | context=%s", message, json.dumps(context, default=str))
+        logger.info("%s | %s", message, _format_key_values(context))
     else:
         logger.info(message)
 
@@ -86,16 +105,21 @@ def log_metric(
     payload = {
         "metric": metric_name,
         "value": metric_value,
-        "step": step,
-        "epoch": epoch,
         **extra,
     }
-    logger.info("METRIC | %s", json.dumps(payload, default=str))
+    if step is not None:
+        payload["step"] = step
+    if epoch is not None:
+        payload["epoch"] = epoch
+
+    logger.info("METRIC | %s", _format_key_values(payload))
 
 
 def log_config_snapshot(logger: logging.Logger, config: dict[str, Any]) -> None:
     """Log the configuration used for a run."""
-    logger.info("CONFIG SNAPSHOT | %s", json.dumps(config, default=str))
+    logger.info("CONFIG SNAPSHOT")
+    for section, section_value in config.items():
+        logger.info("CONFIG | section=%s | value=%s", section, _format_value(section_value))
 
 
 def log_error(

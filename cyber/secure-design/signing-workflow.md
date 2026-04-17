@@ -10,13 +10,13 @@ Steps followed by the system to generate a digital signature:
 2. The data is passed through the SHA-256 hashing algorithm to produce a fixed-length hash value.
 3. The generated hash value represents the integrity of the original data.
 4. The Backend encrypts this hash using its private key.
-5. The encrypted hash becomes the digital signature**.
+5. The encrypted hash becomes the digital signature.
 6. The original data and the digital signature are sent together to the receiver.
 
 ## Key Characteristics
 - The private key is kept secure within the Backend system.
 - Any change in the original data results in a completely different hash value.
-- The signature ensures both data integrity** and source authenticity.
+- The signature ensures both data integrity and source authenticity.
 
 ## Flow Representation
 Data → SHA-256 → Encrypt with Private Key → Digital Signature

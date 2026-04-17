@@ -69,7 +69,7 @@ Phoenix provides a unified system for:
 * Rate Limiting & Abuse Prevention: Implement controls to limit request rates and prevent abuse or malicious activity (CY010)
 * Cryptographic Design: Design secure cryptographic processes, including hashing, signatures, and key management (CY011)
 * Security Architecture Design: Develop a comprehensive security architecture integrating all security components (CY012)
-* API Development: Build and test the API with full functionality and database integration (CY013) 
+* API Development: Build and test the API with full functionality and database integration (CY013)  
 * Authentication Implementation: Implement and test secure authentication and authorisation mechanisms (CY014)
 * Cryptography Implementation: Implement and verify cryptographic features to ensure data integrity and security (CY015)
 * Endpoint Security Testing: Test API endpoints for vulnerabilities and document security findings (CY016)

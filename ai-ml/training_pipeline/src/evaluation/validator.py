@@ -1,7 +1,23 @@
 """Validation engine for W6-T6."""
 
+from __future__ import annotations
+
 from typing import Any, Dict, Optional
-from .metrics import evaluate_classification, evaluate_anomaly_detection
+
+import numpy as np
+
+from .metrics import evaluate_anomaly_detection, evaluate_classification
+
+
+def _normalize_anomaly_predictions(y_pred: Any) -> np.ndarray:
+    values = np.asarray(y_pred)
+    unique_values = set(np.unique(values))
+
+    # IsolationForest convention: -1 = anomaly, 1 = normal.
+    if unique_values.issubset({-1, 1}):
+        return np.where(values == -1, 1, 0)
+
+    return values
 
 
 def validate_predictions(
@@ -9,20 +25,20 @@ def validate_predictions(
     y_pred: Any,
     y_prob: Optional[Any] = None,
     task_type: str = "classification",
-) -> Dict[str, float]:
+) -> Dict[str, Any]:
     """Validate prediction outputs using evaluation metrics."""
-    if task_type == "classification":
+    normalized_task_type = str(task_type).strip().lower()
+
+    if y_true is None:
+        raise ValueError("y_true cannot be None for evaluation.")
+    if y_pred is None:
+        raise ValueError("y_pred cannot be None for evaluation.")
+
+    if normalized_task_type == "classification":
         return evaluate_classification(y_true, y_pred, y_prob)
-    elif task_type == "anomaly":
-        return evaluate_anomaly_detection(y_true, y_pred)
-    else:
-        raise ValueError(f"Unsupported task_type: {task_type}")
 
+    if normalized_task_type in {"anomaly", "anomaly_detection"}:
+        normalized_preds = _normalize_anomaly_predictions(y_pred)
+        return evaluate_anomaly_detection(y_true, normalized_preds)
 
-if __name__ == "__main__":
-    y_true = [0, 1, 1, 0, 1, 0, 1, 0]
-    y_pred = [0, 1, 0, 0, 1, 0, 1, 1]
-    y_prob = [0.10, 0.85, 0.40, 0.20, 0.90, 0.15, 0.78, 0.65]
-
-    print("Validator Classification Test:")
-    print(validate_predictions(y_true, y_pred, y_prob, task_type="classification"))
+    raise ValueError(f"Unsupported task_type: {task_type}")

@@ -191,7 +191,14 @@ def preprocess_features(
     if not isinstance(df, pd.DataFrame):
         raise TypeError("Loaded data must contain a pandas DataFrame")
 
-    processed, events = run_cleaning_pipeline(df, cleaning_config)
+    if cleaning_config:
+        processed, events = run_cleaning_pipeline(df, cleaning_config)
+        _log(events, "cleaning", "applied")
+    else:
+        processed = df.copy()
+        events: list[dict[str, str]] = []
+        _log(events, "cleaning", "skipped_no_config")
+
     _log(events, "start", f"post_cleaning_shape={processed.shape}")
 
     encoding_config = dict(preprocessing_config.get("encoding", {}))
@@ -231,7 +238,10 @@ def preprocess_features(
 
 def run_pipeline() -> tuple[pd.DataFrame, list[dict[str, str]]]:
     """Simple local test runner."""
-    from feature_loader import load_feature_set
+    try:
+        from .feature_loader import load_feature_set
+    except ImportError:
+        from feature_loader import load_feature_set
 
     feature_csv = PROJECT_ROOT / "ai-ml" / "features" / "ai004_features_output.csv"
     config_path = (

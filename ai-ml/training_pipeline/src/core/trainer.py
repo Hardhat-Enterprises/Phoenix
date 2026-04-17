@@ -14,9 +14,19 @@ except Exception:
     TensorDataset = None
 
 try:
-    from ..models.model_registry import load_sklearn_model, load_pytorch_model
+    from ..models.model_registry import (
+        infer_task_type_from_model,
+        list_supported_models,
+        load_pytorch_model,
+        load_sklearn_model,
+    )
 except ImportError:
-    from models.model_registry import load_sklearn_model, load_pytorch_model
+    from models.model_registry import (
+        infer_task_type_from_model,
+        list_supported_models,
+        load_pytorch_model,
+        load_sklearn_model,
+    )
 
 
 @dataclass
@@ -24,6 +34,7 @@ class TrainingConfig:
     model_type: str  # "sklearn"/"pytorch" or pipeline aliases like "random_forest"
     model_name: str
     model_params: Dict[str, Any] = field(default_factory=dict)
+    task_type: Optional[str] = None
 
     # Training parameters
     epochs: int = 10
@@ -49,14 +60,29 @@ class TrainingConfig:
         if raw_model_type in {"sklearn", "pytorch"}:
             self.model_type = raw_model_type
             self.model_name = str(self.model_name).strip().lower()
-            return
+        else:
+            normalized_type, normalized_name = _map_pipeline_model(raw_model_type)
+            self.model_type = normalized_type
 
-        normalized_type, normalized_name = _map_pipeline_model(raw_model_type)
-        self.model_type = normalized_type
+            # If caller passed an explicit model_name, keep it when consistent.
+            candidate_name = str(self.model_name).strip().lower() if self.model_name else ""
+            self.model_name = candidate_name or normalized_name
 
-        # If caller passed an explicit model_name, keep it when consistent.
-        candidate_name = str(self.model_name).strip().lower() if self.model_name else ""
-        self.model_name = candidate_name or normalized_name
+        if self.model_type == "sklearn" and not self.model_name:
+            raise ValueError(
+                "model.name is required when model.type is 'sklearn'."
+            )
+        if self.model_type == "pytorch" and not self.model_name:
+            raise ValueError(
+                "model.name is required when model.type is 'pytorch'."
+            )
+
+        if self.task_type:
+            self.task_type = str(self.task_type).strip().lower()
+        elif self.model_type == "sklearn":
+            self.task_type = infer_task_type_from_model(self.model_name)
+        else:
+            self.task_type = "classification"
 
     @classmethod
     def from_pipeline_config(cls, config: Dict[str, Any], verbose: bool = True) -> "TrainingConfig":
@@ -65,12 +91,18 @@ class TrainingConfig:
         training_cfg = config.get("training", {})
 
         model_type_raw = str(model_cfg.get("type", "")).strip().lower()
-        model_type, model_name = _map_pipeline_model(model_type_raw)
+        model_name_raw = str(model_cfg.get("name", "")).strip().lower()
+
+        if model_type_raw in {"sklearn", "pytorch"}:
+            model_type, model_name = model_type_raw, model_name_raw
+        else:
+            model_type, model_name = _map_pipeline_model(model_type_raw)
 
         return cls(
             model_type=model_type,
             model_name=model_name,
             model_params=dict(model_cfg.get("hyperparameters", {})),
+            task_type=model_cfg.get("task_type"),
             epochs=int(training_cfg.get("epochs", 10)),
             batch_size=int(training_cfg.get("batch_size", 32)),
             learning_rate=float(training_cfg.get("learning_rate", 0.001)),
@@ -84,11 +116,18 @@ def _map_pipeline_model(model_type: str) -> tuple[str, str]:
         "random_forest": ("sklearn", "random_forest"),
         "isolation_forest": ("sklearn", "isolation_forest"),
         "pytorch_mlp": ("pytorch", "simple_mlp"),
+        "simple_mlp": ("pytorch", "simple_mlp"),
     }
+
+    supported_sklearn = set(list_supported_models("sklearn"))
+    if model_type in supported_sklearn:
+        return "sklearn", model_type
+
     if model_type not in mapping:
         raise ValueError(
             "Unsupported model.type in pipeline config: "
-            f"{model_type!r}. Expected one of: {list(mapping.keys())}"
+            f"{model_type!r}. Expected one of: {sorted(list(mapping.keys()) + list(supported_sklearn))} "
+            "or use model.type='sklearn'/'pytorch' with model.name."
         )
     return mapping[model_type]
 
@@ -127,13 +166,35 @@ class GenericTrainingEngine:
         else:
             raise ValueError("Unsupported model type")
 
+    def predict_proba(self, X):
+        if self.config.model_type == "sklearn":
+            if not hasattr(self.model, "predict_proba"):
+                raise NotImplementedError(
+                    f"Model '{self.config.model_name}' does not expose predict_proba."
+                )
+            probabilities = self.model.predict_proba(X)
+            probabilities = np.asarray(probabilities)
+            if probabilities.ndim == 2 and probabilities.shape[1] == 2:
+                return probabilities[:, 1]
+            return probabilities
+        if self.config.model_type == "pytorch":
+            return self._predict_proba_pytorch(X)
+        raise ValueError("Unsupported model type")
+
     # Training Implementation Sklearn
     def _fit_sklearn(self, X_train, y_train):
-        # IsolationForest and similar estimators can fit without labels.
+        estimator_kind = getattr(self.model, "_estimator_type", None)
+
+        if estimator_kind == "classifier" and y_train is None:
+            raise ValueError(
+                f"Model '{self.config.model_name}' requires training labels but y_train was not provided."
+            )
+
         if y_train is None:
+            # IsolationForest and similar estimators can fit without labels.
             self.model.fit(X_train)
         else:
-            if getattr(self.model, "_estimator_type", None) == "classifier":
+            if estimator_kind == "classifier":
                 y_np = np.asarray(y_train)
                 if np.issubdtype(y_np.dtype, np.floating):
                     finite_mask = np.isfinite(y_np)
@@ -222,6 +283,25 @@ class GenericTrainingEngine:
             preds = torch.argmax(outputs, dim=1)
 
         return preds.cpu().numpy()
+
+    def _predict_proba_pytorch(self, X):
+        if torch is None:
+            raise ImportError("PyTorch is not installed.")
+
+        device = self.config.device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(device)
+        self.model.eval()
+
+        X_tensor = self._to_tensor(X, dtype=torch.float32).to(device)
+
+        with torch.no_grad():
+            outputs = self.model(X_tensor)
+            probabilities = torch.softmax(outputs, dim=1)
+
+        prob_array = probabilities.cpu().numpy()
+        if prob_array.ndim == 2 and prob_array.shape[1] == 2:
+            return prob_array[:, 1]
+        return prob_array
 
     # Input data conversion to PyTorch tensor
     @staticmethod

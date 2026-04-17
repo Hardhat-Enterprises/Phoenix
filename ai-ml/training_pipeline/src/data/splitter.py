@@ -44,25 +44,43 @@ class DatasetSplitter:
         stratify_labels = y if (y is not None and stratify) else None
 
         # first split: train vs temp
-        x_train, x_temp, y_train, y_temp = train_test_split(
-            x,
-            y,
-            test_size=(test_size + val_size),
-            random_state=random_seed,
-            stratify=stratify_labels,
-        )
+        try:
+            x_train, x_temp, y_train, y_temp = train_test_split(
+                x,
+                y,
+                test_size=(test_size + val_size),
+                random_state=random_seed,
+                stratify=stratify_labels,
+            )
+        except ValueError:
+            x_train, x_temp, y_train, y_temp = train_test_split(
+                x,
+                y,
+                test_size=(test_size + val_size),
+                random_state=random_seed,
+                stratify=None,
+            )
 
         # second split: temp -> val/test
         relative_test_size = test_size / (test_size + val_size)
         temp_stratify = y_temp if (y_temp is not None and stratify) else None
 
-        x_val, x_test, y_val, y_test = train_test_split(
-            x_temp,
-            y_temp,
-            test_size=relative_test_size,
-            random_state=random_seed,
-            stratify=temp_stratify,
-        )
+        try:
+            x_val, x_test, y_val, y_test = train_test_split(
+                x_temp,
+                y_temp,
+                test_size=relative_test_size,
+                random_state=random_seed,
+                stratify=temp_stratify,
+            )
+        except ValueError:
+            x_val, x_test, y_val, y_test = train_test_split(
+                x_temp,
+                y_temp,
+                test_size=relative_test_size,
+                random_state=random_seed,
+                stratify=None,
+            )
 
         return SplitDataset(
             x_train=x_train.reset_index(drop=True),

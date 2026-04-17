@@ -28,7 +28,9 @@ CONFIG_SCHEMA = {
         "feature_selection":      (bool, False, None,                                   True),
     },
     "model": {
-        "type":            (str,  True,  ["random_forest", "isolation_forest", "pytorch_mlp"], None),
+        "type":            (str,  True,  None,                                                      None),
+        "name":            (str,  False, None,                                                      ""),
+        "task_type":       (str,  False, ["", "classification", "anomaly"],                         ""),
         "hyperparameters": (dict, False, None,                                                  {}),
     },
     "training": {

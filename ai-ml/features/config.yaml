@@ -1,0 +1,32 @@
+features:
+  rolling_window: 3
+  ema_span: 3
+  anomaly_threshold: 2
+
+data:
+  input_path: data/input.csv
+  output_path: data/output.csv
+
+cleaning:
+  fill_numeric: median
+  fill_categorical: mode
+  outlier_method: IQR
+
+  type_conversion:
+  int: ["severity", "cyber_incidents"]
+  float: ["rainfall", "temperature"]
+  datetime: ["timestamp"]
+
+missing_values:
+  drop: ["timestamp"]
+  fill:
+    severity: 1
+    cyber_incidents: 0
+    rainfall: 0
+
+duplicates:
+  subset: ["timestamp", "location"]
+
+string_standardisation:
+  case: "capitalize"
+  columns: ["location"]

@@ -2,12 +2,14 @@ import pandas as pd
 import numpy as np
 import json
 import logging
+import yaml
 
+from data_cleaning_pipeline import run_cleaning_pipeline
 
 class FeatureEngineer:
 
     def __init__(self, df: pd.DataFrame):
-        self.df = df.copy(deep=False)
+        self.df = df.copy()
 
         logging.basicConfig(
             level=logging.INFO,
@@ -197,9 +199,9 @@ class FeatureEngineer:
    
     def save_outputs(self, mapping):
 
-        self.df.to_csv("ai-ml/features/ai004_features_output.csv", index=False)
+        self.df.to_csv("ai004_features_output.csv", index=False)
 
-        with open("ai-ml/features/feature_mapping.json", "w") as f:
+        with open("feature_mapping.json", "w") as f:
             json.dump(mapping, f, indent=4)
 
   
@@ -207,8 +209,14 @@ class FeatureEngineer:
   
     def run(self):
 
-        self.df = self.handle_missing_values()
+    # 1. LOAD CONFIG
+        with open("config.yaml", "r") as f:
+           config = yaml.safe_load(f)
 
+          # 2. AI003 CLEANING STEP (MANDATORY)
+        self.df, events = run_cleaning_pipeline(self.df, config)
+
+          # 3. FEATURE ENGINEERING
         self.df = self.create_hazard_features()
         self.df = self.create_cyber_features()
         self.df = self.create_temporal_features()
@@ -216,13 +224,16 @@ class FeatureEngineer:
         self.df = self.create_risk_features()
         self.df = self.create_anomaly_features()
 
+          # 4. VALIDATION
         self.validate()
 
+          # 5. MAPPING
         mapping = self.feature_mapping()
 
+         # 6. SAVE OUTPUTS
         self.save_outputs(mapping)
 
-        print("\n✔ PIPELINE COMPLETED SUCCESSFULLY")
+        print("\n PIPELINE COMPLETED SUCCESSFULLY")
         print({k: len(v) for k, v in mapping.items()})
 
         return self.df

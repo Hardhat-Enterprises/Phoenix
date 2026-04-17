@@ -1,3 +1,5 @@
+.gitignore
+
 # Byte-compiled / cache
 __pycache__/
 *.py[cod]

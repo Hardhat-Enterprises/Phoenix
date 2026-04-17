@@ -6,10 +6,8 @@ const Footer = () => {
       <div className="footer-content">
         <p>&copy; {new Date().getFullYear()} Phoenix</p>
         <ul className="footer-links">
-          <li><a href="/about">About Us</a></li>
-          <li><a href="/contact">Contact</a></li>
-          <li><a href="/privacy">System Purpose - </a></li>
-        </ul>
+          <Link to ="/AboutUs">About Us System Purpose Phoenix supports disaster management by combining hazard monitoring, cyber threat visibility and alert based insights in a single dashboard. It's purpose is to improve awareness of physical and digital risks during disaster events.</Link>
+          </ul>
       </div>
     </footer>
   );

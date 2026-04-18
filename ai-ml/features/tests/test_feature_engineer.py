@@ -39,6 +39,7 @@ class TestFeatureEngineer(unittest.TestCase):
     def test_cyber_features_created(self):
         self.engineer.create_cyber_features()
         expected_columns = [
+            "cyber_incident_count",
             "cyber_intensity_score",
             "scam_spike_rate"
         ]
@@ -48,11 +49,12 @@ class TestFeatureEngineer(unittest.TestCase):
     def test_temporal_features_created(self):
         self.engineer.create_temporal_features()
         expected_columns = [
-            "hour_of_day",
-            "day_of_week",
             "rolling_cyber_mean",
+            "time_since_last_event",
+            "ema",
             "lag_1",
-            "lag_2"
+            "lag_2",
+            "time_decay_factor"
         ]
         for col in expected_columns:
             self.assertIn(col, self.engineer.df.columns)
@@ -61,14 +63,14 @@ class TestFeatureEngineer(unittest.TestCase):
         self.engineer.create_geo_features()
         expected_columns = [
             "geo_risk_zone_score",
-            "location_frequency"
+            "location_encoded",
+            "regional_event_count"
         ]
         for col in expected_columns:
             self.assertIn(col, self.engineer.df.columns)
 
     def test_risk_features_created(self):
-        self.engineer.create_hazard_features()
-        self.engineer.create_cyber_features()
+        self.engineer.create_temporal_features()
         self.engineer.create_risk_features()
         expected_columns = [
             "combined_risk_index",
@@ -78,7 +80,6 @@ class TestFeatureEngineer(unittest.TestCase):
             self.assertIn(col, self.engineer.df.columns)
 
     def test_anomaly_features_created(self):
-        self.engineer.create_cyber_features()
         self.engineer.create_anomaly_features()
         expected_columns = [
             "z_score",
@@ -88,16 +89,15 @@ class TestFeatureEngineer(unittest.TestCase):
             self.assertIn(col, self.engineer.df.columns)
 
     def test_validate_passes_for_valid_data(self):
-        self.engineer.run_full_pipeline()
-        result = self.engineer.validate()
-        self.assertTrue(result)
+        self.engineer.handle_missing_values()
+        self.engineer.validate()
 
     def test_validate_fails_for_negative_severity(self):
         bad_df = self.sample_df.copy()
         bad_df.loc[0, "severity"] = -1
         engineer = FeatureEngineer(bad_df)
-        engineer.run_full_pipeline()
-        with self.assertRaises(ValueError):
+        engineer.handle_missing_values()
+        with self.assertRaises(AssertionError):
             engineer.validate()
 
     def test_validate_fails_for_missing_required_column(self):

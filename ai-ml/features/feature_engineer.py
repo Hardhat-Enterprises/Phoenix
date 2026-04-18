@@ -191,6 +191,19 @@ class FeatureEngineer:
         assert not self.df.isnull().any().any(), "Null values detected"
         assert (self.df["severity"] >= 0).all(), "Negative severity detected"
         assert (self.df["cyber_incidents"] >= 0).all(), "Negative cyber incidents detected"
+        if "hazard_normalized" in self.df.columns:
+            assert ((self.df["hazard_normalized"] >= 0) & (self.df["hazard_normalized"] <= 1)).all(), \
+                "hazard_normalized must be between 0 and 1"
+
+        if "cyber_intensity_score" in self.df.columns:
+            assert (self.df["cyber_intensity_score"] >= 0).all(), \
+                "cyber_intensity_score must be non-negative"
+
+        if "timestamp" in self.df.columns:
+            assert not self.df["timestamp"].isnull().any(), \
+                "timestamp contains null values after processing"
+
+        
 
         logging.info(f"Validation passed. Shape: {self.df.shape}")
 

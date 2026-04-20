@@ -26,8 +26,7 @@ import copy
 from pathlib import Path
 from typing import Union
 
-from utils.config_validator import validate_config, ConfigValidationError
-
+from src.utils.config_validator import validate_config, ConfigValidationError
 try:
     import yaml
     _YAML_AVAILABLE = True

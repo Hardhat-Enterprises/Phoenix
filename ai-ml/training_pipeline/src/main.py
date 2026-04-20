@@ -1,48 +1,48 @@
+def run_training_pipeline(config):
+    print("\n🚀 Pipeline running successfully!")
+    print("Config:", config)
 import argparse
-import os
-from pathlib import Path
+
 
 from src.utils.config_loader import load_config
 
+from src.utils.paths import ensure_runtime_dirs
+from src.utils.seeds import set_seed
 
-def parse_args():
+
+def _build_arg_parser():
     parser = argparse.ArgumentParser(description="AI008 Training Pipeline")
 
-    parser.add_argument(
-        "--config",
-        type=str,
-        required=True,
-        help="Path to config file"
-    )
+    parser.add_argument("--config", type=str, required=True)
 
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="outputs/",
-        help="Output folder path"
-    )
+    # W7-T3 CLI additions
+    parser.add_argument("--output_dir", type=str, help="Override output directory")
+    parser.add_argument("--batch_size", type=int, help="Override batch size")
+    parser.add_argument("--epochs", type=int, help="Override epochs")
 
-    return parser.parse_args()
-
-
-def create_output_dir(path: str):
-    Path(path).mkdir(parents=True, exist_ok=True)
-    print(f"[INFO] Output directory ready: {path}")
+    return parser
 
 
 def main():
-    args = parse_args()
+    args = _build_arg_parser().parse_args()
 
-    # Load config
     config = load_config(args.config)
 
-    # Create output folder
-    create_output_dir(args.output)
+    
+    if args.output_dir:
+        config["output"]["path"] = args.output_dir
 
-    # Example usage
-    print("[INFO] Config Loaded Successfully")
-    print("Model:", config["model"]["type"])
-    print("Epochs:", config["training"]["epochs"])
+    if args.batch_size:
+        config["training"]["batch_size"] = args.batch_size
+
+    if args.epochs:
+        config["training"]["epochs"] = args.epochs
+
+    ensure_runtime_dirs()
+
+    set_seed(config["dataset"]["random_seed"])
+
+    run_training_pipeline(config)
 
 
 if __name__ == "__main__":

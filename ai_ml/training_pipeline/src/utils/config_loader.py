@@ -26,8 +26,8 @@ import copy
 from pathlib import Path
 from typing import Union
 
-from src.utils.config_validator import validate_config, ConfigValidationError
-try:
+from ai_ml.training_pipeline.src.utils.config_validator import validate_config
+try: 
     import yaml
     _YAML_AVAILABLE = True
 except ImportError:

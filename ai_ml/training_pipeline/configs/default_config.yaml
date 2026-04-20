@@ -4,7 +4,7 @@
 
 # --- Data ---
 dataset:
-  path: "data/raw/dataset.csv"         # Path to raw dataset (AI004 output schema)
+  path: ai_ml/training_pipeline/data/raw/dataset.csv       
   train_split: 0.7
   val_split: 0.15
   test_split: 0.15

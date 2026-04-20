@@ -10,8 +10,7 @@ Validates a loaded config dict against CONFIG_SCHEMA:
   - validates split ratios sum to ~1.0
 """
 
-from src.utils.config_schema import CONFIG_SCHEMA
-
+from ai_ml.training_pipeline.src.utils.config_schema import CONFIG_SCHEMA
 
 class ConfigValidationError(Exception):
     """Raised when config fails validation."""

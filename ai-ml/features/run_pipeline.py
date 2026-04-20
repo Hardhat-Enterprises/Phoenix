@@ -1,16 +1,18 @@
+from pathlib import Path
+import json
+
 from datasets import (
     load_disaster_dataset,
     load_cyber_dataset,
     load_weather_dataset,
     load_geo_dataset,
     load_infrastructure_dataset,
-    load_social_dataset
+    load_social_dataset,
 )
-
 from data_cleaning_pipeline import run_cleaning_pipeline
 from feature_engineer import FeatureEngineer
-import yaml
-import pandas as pd
+
+BASE_DIR = Path(__file__).resolve().parent
 
 
 def merge_datasets():
@@ -31,8 +33,19 @@ def merge_datasets():
 
 
 def load_config():
-    with open("config.yaml", "r") as f:
-        return yaml.safe_load(f)
+    config_path = BASE_DIR / "config.yaml"
+    try:
+        import yaml  # type: ignore
+
+        with open(config_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except ModuleNotFoundError:
+        # Minimal fallback: keep pipeline running with defaults if PyYAML
+        # is unavailable in the execution environment.
+        return {}
+    except Exception:
+        # If config can't be parsed, continue with defaults.
+        return {}
 
 
 def main():
@@ -48,6 +61,12 @@ def main():
 
     print("\nFINAL OUTPUT:")
     print(result.head())
+
+    output_path = BASE_DIR / "ai004_features_output.csv"
+    mapping_path = BASE_DIR / "feature_mapping.json"
+    result.to_csv(output_path, index=False)
+    with open(mapping_path, "w", encoding="utf-8") as f:
+        json.dump(fe.feature_mapping(), f, indent=4)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,12 @@ import pandas as pd
 import numpy as np
 import json
 import logging
-import yaml
+from pathlib import Path
+
+try:
+    import yaml  # type: ignore
+except ModuleNotFoundError:
+    yaml = None
 
 from data_cleaning_pipeline import run_cleaning_pipeline
 
@@ -211,20 +216,21 @@ class FeatureEngineer:
     # 6. SAVE OUTPUTS
    
     def save_outputs(self, mapping):
-
-        self.df.to_csv("ai004_features_output.csv", index=False)
-
-        with open("feature_mapping.json", "w") as f:
+        base_dir = Path(__file__).resolve().parent
+        self.df.to_csv(base_dir / "ai004_features_output.csv", index=False)
+        with open(base_dir / "feature_mapping.json", "w", encoding="utf-8") as f:
             json.dump(mapping, f, indent=4)
 
   
     # 7. PIPELINE RUNNER
   
     def run(self):
-
-    # 1. LOAD CONFIG
-        with open("config.yaml", "r") as f:
-           config = yaml.safe_load(f)
+        # 1. LOAD CONFIG
+        config = {}
+        config_path = Path(__file__).resolve().parent / "config.yaml"
+        if yaml is not None and config_path.exists():
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f) or {}
 
           # 2. AI003 CLEANING STEP (MANDATORY)
         self.df, events = run_cleaning_pipeline(self.df, config)

@@ -1,0 +1,59 @@
+hazard_event_id,integration_id,state,region,suburb,event_type,severity_score,severity_level,risk_category,start_time,duration_hours,temperature_c,rainfall_mm,humidity_pct,fatalities,injuries,economic_loss_million,affected_population
+HZ_00001,8cfd301e-c0a8-4ec6-982b-e7094152f7fb,Queensland,South East QLD,Brisbane,earthquake,4.0,medium,low,2025-03-02T00:00:00+00:00,12,19.4,35.0,66.5,8,47,51.19,400
+HZ_00002,9cc621d2-8d85-4d29-8b4b-0707d054fc22,Tasmania,Southern Region,Hobart,storm,7.1,high,medium,2024-03-11T00:00:00+00:00,6,13.7,15.5,63.3,33,35,340.48,710
+HZ_00003,cf63eacd-9b65-4a50-aa6d-8e9c362821d1,Tasmania,Southern Region,Hobart,bushfire,1.1,low,low,2025-03-02T00:00:00+00:00,24,44.6,0.9,5.0,4,15,47.25,110
+HZ_00004,16b49101-2da0-42a8-8738-83bcfff600bf,Victoria,Barwon South West,Geelong,heatwave,7.4,high,medium,2025-03-03T00:00:00+00:00,72,44.7,0.0,11.0,5,114,240.13,740
+HZ_00005,307b6734-6d88-4f5f-9032-b1b321c5f23d,Western Australia,Perth Metro,Perth,heatwave,8.3,high,high,2024-04-20T00:00:00+00:00,48,47.0,0.0,7.1,24,135,231.6,830
+HZ_00006,cc7ca24a-f37c-40d3-a256-3778c882e087,Queensland,Gold Coast Region,Surfers Paradise,cyclone,5.1,medium,medium,2024-04-18T00:00:00+00:00,24,26.7,298.7,82.6,2,37,171.3,509
+HZ_00007,da15ebc4-29f0-4bde-bc64-0bf3fe5ae1a3,Victoria,Melbourne Metro,Melbourne,storm,6.3,high,medium,2024-07-22T00:00:00+00:00,72,21.2,14.8,71.1,20,36,85.04,630
+HZ_00008,9d234e9f-9ca7-40e3-80be-5286d731c161,Victoria,Melbourne Metro,Melbourne,storm,1.6,low,low,2025-04-29T00:00:00+00:00,24,21.0,2.6,55.4,6,26,78.42,160
+HZ_00009,90197298-5edd-4c86-be37-182f341cef1a,New South Wales,Hunter Region,Newcastle,storm,4.2,medium,low,2025-07-09T00:00:00+00:00,48,19.8,15.1,30.9,2,37,114.17,420
+HZ_00010,2ce0cea0-1f82-4e36-a0fc-f5e33e70157a,Western Australia,Perth Metro,Perth,storm,5.3,medium,medium,2024-06-19T00:00:00+00:00,24,23.3,44.7,66.3,10,54,32.73,530
+HZ_00011,0261dfb3-1eb4-4ba9-9332-6aab46f364d1,Victoria,Melbourne Metro,Melbourne,flood,7.0,high,medium,2025-04-03T00:00:00+00:00,48,20.9,93.7,82.3,7,134,328.87,700
+HZ_00012,15c8fb7b-e924-4d4e-8613-ef61c579cf6b,New South Wales,Hunter Region,Newcastle,flood,6.4,high,medium,2025-09-07T00:00:00+00:00,6,18.1,63.4,71.2,18,38,63.59,640
+HZ_00013,399bc288-698a-4e56-9648-eb4e2969eb5f,Queensland,South East QLD,Brisbane,heatwave,7.3,high,medium,2024-09-07T00:00:00+00:00,48,46.3,0.0,22.7,16,130,348.67,730
+HZ_00014,78ce591e-a0d4-4a44-abcf-7f2028bde386,Queensland,South East QLD,Brisbane,cyclone,7.4,high,medium,2025-10-02T00:00:00+00:00,72,24.9,182.7,97.4,30,97,78.84,740
+HZ_00016,c7dd885b-c38d-4c6e-9a1c-4aa873a44561,Northern Territory,Top End,Darwin,storm,4.1,medium,low,2025-07-23T00:00:00+00:00,72,18.1,22.8,46.2,7,71,201.2,409
+HZ_00017,357e013c-5f46-4fd8-9595-5c7bf0392f8c,Victoria,Barwon South West,Geelong,bushfire,9.8,critical,high,2025-02-03T00:00:00+00:00,6,51.0,0.8,5.0,37,187,405.23,980
+HZ_00018,640fe33f-dc70-4645-bff8-777bcfb9cd16,Western Australia,Perth Metro,Perth,heatwave,3.1,low,low,2025-05-13T00:00:00+00:00,72,39.9,0.0,7.5,2,58,85.06,310
+HZ_00019,323d298b-4132-4dfa-8264-be4881ba8a13,Queensland,Gold Coast Region,Surfers Paradise,storm,9.6,critical,high,2024-05-07T00:00:00+00:00,48,13.5,35.2,58.7,32,133,268.63,960
+HZ_00020,93f83dcf-2992-42d4-84c6-c2d8ab94611e,Queensland,Gold Coast Region,Surfers Paradise,cyclone,9.9,critical,high,2024-05-17T00:00:00+00:00,72,28.2,153.4,81.5,2,151,164.42,990
+HZ_00021,f6e9952f-603c-4988-83f2-de2a83f41109,Victoria,Melbourne Metro,Melbourne,heatwave,7.8,high,medium,2024-11-11T00:00:00+00:00,24,49.9,0.0,23.7,35,77,250.22,780
+HZ_00022,44009360-ccdb-469e-9ad1-ff21db92bac1,Victoria,Barwon South West,Geelong,bushfire,9.3,critical,high,2024-12-16T00:00:00+00:00,72,44.1,0.9,11.9,15,137,423.94,930
+HZ_00023,fc2d9e0f-c20d-4a0f-9aa4-e587e3e4dcb2,Victoria,Melbourne Metro,Melbourne,flood,8.0,high,high,2024-08-16T00:00:00+00:00,12,17.5,69.1,82.0,4,64,53.51,800
+HZ_00024,cc315f66-0249-4074-81af-0eafcd812e41,Tasmania,Southern Region,Hobart,storm,4.5,medium,low,2024-04-05T00:00:00+00:00,12,23.5,2.2,,13,85,97.48,450
+HZ_00025,de1c391d-efa5-4d0c-9c9e-ec86380a7690,Western Australia,Perth Metro,Perth,heatwave,7.7,high,medium,2025-11-19T00:00:00+00:00,6,55.0,0.0,21.3,36,41,76.16,770
+HZ_00026,848faa70-033a-4f2a-9c2a-cec376d5b548,New South Wales,Hunter Region,Newcastle,storm,6.2,high,medium,2024-04-15T00:00:00+00:00,72,29.5,13.3,35.0,21,37,280.41,620
+HZ_00027,d2802d33-58f2-4d11-abaf-235948ee710b,Queensland,Gold Coast Region,Surfers Paradise,storm,5.2,medium,medium,2024-06-07T00:00:00+00:00,72,24.9,21.3,48.2,13,42,185.88,520
+HZ_00028,7ece3ecb-6538-4d2c-9c1f-f5590bcf14b0,Victoria,Barwon South West,Geelong,flood,6.7,high,medium,2025-03-10T00:00:00+00:00,24,18.5,171.5,88.1,11,112,72.6,670
+HZ_00029,81dc76da-9c14-4e26-884a-1e52a5e87098,New South Wales,Hunter Region,Newcastle,storm,1.3,low,low,2024-07-13T00:00:00+00:00,72,23.8,30.8,66.3,6,16,1.96,130
+HZ_00030,273dfbd2-a500-4939-a61f-af0eba19a434,Northern Territory,Top End,Darwin,bushfire,6.3,high,medium,2025-03-26T00:00:00+00:00,6,47.5,0.1,,24,60,211.87,630
+HZ_00031,2d642d13-e9b9-40ef-9d8e-f36694550b2d,Victoria,Barwon South West,Geelong,bushfire,6.9,high,medium,2025-02-07T00:00:00+00:00,12,47.0,0.4,20.1,3,70,191.62,690
+HZ_00032,2948c163-3f69-46a0-abcb-904d5332d413,Queensland,Gold Coast Region,Surfers Paradise,flood,3.2,low,low,2024-03-24T00:00:00+00:00,48,21.6,149.9,79.8,15,55,84.5,320
+HZ_00033,7b20cefa-b70c-4a07-9ce8-c63f9e936059,Tasmania,Southern Region,Hobart,heatwave,5.4,medium,medium,2025-09-20T00:00:00+00:00,72,44.8,0.0,13.3,21,104,13.37,540
+HZ_00034,a645860e-d2d9-4780-9a8c-03f29a8776c3,South Australia,Adelaide Metro,Adelaide,bushfire,4.8,medium,low,2024-12-15T00:00:00+00:00,72,48.1,0.4,5.0,3,29,199.97,480
+HZ_00035,c803f0d6-482f-438e-9c8b-23941e869aa2,Northern Territory,Top End,Darwin,storm,7.9,high,medium,2025-06-02T00:00:00+00:00,24,11.1,15.1,35.2,31,76,377.34,790
+HZ_00036,5c5a88cf-7361-48f1-8b65-063a7271309b,Northern Territory,Top End,Darwin,cyclone,6.3,high,medium,2025-09-06T00:00:00+00:00,12,27.8,187.1,82.2,7,69,59.97,630
+HZ_00037,67f98662-fc71-4520-a507-cc4d7c5d4b09,Queensland,Gold Coast Region,Surfers Paradise,storm,4.1,medium,low,2025-05-29T00:00:00+00:00,72,12.9,44.0,33.7,2,42,31.66,409
+HZ_00038,1bc20623-984b-49ab-bc86-2bbb8522dca8,Queensland,South East QLD,Brisbane,storm,8.7,critical,high,2024-03-07T00:00:00+00:00,24,23.5,39.7,56.3,38,107,174.82,869
+HZ_00039,df2cfdb4-4c91-4b6a-b621-cf98747ab033,New South Wales,Hunter Region,Newcastle,cyclone,3.6,medium,low,2025-03-07T00:00:00+00:00,6,29.9,298.3,84.8,6,71,40.1,360
+HZ_00040,c62c03ec-0f79-4d2e-a87c-4d35fc564d40,Tasmania,Southern Region,Hobart,flood,9.1,critical,high,2024-03-21T00:00:00+00:00,48,23.1,99.7,79.1,34,161,111.77,910
+HZ_00041,35cdc85a-2a61-4618-8938-e88f294e101b,Victoria,Barwon South West,Geelong,storm,5.7,medium,medium,2025-07-29T00:00:00+00:00,72,18.3,45.9,61.1,10,47,109.49,570
+HZ_00042,bda36ae8-41f0-4d02-a606-a18b4d174814,South Australia,Adelaide Metro,Adelaide,storm,9.2,critical,high,2025-10-15T00:00:00+00:00,72,23.7,21.4,40.6,33,98,261.54,919
+HZ_00044,06019b3d-5776-422c-820f-3337ebc63dd1,Victoria,Melbourne Metro,Melbourne,heatwave,8.3,high,high,2024-01-10T00:00:00+00:00,12,47.7,0.0,15.7,17,130,176.18,830
+HZ_00045,caa311ba-1656-4520-af63-1742d90e93f2,Victoria,Barwon South West,Geelong,storm,9.4,critical,high,2025-08-14T00:00:00+00:00,48,26.4,6.3,35.9,7,184,69.91,940
+HZ_00046,8df400d9-2a13-4e06-9d55-0b8f6ba7f5ad,Queensland,Gold Coast Region,Surfers Paradise,flood,9.2,critical,high,2025-11-15T00:00:00+00:00,24,15.6,106.7,83.4,11,147,454.48,919
+HZ_00047,2f120cfa-1a37-46ca-a707-a31dbd008f26,Victoria,Melbourne Metro,Melbourne,storm,9.1,critical,high,2025-06-03T00:00:00+00:00,48,14.9,12.3,32.8,4,146,205.91,910
+HZ_00048,af46b992-021c-4183-8f93-0a72271bf0a2,New South Wales,Hunter Region,Newcastle,bushfire,4.1,medium,low,2024-12-28T00:00:00+00:00,12,36.5,0.7,15.2,12,45,52.01,409
+HZ_00049,b1a43a28-2543-4395-9e17-bced1832190e,Queensland,Gold Coast Region,Surfers Paradise,bushfire,8.7,critical,high,2025-02-20T00:00:00+00:00,12,40.6,0.3,11.3,33,63,286.11,869
+HZ_00050,a488976c-8988-4b04-b070-02fc05de7e6b,Western Australia,Perth Metro,Perth,cyclone,7.1,high,medium,2024-10-14T00:00:00+00:00,48,31.1,195.3,92.1,25,71,256.96,710
+HZ_00051,75af0929-9d51-466e-afd4-548ca1970785,New South Wales,Hunter Region,Newcastle,storm,4.1,medium,low,2025-02-08T00:00:00+00:00,48,16.4,41.4,80.0,12,71,53.82,409
+HZ_00052,894a6552-b681-4372-bc00-f39dbeb08438,New South Wales,Greater Sydney,Parramatta,storm,9.8,critical,high,2024-12-11T00:00:00+00:00,48,22.4,49.8,71.9,41,161,430.71,980
+HZ_00053,a511c377-3379-41dc-9aa8-5ce4a7a7ecd6,New South Wales,Greater Sydney,Parramatta,earthquake,4.7,medium,low,2025-03-18T00:00:00+00:00,24,17.8,48.7,77.4,19,89,137.63,470
+HZ_00054,a33295ad-9da5-4343-85e7-6aa5d813bf67,Victoria,Melbourne Metro,Melbourne,storm,4.0,medium,low,2025-08-25T00:00:00+00:00,24,20.3,37.7,63.2,18,27,144.74,400
+HZ_00055,fc464c68-d162-46d1-80d8-86b3e9be5fa9,Victoria,Barwon South West,Geelong,bushfire,6.2,high,medium,2025-01-07T00:00:00+00:00,48,39.7,0.3,16.5,23,65,123.79,620
+HZ_00056,79a3f582-827b-49d3-9f99-1a557e24d86b,Queensland,South East QLD,Brisbane,flood,1.6,low,low,2025-06-09T00:00:00+00:00,6,21.1,124.1,81.8,2,24,66.6,160
+HZ_00057,7ff5e776-3b3b-4f6e-a85c-f320196927de,South Australia,Adelaide Metro,Adelaide,storm,9.8,critical,high,2024-07-22T00:00:00+00:00,12,23.8,36.8,77.2,44,156,122.59,980
+HZ_00058,5ae2bcc6-1e41-42ed-b34c-639db7bd9b3f,Northern Territory,Top End,Darwin,storm,1.8,low,low,2025-05-12T00:00:00+00:00,24,19.9,29.1,71.3,5,35,9.91,180
+HZ_00059,8aa3c5dd-7ead-43c4-bd41-ceeb7d932688,Victoria,Melbourne Metro,Melbourne,storm,7.9,high,medium,2024-05-18T00:00:00+00:00,72,13.7,43.9,40.6,21,60,272.22,790
+HZ_00060,d190c0d0-165d-4308-a6cf-7421b9d43690,South Australia,Adelaide Metro,Adelaide,bushfire,8.3,high,high,2024-05-07T00:00:00+00:00,12,41.3,1.3,13.4,36,130,330.54,830

@@ -13,6 +13,7 @@ Schema compliance:
 """
 
 import json
+import random
 import sys
 import uuid
 from datetime import datetime, timezone
@@ -21,14 +22,29 @@ from pathlib import Path
 import pandas as pd
 
 from disaster_random import build_rows as build_disaster_rows
-from cyber_generator import generate_cyber_rows
-from misinfo_generator import generate_misinfo_rows
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 BASE_DIR   = Path(__file__).resolve().parent
 DATA_DIR   = BASE_DIR / "data"
 DOCS_DIR   = BASE_DIR / "docs"
 CONFIG_DIR = BASE_DIR / "config"
+
+DEFAULT_SETTINGS = {
+    "row_distribution": {
+        "cyber_weight": 1,
+        "misinfo_weight": 1,
+    },
+    "severity_mapping": {
+        "minor": "low",
+        "moderate": "medium",
+        "severe": "high",
+        "extreme": "critical",
+        "low": "low",
+        "medium": "medium",
+        "high": "high",
+        "critical": "critical",
+    },
+}
 
 # ── Master schema columns ──────────────────────────────────────────────────────
 # Ordered to match: identifiers → event → time → geo → weather → forecast →
@@ -173,10 +189,22 @@ PARENT_ENRICH_COLS = [
 
 def load_settings() -> dict:
     path = CONFIG_DIR / "scenario_settings.json"
-    if not path.exists():
-        raise FileNotFoundError(f"scenario_settings.json not found at {path}")
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    if path.exists():
+        with open(path, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+        settings = DEFAULT_SETTINGS.copy()
+        settings.update(loaded)
+        if "row_distribution" in loaded:
+            merged_row_dist = DEFAULT_SETTINGS["row_distribution"].copy()
+            merged_row_dist.update(loaded["row_distribution"])
+            settings["row_distribution"] = merged_row_dist
+        if "severity_mapping" in loaded:
+            merged_sev_map = DEFAULT_SETTINGS["severity_mapping"].copy()
+            merged_sev_map.update(loaded["severity_mapping"])
+            settings["severity_mapping"] = merged_sev_map
+        return settings
+
+    return DEFAULT_SETTINGS.copy()
 
 
 def apply_severity_mapping(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
@@ -202,6 +230,110 @@ def generate_parent(n_rows: int) -> pd.DataFrame:
     if "integration_id" not in df.columns:
         df["integration_id"] = [str(uuid.uuid4()) for _ in range(len(df))]
     return df
+
+
+def generate_cyber_rows(parent_df: pd.DataFrame, n: int, settings: dict) -> pd.DataFrame:
+    rng = random.Random(42)
+    parent_sample = parent_df.sample(n=n, replace=(n > len(parent_df)), random_state=42).reset_index(drop=True)
+
+    threat_types = [
+        "Phishing",
+        "Fraud",
+        "Ransomware",
+        "Data Breach",
+        "DDoS",
+        "API Abuse",
+    ]
+    attack_vectors = [
+        "Email",
+        "SMS",
+        "Fake Website",
+        "Social Media",
+        "Scripted Requests",
+        "Credential Theft",
+    ]
+    targets = [
+        "Citizens",
+        "Government Agency",
+        "Emergency Services",
+        "Healthcare Organisation",
+        "Critical Infrastructure",
+    ]
+
+    rows = []
+    for i, parent in parent_sample.iterrows():
+        rows.append({
+            "hazard_event_id": f"CYB_{i+1:05d}",
+            "parent_hazard_event_id": parent["hazard_event_id"],
+            "integration_id": str(uuid.uuid4()),
+            "threat_id": f"THRT_{i+1:05d}",
+            "source_record_id": f"cyber-{i+1:05d}",
+            "source_dataset": "cyber_network_threat_dataset",
+            "source_system": "cyber_synth_generator",
+            "linked_event_type": "cyber_threat",
+            "related_hazard_id": parent["hazard_event_id"],
+            "correlation_score": round(rng.uniform(0.62, 0.98), 2),
+            "integration_confidence": round(rng.uniform(0.65, 0.99), 2),
+            "linkage_reason": "temporal_and_location_overlap",
+            "threat_stream": "cyber",
+            "event_type": parent.get("event_type", "cyber_threat"),
+            "severity_level": parent.get("severity_level"),
+            "event_time": parent.get("start_time"),
+            "detected_at": parent.get("start_time"),
+            "reported_at": parent.get("start_time"),
+            "timestamp": parent.get("start_time"),
+            "threat_type": rng.choice(threat_types),
+            "attack_vector": rng.choice(attack_vectors),
+            "impersonation": rng.choice(["none", "government", "emergency_services"]),
+            "target": rng.choice(targets),
+            "outcome": rng.choice(["attempted", "blocked", "partially_successful", "successful"]),
+            "success": rng.choice([True, False]),
+            "confidence_score": round(rng.uniform(0.70, 0.99), 2),
+            "created_at": parent.get("created_at"),
+            "updated_at": parent.get("updated_at"),
+        })
+    return pd.DataFrame(rows)
+
+
+def generate_misinfo_rows(parent_df: pd.DataFrame, n: int, settings: dict) -> pd.DataFrame:
+    rng = random.Random(84)
+    parent_sample = parent_df.sample(n=n, replace=(n > len(parent_df)), random_state=84).reset_index(drop=True)
+
+    rows = []
+    for i, parent in parent_sample.iterrows():
+        rows.append({
+            "hazard_event_id": parent["hazard_event_id"],
+            "integration_id": str(uuid.uuid4()),
+            "threat_id": f"MIS_{i+1:05d}",
+            "source_record_id": f"misinfo-{i+1:05d}",
+            "source_dataset": "social_misinformation_dataset",
+            "source_system": "misinfo_synth_generator",
+            "linked_event_type": "social_media_misinformation",
+            "related_hazard_id": parent["hazard_event_id"],
+            "correlation_score": round(rng.uniform(0.60, 0.98), 2),
+            "integration_confidence": round(rng.uniform(0.62, 0.99), 2),
+            "linkage_reason": "hazard_reference_in_social_content",
+            "threat_stream": "misinformation",
+            "event_type": parent.get("event_type", "misinformation"),
+            "severity_level": parent.get("severity_level"),
+            "event_time": parent.get("start_time"),
+            "detected_at": parent.get("start_time"),
+            "reported_at": parent.get("start_time"),
+            "timestamp": parent.get("start_time"),
+            "alert_level": rng.choice(["advice", "watch_and_act", "emergency_warning"]),
+            "misinformation_level": rng.choice(["low", "medium", "high"]),
+            "social_media_spike": rng.choice([True, False]),
+            "cyber_frequency_level": rng.choice(["low", "medium", "high"]),
+            "threat_type": rng.choice([
+                "false_evacuation_notice",
+                "fake_alert_phishing",
+                "deepfake_emergency_message",
+                "rumour_amplification",
+            ]),
+            "created_at": parent.get("created_at"),
+            "updated_at": parent.get("updated_at"),
+        })
+    return pd.DataFrame(rows)
 
 
 # ── Merge helpers ──────────────────────────────────────────────────────────────

@@ -79,7 +79,7 @@ def generate_impact(severity):
         "fatalities": int(severity * random.uniform(0, 5)),
         "injuries": int(severity * random.uniform(5, 20)),
         "economic_loss_million": round(severity * random.uniform(1, 50), 2),
-        "affected_population": int(severity * random.uniform(100, 10000)),
+        "affected_population": int(severity * random.uniform(100, 100)),
     }
 
 
@@ -200,4 +200,4 @@ def export_csv(filename="synthetic_disaster_10k.csv", total_rows=10000):
 # ─────────────────────────────────────────
 
 if __name__ == "__main__":
-    export_csv(total_rows=10000)
+    export_csv(total_rows=100)

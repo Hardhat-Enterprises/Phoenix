@@ -452,8 +452,6 @@ def main() -> None:
     cyber_df.to_csv(        DATA_DIR / "cyber_network_threat_dataset.csv",  index=False)
     misinfo_df.to_csv(      DATA_DIR / "social_misinformation_dataset.csv", index=False)
     master_df.to_csv(       DATA_DIR / "master_ai005_dataset.csv",          index=False)
-    master_df.to_json(      DATA_DIR / "master_ai005_dataset.json",
-                            orient="records", indent=2)
 
     # 7. Validation report
     now_str = datetime.now(tz=timezone.utc).isoformat()
@@ -479,7 +477,6 @@ def main() -> None:
 
     print(f"\nAI005 pipeline complete.")
     print(f"  Master CSV   : {DATA_DIR / 'master_ai005_dataset.csv'}")
-    print(f"  Master JSON  : {DATA_DIR / 'master_ai005_dataset.json'}")
     print(f"  Parent rows  : {DATA_DIR / 'parent_disaster_dataset.csv'} ({len(linked_parent_df)} rows)")
 
 

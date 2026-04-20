@@ -1,6 +1,6 @@
 # AI005 Validation Report
 
-Generated: 2026-04-20T13:16:57.618331+00:00
+Generated: 2026-04-20T13:19:52.942902+00:00
 
 - Master row count              : 100
 - Master columns                : 76
@@ -18,10 +18,10 @@ Generated: 2026-04-20T13:16:57.618331+00:00
 
 ## Severity level distribution
 
-- high: 39
-- medium: 28
-- critical: 21
-- low: 12
+- medium: 48
+- high: 31
+- critical: 14
+- low: 7
 
 ## Schema alignment
 

@@ -1,0 +1,9 @@
+{
+  "run_id": "pipeline_notebook_demo",
+  "timestamp_utc": "2026-04-16T15:50:54.233567Z",
+  "files": [
+    "configs/default_config.yaml",
+    "logs",
+    "checkpoints"
+  ]
+}

@@ -4,9 +4,8 @@ function Sidebar({ setPage, page }) {
   const menuItems = [
     "Dashboard",
     "Alerts",
+    "Threat Reports",
     "About Us",
-    "Threats",
-    "Reports",
     "Settings",
   ];
 

@@ -3,16 +3,13 @@ import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
 import Sidebar from "./components/Sidebar";
-import Header from "./Header";
 
 function App() {
   const [page, setPage] = useState("login");
 
   return (
-    
     <div className="login-page">
       <div className="temp-header">
-        <Header></Header>
         <div className="temp-logo">🔥</div>
         <div>
           <h2>Phoenix</h2>

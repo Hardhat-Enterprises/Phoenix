@@ -1,17 +1,1 @@
-#Jack Spiers - Project Lead
-#Manaal Gupta – Frontend Team Member
-#Priyanka - Co-Lea Frontend 
-#Chris Hole - Team Member
-#Tai Nguyen - Team Member
-#Umer Ahad - Frontend Team Member
-#Takunda – Frontend Team Member
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
+Takunda – Frontend Team Member

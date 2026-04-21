@@ -83,6 +83,7 @@ def _load_preprocessing_runtime_config(
     return (
         cleaning_config,
         {
+            "selected_features": list(default_prep.get("selected_features", [])),
             "encoding": {
                 "enabled": encoding_enabled,
                 "method": "one_hot",
@@ -97,6 +98,15 @@ def _load_preprocessing_runtime_config(
             },
         },
     )
+
+
+def _normalize_selected_features(value: Any) -> list[str] | None:
+    if value is None:
+        return None
+    if not isinstance(value, list):
+        return None
+    normalized = [str(item) for item in value if str(item).strip()]
+    return normalized or None
 
 
 def _combine_datasets(main_df: pd.DataFrame, abnormal_df: pd.DataFrame | None) -> pd.DataFrame:
@@ -188,6 +198,9 @@ def run_training_pipeline(
         data=combined_df,
         cleaning_config=cleaning_config,
         preprocessing_config=preprocessing_config,
+        selected_features=_normalize_selected_features(
+            preprocessing_config.get("selected_features")
+        ),
         target_column=target_column,
     )
     log_run_event(
@@ -213,6 +226,11 @@ def run_training_pipeline(
         config=config,
         verbose=training_verbose,
     )
+    if training_config.tensorboard_enabled:
+        configured_tb_path = training_config.tensorboard_log_dir or "logs/tensorboard"
+        resolved_tb_path = _resolve_path(PIPELINE_ROOT, configured_tb_path)
+        training_config.tensorboard_log_dir = str(resolved_tb_path)
+    training_config.run_id = active_run_id
     task_type = _infer_task_type(config, training_config)
     engine = GenericTrainingEngine(training_config)
     log_run_event(

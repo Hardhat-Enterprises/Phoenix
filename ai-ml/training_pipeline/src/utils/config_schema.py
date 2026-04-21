@@ -26,6 +26,7 @@ CONFIG_SCHEMA = {
         "normalization":          (str,  False, ["standard", "minmax", "none"],         "standard"),
         "encoding":               (str,  False, ["onehot", "label", "none"],            "onehot"),
         "feature_selection":      (bool, False, None,                                   True),
+        "selected_features":      (list, False, None,                                   []),
     },
     "model": {
         "type":            (str,  True,  None,                                                      None),
@@ -37,6 +38,8 @@ CONFIG_SCHEMA = {
         "batch_size":    (int,   False, None, 32),
         "epochs":        (int,   False, None, 50),
         "learning_rate": (float, False, None, 0.001),
+        "tensorboard_enabled": (bool, False, None, False),
+        "tensorboard_log_dir": (str, False, None, "logs/tensorboard"),
     },
     "output": {
         "path":              (str,  False, None,  "checkpoints/"),

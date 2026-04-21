@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 import numpy as np
@@ -12,6 +13,11 @@ except Exception:
     nn = None
     DataLoader = None
     TensorDataset = None
+
+try:
+    from torch.utils.tensorboard import SummaryWriter
+except Exception:
+    SummaryWriter = None
 
 try:
     from ..models.model_registry import (
@@ -47,6 +53,9 @@ class TrainingConfig:
     loss_fn: Optional[Any] = None
     device: Optional[str] = None
     shuffle: bool = True
+    tensorboard_enabled: bool = False
+    tensorboard_log_dir: Optional[str] = None
+    run_id: Optional[str] = None
 
     def __post_init__(self) -> None:
         """
@@ -107,6 +116,8 @@ class TrainingConfig:
             batch_size=int(training_cfg.get("batch_size", 32)),
             learning_rate=float(training_cfg.get("learning_rate", 0.001)),
             verbose=verbose,
+            tensorboard_enabled=bool(training_cfg.get("tensorboard_enabled", False)),
+            tensorboard_log_dir=training_cfg.get("tensorboard_log_dir"),
         )
 
 
@@ -242,6 +253,26 @@ class GenericTrainingEngine:
             shuffle=self.config.shuffle
         ) # type: ignore
 
+        writer = None
+        tensorboard_log_dir = None
+        tensorboard_status = "disabled"
+        if self.config.tensorboard_enabled:
+            if SummaryWriter is None:
+                tensorboard_status = "unavailable"
+                if self.config.verbose:
+                    print(
+                        "TensorBoard unavailable; continuing without TB logging. "
+                        "Install with: pip install tensorboard"
+                    )
+            else:
+                base_dir = Path(self.config.tensorboard_log_dir or "logs/tensorboard")
+                run_suffix = self.config.run_id or "run"
+                tensorboard_log_dir = str((base_dir / run_suffix).resolve())
+                writer = SummaryWriter(log_dir=tensorboard_log_dir)
+                tensorboard_status = "enabled"
+
+        epoch_losses: list[float] = []
+
         # Fit Loop
         for epoch in range(self.config.epochs):
             self.model.train()
@@ -259,12 +290,27 @@ class GenericTrainingEngine:
 
                 epoch_loss += loss.item()
 
+            epoch_loss = epoch_loss / max(1, len(train_loader))
+            epoch_losses.append(float(epoch_loss))
+
+            if writer is not None:
+                writer.add_scalar("train/loss", epoch_loss, epoch + 1)
+                writer.add_scalar("train/learning_rate", optimizer.param_groups[0]["lr"], epoch + 1)
+
             if self.config.verbose:
                 print(f"Epoch {epoch+1}: loss={epoch_loss:.4f}")
 
+        if writer is not None:
+            writer.flush()
+            writer.close()
+
         return {
             "model_type": "pytorch",
-            "status": "trained"
+            "status": "trained",
+            "epochs": self.config.epochs,
+            "train_loss_by_epoch": epoch_losses,
+            "tensorboard_log_dir": tensorboard_log_dir,
+            "tensorboard_status": tensorboard_status,
         }
 
     # PyTorch pred

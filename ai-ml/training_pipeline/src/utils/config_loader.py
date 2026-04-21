@@ -26,7 +26,10 @@ import copy
 from pathlib import Path
 from typing import Union
 
-from src.utils.config_validator import validate_config, ConfigValidationError
+try:
+    from src.utils.config_validator import validate_config, ConfigValidationError
+except ModuleNotFoundError:
+    from utils.config_validator import validate_config, ConfigValidationError
 try:
     import yaml
     _YAML_AVAILABLE = True

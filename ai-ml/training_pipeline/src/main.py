@@ -4,10 +4,14 @@ def run_training_pipeline(config):
 import argparse
 
 
-from src.utils.config_loader import load_config
-
-from src.utils.paths import ensure_runtime_dirs
-from src.utils.seeds import set_seed
+try:
+    from src.utils.config_loader import load_config
+    from src.utils.paths import ensure_runtime_dirs
+    from src.utils.seeds import set_seed
+except ModuleNotFoundError:
+    from utils.config_loader import load_config
+    from utils.paths import ensure_runtime_dirs
+    from utils.seeds import set_seed
 
 
 def _build_arg_parser():

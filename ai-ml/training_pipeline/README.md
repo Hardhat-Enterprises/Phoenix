@@ -64,24 +64,43 @@ training_pipeline/
 - W6-T7: `src/core/checkpoint_manager.py`
 - W6-T8: `src/core/logger.py`
 
-## Run Style Later
+## How to Run
 
-From the `training_pipeline` directory:
+### 1. Install dependency
+
+From `ai-ml/training_pipeline`:
 
 ```bash
-python -m src.main
+pip install pyyaml
+```
+
+### 2. Run with the Windows runner (recommended)
+
+From `ai-ml/training_pipeline`:
+
+```bat
+run_pipeline.bat
+```
+
+The runner will prompt for a config file path.
+If you press Enter, it uses:
+
+```text
+configs\default_config.yaml
+```
+
+### 3. Run directly with Python
+
+From `ai-ml/training_pipeline`:
+
+```bash
+python -m src.main --config configs/default_config.yaml
 ```
 
 From the repository root:
 
 ```bash
-python ai-ml/training_pipeline/src/main.py
-```
-
-Later in Week 7 (from `training_pipeline`):
-
-```bash
-python -m src.main --config configs/default_config.yaml
+python ai-ml/training_pipeline/src/main.py --config ai-ml/training_pipeline/configs/default_config.yaml
 ```
 
 ## Design Rules

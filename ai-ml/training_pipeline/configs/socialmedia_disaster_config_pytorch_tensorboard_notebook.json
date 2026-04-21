@@ -28,7 +28,9 @@
     "batch_size": 32,
     "epochs": 30,
     "learning_rate": 0.001,
-    "verbose": true
+    "verbose": true,
+    "tensorboard_enabled": true,
+    "tensorboard_log_dir": "logs/tensorboard"
   },
   "output": {
     "path": "checkpoints",

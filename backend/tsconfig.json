@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@phoenix/database": ["libs/database/src"],
+      "@phoenix/database/*": ["libs/database/src/*"],
+      "@phoenix/common": ["libs/common/src"],
+      "@phoenix/common/*": ["libs/common/src/*"]
+    }
+  }
+}

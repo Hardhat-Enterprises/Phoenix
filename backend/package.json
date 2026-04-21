@@ -9,10 +9,11 @@
     "build:proto": "copyfiles -u 2 libs/proto/**/*.proto dist/libs/proto",
     "build:gateway": "tsc -b api-gateway/tsconfig.json && tsc-alias -p api-gateway/tsconfig.json",
     "build:user-service": "tsc -b user-service/tsconfig.json && tsc-alias -p user-service/tsconfig.json",
-    "build:ingestion": "tsc -p data-ingestion-service/tsconfig.json",
+    "build:ingestion": "tsc -b data-ingestion-service/tsconfig.json && tsc-alias -p data-ingestion-service/tsconfig.json && cpy \"libs/proto/**/*.proto\" dist/libs/proto",
     "build": "tsc -b",
     "start:gateway": "node -r tsconfig-paths/register dist/api-gateway/src/app.js",
-    "start:user-service": "node -r tsconfig-paths/register dist/user-service/src/app.js"
+    "start:user-service": "node -r tsconfig-paths/register dist/user-service/src/app.js",
+    "start:ingestion": "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.3",
@@ -33,6 +34,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.12.2",
     "copyfiles": "^2.4.1",
+    "cpy-cli": "^7.0.0",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.16",

@@ -21,3 +21,14 @@ services:
     environment:
       - SERVICE=user-service
     command: sh -c "node -r tsconfig-paths/register dist/user-service/src/app.js"
+
+  data-ingestion-service:
+    build: ./backend/data-ingestion-service
+    container_name: ingestion-service
+    ports:
+      - "50053:50053"
+    env_file:
+    - ./.env
+    environment:
+      - SERVICE=user-service
+    command: sh -c "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"

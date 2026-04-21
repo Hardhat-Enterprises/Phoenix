@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package user;
+
+service UserService {
+    rpc GetUserHealth(GetUserHealthRequest) returns (GetUserHealthResponse);   
+    rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+}
+
+message GetUserHealthRequest {
+}
+
+message GetUserHealthResponse {
+    int32 status = 1;
+    string message = 2;
+}
+
+message GetUsersRequest {
+}   
+
+message GetUsersResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated User users = 3;
+}
+
+message User {
+    int32 id = 1;
+    string name = 2;
+    string email = 3;
+}

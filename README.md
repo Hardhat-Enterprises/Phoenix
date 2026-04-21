@@ -58,16 +58,27 @@ Phoenix provides a unified system for:
 
 ### **Cybersecurity Objectives**
 
-* Collect and classify cyber threat intelligence (CY001–CY002)
-* Design structured CTI datasets and schemas (CY003)
-* Perform threat modelling and attack surface analysis (CY004–CY005)
-* Map threats using MITRE ATT&CK framework (CY006)
-* Develop risk assessment and scoring frameworks (CY008–CY009)
-* Design secure communication protocols for alerts (CY010)
-* Implement cryptographic verification for trusted alerts (CY011)
-* Detect misinformation and fake alerts (CY012)
-* Establish incident response strategies (CY013)
-* Ensure compliance, ethics, and security testing (CY017–CY018)
+* Threat Data Finalisation: Prepare a clean, validated, and standardised dataset of disaster-relevant threats (CY001)
+* System Architecture Understanding: Analyse and document the system architecture, components, and key assets (CY002)
+* Data Flow Diagram: Create a data flow diagram showing how data moves, including entry points and trust boundaries (CY003)
+* Threat Identification: Identify potential attackers, vulnerabilities, and attack scenarios affecting the system (CY005)
+* STRIDE Threat Modelling: Apply the STRIDE model to assess threats, risks, and corresponding mitigations (CY006)
+* TEAVS API Design: Design and document the API structure, endpoints, and alert handling processes (CY007)
+* Authentication & Authorisation: Define and design secure authentication and role-based access control mechanisms (CY008)
+* Input Validation & Security Rules: Establish rules to validate inputs and protect against common security vulnerabilities (CY009)
+* Rate Limiting & Abuse Prevention: Implement controls to limit request rates and prevent abuse or malicious activity (CY010)
+* Cryptographic Design: Design secure cryptographic processes, including hashing, signatures, and key management (CY011)
+* Security Architecture Design: Develop a comprehensive security architecture integrating all security components (CY012)
+* API Development: Build and test the API with full functionality and database integration (CY013) 
+* Authentication Implementation: Implement and test secure authentication and authorisation mechanisms (CY014)
+* Cryptography Implementation: Implement and verify cryptographic features to ensure data integrity and security (CY015)
+* Endpoint Security Testing: Test API endpoints for vulnerabilities and document security findings (CY016)
+* Logging & Monitoring: Implement logging and monitoring to detect and respond to suspicious activity (CY017)
+* Incident Response Workflow: Define a structured process for detecting, managing, and communicating incidents (CY018)
+* AI/ML Integration: Integrate and secure AI/ML components within the system while validating outputs (CY019)
+* Risk Scoring System: Develop and validate a system to assess and score risks based on threats (CY020)
+* Governance & Compliance: Ensure the system meets privacy, ethical, and regulatory compliance requirements (CY021)
+* Cyber Resilience Blueprint: Produce a comprehensive blueprint outlining system design, security, and best practices (CY022)
 
 ---
 

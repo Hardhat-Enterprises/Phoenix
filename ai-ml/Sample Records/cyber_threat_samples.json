@@ -1,0 +1,60 @@
+
+{
+  "threat_id": "b2e4d5f6-1111-4c3d-c111-000000000001",
+  "threat_type": "phishing",
+  "title": "Fake disaster relief payment email",
+  "description": "Email campaign impersonating government agencies offering emergency relief payments.",
+  "risk_level": "critical",
+  "status": "active",
+  "category": "cyber",
+  "confidence_score": 0.92,
+  "detected_at": "2026-03-21T12:10:00Z",
+  "source_id": "33333333-cccc-4ccc-dddd-000000000010",
+  "created_at": "2026-03-21T12:20:00Z",
+  "updated_at": "2026-03-21T12:20:00Z"
+}
+
+{
+  "threat_id": "b2e4d5f6-2222-4c3d-c222-000000000002",
+  "threat_type": "malware",
+  "title": "Malicious weather alert application",
+  "description": "Fake mobile application distributing malware under the guise of real-time weather alerts.",
+  "risk_level": "high",
+  "status": "active",
+  "category": "cyber",
+  "confidence_score": 0.87,
+  "detected_at": "2026-02-15T08:45:00Z",
+  "source_id": "33333333-cccc-4ccc-dddd-000000000011",
+  "created_at": "2026-02-15T09:00:00Z",
+  "updated_at": "2026-02-15T09:00:00Z"
+}
+
+{
+  "threat_id": "b2e4d5f6-3333-4c3d-c333-000000000003",
+  "threat_type": "misinformation",
+  "title": "False evacuation alert circulating online",
+  "description": "Social media posts spreading false evacuation notices during severe storm events.",
+  "risk_level": "medium",
+  "status": "monitoring",
+  "category": "cyber",
+  "confidence_score": 0.78,
+  "detected_at": "2026-01-30T16:20:00Z",
+  "source_id": "33333333-cccc-4ccc-dddd-000000000012",
+  "created_at": "2026-01-30T16:30:00Z",
+  "updated_at": "2026-01-30T16:30:00Z"
+}
+
+{
+  "threat_id": "b2e4d5f6-4444-4c3d-c444-000000000004",
+  "threat_type": "data_breach",
+  "title": "Unauthorized access to emergency response system",
+  "description": "Multiple unauthorized login attempts detected targeting emergency service infrastructure.",
+  "risk_level": "high",
+  "status": "active",
+  "category": "cyber",
+  "confidence_score": 0.85,
+  "detected_at": "2026-03-10T22:15:00Z",
+  "source_id": "33333333-cccc-4ccc-dddd-000000000013",
+  "created_at": "2026-03-10T22:30:00Z",
+  "updated_at": "2026-03-10T22:30:00Z"
+}

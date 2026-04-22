@@ -27,9 +27,12 @@ from pathlib import Path
 from typing import Union
 
 try:
-    from src.utils.config_validator import validate_config, ConfigValidationError
 except ModuleNotFoundError:
     from utils.config_validator import validate_config, ConfigValidationError
+    from .config_validator import validate_config, ConfigValidationError
+except ImportError:
+    from utils.config_validator import validate_config, ConfigValidationError
+
 try:
     import yaml
     _YAML_AVAILABLE = True
@@ -107,12 +110,12 @@ def _load_yaml(path: Path) -> dict:
         raise ImportError(
             "PyYAML is not installed. Run: pip install pyyaml"
         )
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8-sig") as f:
         return yaml.safe_load(f) or {}
 
 
 def _load_json(path: Path) -> dict:
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8-sig") as f:
         return json.load(f)
 
 

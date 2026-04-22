@@ -1,68 +1,48 @@
-﻿# AI008 Training Pipeline - Week 6 Core Scaffold
+﻿# PHOENIX Training Pipeline
 
-This scaffold provides the minimum viable training framework for PHOENIX Sprint 2.
-It is designed to support:
+Reusable training pipeline for PHOENIX datasets and multiple model types.
 
-- AI009 Baseline Model
-- AI010 Risk Refinement
+## What It Does
 
-## Week 6 Scope Covered
+- Loads main + optional abnormal datasets
+- Applies configurable cleaning/preprocessing
+- Splits into train/validation/test
+- Trains sklearn or PyTorch models
+- Evaluates metrics for classification/anomaly tasks
+- Writes logs and optional checkpoints
 
-- W6-T1 Project Structure and Module Scaffolding
-- base folders
-- placeholder scripts
-- import-ready package layout
-- starter README
+## Quick Start
 
-## Folder Structure
+From repository root:
 
-```text
-training_pipeline/
-|-- checkpoints/              # saved models and recovery artifacts
-|-- configs/                  # YAML / JSON configs
-|-- logs/                     # run logs, metric logs, error logs
-|-- src/
-|   |-- __init__.py
-|   |-- main.py               # pipeline entry point
-|   |-- core/
-|   |   |-- __init__.py
-|   |   |-- config_manager.py
-|   |   |-- trainer.py
-|   |   |-- checkpoint_manager.py
-|   |   `-- logger.py
-|   |-- data/
-|   |   |-- __init__.py
-|   |   |-- dataset_loader.py
-|   |   `-- splitter.py
-|   |-- preprocessing/
-|   |   |-- __init__.py
-|   |   |-- preprocess.py
-|   |   `-- feature_loader.py
-|   |-- models/
-|   |   |-- __init__.py
-|   |   `-- model_registry.py
-|   |-- evaluation/
-|   |   |-- __init__.py
-|   |   |-- metrics.py
-|   |   `-- validator.py
-|   `-- utils/
-|       |-- __init__.py
-|       |-- paths.py
-|       `-- seeds.py
-`-- tests/
-    `-- test_smoke.py
+```powershell
+python.exe ai-ml/training_pipeline/src/main.py --config ai-ml/training_pipeline/configs/default_config.yaml --run-id demo_run
 ```
 
-## Suggested Ownership by Week 6 Task
+Disable checkpoint save:
 
-- W6-T1: full scaffold in this repo
-- W6-T2: `src/core/config_manager.py`
-- W6-T3: `src/data/dataset_loader.py`, `src/data/splitter.py`
-- W6-T4: `src/preprocessing/preprocess.py`, `src/preprocessing/feature_loader.py`
-- W6-T5: `src/core/trainer.py`, `src/models/model_registry.py`
-- W6-T6: `src/evaluation/metrics.py`, `src/evaluation/validator.py`
-- W6-T7: `src/core/checkpoint_manager.py`
-- W6-T8: `src/core/logger.py`
+```powershell
+python.exe ai-ml/training_pipeline/src/main.py --config ai-ml/training_pipeline/configs/default_config.yaml --run-id demo_run --no-checkpoint
+```
+
+## Notebook Usage
+
+Use:
+
+- `ai-ml/training_pipeline/pipeline.ipynb`
+
+The notebook is a step-by-step "How to use" guide with print statements showing each stage:
+
+1. Setup/imports
+2. Config loading
+3. Supported models
+4. Data + preprocessing
+5. Split + train
+6. Evaluation
+7. Full pipeline API run
+8. Multi-model runs on the same dataset
+
+## Config
 
 ## How to Run
 
@@ -92,9 +72,64 @@ configs\default_config.yaml
 ### 3. Run directly with Python
 
 From `ai-ml/training_pipeline`:
+Main config example:
 
-```bash
-python -m src.main --config configs/default_config.yaml
+- `ai-ml/training_pipeline/configs/default_config.yaml`
+
+Important fields:
+
+- `dataset.path`: main CSV path
+- `dataset.abnormal_path`: optional CSV to append
+- `dataset.target_column`: supervised label column
+- `model.type`: model selection mode
+- `model.name`: required when `model.type` is `sklearn` or `pytorch`
+- `model.task_type`: optional (`classification` or `anomaly`)
+- `output.path`: checkpoint directory
+- `output.log_path`: logs directory
+
+### Model Selection Patterns
+
+Pattern A (alias shortcut):
+
+```yaml
+model:
+  type: random_forest
+  hyperparameters:
+    n_estimators: 100
+```
+
+Pattern B (explicit backend + model name):
+
+```yaml
+model:
+  type: sklearn
+  name: logistic_regression
+  task_type: classification
+  hyperparameters:
+    max_iter: 200
+```
+
+## Preprocessing Config Behavior
+
+Optional CLI arg:
+
+- `--preprocessing-config <json_path>`
+
+If provided, cleaning + preprocessing are loaded from that JSON file.
+If not provided, cleaning is skipped and default preprocessing behavior is derived from main config (`encoding`/`normalization` settings).
+
+## Python API
+
+```python
+from src import run_training_pipeline
+
+result = run_training_pipeline(
+    config_path="configs/default_config.yaml",
+    preprocessing_config_path="configs/preprocessing_config.json",
+    run_id="api_run",
+    save_checkpoint=False,
+)
+print(result)
 ```
 
 From the repository root:
@@ -104,13 +139,47 @@ python ai-ml/training_pipeline/src/main.py --config ai-ml/training_pipeline/conf
 ```
 
 ## Design Rules
+## Outputs
 
-- each module should be usable independently where possible
-- Week 6 should favor mock inputs over blocked integration
-- config-driven behavior should be added without breaking module isolation
-- file outputs should always go into `logs/` or `checkpoints/`
-- avoid hardcoding dataset-specific assumptions
+- Logs: `ai-ml/training_pipeline/logs/*.log`
+- Checkpoints: `ai-ml/training_pipeline/checkpoints/*`
+- Artifacts used by notebook demos: `ai-ml/training_pipeline/artifacts/*`
 
-## Notes for PHOENIX
+`run_training_pipeline` returns structured JSON-like output including:
 
-This structure aligns with PHOENIX's AI workflow where hazard, cyber, and fused risk features need to move cleanly from data loading to preprocessing, model training, evaluation, and handoff to downstream scoring tasks. The broader project focuses on AI-driven cyber risk modelling for bushfire and flood disaster contexts.
+- `run_id`
+- `model` info
+- `metrics` (validation/test)
+- `rows` counts
+- `events.preprocessing`
+- `checkpoint_path` (if saved)
+
+## Testing (phoenix env)
+
+From `ai-ml/training_pipeline`:
+
+```powershell
+python.exe -m pytest tests/test_pipeline_integration.py tests/test_smoke.py tests/test_reusable_models.py -q
+```
+
+If your machine has temp/OneDrive permission issues with pytest, set `--basetemp` to a writable local path.
+
+## Structure
+
+```text
+training_pipeline/
+|-- configs/
+|-- data/
+|-- artifacts/
+|-- logs/
+|-- checkpoints/
+|-- src/
+|   |-- main.py
+|   |-- core/
+|   |-- data/
+|   |-- preprocessing/
+|   |-- models/
+|   |-- evaluation/
+|   `-- utils/
+`-- tests/
+```

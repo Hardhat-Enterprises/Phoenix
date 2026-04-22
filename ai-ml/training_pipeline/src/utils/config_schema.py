@@ -13,25 +13,33 @@ Defines the full expected structure of a config, including:
 CONFIG_SCHEMA = {
     "dataset": {
         "path":         (str,   True,  None,                                 None),
+        "abnormal_path": (str,  False, None,                                 ""),
+        "target_column": (str,  False, None,                                 ""),
         "train_split":  (float, True,  None,                                 None),
         "val_split":    (float, True,  None,                                 None),
         "test_split":   (float, True,  None,                                 None),
         "random_seed":  (int,   False, None,                                 42),
+        "stratify":     (bool,  False, None,                                 True),
     },
     "preprocessing": {
         "missing_value_strategy": (str,  False, ["mean", "median", "drop", "constant"], "mean"),
         "normalization":          (str,  False, ["standard", "minmax", "none"],         "standard"),
         "encoding":               (str,  False, ["onehot", "label", "none"],            "onehot"),
         "feature_selection":      (bool, False, None,                                   True),
+        "selected_features":      (list, False, None,                                   []),
     },
     "model": {
-        "type":            (str,  True,  ["random_forest", "isolation_forest", "pytorch_mlp"], None),
+        "type":            (str,  True,  None,                                                      None),
+        "name":            (str,  False, None,                                                      ""),
+        "task_type":       (str,  False, ["", "classification", "anomaly"],                         ""),
         "hyperparameters": (dict, False, None,                                                  {}),
     },
     "training": {
         "batch_size":    (int,   False, None, 32),
         "epochs":        (int,   False, None, 50),
         "learning_rate": (float, False, None, 0.001),
+        "tensorboard_enabled": (bool, False, None, False),
+        "tensorboard_log_dir": (str, False, None, "logs/tensorboard"),
     },
     "output": {
         "path":              (str,  False, None,  "checkpoints/"),

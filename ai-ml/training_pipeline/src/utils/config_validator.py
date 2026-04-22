@@ -13,6 +13,8 @@ Validates a loaded config dict against CONFIG_SCHEMA:
 try:
     from src.utils.config_schema import CONFIG_SCHEMA
 except ModuleNotFoundError:
+    from .config_schema import CONFIG_SCHEMA
+except ImportError:
     from utils.config_schema import CONFIG_SCHEMA
 
 

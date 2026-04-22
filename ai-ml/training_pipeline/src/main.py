@@ -1,88 +1,84 @@
-def run_training_pipeline(config):
-    print("\n🚀 Pipeline running successfully!")
-    print("Config:", config)
-import argparse
+"""CLI entrypoint for the training pipeline."""
+
 from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
-
+import os
+from typing import Sequence
 
 try:
-    from src.utils.config_loader import load_config
-    from src.utils.paths import ensure_runtime_dirs
-    from src.utils.seeds import set_seed
+    from src.core.logger import get_logger, log_error
+    from src.core.pipeline import PIPELINE_ROOT, run_training_pipeline
 except ModuleNotFoundError:
-    from utils.config_loader import load_config
-    from utils.paths import ensure_runtime_dirs
-    from utils.seeds import set_seed
-
-
-def _build_arg_parser():
-    parser = argparse.ArgumentParser(description="AI008 Training Pipeline")
-
-    parser.add_argument("--config", type=str, required=True)
-
-    # W7-T3 CLI additions
-    parser.add_argument("--output_dir", type=str, help="Override output directory")
-    parser.add_argument("--batch_size", type=int, help="Override batch size")
-    parser.add_argument("--epochs", type=int, help="Override epochs")
-
-    return parser
     from core.logger import get_logger, log_error
     from core.pipeline import PIPELINE_ROOT, run_training_pipeline
-else:
-    from .core.logger import get_logger, log_error
-    from .core.pipeline import PIPELINE_ROOT, run_training_pipeline
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run integrated PHOENIX training pipeline.")
+    parser = argparse.ArgumentParser(
+        description="Run the PHOENIX training pipeline."
+    )
     parser.add_argument(
         "--config",
         type=str,
         default=str(PIPELINE_ROOT / "configs" / "default_config.yaml"),
-        help="Path to main YAML/JSON config file.",
+        help="Path to the main YAML or JSON config file.",
     )
     parser.add_argument(
         "--preprocessing-config",
+        dest="preprocessing_config",
         type=str,
         default=None,
-        help="Optional JSON config for cleaning/preprocessing.",
+        help="Optional JSON config for cleaning and preprocessing.",
     )
     parser.add_argument(
         "--run-id",
         type=str,
         default=None,
-        help="Optional run identifier for logs/checkpoints.",
+        help="Optional run identifier for logs and checkpoints.",
     )
     parser.add_argument(
         "--no-checkpoint",
         action="store_true",
-        help="Disable checkpoint saving.",
+        help="Disable checkpoint saving for this run.",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default=None,
+        help="Override the output checkpoint directory.",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=None,
+        help="Override the training batch size.",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=None,
+        help="Override the training epochs.",
     )
     return parser
 
-def main():
-    args = _build_arg_parser().parse_args()
 
-    config = load_config(args.config)
+def _apply_cli_overrides(args: argparse.Namespace) -> None:
+    overrides = {
+        "PIPELINE_OUTPUT__PATH": args.output_dir,
+        "PIPELINE_TRAINING__BATCH_SIZE": args.batch_size,
+        "PIPELINE_TRAINING__EPOCHS": args.epochs,
+    }
+    for env_key, value in overrides.items():
+        if value is not None:
+            os.environ[env_key] = str(value)
 
-    
-    if args.output_dir:
-        config["output"]["path"] = args.output_dir
 
-    if args.batch_size:
-        config["training"]["batch_size"] = args.batch_size
+def main(argv: Sequence[str] | None = None) -> int:
+    args = _build_arg_parser().parse_args(argv)
+    _apply_cli_overrides(args)
 
-    if args.epochs:
-        config["training"]["epochs"] = args.epochs
-
-    ensure_runtime_dirs()
-
-    set_seed(config["dataset"]["random_seed"])
-    
     try:
         result = run_training_pipeline(
             config_path=args.config,
@@ -90,7 +86,6 @@ def main():
             run_id=args.run_id,
             save_checkpoint=not args.no_checkpoint,
         )
-        print(json.dumps(result, indent=2))
     except Exception as exc:
         fallback_logger = get_logger(
             name="training_pipeline_error",
@@ -100,6 +95,9 @@ def main():
         log_error(fallback_logger, "Pipeline execution failed", exc=exc)
         raise
 
+    print(json.dumps(result, indent=2, default=str))
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

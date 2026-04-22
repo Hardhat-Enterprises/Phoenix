@@ -27,10 +27,8 @@ from pathlib import Path
 from typing import Union
 
 try:
-except ModuleNotFoundError:
-    from utils.config_validator import validate_config, ConfigValidationError
     from .config_validator import validate_config, ConfigValidationError
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     from utils.config_validator import validate_config, ConfigValidationError
 
 try:
@@ -87,7 +85,8 @@ def _apply_env_overrides(config: dict) -> dict:
     for env_key, env_val in os.environ.items():
         if not env_key.startswith(_ENV_PREFIX):
             continue
-        remainder = env_key[len(_ENV_PREFIX):]           # e.g. TRAINING__LEARNING_RATE
+        # e.g. TRAINING__LEARNING_RATE
+        remainder = env_key[len(_ENV_PREFIX):]
         if "__" not in remainder:
             continue
         section, key = remainder.split("__", 1)
@@ -111,7 +110,7 @@ def _load_yaml(path: Path) -> dict:
             "PyYAML is not installed. Run: pip install pyyaml"
         )
     with open(path, "r", encoding="utf-8-sig") as f:
-        return yaml.safe_load(f) or {}
+        return yaml.safe_load(f) or {} # type: ignore
 
 
 def _load_json(path: Path) -> dict:

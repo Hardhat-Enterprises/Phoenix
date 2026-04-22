@@ -5,11 +5,8 @@ import AboutUs from "./AboutUs";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./Dashboard";
 
-// In this version, I set the default page to "dashboard"
-// so I can test my assigned dashboard task (Item List section)
-
 function App() {
-  const [page, setPage] = useState("dashboard");
+  const [page, setPage] = useState("login");
 
   return (
     <div className="login-page">

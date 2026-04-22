@@ -78,7 +78,9 @@ tracker = ExperimentTracker()
 tracker.start_run(
     experiment_name="disaster_tweet_classifier",
     model_name="logistic_regression",
-    dataset_name="disaster_tweets.csv",
+    model_version="lr_v1",
+    dataset_name="disaster_tweets",
+    dataset_version="disaster_tweets_v1",
     parameters={
         "model": "LogisticRegression",
         "max_iter": 200,
@@ -87,8 +89,7 @@ tracker.start_run(
         "max_features": 5000,
         "stop_words": "english",
         "stratify": True
-    },
-    version="v1"
+    }
 )
 
 tracker.log_metrics({

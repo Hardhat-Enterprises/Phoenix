@@ -3,9 +3,13 @@ import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
 import Sidebar from "./components/Sidebar";
+import Dashboard from "./Dashboard";
+
+// In this version, I set the default page to "dashboard"
+// so I can test my assigned dashboard task (Item List section)
 
 function App() {
-  const [page, setPage] = useState("login");
+  const [page, setPage] = useState("dashboard");
 
   return (
     <div className="login-page">
@@ -35,14 +39,7 @@ function App() {
       <div className="page-content">
         {page === "login" && <LoginForm setPage={setPage} />}
 
-        {page === "dashboard" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} />
-            <div style={{ padding: "20px" }}>
-              <h1>Dashboard</h1>
-            </div>
-          </div>
-        )}
+        {page === "dashboard" && <Dashboard setPage={setPage} />}
 
         {page === "about" && (
           <div style={{ display: "flex" }}>

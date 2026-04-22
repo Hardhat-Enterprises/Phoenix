@@ -1,16 +1,35 @@
+def run_training_pipeline(config):
+    print("\n🚀 Pipeline running successfully!")
+    print("Config:", config)
+import argparse
 from __future__ import annotations
 
 import argparse
 import json
 from pathlib import Path
 
-if __package__ is None or __package__ == "":
-    import sys
 
-    project_root = Path(__file__).resolve().parent.parent
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
+try:
+    from src.utils.config_loader import load_config
+    from src.utils.paths import ensure_runtime_dirs
+    from src.utils.seeds import set_seed
+except ModuleNotFoundError:
+    from utils.config_loader import load_config
+    from utils.paths import ensure_runtime_dirs
+    from utils.seeds import set_seed
 
+
+def _build_arg_parser():
+    parser = argparse.ArgumentParser(description="AI008 Training Pipeline")
+
+    parser.add_argument("--config", type=str, required=True)
+
+    # W7-T3 CLI additions
+    parser.add_argument("--output_dir", type=str, help="Override output directory")
+    parser.add_argument("--batch_size", type=int, help="Override batch size")
+    parser.add_argument("--epochs", type=int, help="Override epochs")
+
+    return parser
     from core.logger import get_logger, log_error
     from core.pipeline import PIPELINE_ROOT, run_training_pipeline
 else:
@@ -45,9 +64,25 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     )
     return parser
 
-
-def main() -> None:
+def main():
     args = _build_arg_parser().parse_args()
+
+    config = load_config(args.config)
+
+    
+    if args.output_dir:
+        config["output"]["path"] = args.output_dir
+
+    if args.batch_size:
+        config["training"]["batch_size"] = args.batch_size
+
+    if args.epochs:
+        config["training"]["epochs"] = args.epochs
+
+    ensure_runtime_dirs()
+
+    set_seed(config["dataset"]["random_seed"])
+    
     try:
         result = run_training_pipeline(
             config_path=args.config,

@@ -27,6 +27,8 @@ from pathlib import Path
 from typing import Union
 
 try:
+except ModuleNotFoundError:
+    from utils.config_validator import validate_config, ConfigValidationError
     from .config_validator import validate_config, ConfigValidationError
 except ImportError:
     from utils.config_validator import validate_config, ConfigValidationError

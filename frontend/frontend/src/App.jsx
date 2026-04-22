@@ -3,6 +3,7 @@ import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
 import Sidebar from "./components/Sidebar";
+import ForgotPassword from "./ForgotPassword";
 
 function App() {
   const [page, setPage] = useState("login");
@@ -22,6 +23,10 @@ function App() {
         {page === "login" && (
           <LoginForm setPage={setPage} />
         )}
+        {page === "forgotPassword" && (
+          <ForgotPassword setPage={setPage} />
+        )}
+
 
         {page === "dashboard" && (
           <div style={{ display: "flex" }}>

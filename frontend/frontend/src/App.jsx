@@ -3,7 +3,7 @@ import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
 import Sidebar from "./components/Sidebar";
-import Footer from "./components/Footer";
+import Footer from "./components/Footer"
 
 function App() {
   const [page, setPage] = useState("login");
@@ -51,7 +51,7 @@ function App() {
             <AboutUs />
           </div>
         )}
-      <Footer />
+      
       </div>
     
     </div>

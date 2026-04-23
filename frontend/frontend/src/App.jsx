@@ -3,6 +3,7 @@ import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
 import Sidebar from "./components/Sidebar";
+import Footer from "./components/Footer";
 
 function App() {
   const [page, setPage] = useState("login");
@@ -34,7 +35,7 @@ function App() {
 
       <div className="page-content">
         {page === "login" && <LoginForm setPage={setPage} />}
-
+        
         {page === "dashboard" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} />
@@ -50,7 +51,9 @@ function App() {
             <AboutUs />
           </div>
         )}
+      <Footer />
       </div>
+    
     </div>
   );
 }

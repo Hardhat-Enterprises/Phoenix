@@ -1,34 +1,64 @@
 services:
   api-gateway:
-    build: ./backend/api-gateway
+    build: 
+      context: ./
+      dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
     ports:
       - "3000:3000"
-    env_file:
-    - ./.env
     environment:
       - SERVICE=api-gateway
+      - USER_SERVICE_URL=user-service:50051
+      - INGESTION_SERVICE_URL=data-ingestion-service:50053
     depends_on:
       - user-service
+      - data-ingestion-service
+    command: sh -c "node -r tsconfig-paths/register dist/api-gateway/src/app.js"
 
   user-service:
-    build: ./backend/user-service
+    build: 
+      context: ./
+      dockerfile: user-service/Dockerfile
     container_name: user-service
     ports:
       - "50051:50051"
-    env_file:
-    - ./.env
     environment:
       - SERVICE=user-service
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=phoenix_user
+      - DB_PASSWORD=phoenix_pass
+      - DB_NAME=phoenix_db
+    depends_on:
+      - postgres
     command: sh -c "node -r tsconfig-paths/register dist/user-service/src/app.js"
 
   data-ingestion-service:
-    build: ./backend/data-ingestion-service
+    build: 
+      context: ./
+      dockerfile: data-ingestion-service/Dockerfile
     container_name: ingestion-service
     ports:
       - "50053:50053"
-    env_file:
-    - ./.env
     environment:
-      - SERVICE=user-service
+      - SERVICE=data-ingestion-service
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=phoenix_user
+      - DB_PASSWORD=phoenix_pass
+      - DB_NAME=phoenix_db
+    depends_on:
+      - postgres
     command: sh -c "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
+
+  postgres:
+    image: postgres:16
+    container_name: phoenix-postgres
+    environment:
+      POSTGRES_DB: phoenix_db
+      POSTGRES_USER: phoenix_user
+      POSTGRES_PASSWORD: phoenix_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./backend/database:/docker-entrypoint-initdb.d

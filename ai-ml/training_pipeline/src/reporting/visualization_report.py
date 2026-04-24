@@ -1,8 +1,7 @@
 from __future__ import annotations
-import argparse
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 import joblib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,132 +15,149 @@ from sklearn.metrics import (
     roc_curve,
 )
 
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Generate static visualization reports from trainer/eval outputs."
-    )
-
-    parser.add_argument(
-        "--predictions",
-        required=True,
-        help="Path to CSV containing prediction outputs.",
-    )
-
-    parser.add_argument(
-        "--output-dir",
-        default="ai-ml/training_pipeline/reports",
-        help="Directory where plots will be saved.",
-    )
-
-    parser.add_argument(
-        "--true-col",
-        default="y_true",
-        help="Column name for true labels in predictions CSV.",
-    )
-    parser.add_argument(
-        "--pred-col",
-        default="y_pred",
-        help="Column name for predicted labels in predictions CSV.",
-    )
-    parser.add_argument(
-    "--score-col",
-    default="y_score",
-        help="Optional column name for predicted probability/score used for ROC, PR, and score distribution.",
-    )
-
-    parser.add_argument(
-        "--importance-csv",
-        default=None,
-        help="Optional CSV with feature importance values. Must contain feature and importance columns.",
-    )
-    parser.add_argument(
-        "--importance-feature-col",
-        default="feature",
-        help="Column name for feature names in importance CSV.",
-    )
-    parser.add_argument(
-        "--importance-value-col",
-        default="importance",
-        help="Column name for importance values in importance CSV.",
-    )
-    parser.add_argument(
-        "--model-path",
-        default=None,
-        help="Optional joblib model path. Used for feature importance if importance CSV is not supplied.",
-    )
-    parser.add_argument(
-        "--feature-names-path",
-        default=None,
-        help="Optional JSON or TXT file containing feature names, used with --model-path.",
-    )
-    parser.add_argument(
-        "--top-n",
-        type=int,
-        default=20,
-        help="Number of top features to show in feature importance chart.",
-    )
-
-    return parser.parse_args()
+try:
+    from torch.utils.tensorboard import SummaryWriter
+except Exception:
+    SummaryWriter = None
 
 
-def ensure_output_dir(path_str: str) -> Path:
-    output_dir = Path(path_str).resolve()
+def ensure_output_dir(path_like: str | Path) -> Path:
+    output_dir = Path(path_like).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 
 
-def load_predictions(
-    csv_path: str,
-    true_col: str,
-    pred_col: str,
-    score_col: Optional[str],
-) -> tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
-    df = pd.read_csv(csv_path)
+def _prepare_binary_scores(y_score: Any | None) -> Optional[np.ndarray]:
+    if y_score is None:
+        return None
 
-    required = [true_col, pred_col]
-    missing = [col for col in required if col not in df.columns]
-    if missing:
-        raise ValueError(f"Missing required prediction columns: {missing}")
+    score_array = np.asarray(y_score)
 
-    y_true = df[true_col].to_numpy()
-    y_pred = df[pred_col].to_numpy()
+    if score_array.ndim == 1:
+        return score_array.astype(float)
 
-    y_score: Optional[np.ndarray] = None
-    if score_col is not None:
-        if score_col not in df.columns:
-            raise ValueError(f"Score column '{score_col}' not found in predictions CSV.")
-        y_score = df[score_col].to_numpy()
+    if score_array.ndim == 2:
+        if score_array.shape[1] == 2:
+            return score_array[:, 1].astype(float)
+        if score_array.shape[1] == 1:
+            return score_array[:, 0].astype(float)
 
-    return y_true, y_pred, y_score
+    return None
+
+
+def _prepare_feature_importance(
+    importance_df: Optional[pd.DataFrame] = None,
+    model: Any | None = None,
+    feature_names: Optional[list[str]] = None,
+    feature_names_path: str | Path | None = None,
+) -> Optional[pd.DataFrame]:
+    if importance_df is not None:
+        df = importance_df.copy()
+
+        if "feature" not in df.columns or "importance" not in df.columns:
+            raise ValueError(
+                "importance_df must contain 'feature' and 'importance' columns."
+            )
+
+        df["importance"] = df["importance"].astype(float)
+        df["importance_abs"] = df["importance"].abs()
+        return df[["feature", "importance", "importance_abs"]]
+
+    if model is None:
+        return None
+
+    resolved_feature_names = feature_names
+    if resolved_feature_names is None and feature_names_path is not None:
+        resolved_feature_names = load_feature_names(feature_names_path)
+
+    if hasattr(model, "feature_importances_"):
+        importance = np.asarray(model.feature_importances_, dtype=float)
+    elif hasattr(model, "coef_"):
+        coef = np.asarray(model.coef_, dtype=float)
+        if coef.ndim == 2:
+            importance = np.mean(np.abs(coef), axis=0)
+        else:
+            importance = np.abs(coef)
+    else:
+        return None
+
+    if resolved_feature_names is None:
+        resolved_feature_names = [f"feature_{i}" for i in range(len(importance))]
+
+    if len(resolved_feature_names) != len(importance):
+        raise ValueError(
+            "Number of feature names does not match number of importance values."
+        )
+
+    return pd.DataFrame(
+        {
+            "feature": resolved_feature_names,
+            "importance": importance,
+            "importance_abs": np.abs(importance),
+        }
+    )
+
+
+def load_feature_names(path_like: str | Path) -> list[str]:
+    path = Path(path_like).resolve()
+
+    if path.suffix.lower() == ".json":
+        with open(path, "r", encoding="utf-8") as file_obj:
+            data = json.load(file_obj)
+
+        if isinstance(data, list):
+            return [str(item) for item in data]
+
+        if isinstance(data, dict):
+            if "feature_names" in data and isinstance(data["feature_names"], list):
+                return [str(item) for item in data["feature_names"]]
+
+        raise ValueError("Unsupported JSON feature names format.")
+
+    if path.suffix.lower() in {".txt", ".csv"}:
+        with open(path, "r", encoding="utf-8") as file_obj:
+            return [line.strip() for line in file_obj if line.strip()]
+
+    raise ValueError("Feature names file must be .json, .txt, or .csv.")
 
 
 def save_confusion_matrix(
     y_true: np.ndarray,
     y_pred: np.ndarray,
     output_dir: Path,
-) -> None:
+    writer: SummaryWriter | None = None,
+    prefix: str = "test",
+) -> str:
     cm = confusion_matrix(y_true, y_pred)
     fig, ax = plt.subplots(figsize=(6, 5))
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot(ax=ax, colorbar=False)
     ax.set_title("Confusion Matrix")
     fig.tight_layout()
-    fig.savefig(output_dir / "confusion_matrix.png", dpi=300, bbox_inches="tight")
+
+    file_path = output_dir / f"{prefix}_confusion_matrix.png"
+    fig.savefig(file_path, dpi=300, bbox_inches="tight")
+
+    if writer is not None:
+        writer.add_figure(f"{prefix}/confusion_matrix", fig)
+
     plt.close(fig)
+    return str(file_path)
 
 
 def save_roc_curve(
     y_true: np.ndarray,
     y_score: Optional[np.ndarray],
     output_dir: Path,
-) -> Optional[float]:
+    writer: SummaryWriter | None = None,
+    prefix: str = "test",
+) -> tuple[Optional[float], Optional[str]]:
     if y_score is None:
-        return None
+        return None, None
 
     unique_classes = np.unique(y_true)
     if len(unique_classes) != 2:
-        return None
+        return None, None
 
     fpr, tpr, _ = roc_curve(y_true, y_score)
     roc_auc = auc(fpr, tpr)
@@ -154,23 +170,31 @@ def save_roc_curve(
     ax.set_title("ROC Curve")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(output_dir / "roc_curve.png", dpi=300, bbox_inches="tight")
-    plt.close(fig)
 
-    return float(roc_auc)
+    file_path = output_dir / f"{prefix}_roc_curve.png"
+    fig.savefig(file_path, dpi=300, bbox_inches="tight")
+
+    if writer is not None:
+        writer.add_figure(f"{prefix}/roc_curve", fig)
+        writer.add_scalar(f"{prefix}/roc_auc", float(roc_auc))
+
+    plt.close(fig)
+    return float(roc_auc), str(file_path)
 
 
 def save_precision_recall_curve(
     y_true: np.ndarray,
     y_score: Optional[np.ndarray],
     output_dir: Path,
-) -> Optional[float]:
+    writer: SummaryWriter | None = None,
+    prefix: str = "test",
+) -> tuple[Optional[float], Optional[str]]:
     if y_score is None:
-        return None
+        return None, None
 
     unique_classes = np.unique(y_true)
     if len(unique_classes) != 2:
-        return None
+        return None, None
 
     precision, recall, _ = precision_recall_curve(y_true, y_score)
     pr_auc = auc(recall, precision)
@@ -182,136 +206,65 @@ def save_precision_recall_curve(
     ax.set_title("Precision-Recall Curve")
     ax.legend()
     fig.tight_layout()
-    fig.savefig(output_dir / "precision_recall_curve.png", dpi=300, bbox_inches="tight")
-    plt.close(fig)
 
-    return float(pr_auc)
+    file_path = output_dir / f"{prefix}_precision_recall_curve.png"
+    fig.savefig(file_path, dpi=300, bbox_inches="tight")
+
+    if writer is not None:
+        writer.add_figure(f"{prefix}/precision_recall_curve", fig)
+        writer.add_scalar(f"{prefix}/pr_auc", float(pr_auc))
+
+    plt.close(fig)
+    return float(pr_auc), str(file_path)
 
 
 def save_prediction_distribution(
     y_pred: np.ndarray,
     y_score: Optional[np.ndarray],
     output_dir: Path,
-) -> None:
+    writer: SummaryWriter | None = None,
+    prefix: str = "test",
+) -> str:
     fig, ax = plt.subplots(figsize=(7, 5))
 
     if y_score is not None:
-        # Histogram
-        ax.hist(y_score, bins=20, density=True, alpha=0.5, label="Histogram")
-
-        # Smooth density line (KDE)
-        try:
-            from scipy.stats import gaussian_kde
-
-            kde = gaussian_kde(y_score)
-            x_vals = np.linspace(min(y_score), max(y_score), 200)
-            y_vals = kde(x_vals)
-
-            ax.plot(x_vals, y_vals, label="Density Curve")
-        except ImportError:
-            print("scipy not installed, skipping density curve")
-
+        ax.hist(y_score, bins=20, alpha=0.7)
         ax.set_title("Prediction Score Distribution")
         ax.set_xlabel("Predicted Score / Probability")
 
+        if writer is not None:
+            writer.add_histogram(f"{prefix}/prediction_scores", y_score)
     else:
         labels, counts = np.unique(y_pred, return_counts=True)
         ax.bar(labels.astype(str), counts)
         ax.set_title("Prediction Distribution")
         ax.set_xlabel("Predicted Class")
 
-    ax.set_ylabel("Density / Frequency")
-    ax.legend()
+        if writer is not None:
+            writer.add_histogram(f"{prefix}/predicted_classes", y_pred)
+
+    ax.set_ylabel("Frequency")
     fig.tight_layout()
-    fig.savefig(output_dir / "prediction_distribution.png", dpi=300, bbox_inches="tight")
+
+    file_path = output_dir / f"{prefix}_prediction_distribution.png"
+    fig.savefig(file_path, dpi=300, bbox_inches="tight")
+
+    if writer is not None:
+        writer.add_figure(f"{prefix}/prediction_distribution", fig)
+
     plt.close(fig)
-
-
-def load_feature_names(path_str: str) -> list[str]:
-    path = Path(path_str).resolve()
-
-    if path.suffix.lower() == ".json":
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        if isinstance(data, list):
-            return [str(x) for x in data]
-
-        if isinstance(data, dict):
-            if "feature_names" in data and isinstance(data["feature_names"], list):
-                return [str(x) for x in data["feature_names"]]
-
-        raise ValueError("Unsupported JSON feature names format.")
-
-    if path.suffix.lower() in {".txt", ".csv"}:
-        with open(path, "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f if line.strip()]
-        return lines
-
-    raise ValueError("Feature names file must be .json, .txt, or .csv.")
-
-
-def get_importance_from_csv(
-    importance_csv: str,
-    feature_col: str,
-    value_col: str,
-) -> pd.DataFrame:
-    df = pd.read_csv(importance_csv)
-
-    missing = [col for col in [feature_col, value_col] if col not in df.columns]
-    if missing:
-        raise ValueError(f"Missing required importance CSV columns: {missing}")
-
-    result = df[[feature_col, value_col]].copy()
-    result.columns = ["feature", "importance"]
-    result["importance"] = result["importance"].astype(float)
-    result["importance_abs"] = result["importance"].abs()
-    return result
-
-
-def get_importance_from_model(
-    model_path: str,
-    feature_names_path: str,
-) -> pd.DataFrame:
-    model = joblib.load(model_path)
-    feature_names = load_feature_names(feature_names_path)
-
-    if hasattr(model, "feature_importances_"):
-        importance = np.asarray(model.feature_importances_, dtype=float)
-    elif hasattr(model, "coef_"):
-        coef = np.asarray(model.coef_, dtype=float)
-        if coef.ndim == 2:
-            importance = np.mean(np.abs(coef), axis=0)
-        else:
-            importance = np.abs(coef)
-    else:
-        raise ValueError(
-            "Model does not expose feature_importances_ or coef_. "
-            "Provide --importance-csv instead."
-        )
-
-    if len(feature_names) != len(importance):
-        raise ValueError(
-            "Number of feature names does not match number of importance values."
-        )
-
-    df = pd.DataFrame(
-        {
-            "feature": feature_names,
-            "importance": importance,
-            "importance_abs": np.abs(importance),
-        }
-    )
-    return df
+    return str(file_path)
 
 
 def save_feature_importance(
     importance_df: pd.DataFrame,
     output_dir: Path,
-    top_n: int,
-) -> None:
+    top_n: int = 20,
+    writer: SummaryWriter | None = None,
+    prefix: str = "test",
+) -> Optional[str]:
     if importance_df.empty:
-        return
+        return None
 
     plot_df = (
         importance_df.sort_values("importance_abs", ascending=False)
@@ -325,15 +278,28 @@ def save_feature_importance(
     ax.set_xlabel("Importance")
     ax.set_ylabel("Feature")
     fig.tight_layout()
-    fig.savefig(output_dir / "feature_importance.png", dpi=300, bbox_inches="tight")
+
+    file_path = output_dir / f"{prefix}_feature_importance.png"
+    fig.savefig(file_path, dpi=300, bbox_inches="tight")
+
+    if writer is not None:
+        writer.add_figure(f"{prefix}/feature_importance", fig)
+        writer.add_histogram(
+            f"{prefix}/feature_importance_values",
+            plot_df["importance_abs"].to_numpy(dtype=float),
+        )
+
     plt.close(fig)
+    return str(file_path)
 
 
 def save_classification_report(
     y_true: np.ndarray,
     y_pred: np.ndarray,
     output_dir: Path,
-) -> dict:
+    writer: SummaryWriter | None = None,
+    prefix: str = "test",
+) -> tuple[dict[str, Any], str, str]:
     report_dict = classification_report(
         y_true,
         y_pred,
@@ -342,16 +308,30 @@ def save_classification_report(
     )
 
     report_df = pd.DataFrame(report_dict).transpose()
-    report_df.to_csv(output_dir / "classification_report.csv", index=True)
+
+    csv_path = output_dir / f"{prefix}_classification_report.csv"
+    json_path = output_dir / f"{prefix}_classification_report.json"
+    png_path = output_dir / f"{prefix}_classification_report.png"
+
+    report_df.to_csv(csv_path, index=True)
+
+    with open(json_path, "w", encoding="utf-8") as file_obj:
+        json.dump(report_dict, file_obj, indent=2)
 
     metric_rows = [
         row for row in report_df.index
         if row not in {"accuracy", "macro avg", "weighted avg"}
     ]
-    summary_rows = [row for row in ["macro avg", "weighted avg"] if row in report_df.index]
+    summary_rows = [
+        row for row in ["macro avg", "weighted avg"]
+        if row in report_df.index
+    ]
     rows_to_plot = metric_rows + summary_rows
 
-    cols_to_plot = [col for col in ["precision", "recall", "f1-score", "support"] if col in report_df.columns]
+    cols_to_plot = [
+        col for col in ["precision", "recall", "f1-score", "support"]
+        if col in report_df.columns
+    ]
     plot_df = report_df.loc[rows_to_plot, cols_to_plot].copy()
 
     fig_height = max(4, 0.6 * len(plot_df) + 1.5)
@@ -378,10 +358,27 @@ def save_classification_report(
 
     ax.set_title("Classification Report", pad=20)
     fig.tight_layout()
-    fig.savefig(output_dir / "classification_report.png", dpi=300, bbox_inches="tight")
-    plt.close(fig)
+    fig.savefig(png_path, dpi=300, bbox_inches="tight")
 
-    return report_dict
+    if writer is not None:
+        writer.add_figure(f"{prefix}/classification_report", fig)
+
+        accuracy_value = report_dict.get("accuracy")
+        if accuracy_value is not None:
+            writer.add_scalar(f"{prefix}/accuracy", float(accuracy_value))
+
+        for avg_name in ["macro avg", "weighted avg"]:
+            avg_metrics = report_dict.get(avg_name, {})
+            for metric_name in ["precision", "recall", "f1-score"]:
+                metric_value = avg_metrics.get(metric_name)
+                if metric_value is not None:
+                    writer.add_scalar(
+                        f"{prefix}/{avg_name.replace(' ', '_')}_{metric_name}",
+                        float(metric_value),
+                    )
+
+    plt.close(fig)
+    return report_dict, str(csv_path), str(png_path)
 
 
 def build_summary(
@@ -391,80 +388,209 @@ def build_summary(
     pr_auc_value: Optional[float],
     feature_importance_created: bool,
     classification_report_created: bool,
-) -> dict:
+    artifact_paths: dict[str, Any],
+    prefix: str,
+) -> dict[str, Any]:
     accuracy = float((y_true == y_pred).mean())
 
     return {
+        "split": prefix,
         "num_rows": int(len(y_true)),
         "accuracy": accuracy,
         "roc_auc": roc_auc_value,
         "pr_auc": pr_auc_value,
         "feature_importance_created": feature_importance_created,
         "classification_report_created": classification_report_created,
-        "classes": [str(x) for x in np.unique(y_true)],
+        "classes": [str(item) for item in np.unique(y_true)],
+        "artifacts": artifact_paths,
     }
 
 
-def main() -> None:
-    args = parse_args()
-    output_dir = ensure_output_dir(args.output_dir)
+def generate_visualization_report(
+    *,
+    y_true: Any,
+    y_pred: Any,
+    y_score: Any | None = None,
+    output_dir: str | Path,
+    prefix: str = "test",
+    tensorboard_enabled: bool = False,
+    tensorboard_log_dir: str | Path | None = None,
+    run_id: str | None = None,
+    importance_df: Optional[pd.DataFrame] = None,
+    model: Any | None = None,
+    feature_names: Optional[list[str]] = None,
+    feature_names_path: str | Path | None = None,
+    top_n: int = 20,
+    extra_metrics: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    resolved_output_dir = ensure_output_dir(output_dir)
 
-    y_true, y_pred, y_score = load_predictions(
-        csv_path=args.predictions,
-        true_col=args.true_col,
-        pred_col=args.pred_col,
-        score_col=args.score_col,
+    y_true_np = np.asarray(y_true)
+    y_pred_np = np.asarray(y_pred)
+    y_score_np = _prepare_binary_scores(y_score)
+
+    writer = None
+    tensorboard_status = "disabled"
+    tb_run_dir = None
+
+    if tensorboard_enabled:
+        if SummaryWriter is None:
+            tensorboard_status = "unavailable"
+        else:
+            base_tb_dir = Path(tensorboard_log_dir or (resolved_output_dir / "tensorboard"))
+            tb_run_dir = (
+                (base_tb_dir / run_id / prefix).resolve()
+                if run_id
+                else (base_tb_dir / prefix).resolve()
+            )
+            tb_run_dir.mkdir(parents=True, exist_ok=True)
+            writer = SummaryWriter(log_dir=str(tb_run_dir))
+            tensorboard_status = "enabled"
+
+    artifact_paths: dict[str, Any] = {}
+
+    artifact_paths["confusion_matrix"] = save_confusion_matrix(
+        y_true=y_true_np,
+        y_pred=y_pred_np,
+        output_dir=resolved_output_dir,
+        writer=writer,
+        prefix=prefix,
     )
 
-    save_confusion_matrix(y_true, y_pred, output_dir)
-    roc_auc_value = save_roc_curve(y_true, y_score, output_dir)
-    pr_auc_value = save_precision_recall_curve(y_true, y_score, output_dir)
-    save_prediction_distribution(y_pred, y_score, output_dir)
+    roc_auc_value, roc_path = save_roc_curve(
+        y_true=y_true_np,
+        y_score=y_score_np,
+        output_dir=resolved_output_dir,
+        writer=writer,
+        prefix=prefix,
+    )
+    artifact_paths["roc_curve"] = roc_path
 
-    classification_report_dict = save_classification_report(y_true, y_pred, output_dir)
-    classification_report_created = classification_report_dict is not None
+    pr_auc_value, pr_path = save_precision_recall_curve(
+        y_true=y_true_np,
+        y_score=y_score_np,
+        output_dir=resolved_output_dir,
+        writer=writer,
+        prefix=prefix,
+    )
+    artifact_paths["precision_recall_curve"] = pr_path
+
+    artifact_paths["prediction_distribution"] = save_prediction_distribution(
+        y_pred=y_pred_np,
+        y_score=y_score_np,
+        output_dir=resolved_output_dir,
+        writer=writer,
+        prefix=prefix,
+    )
+
+    report_dict, report_csv_path, report_png_path = save_classification_report(
+        y_true=y_true_np,
+        y_pred=y_pred_np,
+        output_dir=resolved_output_dir,
+        writer=writer,
+        prefix=prefix,
+    )
+    artifact_paths["classification_report_csv"] = report_csv_path
+    artifact_paths["classification_report_png"] = report_png_path
+    artifact_paths["classification_report_json"] = str(
+        resolved_output_dir / f"{prefix}_classification_report.json"
+    )
 
     feature_importance_created = False
-    importance_df: Optional[pd.DataFrame] = None
+    resolved_importance_df = _prepare_feature_importance(
+        importance_df=importance_df,
+        model=model,
+        feature_names=feature_names,
+        feature_names_path=feature_names_path,
+    )
 
-    if args.importance_csv is not None:
-        importance_df = get_importance_from_csv(
-            importance_csv=args.importance_csv,
-            feature_col=args.importance_feature_col,
-            value_col=args.importance_value_col,
-        )
-    elif args.model_path is not None and args.feature_names_path is not None:
-        importance_df = get_importance_from_model(
-            model_path=args.model_path,
-            feature_names_path=args.feature_names_path,
-        )
+    if resolved_importance_df is not None:
+        importance_csv_path = resolved_output_dir / f"{prefix}_feature_importance.csv"
+        resolved_importance_df.to_csv(importance_csv_path, index=False)
+        artifact_paths["feature_importance_csv"] = str(importance_csv_path)
 
-    if importance_df is not None:
-        save_feature_importance(
-            importance_df=importance_df,
-            output_dir=output_dir,
-            top_n=args.top_n,
+        feature_plot_path = save_feature_importance(
+            importance_df=resolved_importance_df,
+            output_dir=resolved_output_dir,
+            top_n=top_n,
+            writer=writer,
+            prefix=prefix,
         )
-        feature_importance_created = True
+        artifact_paths["feature_importance_png"] = feature_plot_path
+        feature_importance_created = feature_plot_path is not None
+    else:
+        artifact_paths["feature_importance_csv"] = None
+        artifact_paths["feature_importance_png"] = None
+
+    if writer is not None and extra_metrics:
+        for metric_name, metric_value in extra_metrics.items():
+            if isinstance(metric_value, (int, float, np.integer, np.floating)):
+                writer.add_scalar(f"{prefix}/metric_{metric_name}", float(metric_value))
 
     summary = build_summary(
-        y_true=y_true,
-        y_pred=y_pred,
+        y_true=y_true_np,
+        y_pred=y_pred_np,
         roc_auc_value=roc_auc_value,
         pr_auc_value=pr_auc_value,
         feature_importance_created=feature_importance_created,
-        classification_report_created=classification_report_created,
+        classification_report_created=report_dict is not None,
+        artifact_paths=artifact_paths,
+        prefix=prefix,
     )
 
-    with open(output_dir / "summary.json", "w", encoding="utf-8") as f:
-        json.dump(summary, f, indent=2)
+    if extra_metrics:
+        summary["extra_metrics"] = extra_metrics
 
-    with open(output_dir / "classification_report.json", "w", encoding="utf-8") as f:
-        json.dump(classification_report_dict, f, indent=2)
+    summary["tensorboard"] = {
+        "enabled": tensorboard_enabled,
+        "status": tensorboard_status,
+        "log_dir": str(tb_run_dir) if tb_run_dir is not None else None,
+    }
 
-    print("Visualization report generation complete.")
-    print(f"Outputs saved to: {output_dir}")
+    summary_path = resolved_output_dir / f"{prefix}_summary.json"
+    with open(summary_path, "w", encoding="utf-8") as file_obj:
+        json.dump(summary, file_obj, indent=2)
+    artifact_paths["summary_json"] = str(summary_path)
+
+    if writer is not None:
+        writer.flush()
+        writer.close()
+
+    return summary
 
 
-if __name__ == "__main__":
-    main()
+def generate_split_visualizations(
+    *,
+    y_true: Any,
+    y_pred: Any,
+    y_score: Any | None = None,
+    base_output_dir: str | Path,
+    split_name: str,
+    tensorboard_enabled: bool = False,
+    tensorboard_log_dir: str | Path | None = None,
+    run_id: str | None = None,
+    importance_df: Optional[pd.DataFrame] = None,
+    model: Any | None = None,
+    feature_names: Optional[list[str]] = None,
+    feature_names_path: str | Path | None = None,
+    top_n: int = 20,
+    extra_metrics: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    split_output_dir = ensure_output_dir(Path(base_output_dir) / split_name)
+
+    return generate_visualization_report(
+        y_true=y_true,
+        y_pred=y_pred,
+        y_score=y_score,
+        output_dir=split_output_dir,
+        prefix=split_name,
+        tensorboard_enabled=tensorboard_enabled,
+        tensorboard_log_dir=tensorboard_log_dir,
+        run_id=run_id,
+        importance_df=importance_df,
+        model=model,
+        feature_names=feature_names,
+        feature_names_path=feature_names_path,
+        top_n=top_n,
+        extra_metrics=extra_metrics,
+    )

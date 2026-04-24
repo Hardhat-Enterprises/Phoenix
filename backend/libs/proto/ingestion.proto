@@ -5,6 +5,7 @@ package ingestion;
 service IngestionService {
   rpc GetIngestionHealth (GetIngestionHealthRequest) returns (GetIngestionHealthResponse);
   rpc IngestData (IngestDataRequest) returns (IngestDataResponse);
+  rpc CreateHazardData (CreateHazardRequest) returns (CreateHazardResponse);
 }
 
 message GetIngestionHealthRequest {}
@@ -24,4 +25,22 @@ message IngestDataResponse {
   int32 status = 1;
   string message = 2;
   string ingestionId = 3;
+}
+
+message CreateHazardRequest {
+  string hazard_type = 1;
+  string severity_level = 2;
+  string event_status = 3;
+  string geo_location_id = 4;
+  string start_time = 5;
+  string end_time = 6;
+  string source_ref_event = 7;
+  string description = 8;
+}
+
+message CreateHazardResponse {
+  int32 status = 1;
+  string message = 2;
+  string ingestionId = 3;
+  string failedReason = 4;
 }

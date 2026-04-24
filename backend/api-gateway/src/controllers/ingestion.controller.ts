@@ -33,3 +33,19 @@ export const ingestData = (req: Request, res: Response): void => {
       .json(response);
   });
 };
+
+export const createHazard = (req: Request, res: Response): void => {
+  ingestionGrpcClient.CreateHazardData(req.body, (error: any, response: any) => {
+    if (error) {
+      logger.error(`Error calling CreateHazardData: ${error}`);
+      res
+        .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+        .json({ message: "Error creating hazard data" });
+      return;
+    }
+
+    res
+      .status(response?.status || HttpStatusCode.HTTP_STATUS_OK)
+      .json(response);
+  });
+};

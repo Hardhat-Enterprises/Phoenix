@@ -3,11 +3,16 @@
 data:
   pipeline: AI008
   cleaning: AI003
+  input_path: ai-ml/ai009_baseline/outputs/p2_cleaned_data.csv
+  target_column: label
+  feature_columns:
+    - temperature
+    - humidity
 
 model:
   name: baseline_model
   version: v1
-  save_path: models/baseline_logisticregression_v1.pkl
+  save_path: ai-ml/ai009_baseline/models/baseline_logisticregression_v1.pkl
 
 training:
   seed: 42
@@ -15,6 +20,8 @@ training:
   val_size: 0.1
 
 outputs:
-  metrics: outputs/metrics_test.json
-  predictions: outputs/predictions_val.csv
-  conf_matrix: outputs/conf_matrix_test.png
+  metrics_val: ai-ml/ai009_baseline/outputs/metrics_val.json
+  metrics_test: ai-ml/ai009_baseline/outputs/metrics_test.json
+  predictions_val: ai-ml/ai009_baseline/outputs/predictions_val.csv
+  predictions_test: ai-ml/ai009_baseline/outputs/predictions_test.csv
+  conf_matrix_test: ai-ml/ai009_baseline/outputs/conf_matrix_test.png

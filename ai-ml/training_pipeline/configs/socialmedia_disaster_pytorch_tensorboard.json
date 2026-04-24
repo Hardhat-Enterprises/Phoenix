@@ -1,6 +1,6 @@
-{
+﻿{
   "dataset": {
-    "path": "artifacts/socialmedia_disaster_prepared.csv",
+    "path": "../datasets/socialmedia_disaster_numeric_binary.csv",
     "abnormal_path": "",
     "target_column": "label",
     "train_split": 0.7,
@@ -13,27 +13,37 @@
     "missing_value_strategy": "mean",
     "normalization": "standard",
     "encoding": "none",
-    "feature_selection": false
+    "feature_selection": true,
+    "selected_features": [
+      "_unit_id",
+      "_trusted_judgments",
+      "choose_one_confidence",
+      "tweetid"
+    ]
   },
   "model": {
     "type": "pytorch_mlp",
     "task_type": "classification",
     "hyperparameters": {
-      "input_dim": 5,
+      "input_dim": 4,
       "hidden_dim": 64,
       "output_dim": 2
     }
   },
   "training": {
-    "batch_size": 32,
-    "epochs": 12,
+    "batch_size": 64,
+    "epochs": 200,
     "learning_rate": 0.001,
-    "verbose": true
+    "verbose": true,
+    "tensorboard_enabled": true,
+    "tensorboard_log_dir": "logs/tensorboard"
   },
   "output": {
     "path": "checkpoints",
     "log_path": "logs",
+    "reports_path": "reports",
     "save_best_only": true,
-    "checkpoint_prefix": "socialmedia"
+    "previous_checkpoints_to_keep": 3,
+    "checkpoint_prefix": "socialmedia_pytorch_tb"
   }
 }

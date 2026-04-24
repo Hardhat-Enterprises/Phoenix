@@ -174,6 +174,7 @@ def preprocess_features(
     preprocessing_config: dict[str, Any] | None = None,
     selected_features: list[str] | None = None,
     target_column: str | None = None,
+    time_column: str | None = None,
 ) -> tuple[pd.DataFrame, list[dict[str, str]]]:
     """
     Apply cleaning pipeline first, then preprocessing steps.
@@ -212,6 +213,15 @@ def preprocess_features(
         encoding_config["exclude_columns"] = sorted(encoding_exclude)
         normalization_config["exclude_columns"] = sorted(normalization_exclude)
         _log(events, "target_protection", f"excluded_from_transform={target_column}")
+
+    if time_column and time_column in processed.columns:
+        encoding_exclude = set(encoding_config.get("exclude_columns", []))
+        normalization_exclude = set(normalization_config.get("exclude_columns", []))
+        encoding_exclude.add(time_column)
+        normalization_exclude.add(time_column)
+        encoding_config["exclude_columns"] = sorted(encoding_exclude)
+        normalization_config["exclude_columns"] = sorted(normalization_exclude)
+        _log(events, "time_protection", f"excluded_from_transform={time_column}")
 
     processed = apply_encoding(
         processed,

@@ -31,6 +31,7 @@ class DatasetSplitter:
         val_size: float = 0.2,
         random_seed: int = 42,
         stratify: bool = True,
+        time_column: Optional[str] = None,
     ) -> SplitDataset:
         if not 0 < test_size < 1:
             raise ValueError("test_size must be between 0 and 1.")
@@ -41,6 +42,47 @@ class DatasetSplitter:
         if test_size + val_size >= 1:
             raise ValueError("test_size + val_size must be less than 1.")
 
+        # Handle time-series split if time_column is provided
+        if time_column is not None:
+            if time_column not in x.columns:
+                raise ValueError(f"Time column '{time_column}' not found in dataset.")
+            
+            # Combine x and y for sorting
+            combined = x.copy()
+            if y is not None:
+                combined[y.name] = y
+            
+            # Sort by time
+            combined = combined.sort_values(time_column).reset_index(drop=True)
+            
+            # Split indices
+            n = len(combined)
+            train_end = int(n * (1 - val_size - test_size))
+            val_end = int(n * (1 - test_size))
+            
+            train_indices = combined.index[:train_end]
+            val_indices = combined.index[train_end:val_end]
+            test_indices = combined.index[val_end:]
+            
+            # Split data
+            x_train = combined.loc[train_indices, x.columns].reset_index(drop=True)
+            x_val = combined.loc[val_indices, x.columns].reset_index(drop=True)
+            x_test = combined.loc[test_indices, x.columns].reset_index(drop=True)
+            
+            y_train = None if y is None else combined.loc[train_indices, y.name].reset_index(drop=True)
+            y_val = None if y is None else combined.loc[val_indices, y.name].reset_index(drop=True)
+            y_test = None if y is None else combined.loc[test_indices, y.name].reset_index(drop=True)
+            
+            return SplitDataset(
+                x_train=x_train,
+                x_val=x_val,
+                x_test=x_test,
+                y_train=y_train,
+                y_val=y_val,
+                y_test=y_test,
+            )
+
+        # Original random split logic
         stratify_labels = y if (y is not None and stratify) else None
 
         # first split: train vs temp

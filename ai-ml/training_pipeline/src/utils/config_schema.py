@@ -38,13 +38,17 @@ CONFIG_SCHEMA = {
         "batch_size":    (int,   False, None, 32),
         "epochs":        (int,   False, None, 50),
         "learning_rate": (float, False, None, 0.001),
+        "verbose":       (bool,  False, None, True),
         "tensorboard_enabled": (bool, False, None, False),
         "tensorboard_log_dir": (str, False, None, "logs/tensorboard"),
     },
     "output": {
         "path":              (str,  False, None,  "checkpoints/"),
         "log_path":          (str,  False, None,  "logs/"),
+        "reports_path":      (str,  False, None,  "reports/"),
         "save_best_only":    (bool, False, None,  True),
+        "organize_checkpoints_by_run": (bool, False, None, True),
+        "previous_checkpoints_to_keep": (int, False, None, 3),
         "checkpoint_prefix": (str,  False, None,  "model"),
     },
 }

@@ -1,41 +1,44 @@
-# configs/default.yaml
-# Default configuration for AI008 training pipeline
-# All parameters can be overridden via CLI or environment variables (W6-T2)
+# Default demo configuration for the PHOENIX training pipeline.
+# This is intentionally small and quick to run from CLI or notebook.
 
-# --- Data ---
 dataset:
-  path: "data/raw/example.csv"              # Path to main dataset
-  abnormal_path: "data/raw/abnormal.csv"    # Optional abnormal / edge-case dataset
-  target_column: "label"                    # Optional target column for supervised tasks
+  path: "data/raw/example.csv"
+  abnormal_path: ""
+  target_column: "label"
   train_split: 0.7
   val_split: 0.15
   test_split: 0.15
   random_seed: 42
-  stratify: true                            # Use stratified split when target column exists
+  stratify: true
 
-# --- Preprocessing ---
 preprocessing:
-  missing_value_strategy: "mean"            # Options: mean, median, drop, constant
-  normalization: "standard"                 # Options: standard, minmax, none
-  encoding: "onehot"                        # Options: onehot, label, none
-  feature_selection: true
+  missing_value_strategy: "mean"
+  normalization: "standard"
+  encoding: "none"
+  feature_selection: false
+  selected_features: []
 
-# --- Model ---
 model:
-  type: "random_forest"                     # Options: random_forest, isolation_forest, pytorch_mlp
+  type: "pytorch_mlp"
+  task_type: "classification"
   hyperparameters:
-    n_estimators: 100
-    max_depth: 10
+    input_dim: 2
+    hidden_dim: 16
+    output_dim: 2
 
-# --- Training ---
 training:
-  batch_size: 32
-  epochs: 50
+  batch_size: 8
+  epochs: 5
   learning_rate: 0.001
+  verbose: true
+  tensorboard_enabled: true
+  tensorboard_log_dir: "logs/tensorboard"
 
-# --- Output ---
 output:
   path: "checkpoints/"
   log_path: "logs/"
+  reports_path: "reports/"
   save_best_only: true
-  checkpoint_prefix: "model"
+  organize_checkpoints_by_run: true
+  previous_checkpoints_to_keep: 1
+  checkpoint_prefix: "demo_pipeline"

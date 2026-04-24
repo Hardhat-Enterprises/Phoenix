@@ -23,6 +23,21 @@ class DatasetLoader:
     SUPPORTED_EXTENSIONS = {".csv"}
 
     @staticmethod
+    def from_dataframe(
+        df: pd.DataFrame,
+        name: str = "in_memory_dataset",
+    ) -> LoadedDataset:
+        """Wrap an in-memory dataframe so the pipeline can treat it like a loaded dataset."""
+        if df.empty:
+            raise ValueError("Loaded dataset is empty: in-memory dataframe")
+
+        return LoadedDataset(
+            name=name,
+            data=df.copy(),
+            path=Path(f"<in-memory>/{name}.csv"),
+        )
+
+    @staticmethod
     def load_csv(path: str | Path, name: Optional[str] = None) -> LoadedDataset:
         file_path = Path(path)
 

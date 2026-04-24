@@ -1,0 +1,41 @@
+# configs/default.yaml
+# Default configuration for AI008 training pipeline
+# All parameters can be overridden via CLI or environment variables (W6-T2)
+
+# --- Data ---
+dataset:
+  path: "data/raw/example.csv"              # Path to main dataset
+  abnormal_path: "data/raw/abnormal.csv"    # Optional abnormal / edge-case dataset
+  target_column: "label"                    # Optional target column for supervised tasks
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  random_seed: 42
+  stratify: true                            # Use stratified split when target column exists
+
+# --- Preprocessing ---
+preprocessing:
+  missing_value_strategy: "mean"            # Options: mean, median, drop, constant
+  normalization: "standard"                 # Options: standard, minmax, none
+  encoding: "onehot"                        # Options: onehot, label, none
+  feature_selection: true
+
+# --- Model ---
+model:
+  type: "random_forest"                     # Options: random_forest, isolation_forest, pytorch_mlp
+  hyperparameters:
+    n_estimators: 100
+    max_depth: 10
+
+# --- Training ---
+training:
+  batch_size: 32
+  epochs: 50
+  learning_rate: 0.001
+
+# --- Output ---
+output:
+  path: "checkpoints/"
+  log_path: "logs/"
+  save_best_only: true
+  checkpoint_prefix: "model"

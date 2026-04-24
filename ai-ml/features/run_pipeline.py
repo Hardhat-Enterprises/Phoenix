@@ -11,6 +11,7 @@ from datasets import (
 )
 from data_cleaning_pipeline import run_cleaning_pipeline
 from feature_engineer import FeatureEngineer
+from src.model_setup import setup_model
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -56,6 +57,10 @@ def main():
     # AI003 CLEANING STEP (NEW REQUIRED STEP)
     cleaned_df, events = run_cleaning_pipeline(df, config)
 
+    # P4 – Model Setup
+    model, model_save_path, model_config = setup_model()
+
+    # P5 – Feature Engineering
     fe = FeatureEngineer(cleaned_df)
     result = fe.run()
 

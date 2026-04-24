@@ -26,7 +26,7 @@
   },
   "training": {
     "batch_size": 32,
-    "epochs": 30,
+    "epochs": 200,
     "learning_rate": 0.001,
     "verbose": true,
     "tensorboard_enabled": true,

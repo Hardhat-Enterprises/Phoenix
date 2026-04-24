@@ -44,6 +44,34 @@ The notebook is a step-by-step "How to use" guide with print statements showing 
 
 ## Config
 
+## How to Run
+
+### 1. Install dependency
+
+From `ai-ml/training_pipeline`:
+
+```bash
+pip install pyyaml
+```
+
+### 2. Run with the Windows runner (recommended)
+
+From `ai-ml/training_pipeline`:
+
+```bat
+run_pipeline.bat
+```
+
+The runner will prompt for a config file path.
+If you press Enter, it uses:
+
+```text
+configs\default_config.yaml
+```
+
+### 3. Run directly with Python
+
+From `ai-ml/training_pipeline`:
 Main config example:
 
 - `ai-ml/training_pipeline/configs/default_config.yaml`
@@ -104,6 +132,13 @@ result = run_training_pipeline(
 print(result)
 ```
 
+From the repository root:
+
+```bash
+python ai-ml/training_pipeline/src/main.py --config ai-ml/training_pipeline/configs/default_config.yaml
+```
+
+## Design Rules
 ## Outputs
 
 - Logs: `ai-ml/training_pipeline/logs/*.log`

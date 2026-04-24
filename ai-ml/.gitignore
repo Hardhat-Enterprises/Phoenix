@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+
+# Mac
+.DS_Store
+
+# Virtual env
+venv/
+
+# Data files
+datasets/
+
+# Experiment outputs
+Sample Records/

@@ -157,8 +157,10 @@ def run_training_pipeline(
     dataset_path = _resolve_path(PIPELINE_ROOT, dataset_cfg.get("path"))
     abnormal_raw = dataset_cfg.get("abnormal_path")
     target_raw = dataset_cfg.get("target_column")
+    time_raw = dataset_cfg.get("time_column")
     abnormal_path = _resolve_path(PIPELINE_ROOT, abnormal_raw) if abnormal_raw else None
     target_column = target_raw if target_raw else None
+    time_column = time_raw if time_raw else None
 
     if dataset_path is None:
         raise ValueError("dataset.path is required in config.")
@@ -189,6 +191,7 @@ def run_training_pipeline(
         cleaning_config=cleaning_config,
         preprocessing_config=preprocessing_config,
         target_column=target_column,
+        time_column=time_column,
     )
     log_run_event(
         logger,
@@ -206,6 +209,7 @@ def run_training_pipeline(
         val_size=float(dataset_cfg.get("val_split", 0.2)),
         random_seed=seed,
         stratify=bool(dataset_cfg.get("stratify", True)),
+        time_column=time_column,
     )
 
     training_verbose = bool(config.get("training", {}).get("verbose", False))

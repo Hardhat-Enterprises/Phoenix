@@ -3,6 +3,7 @@
     "path": "artifacts/socialmedia_disaster_prepared.csv",
     "abnormal_path": "",
     "target_column": "label",
+    "time_column": "timestamp",
     "train_split": 0.7,
     "val_split": 0.15,
     "test_split": 0.15,

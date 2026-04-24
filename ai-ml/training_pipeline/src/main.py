@@ -44,6 +44,17 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         help="Disable checkpoint saving for this run.",
     )
     parser.add_argument(
+        "--resume-from",
+        type=str,
+        default=None,
+        help="Optional checkpoint path to resume training from.",
+    )
+    parser.add_argument(
+        "--rollback-best",
+        action="store_true",
+        help="Copy the best checkpoint to a rollback checkpoint after training.",
+    )
+    parser.add_argument(
         "--output_dir",
         type=str,
         default=None,
@@ -85,6 +96,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             preprocessing_config_path=args.preprocessing_config,
             run_id=args.run_id,
             save_checkpoint=not args.no_checkpoint,
+            resume_from=args.resume_from,
+            rollback_best=args.rollback_best,
         )
     except Exception as exc:
         fallback_logger = get_logger(

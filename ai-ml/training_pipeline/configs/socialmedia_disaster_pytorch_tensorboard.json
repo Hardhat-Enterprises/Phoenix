@@ -41,7 +41,9 @@
   "output": {
     "path": "checkpoints",
     "log_path": "logs",
+    "reports_path": "reports",
     "save_best_only": true,
+    "previous_checkpoints_to_keep": 3,
     "checkpoint_prefix": "socialmedia_pytorch_tb"
   }
 }

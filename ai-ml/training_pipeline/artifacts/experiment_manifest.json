@@ -1,9 +1,11 @@
 {
-  "run_id": "pipeline_notebook_demo",
-  "timestamp_utc": "2026-04-16T15:50:54.233567Z",
-  "files": [
-    "configs/default_config.yaml",
-    "logs",
-    "checkpoints"
-  ]
+  "purpose": "Generic training pipeline output manifest template",
+  "paths_are_relative_to": "ai-ml/training_pipeline",
+  "expected_outputs": {
+    "logs": "logs/",
+    "checkpoints": "checkpoints/",
+    "tensorboard": "logs/tensorboard/",
+    "experiment_reports": "reports/"
+  },
+  "recommended_config": "configs/socialmedia_disaster_pytorch_tensorboard.json"
 }

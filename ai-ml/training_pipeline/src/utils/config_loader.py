@@ -42,9 +42,9 @@ except ImportError:
 
 def _coerce(value: str):
     """Auto-coerce a string env var value to bool / int / float / str."""
-    if value.lower() in ("true", "yes", "1"):
+    if value.lower() in ("true", "yes"):
         return True
-    if value.lower() in ("false", "no", "0"):
+    if value.lower() in ("false", "no"):
         return False
     try:
         return int(value)

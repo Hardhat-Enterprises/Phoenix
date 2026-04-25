@@ -132,7 +132,7 @@ All request bodies are subject to a fixed maximum payload size of **5 KB**, enfo
 
 | Code | Condition |
 |---|---|
-| `400 Bad Request` | Missing required field, invalid enum value, field too long, or payload exceeds 5 KB |
+| `400 Bad Request` | Missing required field, invalid enum value, field too long or payload exceeds 5 KB |
 | `401 Unauthorized` | JWT absent, malformed or expired |
 | `403 Forbidden` | Authenticated user's role is not `admin` or `council_officer` |
 | `429 Too Many Requests` | Rate limit exceeded; includes `Retry-After` header |
@@ -363,7 +363,7 @@ The `signature` field is required. An alert verification request submitted witho
 
 | Code | Condition |
 |---|---|
-| `400 Bad Request` | Invalid or disallowed status value, or payload exceeds 5 KB |
+| `400 Bad Request` | Invalid or disallowed status value or payload exceeds 5 KB |
 | `401 Unauthorized` | JWT absent, malformed or expired |
 | `403 Forbidden` | Authenticated user's role is not `admin` |
 | `404 Not Found` | No alert found with the given ID |

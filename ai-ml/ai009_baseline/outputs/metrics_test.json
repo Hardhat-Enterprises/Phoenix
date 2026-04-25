@@ -1,0 +1,38 @@
+{
+  "model_name": "baseline_logistic_regression",
+  "model_version": "v1",
+  "seed": 42,
+  "dataset_used": "p2_cleaned_data.csv",
+  "train_rows": 14,
+  "validation_rows": 2,
+  "test_rows": 4,
+  "features_used": [
+    "temperature",
+    "humidity"
+  ],
+  "target_column": "label",
+  "validation_metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0
+  },
+  "test_metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "roc_auc": 1.0
+  },
+  "test_confusion_matrix": [
+    [
+      2,
+      0
+    ],
+    [
+      0,
+      2
+    ]
+  ]
+}

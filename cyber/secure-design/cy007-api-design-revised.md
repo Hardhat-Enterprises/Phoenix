@@ -3,7 +3,6 @@
 
 **Project:** Project Phoenix – TEAVS (Trusted Emergency Alert Verification System)\
 **Task Group:** CY007 – TEAVS API Design\
-**Sub-task:** Define endpoints
 
 ---
 

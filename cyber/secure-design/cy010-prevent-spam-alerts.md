@@ -1,8 +1,8 @@
-# CY009 – Rate Limiting & Abuse Prevention
+# CY010 – Rate Limiting & Abuse Prevention
 ## Sub-task: Prevent Spam Alerts
 
 **Project:** Project Phoenix – TEAVS (Trusted Emergency Alert Verification System)\
-**Task Group:** CY009 – Rate Limiting & Abuse Prevention\
+**Task Group:** CY010 – Rate Limiting & Abuse Prevention\
 **Sub-task:** Prevent Spam Alerts
 
 
@@ -18,7 +18,6 @@
    - [Layer 3 – Rate Limiting, Throttling and Duplicate Detection Gate](#layer-3--rate-limiting-throttling-and-duplicate-detection-gate)
 4. [How Controls Fit into the Alert Flow](#3-how-controls-fit-into-the-alert-flow)
 5. [Anti-Spam Controls Summary](#4-anti-spam-controls-summary)
-6. [Assumptions](#assumptions)
 
 ---
 
@@ -26,7 +25,7 @@
 
 This document defines how the TEAVS system detects and blocks spam, fake, repeated and abusive alert submissions. It explains what counts as spam in this project's context, describes the three sequential prevention layers applied to every alert creation request, maps each control to its position in the alert submission flow and summarises the full set of anti-spam mechanisms.
 
-This design works alongside the authentication design (CY007), the input validation design (CY008), the rate limiting thresholds (CY009) and the alert lifecycle design (CY006). It forms the abuse prevention layer of the integrated security architecture (CY011).
+This design works alongside the authentication design (CY008), the input validation design (CY009), the rate limiting thresholds (CY010) and the alert lifecycle design (CY007). It forms the abuse prevention layer of the integrated security architecture (CY012).
 
 ---
 
@@ -35,7 +34,7 @@ This design works alongside the authentication design (CY007), the input validat
 In the context of TEAVS, a spam alert is any alert submission that is:
 
 - **Unauthorised** – submitted by a user whose role does not permit alert creation.
-- **Duplicate or near-duplicate** – the same or substantially similar alert content submitted repeatedly in a short time window by the same source.
+- **Duplicate or near-duplicate** – an alert with matching `title`, `message`, `disaster_type` and `location` submitted again by the same source within a **5-minute window**.
 - **Volume-abusive** – an authorised user submitting alerts at a rate that exceeds legitimate operational need.
 - **Automated or bot-driven** – scripted or programmatic submissions not backed by a real disaster or threat event.
 - **Structurally invalid but persistent** – malformed submissions that repeatedly fail validation, indicating probing or flooding behaviour rather than honest error.
@@ -72,13 +71,14 @@ Authorised users who have cleared authentication and role checks are subject to 
 
 - A submission rate cap of **10 `POST /api/alerts` requests per minute per authenticated user**. Exceeding this returns `429 Too Many Requests` with a `Retry-After` header.
 - **Progressive throttling** that slows or delays responses for rapid successive submissions approaching the rate limit ceiling, before the hard cap is applied.
-- **Duplicate and near-duplicate detection**: alert submissions with substantially similar content (title, message, disaster type, location) from the same source within a short time window are flagged for manual review and may result in temporary creation restrictions.
-- **Temporary access restriction** for users or IP addresses that persistently and repeatedly violate rate limits OR keeps triggering duplicate detection across multiple time windows.
+- **Duplicate and near-duplicate detection**: the system checks incoming submissions against a **similarity key of `title` + `message` + `disaster_type` + `location`**. If a matching submission from the same source is detected within a **5-minute window**, it is flagged for manual review and creation is restricted. This window operates independently of the rate limiting window — rate limiting controls request volume, while duplicate detection controls content repetition regardless of how slowly the requests arrive.
+- **Temporary access restriction** for users or IP addresses that persistently violate rate limits or repeatedly trigger duplicate detection accross multiple time window. This follows the same escalation model used for brute-force protection: an **initial restriction of 15 minutes** is applied on the first sustained violation, with the restriction duration increasing for each repeated offence. The admin is notified when a restriction is applied.
+- A **fixed request size cap of 5 KB** is enforced at the API layer. This is a balanced value that prevents oversized or abusive payloads without affecting normal alert submissions.
 
 **What this stops:**
-- A compromised council officer account flooding the system —> caught by the rate limit.
-- An authorised user submitting the same alert slowly but repeatedly —> caught by duplicate detection.
-- Sustained repeated abuse —> caught by temporary access restriction.
+- A compromised council officer (user with valid token) account flooding the system → caught by the rate limit and throttling.
+- An authorised user submitting the same alert slowly but repeatedly → caught by duplicate detection (5-minute window, similarity key: `title` + `message` + `disaster_type` + `location`).
+- Sustained repeated abuse → caught by temporary access restriction (initial 15-minute block, escalating on repeat violations).
 
 ---
 
@@ -96,7 +96,7 @@ Client → POST /api/alerts
 [2] RBAC Role Check (admin or council_officer only)
     │ Fail → 403 Forbidden
     ▼
-[3] Request Size Check (max 2 KB – 10 KB)
+[3] Request Size Check (fixed cap: 5 KB)
     │ Fail → 400 Bad Request
     ▼
 [4] Input Validation (field types, lengths, enum values, format)
@@ -109,7 +109,10 @@ Client → POST /api/alerts
     │ Pattern detected → progressive delay or early 429
     ▼
 [7] Duplicate / Similar Content Detection
+    │ Key: title + message + disaster_type + location
+    │ Window: 5 minutes per source (independent of rate limit window)
     │ Match found → flag for review; restrict creation
+    │ Repeated violations → 15-min restriction (escalating on repeat offences)
     ▼
 [8] Alert Created → Status: Draft (enters TEAVS lifecycle)
     │
@@ -129,14 +132,13 @@ Once an alert passes all controls and is created, it enters the TEAVS alert life
 | Role Enforcement | RBAC role check from JWT payload | All `POST /api/alerts` requests | `403 Forbidden` |
 | Rate Limiting | 10 requests per minute per authenticated user | `POST /api/alerts` | `429 Too Many Requests` + `Retry-After` |
 | Throttling | Progressive delay for rapid successive requests | Sensitive endpoints including alert creation | `429` after cooldown period |
-| Duplicate Detection | Near-identical content from same source in short window | `POST /api/alerts` | Flagged for review; creation restricted |
+| Duplicate Detection | Similarity key: `title` + `message` + `disaster_type` + `location`; 5-minute window per source | `POST /api/alerts` | Flagged for review; creation restricted |
 | Input Validation | Field type, format, enum and length checks | All request fields | `400 Bad Request` with field detail |
-| Request Size Cap | Maximum payload size enforced at API layer | All endpoints | `400 Bad Request` |
-| Temporary Blocking | Sustained violations trigger access suspension | Per user / per IP | Access suspended; admin notified |
+| Request Size Cap | Fixed 5 KB maximum payload size enforced at API layer | All endpoints | `400 Bad Request` |
+| Temporary Restriction | Initial 15-min block on sustained violations; duration escalates on repeat offences | Per user / per IP | Access suspended; admin notified |
 | Audit Logging | All rejection and suspicious events captured | All endpoints and control points | Logged with timestamp, IP, user, action |
 
 ---
-
 
 
 

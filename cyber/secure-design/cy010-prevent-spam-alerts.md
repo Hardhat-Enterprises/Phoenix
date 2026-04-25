@@ -120,7 +120,7 @@ Client → POST /api/alerts
 [9] All events logged (including all rejection points above)
 ```
 
-Once an alert passes all controls and is created, it enters the TEAVS alert lifecycle at the `Draft` state and is subject to the approval, distribution and revocation workflow defined separately (CY006).
+Once an alert passes all controls and is created, it enters the TEAVS alert lifecycle at the `Draft` state and is subject to the approval, distribution and revocation workflow defined separately (CY007).
 
 ---
 

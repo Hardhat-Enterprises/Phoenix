@@ -1,0 +1,22 @@
+openapi: 3.0.0
+info:
+  title: PHOENIX TEAVS API
+  [cite_start]description: Framework for verifying disaster alerts and reporting cyber threats[cite: 2].
+  version: 1.0.0
+paths:
+  /api/alerts:
+    post:
+      summary: Create Alert (Admin/Council)
+      description: Handles fields like title, message, disaster_type, and severity.
+    get:
+      summary: List all Alerts
+  /api/alerts/{id}:
+    get:
+      summary: Get specific alert details
+  /api/alerts/{id}/verify:
+    post:
+      summary: Verify Alert Authenticity (Public Access)
+      [cite_start]description: Uses SHA-256 and digital signatures for verification[cite: 86, 153].
+  /api/alerts/{id}/status:
+    patch:
+      summary: Update Alert Lifecycle (Admin Only)

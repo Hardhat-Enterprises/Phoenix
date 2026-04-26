@@ -1,0 +1,5 @@
+1.fastapi: The web framework for building the TEAVS API.
+2.uvicorn: The server required to run and test the API locally.
+3.pydantic: Used for data validation to ensure hazard data (like location and severity) is in the correct format.
+4.pyjwt: Essential for your upcoming task CY007 to manage the JWT token lifecycle.
+5.cryptography: Required for the SHA-256 hashing and digital signatures needed to verify official alerts

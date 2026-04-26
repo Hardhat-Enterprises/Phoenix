@@ -1,31 +1,22 @@
-/* Footer.css */
-.footer-container {
-  background-color: #010000;
-  color: white;
-  padding: 20px 0;
-  width: 100%;
-}
+ /* Footer.css */
+ .footer-container {
+   background-color: #bcb2b2;
+   color: rgb(13, 0, 0);
+   padding: 20px 0;
+   width: 100%;
+ }
 
+ .content-wrap{
+  flex: 1;
+ }
 .footer-content {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
   align-items: center;
   max-width: 1200px;
-  margin: 0 auto;
+  margin-top: auto;
+  font-size: 12px;
+  
 }
 
-.footer-links {
-  list-style: none;
-  display: flex;
-  gap: 15px;
-}
-
-.footer-links a {
-  color: white;
-  text-decoration: none;
-}
-
-.footer-links a:hover {
-  text-decoration: underline;
-}

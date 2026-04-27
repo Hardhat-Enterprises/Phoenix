@@ -2,23 +2,27 @@
   "name": "microservices-backend",
   "private": true,
   "scripts": {
-    "dev:gateway": "nodemon --watch api-gateway/src --watch libs/common/src --ext ts --exec \"ts-node -r tsconfig-paths/register -P api-gateway/tsconfig.json api-gateway/src/app.ts\"",
+    "dev:gateway": "nodemon --watch api-gateway/src --watch libs/common/src --watch libs/proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P api-gateway/tsconfig.json api-gateway/src/app.ts\"",
     "dev:user": "nodemon --watch user-service/src --watch proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P user-service/tsconfig.json user-service/src/app.ts\"",
+    "dev:ingestion": "nodemon --watch data-ingestion-service/src --watch libs/proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P data-ingestion-service/tsconfig.json data-ingestion-service/src/app.ts\"",
     "dev:notification": "nodemon --watch notification-service/src --watch proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P notification-service/tsconfig.json notification-service/src/app.ts\"",
-    "build:gateway": "tsc -p api-gateway/tsconfig.json",
-    "build:user": "tsc -p user-service/tsconfig.json",
-    "build:notification": "tsc -p notification-service/tsconfig.json",
-    "build": "npm run build:gateway && npm run build:user && npm run build:notification",
-    "start:gateway": "node dist/api-gateway/server.js",
-    "start:user": "node dist/user-service/server.js",
-    "start:notification": "node dist/notification-service/server.js"
+    "build:common": "tsc -b libs/common && tsc-alias -p libs/common/tsconfig.json",
+    "build:proto": "copyfiles -u 2 libs/proto/**/*.proto dist/libs/proto",
+    "build:gateway": "tsc -b api-gateway/tsconfig.json && tsc-alias -p api-gateway/tsconfig.json",
+    "build:user-service": "tsc -b user-service/tsconfig.json && tsc-alias -p user-service/tsconfig.json",
+    "build:ingestion": "tsc -b data-ingestion-service/tsconfig.json && tsc-alias -p data-ingestion-service/tsconfig.json && cpy \"libs/proto/**/*.proto\" dist/libs/proto",
+    "build": "tsc -b",
+    "start:gateway": "node -r tsconfig-paths/register dist/api-gateway/src/app.js",
+    "start:user-service": "node -r tsconfig-paths/register dist/user-service/src/app.js",
+    "start:ingestion": "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.14.0",
+    "@grpc/grpc-js": "^1.14.3",
     "@grpc/proto-loader": "^0.8.0",
+    "@phoenix/common": "file:../libs/common",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
+    "dotenv": "^17.4.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
@@ -29,10 +33,13 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.3.0",
+    "@types/node": "^24.12.2",
+    "copyfiles": "^2.4.1",
+    "cpy-cli": "^7.0.0",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   }
 }

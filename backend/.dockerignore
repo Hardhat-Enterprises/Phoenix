@@ -1,0 +1,8 @@
+.env
+node-modules 
+.gitignore
+.gitkeep
+.vscode
+.github
+.tsbuildinfo
+dist

@@ -1,0 +1,35 @@
+{
+  "name": "microservices-backend",
+  "private": true,
+  "scripts": {
+    "dev:gateway": "nodemon --watch api-gateway/src --watch libs/common/src --ext ts --exec \"ts-node -r tsconfig-paths/register -P api-gateway/tsconfig.json api-gateway/src/app.ts\"",
+    "dev:user": "nodemon --watch user-service/src --watch proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P user-service/tsconfig.json user-service/src/app.ts\"",
+    "build:gateway": "tsc -p api-gateway/tsconfig.json",
+    "build:user": "tsc -p user-service/tsconfig.json",
+    "build": "npm run build:gateway && npm run build:user",
+    "start:gateway": "node dist/api-gateway/server.js",
+    "start:user": "node dist/user-service/server.js"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.14.0",
+    "@grpc/proto-loader": "^0.8.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.18.0",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.3.0",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.2"
+  }
+}

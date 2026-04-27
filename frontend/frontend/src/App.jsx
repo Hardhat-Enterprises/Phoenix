@@ -4,6 +4,7 @@ import "./App.css";
 import AboutUs from "./AboutUs";
 import Sidebar from "./components/Sidebar";
 import ForgotPassword from "./ForgotPassword";
+import SettingsPage from "./SettingsPage";
 
 function App() {
   const [page, setPage] = useState("login");
@@ -12,7 +13,7 @@ function App() {
     <div className="login-page">
       <div className="temp-header">
         <div className="temp-header-left">
-          <div className="temp-logo">🔥</div>
+          <div className="temp-logo"> <img src="/logo.png" alt="Phoenix logo" /></div>
           <div>
             <h2>Phoenix</h2>
             <p>Disaster and Cyber Risk Monitoring Dashboard</p>
@@ -40,9 +41,10 @@ function App() {
 
         {page === "dashboard" && (
           <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} />
+            <Sidebar setPage={setPage} page={page}/>
             <div style={{ padding: "20px" }}>
               <h1>Dashboard</h1>
+              <p>This is the dashboard page.</p>
             </div>
           </div>
         )}
@@ -54,6 +56,13 @@ function App() {
           </div>
         )}
       </div>
+
+      {page === "settings" && (
+        <div style={{ display: "flex" }}>
+          <Sidebar setPage={setPage} page={page} />
+          <SettingsPage setPage={setPage}/>
+        </div>
+      )}
     </div>
   );
 }

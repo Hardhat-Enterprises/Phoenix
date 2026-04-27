@@ -1,3 +1,5 @@
+import * as path from "path";
+
 interface Config {
   SERVICE_NAME: string;
   PORT: number;
@@ -11,7 +13,7 @@ interface Config {
 }
 
 export const config: Config = {
-  SERVICE_NAME: require("../../../../package.json").name,
+  SERVICE_NAME: require(path.resolve(process.cwd(), "package.json")).name,
   PORT: Number(process.env.PORT) || 3000,
   DEFAULT_TIMEOUT: Number(process.env.DEFAULT_TIMEOUT || "30000"),
   AUTH_JWT_SECRET:

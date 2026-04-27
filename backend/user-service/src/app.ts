@@ -7,7 +7,7 @@ import { config, initDatabase } from "@phoenix/common";
 
 dotenv.config();
 
-const PROTO_PATH = path.resolve(process.cwd(), "libs/proto/user.proto");
+const PROTO_PATH = path.resolve("libs/proto/user.proto");
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,

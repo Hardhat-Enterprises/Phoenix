@@ -1,9 +1,12 @@
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import { logger } from "@phoenix/common";
-import path from "path";
+import * as path from "path";
+import dotenv from "dotenv";
 
-const PROTO_PATH = path.resolve(process.cwd(), "libs/proto/user.proto");
+dotenv.config();
+
+const PROTO_PATH = path.resolve(`${process.env.USER_PROTO_PATH}`);
 logger.info(`Loading gRPC proto file from: ${PROTO_PATH}`);
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,

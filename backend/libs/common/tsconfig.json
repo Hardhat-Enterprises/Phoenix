@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "strict": true,
+    "rootDir": ".",
+    "outDir": "../../dist/libs/common",
+    "composite": true,
+    "esModuleInterop": true,
+    "noEmit": false,
+    "incremental": true,
+    "tsBuildInfoFile": "../../.tsbuildinfo/common.tsbuildinfo"
+  },
+  "include": ["src", "index.ts"],
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
+}

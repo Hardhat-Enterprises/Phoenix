@@ -10,6 +10,7 @@ interface Config {
   LOG_LEVEL: string;
   USER_SERVICE_PORT: number;
   SQLITE_STORAGE_PATH: string;
+  NOTIFICATION_SERVICE_PORT: number;
 }
 
 export const config: Config = {
@@ -25,4 +26,6 @@ export const config: Config = {
   USER_SERVICE_PORT: Number(process.env.USER_SERVICE_PORT) || 50051,
   SQLITE_STORAGE_PATH:
     process.env.SQLITE_STORAGE_PATH || "./database/phoenix.sqlite",
+  NOTIFICATION_SERVICE_PORT:
+    Number(process.env.NOTIFICATION_SERVICE_PORT) || 50052,
 };

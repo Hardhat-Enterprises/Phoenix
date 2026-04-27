@@ -1,7 +1,7 @@
-import path from "path";
+import * as path from "path";
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
-import dotenv from "dotenv";
+import * as dotenv from "dotenv";
 import { userHandler } from "./grpc/user.handler";
 import { config, initDatabase } from "@phoenix/common";
 

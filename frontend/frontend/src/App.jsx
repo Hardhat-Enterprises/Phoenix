@@ -2,6 +2,7 @@ import { useState } from "react";
 import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
+import Dashboard from "./Dashboard";
 import Sidebar from "./components/Sidebar";
 
 function App() {
@@ -35,14 +36,14 @@ function App() {
       <div className="page-content">
         {page === "login" && <LoginForm setPage={setPage} />}
 
-        {page === "dashboard" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} />
-            <div style={{ padding: "20px" }}>
-              <h1>Dashboard</h1>
-            </div>
-          </div>
-        )}
+    {page === "dashboard" && (
+  <div style={{ display: "flex" }}>
+    <Sidebar setPage={setPage} />
+    <div style={{ flex: 1 }}>
+      <Dashboard />
+    </div>
+  </div>
+)}
 
         {page === "about" && (
           <div style={{ display: "flex" }}>

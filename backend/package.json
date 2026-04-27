@@ -5,6 +5,7 @@
     "dev:gateway": "nodemon --watch api-gateway/src --watch libs/common/src --watch libs/proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P api-gateway/tsconfig.json api-gateway/src/app.ts\"",
     "dev:user": "nodemon --watch user-service/src --watch proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P user-service/tsconfig.json user-service/src/app.ts\"",
     "dev:ingestion": "nodemon --watch data-ingestion-service/src --watch libs/proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P data-ingestion-service/tsconfig.json data-ingestion-service/src/app.ts\"",
+    "dev:notification": "nodemon --watch notification-service/src --watch proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P notification-service/tsconfig.json notification-service/src/app.ts\"",
     "build:common": "tsc -b libs/common && tsc-alias -p libs/common/tsconfig.json",
     "build:proto": "copyfiles -u 2 libs/proto/**/*.proto dist/libs/proto",
     "build:gateway": "tsc -b api-gateway/tsconfig.json && tsc-alias -p api-gateway/tsconfig.json",

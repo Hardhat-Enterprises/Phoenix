@@ -6,7 +6,8 @@ import { ingestionHandler } from "./grpc/ingestion.handler";
 
 dotenv.config();
 
-const PROTO_PATH = path.resolve(process.cwd(), "libs/proto/ingestion.proto");
+//const PROTO_PATH = path.resolve(process.cwd(), "libs/proto/ingestion.proto");
+const PROTO_PATH = path.resolve(`${process.env.INGESTION_PROTO_PATH}`);
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,

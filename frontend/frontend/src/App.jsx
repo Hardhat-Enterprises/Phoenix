@@ -2,6 +2,7 @@ import { useState } from "react";
 import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
+import Dashboard from "./Dashboard";
 import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer"
 import ForgotPassword from "./ForgotPassword";

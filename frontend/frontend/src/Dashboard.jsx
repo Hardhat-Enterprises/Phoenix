@@ -1,11 +1,9 @@
 import Sidebar from "./components/Sidebar";
 import "./Dashboard.css";
 
-// This dashboard page is used for my assigned task.
-// My focus here is only on the Item List section, so I kept the page simple
-// and made the list area the main dashboard component.
-
 function Dashboard({ setPage }) {
+  const threatData = [];
+
   const itemRows = [
     {
       id: 1,
@@ -30,12 +28,56 @@ function Dashboard({ setPage }) {
     },
   ];
 
+  const hasThreatData = threatData.length > 0;
+
   return (
     <div className="dashboard-page">
       <Sidebar setPage={setPage} />
 
       <main className="dashboard-content">
         <div className="dashboard-main-area">
+
+          //Threat Chart Section - Sathvik
+          <section className="threat-chart-section">
+            <div className="threat-chart-header">
+              <div>
+                <h2>Threat Chart</h2>
+                <p>
+                  This section is prepared for future backend threat data.
+                </p>
+              </div>
+              <span className="backend-ready-badge">Backend Ready</span>
+            </div>
+
+            <div className="threat-chart-body">
+              {hasThreatData ? (
+                <div className="threat-chart-list">
+                  {threatData.map((threat) => (
+                    <div className="threat-row" key={threat.id}>
+                      <span className="threat-name">{threat.name}</span>
+
+                      <div className="threat-bar-track">
+                        <div
+                          className={`threat-bar ${threat.severity.toLowerCase()}`}
+                          style={{ width: `${threat.riskValue}%` }}
+                        ></div>
+                      </div>
+
+                      <span className="threat-value">
+                        {threat.riskValue}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-chart-placeholder">
+                  <p>No threat data connected yet</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          //Item List Section
           <section className="item-list-card">
             <div className="item-list-header">
               <h2>Item List</h2>
@@ -72,6 +114,7 @@ function Dashboard({ setPage }) {
               ))}
             </div>
           </section>
+
         </div>
       </main>
     </div>

@@ -34,6 +34,14 @@ function App() {
             </button>
           </div>
         )}
+        {page === "alerts" && (
+  <div style={{ display: "flex" }}>
+    <Sidebar setPage={setPage} page={page} />
+    <div style={{ padding: "20px" }}>
+      <h1>Alerts Page</h1>
+    </div>
+  </div>
+)}
       </div>
 
       <div className="page-content">
@@ -52,7 +60,7 @@ function App() {
 
         {page === "about" && (
           <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} />
+            <Sidebar setPage={setPage} page={page} />
             <AboutUs />
           </div>
         )}

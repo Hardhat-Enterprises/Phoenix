@@ -30,6 +30,91 @@ function Dashboard({ setPage }) {
 
   const hasThreatData = threatData.length > 0;
 
+  const styles = {
+    card: {
+      backgroundColor: "#ffffff",
+      borderRadius: "20px",
+      padding: "18px",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+      border: "1px solid #e8edf5",
+    },
+
+    title: {
+      margin: "0 0 10px 0",
+      fontSize: "16px",
+      fontWeight: "700",
+      color: "#11264d",
+      textAlign: "left",
+    },
+
+    placeholder: {
+      height: "180px",
+      backgroundColor: "#eef3fb",
+      borderRadius: "12px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "#5a6b85",
+      fontSize: "16px",
+      textAlign: "center",
+    },
+
+    addAlertCard: {
+      backgroundColor: "#ffffff",
+      borderRadius: "18px",
+      padding: "20px",
+      boxShadow: "0 6px 16px rgba(0,0,0,0.05)",
+      border: "1px solid #e6ecf5",
+      display: "flex",
+      flexDirection: "column",
+      minHeight: "250px",
+    },
+
+    addAlertContent: {
+      textAlign: "left",
+    },
+
+    addAlertTitle: {
+      margin: "0 0 14px 0",
+      fontSize: "18px",
+      fontWeight: "700",
+      color: "#0f2a55",
+      textAlign: "left",
+      lineHeight: "1.4",
+    },
+
+    addAlertList: {
+      margin: 0,
+      paddingLeft: "20px",
+      color: "#4a5f7a",
+      fontSize: "14px",
+      lineHeight: "1.7",
+      textAlign: "left",
+    },
+
+    addAlertListItem: {
+      marginBottom: "10px",
+    },
+
+    addAlertButtonWrap: {
+      marginTop: "auto",
+      display: "flex",
+      justifyContent: "flex-end",
+      paddingTop: "18px",
+    },
+
+    addAlertButton: {
+      backgroundColor: "#1f8fff",
+      color: "#ffffff",
+      border: "none",
+      borderRadius: "10px",
+      padding: "10px 18px",
+      fontSize: "13px",
+      fontWeight: "600",
+      cursor: "pointer",
+    },
+  };
+
   return (
     <div className="dashboard-page">
       <Sidebar setPage={setPage} />
@@ -37,7 +122,6 @@ function Dashboard({ setPage }) {
       <main className="dashboard-content">
         <div className="dashboard-main-area">
 
-          {/* Threat Chart Section (Sathvik) */}
           <section className="threat-chart-section">
             <div className="threat-chart-header">
               <div>
@@ -65,9 +149,7 @@ function Dashboard({ setPage }) {
                         />
                       </div>
 
-                      <span className="threat-value">
-                        {threat.riskValue}%
-                      </span>
+                      <span className="threat-value">{threat.riskValue}%</span>
                     </div>
                   ))}
                 </div>
@@ -117,7 +199,6 @@ function Dashboard({ setPage }) {
             </div>
           </section>
 
-          {/* Item List Section */}
           <section className="item-list-card">
             <div className="item-list-header">
               <h2>Item List</h2>
@@ -152,6 +233,45 @@ function Dashboard({ setPage }) {
                   </div>
                 </div>
               ))}
+            </div>
+          </section>
+
+          <section style={styles.card}>
+            <h3 style={styles.title}>Risk Trend</h3>
+            <div style={styles.placeholder}>Chart Placeholder</div>
+          </section>
+
+          <section style={styles.card}>
+            <h3 style={styles.title}>Risk by Location</h3>
+            <div style={styles.placeholder}>Map Placeholder</div>
+          </section>
+
+          <section style={styles.addAlertCard}>
+            <div style={styles.addAlertContent}>
+              <h3 style={styles.addAlertTitle}>
+                Add Threat and Alert Source
+              </h3>
+
+              <ul style={styles.addAlertList}>
+                <li style={styles.addAlertListItem}>
+                  Allow users to submit threat sources
+                </li>
+                <li style={styles.addAlertListItem}>
+                  Support both URL and file upload
+                </li>
+                <li style={styles.addAlertListItem}>
+                  Includes metadata for risk classification
+                </li>
+              </ul>
+            </div>
+
+            <div style={styles.addAlertButtonWrap}>
+              <button
+                style={styles.addAlertButton}
+                onClick={() => {}}
+              >
+                Add Alert
+              </button>
             </div>
           </section>
 

@@ -155,3 +155,151 @@
   color: #9fb0c4;
   line-height: 1;
 }
+
+.threat-chart-section {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #dfe7f2;
+  border-radius: 18px;
+  padding: 26px 30px 30px;
+  box-shadow: 0 6px 18px rgba(16, 42, 67, 0.05);
+  margin-bottom: 26px;
+}
+
+/*ThreatHeader*/
+.threat-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.threat-chart-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f3a5f;
+}
+
+.threat-chart-header p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #5c6f86;
+}
+
+.backend-ready-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+
+/* Body */
+.threat-chart-body {
+  background: #f9fafb;
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+  min-height: 220px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Empty chart placeholder */
+.empty-chart-placeholder {
+  width: 100%;
+}
+
+.chart-area {
+  height: 145px;
+  position: relative;
+  border-left: 2px solid #cbd5e1;
+  border-bottom: 2px solid #cbd5e1;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.chart-grid-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.line-1 { top: 25%; }
+.line-2 { top: 50%; }
+.line-3 { top: 75%; }
+
+.chart-bar {
+  position: absolute;
+  bottom: 0;
+  width: 54px;
+  border-radius: 10px 10px 0 0;
+  opacity: 0.85;
+}
+
+.high-bar {
+  left: 22%;
+  height: 110px;
+  background: #ef4444;
+}
+
+.medium-bar {
+  left: 46%;
+  height: 78px;
+  background: #f59e0b;
+}
+
+.low-bar {
+  left: 70%;
+  height: 48px;
+  background: #10b981;
+}
+
+.empty-chart-text {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.empty-chart-text strong {
+  font-size: 15px;
+  color: #1f3a5f;
+}
+
+.empty-chart-text span {
+  font-size: 13px;
+  color: #5c6f86;
+}
+
+/* Footer */
+.threat-chart-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #5c6f86;
+}
+
+.severity-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot.high { background: #ef4444; }
+.legend-dot.medium { background: #f59e0b; }
+.legend-dot.low { background: #10b981; }

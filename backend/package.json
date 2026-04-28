@@ -1,7 +1,7 @@
 {
   "name": "microservices-backend",
   "private": true,
-   "scripts": {
+  "scripts": {
     "dev:gateway": "nodemon --watch api-gateway/src --watch libs/common/src --watch libs/proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P api-gateway/tsconfig.json api-gateway/src/app.ts\"",
     "dev:user": "nodemon --watch user-service/src --watch proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P user-service/tsconfig.json user-service/src/app.ts\"",
     "dev:ingestion": "nodemon --watch data-ingestion-service/src --watch libs/proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P data-ingestion-service/tsconfig.json data-ingestion-service/src/app.ts\"",

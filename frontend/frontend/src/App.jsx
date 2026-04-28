@@ -7,7 +7,6 @@ import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer"
 import ForgotPassword from "./ForgotPassword";
 import SettingsPage from "./SettingsPage";
-import Dashboard from "./Dashboard";
 
 function App() {
   const [page, setPage] = useState("login");

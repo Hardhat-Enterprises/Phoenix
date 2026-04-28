@@ -4,6 +4,7 @@ import "./App.css";
 import AboutUs from "./AboutUs";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./Dashboard";
+import ForgotPassword from "./ForgotPassword";
 
 function App() {
   const [page, setPage] = useState("login");
@@ -34,7 +35,13 @@ function App() {
       </div>
 
       <div className="page-content">
-        {page === "login" && <LoginForm setPage={setPage} />}
+
+        {page === "login" && (
+          <LoginForm setPage={setPage} />
+        )}
+        {page === "forgotPassword" && (
+          <ForgotPassword setPage={setPage} />
+        )}
 
         {page === "dashboard" && <Dashboard setPage={setPage} />}
 

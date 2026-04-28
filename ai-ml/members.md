@@ -1,5 +1,5 @@
 ## Team Members  
-**Count:** 7/17  
+**Count:** 8/17  
 
 - **Sunain Mushtaq**  
   *13/04/2026*
@@ -21,3 +21,6 @@
  
 - **Abin Baby**
   *26/04/2026*
+
+- **Sam Braley**
+  *28/04/2026*

@@ -1,0 +1,157 @@
+/*
+  Final styling for my assigned dashboard task.
+  The focus here is only on the Item List section, keeping it clean,
+  wide, and visually close to the dashboard mock-up.
+*/
+
+.dashboard-page {
+  display: flex;
+  min-height: calc(100vh - 88px);
+  background-color: #eef3f8;
+}
+
+.dashboard-content {
+  flex: 1;
+  padding: 34px 38px;
+}
+
+.dashboard-main-area {
+  width: 100%;
+  max-width: 900px;
+}
+
+/* Main card */
+.item-list-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #dfe7f2;
+  border-radius: 18px;
+  padding: 26px 30px 30px;
+  box-shadow: 0 6px 18px rgba(16, 42, 67, 0.05);
+}
+
+/* Header */
+.item-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.item-list-header h2 {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 700;
+  color: #1f3a5f;
+}
+
+.view-all-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #3b5f8b;
+  cursor: pointer;
+}
+
+.view-all-button:hover {
+  text-decoration: underline;
+}
+
+/* Table */
+.item-list-table {
+  width: 100%;
+  border: 1px solid #dfe7f2;
+  border-radius: 14px;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+.item-list-table-head {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr 1fr;
+  padding: 16px 22px;
+  background-color: #f4f7fb;
+  font-size: 15px;
+  font-weight: 700;
+  color: #5c6f86;
+}
+
+.item-list-row {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr 1fr;
+  align-items: center;
+  padding: 20px 22px;
+  border-top: 1px solid #edf2f8;
+  background-color: #ffffff;
+  transition: background-color 0.2s ease;
+}
+
+.item-list-row:hover {
+  background-color: #f7fbff;
+}
+
+/* Left cell */
+.item-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2f3f55;
+}
+
+.item-check-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background-color: #2f6fe8;
+  color: #ffffff;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Pills */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 130px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.safe {
+  background-color: #e2f3eb;
+  color: #17774f;
+}
+
+.unverified {
+  background-color: #fff1d8;
+  color: #cf8b00;
+}
+
+.unsafe {
+  background-color: #fbe4e4;
+  color: #df3939;
+}
+
+/* Right cell */
+.status-right-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.row-arrow {
+  font-size: 24px;
+  color: #9fb0c4;
+  line-height: 1;
+}

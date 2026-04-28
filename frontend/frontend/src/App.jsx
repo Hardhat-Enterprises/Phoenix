@@ -3,6 +3,7 @@ import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
 import Sidebar from "./components/Sidebar";
+import Dashboard from "./Dashboard";
 import ForgotPassword from "./ForgotPassword";
 
 function App() {
@@ -42,14 +43,7 @@ function App() {
           <ForgotPassword setPage={setPage} />
         )}
 
-        {page === "dashboard" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} />
-            <div style={{ padding: "20px" }}>
-              <h1>Dashboard</h1>
-            </div>
-          </div>
-        )}
+        {page === "dashboard" && <Dashboard setPage={setPage} />}
 
         {page === "about" && (
           <div style={{ display: "flex" }}>

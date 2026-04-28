@@ -11,11 +11,26 @@ function App() {
   return (
     <div className="login-page">
       <div className="temp-header">
-        <div className="temp-logo">🔥</div>
-        <div>
-          <h2>Phoenix</h2>
-          <p>Disaster and Cyber Risk Monitoring Dashboard</p>
+        <div className="temp-header-left">
+          <div className="temp-logo">🔥</div>
+          <div>
+            <h2>Phoenix</h2>
+            <p>Disaster and Cyber Risk Monitoring Dashboard</p>
+          </div>
         </div>
+
+        {page === "about" && (
+          <div className="temp-header-right">
+            <input
+              type="text"
+              placeholder="Search in site"
+              className="temp-search"
+            />
+            <button className="temp-bell" aria-label="Notifications">
+              🔔
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="page-content">
@@ -27,11 +42,9 @@ function App() {
           <ForgotPassword setPage={setPage} />
         )}
 
-
         {page === "dashboard" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} />
-
             <div style={{ padding: "20px" }}>
               <h1>Dashboard</h1>
             </div>
@@ -44,7 +57,6 @@ function App() {
             <AboutUs />
           </div>
         )}
-
       </div>
     </div>
   );

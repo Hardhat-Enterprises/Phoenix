@@ -1,0 +1,12 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: phoenix-postgres
+    environment:
+      POSTGRES_DB: phoenix_db
+      POSTGRES_USER: phoenix_user
+      POSTGRES_PASSWORD: phoenix_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./backend/database:/docker-entrypoint-initdb.d

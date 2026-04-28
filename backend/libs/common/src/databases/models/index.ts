@@ -5,4 +5,4 @@ export * from "./location-hazard.model";
 export * from "./location-threat.model";
 export * from "./risk-assessment.model";
 export * from "./status-event.model";
-export * from "./user.model";
+export * from "./user-account.model";

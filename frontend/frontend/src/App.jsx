@@ -5,6 +5,7 @@ import AboutUs from "./AboutUs";
 import Sidebar from "./components/Sidebar";
 import ForgotPassword from "./ForgotPassword";
 import SettingsPage from "./SettingsPage";
+import Dashboard from "./Dashboard";
 
 function App() {
   const [page, setPage] = useState("login");
@@ -35,18 +36,17 @@ function App() {
       </div>
 
       <div className="page-content">
-        {page === "login" && <LoginForm setPage={setPage} />}
 
-        {page === "forgotPassword" && <ForgotPassword setPage={setPage} />}
+        {page === "login" && (
+          <LoginForm setPage={setPage} />
+        )}
+        
+        {page === "forgotPassword" && (
+          <ForgotPassword setPage={setPage} />
+        )}
 
         {page === "dashboard" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page}/>
-            <div style={{ padding: "20px" }}>
-              <h1>Dashboard</h1>
-              <p>This is the dashboard page.</p>
-            </div>
-          </div>
+          <Dashboard setPage={setPage} />
         )}
 
         {page === "about" && (

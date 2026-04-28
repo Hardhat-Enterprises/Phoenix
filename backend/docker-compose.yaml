@@ -1,3 +1,4 @@
+
 services:
   api-gateway:
     build: 
@@ -14,7 +15,6 @@ services:
       - user-service
       - data-ingestion-service
     command: sh -c "node -r tsconfig-paths/register dist/api-gateway/src/app.js"
-
   user-service:
     build: 
       context: ./
@@ -26,13 +26,12 @@ services:
       - SERVICE=user-service
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=phoenix_user
-      - DB_PASSWORD=phoenix_pass
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=phoenix_db
     depends_on:
       - postgres
     command: sh -c "node -r tsconfig-paths/register dist/user-service/src/app.js"
-
   data-ingestion-service:
     build: 
       context: ./
@@ -44,20 +43,36 @@ services:
       - SERVICE=data-ingestion-service
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=phoenix_user
-      - DB_PASSWORD=phoenix_pass
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=phoenix_db
     depends_on:
       - postgres
     command: sh -c "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
-
+  notification-service:
+    build: 
+      context: ./
+      dockerfile: notification-service/Dockerfile
+    container_name: notification-service
+    ports:
+      - "50052:50052"
+    environment:
+      - SERVICE=notification-service
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=phoenix_db
+    depends_on:
+      - postgres
+    command: sh -c "node -r tsconfig-paths/register dist/notification-service/src/app.js"
   postgres:
     image: postgres:16
     container_name: phoenix-postgres
     environment:
       POSTGRES_DB: phoenix_db
-      POSTGRES_USER: phoenix_user
-      POSTGRES_PASSWORD: phoenix_pass
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD} 
     ports:
       - "5432:5432"
     volumes:

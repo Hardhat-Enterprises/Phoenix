@@ -3,12 +3,13 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
-    "outDir": "../../dist/notification-service",
+    "outDir": "../dist/notification-service",
     "strict": true,
     "esModuleInterop": true,
     "moduleResolution": "node",
     "skipLibCheck": true,
     "strictPropertyInitialization": false
   },
-  "include": ["src/**/*"]
+  "include": ["src"],
+  "references": [{ "path": "../libs/common" }]
 }

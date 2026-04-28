@@ -3,6 +3,7 @@ import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
 import Sidebar from "./components/Sidebar";
+import Footer from "./components/Footer"
 import ForgotPassword from "./ForgotPassword";
 import SettingsPage from "./SettingsPage";
 import Dashboard from "./Dashboard";
@@ -63,7 +64,8 @@ function App() {
           <SettingsPage setPage={setPage}/>
         </div>
       )}
-    </div>
+    <Footer />
+  </div>
   );
 }
 

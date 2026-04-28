@@ -1,5 +1,5 @@
 ## Team Members  
-**Count:** 8/17  
+**Count:** 9/17  
 
 - **Sunain Mushtaq**  
   *13/04/2026*
@@ -24,3 +24,6 @@
 
 - **Sam Braley**
   *28/04/2026*
+
+- **Asad Ullah**
+*29/04/2026*

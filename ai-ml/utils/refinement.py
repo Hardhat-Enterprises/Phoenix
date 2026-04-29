@@ -28,6 +28,38 @@ def map_severity(score: float) -> str:
 
 
 # -------------------------------
+# Confidence Adjustment Logic
+# -------------------------------
+def apply_confidence_adjustment(score: float, confidence: float) -> float:
+    """
+    Adjust risk score based on model confidence.
+
+    Args:
+        score (float): Baseline risk score (0–100)
+        confidence (float): Confidence level (0–1)
+
+    Returns:
+        float: Adjusted (refined) risk score
+    """
+
+    # Base adjustment
+    refined_score = score * (0.5 + 0.5 * confidence)
+
+    # Low confidence penalty
+    if confidence < 0.4:
+        refined_score *= 0.8
+
+    # High confidence boost
+    elif confidence > 0.85:
+        refined_score *= 1.05
+
+    # Clamp between 0–100
+    refined_score = max(0, min(refined_score, 100))
+
+    return round(refined_score, 2)
+
+
+# -------------------------------
 # Issue Detection (Analysis Layer)
 # -------------------------------
 def detect_issues(record: dict) -> list:
@@ -61,8 +93,8 @@ def refine_score(record: dict) -> float:
     score = record["score"]
     confidence = record["confidence"]
 
-    # Step 1: Confidence adjustment
-    score = score * (0.5 + 0.5 * confidence)
+    # Step 1: Confidence adjustment (FIXED)
+    score = apply_confidence_adjustment(score, confidence)
 
     # Step 2: Boost combined hazard + cyber events
     if record.get("hazard") and record.get("cyber"):

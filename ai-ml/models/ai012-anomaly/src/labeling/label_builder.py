@@ -46,21 +46,27 @@ def _safe_zscore(series: pd.Series) -> pd.Series:
 
 
 def build_anomaly_labels(
-    input_path: str = "data/processed/anomaly_dataset_v1.csv",
+    input_path: str = "../../features/ai004_features_output.csv",
     output_path: str = "data/processed/anomaly_labels_v1.csv",
     zscore_threshold: float = 3.0,
 ) -> pd.DataFrame:
+    """
+    Builds rule-based anomaly labels for validation using engineered features.
+
+    The labels are generated from feature-engineered data and are intended only
+    for validation/evaluation, not for unsupervised model training.
+    """
 
     input_path = Path(input_path)
     output_path = Path(output_path)
 
     if not input_path.exists():
         raise FileNotFoundError(
-            f"Input dataset not found: {input_path}. "
-            "Please make sure Role A/B output anomaly_dataset_v1.csv exists."
+            f"Input feature dataset not found: {input_path}. "
+            "Please make sure the engineered feature output file exists."
         )
 
-    df = pd.read_csv(input_path)
+    df = pd.read_csv(input_path, low_memory=False)
 
     labels = pd.DataFrame()
     labels["row_id"] = df.index
@@ -69,9 +75,6 @@ def build_anomaly_labels(
 
     reasons = [[] for _ in range(len(df))]
 
-    # --------------------------
-    # Z-SCORE ANOMALIES
-    # --------------------------
     numeric_cols = _find_numeric_columns(df)
 
     for col in numeric_cols:
@@ -83,9 +86,6 @@ def build_anomaly_labels(
         for idx in df.index[mask]:
             reasons[idx].append(f"high_zscore_{col}")
 
-    # --------------------------
-    # KEYWORD BASED ANOMALIES
-    # --------------------------
     risk_keywords = [
         "malware",
         "phishing",
@@ -103,7 +103,6 @@ def build_anomaly_labels(
     text_cols = [col for col in df.columns if df[col].dtype == "object"]
 
     for col in text_cols:
-        # FIX: handle floats, NaNs safely
         lowered = df[col].fillna("").astype(str).str.lower()
 
         keyword_mask = lowered.apply(
@@ -115,13 +114,13 @@ def build_anomaly_labels(
         for idx in df.index[keyword_mask]:
             reasons[idx].append(f"risk_keyword_{col}")
 
-    # --------------------------
-    # RISK COLUMN ANOMALIES
-    # --------------------------
     risk_like_cols = [
         col
         for col in df.columns
-        if any(word in col.lower() for word in ["risk", "threat", "suspicious", "malicious", "abuse"])
+        if any(
+            word in col.lower()
+            for word in ["risk", "threat", "suspicious", "malicious", "abuse"]
+        )
         and pd.api.types.is_numeric_dtype(df[col])
     ]
 
@@ -134,9 +133,6 @@ def build_anomaly_labels(
         for idx in df.index[mask]:
             reasons[idx].append(f"high_risk_value_{col}")
 
-    # --------------------------
-    # FINAL REASON COLUMN
-    # --------------------------
     labels["anomaly_reason"] = [
         ";".join(reason_list) if reason_list else "normal"
         for reason_list in reasons

@@ -26,8 +26,8 @@ services:
       - SERVICE=user-service
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USER=phoenix_user
+      - DB_PASSWORD=phoenix_pass
       - DB_NAME=phoenix_db
     depends_on:
       - postgres
@@ -43,8 +43,8 @@ services:
       - SERVICE=data-ingestion-service
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USER=phoenix_user
+      - DB_PASSWORD=phoenix_pass
       - DB_NAME=phoenix_db
     depends_on:
       - postgres
@@ -60,8 +60,8 @@ services:
       - SERVICE=notification-service
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USER=phoenix_user
+      - DB_PASSWORD=phoenix_pass
       - DB_NAME=phoenix_db
     depends_on:
       - postgres
@@ -71,8 +71,8 @@ services:
     container_name: phoenix-postgres
     environment:
       POSTGRES_DB: phoenix_db
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD} 
+      POSTGRES_USER: phoenix_user
+      POSTGRES_PASSWORD: phoenix_pass
     ports:
       - "5432:5432"
     volumes:

@@ -3,11 +3,11 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import * as dotenv from "dotenv";
 import { userHandler } from "./grpc/user.handler";
-import { config } from "@phoenix/common";
+import { config, initDatabase } from "@phoenix/common";
 
 dotenv.config();
 
-const PROTO_PATH = path.resolve(`${process.env.USER_PROTO_PATH}`);
+const PROTO_PATH = path.resolve("libs/proto/user.proto");
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
@@ -20,23 +20,30 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const grpcObject = grpc.loadPackageDefinition(packageDefinition) as any;
 const userPackage = grpcObject.user;
 
-const startGrpcServer = () => {
-  const server = new grpc.Server();
+const startGrpcServer = async (): Promise<void> => {
+  try {
+    await initDatabase();
 
-  server.addService(userPackage.UserService.service, userHandler);
+    const server = new grpc.Server();
 
-  server.bindAsync(
-    `0.0.0.0:${config.USER_SERVICE_PORT}`,
-    grpc.ServerCredentials.createInsecure(),
-    (error, boundPort) => {
-      if (error) {
-        console.error("Failed to start user-service:", error);
-        return;
+    server.addService(userPackage.UserService.service, userHandler);
+
+    server.bindAsync(
+      `0.0.0.0:${config.USER_SERVICE_PORT}`,
+      grpc.ServerCredentials.createInsecure(),
+      (error, boundPort) => {
+        if (error) {
+          console.error("Failed to start user-service:", error);
+          return;
+        }
+
+        console.log(`User service gRPC running on port ${boundPort}`);
       }
-
-      console.log(`User service gRPC running on port ${boundPort}`);
-    },
-  );
+    );
+  } catch (error) {
+    console.error("Failed to initialize application:", error);
+    process.exit(1);
+  }
 };
 
 startGrpcServer();

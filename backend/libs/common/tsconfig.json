@@ -9,7 +9,8 @@
     "esModuleInterop": true,
     "noEmit": false,
     "incremental": true,
-    "tsBuildInfoFile": "../../.tsbuildinfo/common.tsbuildinfo"
+    "tsBuildInfoFile": "../../.tsbuildinfo/common.tsbuildinfo",
+    "types": ["node"]
   },
   "include": ["src", "index.ts"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]

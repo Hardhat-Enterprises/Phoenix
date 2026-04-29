@@ -20,12 +20,12 @@ export const userHandler = {
       });
     }
   },
-  GetUsers: (
+  GetUsers: async (
     call: ServerUnaryCall<GetUsersDto, GetUsersEntity>,
     callback: sendUnaryData<GetUsersEntity>,
   ) => {
     try {
-      const response = getUsers(call.request);
+      const response = await getUsers(call.request);
       logger.info(`User service GetUsers response:${response}`);
       callback(null, response);
     } catch (error) {

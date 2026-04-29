@@ -37,9 +37,9 @@ export interface GetUsersResponse {
   message: string;
   users: [
     {
-      id: string;
-      name: string;
-      email: string;
+      user_id: string;
+      username: string;
+      role: string;
     },
   ];
 }

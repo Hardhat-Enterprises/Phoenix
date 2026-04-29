@@ -25,7 +25,7 @@ message GetUsersResponse {
 }
 
 message User {
-    int32 id = 1;
-    string name = 2;
-    string email = 3;
+    string user_id = 1;
+    string username = 2;
+    string role = 3;
 }

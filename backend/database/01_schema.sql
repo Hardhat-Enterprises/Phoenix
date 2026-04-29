@@ -196,6 +196,14 @@ CREATE TABLE user_account (
         DEFAULT gen_random_uuid()
     ,password_hashed                VARCHAR(255)
     ,role                           VARCHAR(50)
+    ,access_token                   VARCHAR(255)
+    ,refresh_token                  VARCHAR(255)
+    ,username                       VARCHAR(100)
+        UNIQUE
+    ,created_at                     TIMESTAMPTZ
+        DEFAULT CURRENT_TIMESTAMP
+    ,updated_at                     TIMESTAMPTZ
+        DEFAULT CURRENT_TIMESTAMP  
 );
 
 

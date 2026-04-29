@@ -1,6 +1,6 @@
 services:
   api-gateway:
-    build: 
+    build:
       context: ./
       dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
@@ -16,7 +16,7 @@ services:
     command: sh -c "node -r tsconfig-paths/register dist/api-gateway/src/app.js"
 
   user-service:
-    build: 
+    build:
       context: ./
       dockerfile: user-service/Dockerfile
     container_name: user-service
@@ -24,17 +24,12 @@ services:
       - "50051:50051"
     environment:
       - SERVICE=user-service
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=phoenix_user
-      - DB_PASSWORD=phoenix_pass
-      - DB_NAME=phoenix_db
     depends_on:
       - postgres
     command: sh -c "node -r tsconfig-paths/register dist/user-service/src/app.js"
 
   data-ingestion-service:
-    build: 
+    build:
       context: ./
       dockerfile: data-ingestion-service/Dockerfile
     container_name: ingestion-service
@@ -42,11 +37,6 @@ services:
       - "50053:50053"
     environment:
       - SERVICE=data-ingestion-service
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=phoenix_user
-      - DB_PASSWORD=phoenix_pass
-      - DB_NAME=phoenix_db
     depends_on:
       - postgres
     command: sh -c "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
@@ -59,6 +49,6 @@ services:
       POSTGRES_USER: phoenix_user
       POSTGRES_PASSWORD: phoenix_pass
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
-      - ./backend/database:/docker-entrypoint-initdb.d
+      - ./database:/docker-entrypoint-initdb.d

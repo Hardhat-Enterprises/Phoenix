@@ -4,6 +4,6 @@ import { getHealth, ingestData } from "../controllers/ingestion.controller";
 const router = Router();
 
 router.get("/health", getHealth);
-router.post("/", ingestData);
+router.post("/stream", ingestData);
 
 export default router;

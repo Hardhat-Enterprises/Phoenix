@@ -9,19 +9,5 @@ export const getHealth = (_getHealthDto: GetHealthDto): GetHealthEntity => {
   };
 };
 
-export const ingestData = (ingestDataDto: IngestDataDto): IngestDataEntity => {
-  logger.info("Received ingestion request...");
-
-  if (!ingestDataDto?.source || !ingestDataDto?.payload) {
-    return {
-      status: HttpStatusCode.HTTP_STATUS_BAD_REQUEST,
-      message: "source and payload are required",
-    };
-  }
-
-  return {
-    status: HttpStatusCode.HTTP_STATUS_OK,
-    message: "Data ingested successfully",
-    ingestionId: `ing-${Date.now()}`,
-  };
-};
+export const createHazardData = (content: any) => {};
+export const createCyberData = (content: any) => {};

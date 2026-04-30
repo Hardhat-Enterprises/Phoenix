@@ -20,6 +20,7 @@
     "@grpc/grpc-js": "^1.14.3",
     "@grpc/proto-loader": "^0.8.0",
     "@phoenix/common": "file:../libs/common",
+    "amqplib": "^1.0.3",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^17.4.1",
@@ -32,6 +33,7 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.8",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",

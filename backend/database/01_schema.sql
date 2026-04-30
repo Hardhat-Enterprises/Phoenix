@@ -206,6 +206,13 @@ CREATE TABLE user_account (
         DEFAULT CURRENT_TIMESTAMP  
 );
 
+CREATE TABLE data_ingestion_log (
+    ingestion_log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    payload TEXT NULL,
+    status VARCHAR(50) NULL,
+    fail_reason TEXT NULL
+);
+
 
 /*INDEXES
   Based on schema documentation */

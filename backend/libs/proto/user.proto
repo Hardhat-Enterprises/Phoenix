@@ -3,8 +3,12 @@ syntax = "proto3";
 package user;
 
 service UserService {
-    rpc GetUserHealth(GetUserHealthRequest) returns (GetUserHealthResponse);   
+    rpc GetUserHealth(GetUserHealthRequest) returns (GetUserHealthResponse);
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+    rpc GetThreats(GetThreatsRequest) returns (GetThreatsResponse);
+    rpc GetThreat(GetThreatRequest) returns (GetThreatResponse);
+    rpc GetHazards(GetHazardsRequest) returns (GetHazardsResponse);
+    rpc GetHazard(GetHazardRequest) returns (GetHazardResponse);
 }
 
 message GetUserHealthRequest {
@@ -16,7 +20,7 @@ message GetUserHealthResponse {
 }
 
 message GetUsersRequest {
-}   
+}
 
 message GetUsersResponse {
     int32 status = 1;
@@ -28,4 +32,88 @@ message User {
     string user_id = 1;
     string username = 2;
     string role = 3;
+}
+
+// ─── Threats ───────────────────────────────────────────────────────────────
+
+message GetThreatsRequest {
+    string threat_type = 1;
+    string risk_level = 2;
+    string status = 3;
+    int32 page = 4;
+    int32 limit = 5;
+}
+
+message GetThreatsResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated Threat threats = 3;
+    int32 total = 4;
+    int32 page = 5;
+    int32 limit = 6;
+}
+
+message GetThreatRequest {
+    string threat_id = 1;
+}
+
+message GetThreatResponse {
+    int32 status = 1;
+    string message = 2;
+    Threat threat = 3;
+}
+
+message Threat {
+    string threat_id = 1;
+    string threat_type = 2;
+    string title = 3;
+    string description = 4;
+    string risk_level = 5;
+    string status = 6;
+    string category = 7;
+    string confidence_score = 8;
+    string detected_at = 9;
+    string created_at = 10;
+    string updated_at = 11;
+}
+
+// ─── Hazards ───────────────────────────────────────────────────────────────
+
+message GetHazardsRequest {
+    string hazard_type = 1;
+    string severity_level = 2;
+    string event_status = 3;
+    int32 page = 4;
+    int32 limit = 5;
+}
+
+message GetHazardsResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated Hazard hazards = 3;
+    int32 total = 4;
+    int32 page = 5;
+    int32 limit = 6;
+}
+
+message GetHazardRequest {
+    string hazard_event_id = 1;
+}
+
+message GetHazardResponse {
+    int32 status = 1;
+    string message = 2;
+    Hazard hazard = 3;
+}
+
+message Hazard {
+    string hazard_event_id = 1;
+    string hazard_type = 2;
+    string severity_level = 3;
+    string event_status = 4;
+    string start_time = 5;
+    string end_time = 6;
+    string description = 7;
+    string created_at = 8;
+    string updated_at = 9;
 }

@@ -2,8 +2,11 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import { logger } from "@phoenix/common";
 import path from "path";
+import fs from "fs";
 
-const PROTO_PATH = path.resolve(process.cwd(), "libs/proto/notification.proto");
+const distPath = path.resolve(process.cwd(), "dist/libs/proto/notification.proto");
+const devPath = path.resolve(process.cwd(), "libs/proto/notification.proto");
+const PROTO_PATH = fs.existsSync(distPath) ? distPath : devPath;
 logger.info(`Loading gRPC proto file from: ${PROTO_PATH}`);
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,

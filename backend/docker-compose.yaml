@@ -52,3 +52,13 @@ services:
       - "5434:5432"
     volumes:
       - ./database:/docker-entrypoint-initdb.d
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: phoenix-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}

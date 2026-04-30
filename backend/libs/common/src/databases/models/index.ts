@@ -6,3 +6,4 @@ export * from "./location-threat.model";
 export * from "./risk-assessment.model";
 export * from "./status-event.model";
 export * from "./user-account.model";
+export * from "./data-ingestion-log.model";

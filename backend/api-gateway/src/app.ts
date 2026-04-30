@@ -2,7 +2,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { config, logger } from "@phoenix/common";
+import { config, connectRabbitMQ, logger } from "@phoenix/common";
 import userRoutes from "./routes/user.routes";
 import ingestionRoutes from "./routes/ingestion.routes";
 import notificationRoutes from "./routes/notification.routes";
@@ -26,8 +26,9 @@ app.use("/api/users", userRoutes);
 app.use("/api/ingestion", ingestionRoutes);
 app.use("/api/notifications", notificationRoutes);
 
-const startServer = () => {
+const startServer = async () => {
   try {
+    await connectRabbitMQ(process.env.RABBITMQ_URL!);
     (app.listen(config.PORT),
       () => {
         logger.info(`${config.SERVICE_NAME} running on port ${config.PORT}`);

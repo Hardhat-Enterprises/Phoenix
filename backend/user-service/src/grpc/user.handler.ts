@@ -1,7 +1,19 @@
-import { GetHealthDto, GetUsersDto } from "../dto/user.dto";
+import {
+  GetHealthDto,
+  GetUsersDto,
+  GetUserDashboardDto,
+} from "../dto/user.dto";
 import { ServerUnaryCall, sendUnaryData } from "@grpc/grpc-js";
-import { getHealth, getUsers } from "../services/user.service";
-import { GetHealthEntity, GetUsersEntity } from "../entity/user.entity";
+import {
+  getHealth,
+  getUsers,
+  getUserDashboard,
+} from "../services/user.service";
+import {
+  GetHealthEntity,
+  GetUsersEntity,
+  GetUserDashboardEntity,
+} from "../entity/user.entity";
 import { logger } from "@phoenix/common";
 
 export const userHandler = {
@@ -20,6 +32,7 @@ export const userHandler = {
       });
     }
   },
+
   GetUsers: async (
     call: ServerUnaryCall<GetUsersDto, GetUsersEntity>,
     callback: sendUnaryData<GetUsersEntity>,
@@ -27,6 +40,22 @@ export const userHandler = {
     try {
       const response = await getUsers(call.request);
       logger.info(`User service GetUsers response:${response}`);
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+
+  GetUserDashboard: async (
+    call: ServerUnaryCall<GetUserDashboardDto, GetUserDashboardEntity>,
+    callback: sendUnaryData<GetUserDashboardEntity>,
+  ) => {
+    try {
+      const response = await getUserDashboard(call.request);
+      logger.info(`User service GetUserDashboard response:${response}`);
       callback(null, response);
     } catch (error) {
       callback({

@@ -5,6 +5,7 @@ package user;
 service UserService {
     rpc GetUserHealth(GetUserHealthRequest) returns (GetUserHealthResponse);   
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+    rpc GetUserDashboard(GetUserDashboardRequest) returns (GetUserDashboardResponse);
 }
 
 message GetUserHealthRequest {
@@ -16,7 +17,7 @@ message GetUserHealthResponse {
 }
 
 message GetUsersRequest {
-}   
+}
 
 message GetUsersResponse {
     int32 status = 1;
@@ -28,4 +29,15 @@ message User {
     string user_id = 1;
     string username = 2;
     string role = 3;
+}
+
+message GetUserDashboardRequest {
+}
+
+message GetUserDashboardResponse {
+    int32 status = 1;
+    string message = 2;
+    int32 total_users = 3;
+    int32 admin_users = 4;
+    int32 standard_users = 5;
 }

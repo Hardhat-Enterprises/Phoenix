@@ -8,6 +8,7 @@ dotenv.config();
 
 const PROTO_PATH = path.resolve(`${process.env.USER_PROTO_PATH}`);
 logger.info(`Loading gRPC proto file from: ${PROTO_PATH}`);
+
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -26,12 +27,14 @@ const grpcObject = grpc.loadPackageDefinition(packageDefinition) as unknown as {
 };
 
 export interface GetUserHealthRequest {}
+
 export interface GetUserHealthResponse {
   status: number;
   message: string;
 }
 
 export interface GetUsersRequest {}
+
 export interface GetUsersResponse {
   status: number;
   message: string;
@@ -44,6 +47,16 @@ export interface GetUsersResponse {
   ];
 }
 
+export interface GetUserDashboardRequest {}
+
+export interface GetUserDashboardResponse {
+  status: number;
+  message: string;
+  total_users: number;
+  admin_users: number;
+  standard_users: number;
+}
+
 export interface UserServiceClient {
   GetUserHealth(
     request: GetUserHealthRequest,
@@ -52,11 +65,20 @@ export interface UserServiceClient {
       response: GetUserHealthResponse,
     ) => void,
   ): void;
+
   GetUsers(
     request: GetUsersRequest,
     callback: (
       error: grpc.ServiceError | null,
       response: GetUsersResponse,
+    ) => void,
+  ): void;
+
+  GetUserDashboard(
+    request: GetUserDashboardRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetUserDashboardResponse,
     ) => void,
   ): void;
 }

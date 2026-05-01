@@ -13,6 +13,7 @@ export class GetUsersEntity {
       role: string;
     },
   ];
+
   static toEntity(item: any): GetUsersEntity {
     const response = new GetUsersEntity();
     response.users = item.users.map((user: any) => ({
@@ -20,6 +21,26 @@ export class GetUsersEntity {
       username: user.username,
       role: user.role,
     }));
+    return response;
+  }
+}
+
+export class GetUserDashboardEntity {
+  status: number;
+  message: string;
+  total_users: number;
+  admin_users: number;
+  standard_users: number;
+
+  static toEntity(item: any): GetUserDashboardEntity {
+    const response = new GetUserDashboardEntity();
+
+    response.status = item.status;
+    response.message = item.message;
+    response.total_users = item.total_users;
+    response.admin_users = item.admin_users;
+    response.standard_users = item.standard_users;
+
     return response;
   }
 }

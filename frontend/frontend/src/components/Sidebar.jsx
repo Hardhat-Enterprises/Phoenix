@@ -21,6 +21,8 @@ function Sidebar({ setPage, page }) {
               type="button"
               className={`sidebar-item ${
                 (page === "dashboard" && item === "Dashboard") ||
+                (page === "alerts" && item === "Alerts") ||
+                (page === "reports" && item === "Threat Reports") ||
                 (page === "about" && item === "About Us") ||
                 (page === "settings" && item === "Settings")
                   ? "active"
@@ -28,6 +30,8 @@ function Sidebar({ setPage, page }) {
               }`}
               onClick={() => {
                 if (item === "Dashboard") setPage("dashboard");
+                if (item === "Alerts") setPage("alerts");
+                if (item === "Threat Reports") setPage("reports");
                 if (item === "About Us") setPage("about");
                 if (item === "Settings") setPage("settings");
               }}

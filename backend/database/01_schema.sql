@@ -28,6 +28,33 @@ CREATE TABLE data_source (
 	,fail_reason				VARCHAR
 );
 
+/*DATA_INGESTION_STREAMING_LOG TABLE
+  Stores logs for incoming data ingestion records */
+CREATE TABLE data_ingestion_streaming_log (
+    log_id                      UUID PRIMARY KEY DEFAULT gen_random_uuid()
+    ,source_id                  UUID
+    ,ingestion_type             VARCHAR(50) NOT NULL
+        CHECK (ingestion_type IN ('hazard', 'cyber_threat', 'risk_assessment'))
+    ,payload                    JSONB
+    ,processing_status          VARCHAR(50) NOT NULL DEFAULT 'received'
+        CHECK (processing_status IN ('received', 'processing', 'processed', 'failed'))
+    ,error_message              TEXT
+    ,received_at                TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    ,processed_at               TIMESTAMPTZ
+    ,created_at                 TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    ,updated_at                 TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    ,FOREIGN KEY (source_id) REFERENCES data_source(source_id)
+);
+
+CREATE INDEX idx_ingestion_type
+    ON data_ingestion_streaming_log(ingestion_type);
+
+CREATE INDEX idx_ingestion_status
+    ON data_ingestion_streaming_log(processing_status);
+
+CREATE INDEX idx_ingestion_received_at
+    ON data_ingestion_streaming_log(received_at);
+
 /*HAZARD_EVENT TABLE
   Entity table */
 CREATE TABLE hazard_event (
@@ -99,12 +126,12 @@ CREATE TABLE threat_location (
    Dimensional table */
 CREATE TABLE event_status(
 	event_status_id				SERIAL UNIQUE
-	,event_status_dscription	VARCHAR
+	,event_status_description	VARCHAR
 );
 
 /*RISK_ASSESSMENT OR INTEGRATION TABLE 
   Fact table*/
- CREATE TABLE tisk_assessment (
+ CREATE TABLE risk_assessment (
 	integration_event_id 		UUID PRIMARY KEY DEFAULT gen_random_uuid()
 	,related_hazard_event_id 	UUID
 	,related_threat_id 			UUID

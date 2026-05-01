@@ -30,14 +30,13 @@ VALUES
 
 
 -- =========================
--- HAZARD_EVENT
+-- HAZARD_EVENT (FIXED)
 -- =========================
 INSERT INTO hazard_event (
     hazard_type,
     severity_level,
     event_status,
     start_time,
-    geo_location_id,
     source_id,
     description
 )
@@ -46,13 +45,27 @@ SELECT
     'high',
     'active',
     NOW(),
-    g.geo_location_id,
     s.source_id,
     'Severe flooding due to heavy rainfall'
-FROM geo_location g
-CROSS JOIN data_source s
-WHERE g.state_region = 'Victoria'
-  AND s.source_name = 'Bureau of Meteorology'
+FROM data_source s
+WHERE s.source_name = 'Bureau of Meteorology'
+LIMIT 1;
+
+
+-- =========================
+-- HAZARD_LOCATION (NEW - IMPORTANT)
+-- =========================
+INSERT INTO hazard_location (
+    hazard_event_id,
+    geo_location_id
+)
+SELECT
+    h.hazard_event_id,
+    g.geo_location_id
+FROM hazard_event h
+CROSS JOIN geo_location g
+WHERE h.hazard_type = 'Flood'
+  AND g.state_region = 'Victoria'
 LIMIT 1;
 
 
@@ -80,6 +93,22 @@ SELECT
     NOW()
 FROM data_source s
 WHERE s.source_name = 'Cyber Feed'
+LIMIT 1;
+
+
+-- =========================
+-- THREAT_LOCATION (NEW - MATCHING DESIGN)
+-- =========================
+INSERT INTO threat_location (
+    threat_id,
+    geo_location_id
+)
+SELECT
+    t.threat_id,
+    g.geo_location_id
+FROM cyber_threat t
+CROSS JOIN geo_location g
+WHERE g.state_region = 'New South Wales'
 LIMIT 1;
 
 

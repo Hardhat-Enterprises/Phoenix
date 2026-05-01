@@ -9,6 +9,6 @@ const router = Router();
 
 router.get("/health", getHealth);
 router.get("/user", getUser);
-router.get("/dashboard", getUserDashboard);
+router.get("/dashboard/overview", getUserDashboard);
 
 export default router;

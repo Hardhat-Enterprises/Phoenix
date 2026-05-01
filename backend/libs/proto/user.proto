@@ -37,7 +37,11 @@ message GetUserDashboardRequest {
 message GetUserDashboardResponse {
     int32 status = 1;
     string message = 2;
-    int32 total_users = 3;
-    int32 admin_users = 4;
-    int32 standard_users = 5;
+    int32 total_hazards = 3;
+    int32 active_hazards = 4;
+    int32 total_threats = 5;
+    int32 active_threats = 6;
+    int32 total_risk_assessments = 7;
+    int32 critical_risks = 8;
+    string last_updated = 9;
 }

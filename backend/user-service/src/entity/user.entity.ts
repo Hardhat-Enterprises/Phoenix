@@ -28,18 +28,27 @@ export class GetUsersEntity {
 export class GetUserDashboardEntity {
   status: number;
   message: string;
-  total_users: number;
-  admin_users: number;
-  standard_users: number;
+  total_hazards: number;
+  active_hazards: number;
+  total_threats: number;
+  active_threats: number;
+  total_risk_assessments: number;
+  critical_risks: number;
+  last_updated: string;
 
   static toEntity(item: any): GetUserDashboardEntity {
     const response = new GetUserDashboardEntity();
 
     response.status = item.status;
     response.message = item.message;
-    response.total_users = item.total_users;
-    response.admin_users = item.admin_users;
-    response.standard_users = item.standard_users;
+    response.total_hazards = item.total_hazards;
+    response.active_hazards = item.active_hazards;
+    response.total_threats = item.total_threats;
+    response.active_threats = item.active_threats;
+    response.total_risk_assessments =
+      item.total_risk_assessments;
+    response.critical_risks = item.critical_risks;
+    response.last_updated = item.last_updated;
 
     return response;
   }

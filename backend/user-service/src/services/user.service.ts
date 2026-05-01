@@ -43,25 +43,21 @@ export const getUserDashboard = async (
   getUserDashboardDto: GetUserDashboardDto,
 ): Promise<GetUserDashboardEntity> => {
   try {
-    logger.info("Fetching user dashboard data from database...");
-
-    const users = await UserAccount.findAll({});
-
-    const totalUsers = users.length;
-    const adminUsers = users.filter((user: any) => user.role === "admin").length;
-    const standardUsers = users.filter(
-      (user: any) => user.role !== "admin",
-    ).length;
+    logger.info("Fetching dashboard overview data...");
 
     return GetUserDashboardEntity.toEntity({
       status: HttpStatusCode.HTTP_STATUS_OK,
-      message: "User dashboard data fetched successfully",
-      total_users: totalUsers,
-      admin_users: adminUsers,
-      standard_users: standardUsers,
+      message: "Dashboard overview retrieved successfully",
+      total_hazards: 0,
+      active_hazards: 0,
+      total_threats: 0,
+      active_threats: 0,
+      total_risk_assessments: 0,
+      critical_risks: 0,
+      last_updated: new Date().toISOString(),
     });
   } catch (error) {
-    logger.error(`Error fetching user dashboard data: ${error}`);
-    throw new Error("Error fetching user dashboard data");
+    logger.error(`Error fetching dashboard overview data: ${error}`);
+    throw new Error("Error fetching dashboard overview data");
   }
 };

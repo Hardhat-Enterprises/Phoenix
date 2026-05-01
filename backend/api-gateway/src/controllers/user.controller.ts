@@ -50,7 +50,12 @@ export const getUserDashboard = (req: Request, res: Response) => {
         .status(
           response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
         )
-        .json({ message: "Error fetching user dashboard" });
+        .json({
+          status:
+            response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+          message: "Error fetching dashboard overview",
+          data: [],
+        });
     }
 
     logger.info(
@@ -58,13 +63,20 @@ export const getUserDashboard = (req: Request, res: Response) => {
     );
 
     return res.status(response.status || HttpStatusCode.HTTP_STATUS_OK).json({
-      status: response?.status,
-      message: response?.message,
-      dashboard: {
-        total_users: response?.total_users,
-        admin_users: response?.admin_users,
-        standard_users: response?.standard_users,
-      },
+      status: response?.status || HttpStatusCode.HTTP_STATUS_OK,
+      message:
+        response?.message || "Dashboard overview retrieved successfully",
+      data: [
+        {
+          total_hazards: response?.total_hazards,
+          active_hazards: response?.active_hazards,
+          total_threats: response?.total_threats,
+          active_threats: response?.active_threats,
+          total_risk_assessments: response?.total_risk_assessments,
+          critical_risks: response?.critical_risks,
+          last_updated: response?.last_updated || new Date().toISOString(),
+        },
+      ],
     });
   });
 };

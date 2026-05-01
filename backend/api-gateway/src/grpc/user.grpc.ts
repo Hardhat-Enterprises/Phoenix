@@ -38,13 +38,11 @@ export interface GetUsersRequest {}
 export interface GetUsersResponse {
   status: number;
   message: string;
-  users: [
-    {
-      user_id: string;
-      username: string;
-      role: string;
-    },
-  ];
+  users: {
+    user_id: string;
+    username: string;
+    role: string;
+  }[];
 }
 
 export interface GetUserDashboardRequest {}
@@ -52,9 +50,13 @@ export interface GetUserDashboardRequest {}
 export interface GetUserDashboardResponse {
   status: number;
   message: string;
-  total_users: number;
-  admin_users: number;
-  standard_users: number;
+  total_hazards: number;
+  active_hazards: number;
+  total_threats: number;
+  active_threats: number;
+  total_risk_assessments: number;
+  critical_risks: number;
+  last_updated: string;
 }
 
 export interface UserServiceClient {

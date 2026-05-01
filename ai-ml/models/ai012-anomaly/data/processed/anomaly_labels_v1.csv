@@ -1,0 +1,4 @@
+row_id,anomaly_flag,anomaly_score,anomaly_reason
+0,1,0.2,cyber_spike_low_hazard
+1,0,0.0,normal
+2,1,0.2,high_risk_feature

@@ -1,118 +1,248 @@
-import pandas as pd
+import os
 import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
+
+
+# 1. DATA LOADER MODULE
+
+
+class DataLoader:
+    def load(self, path: str) -> pd.DataFrame:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Dataset not found: {path}")
+
+        df = pd.read_csv(path, low_memory=False)
+
+        if df.empty:
+            raise ValueError("Dataset is empty.")
+
+        return df
+
+
+# 2. DATA CLEANER MODULE
+
+
+class DataCleaner:
+    def clean(self, df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+
+        if "time_window" in df.columns:
+            df["time_window"] = pd.to_datetime(df["time_window"], errors="coerce")
+
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+
+        for col in numeric_cols:
+            df[col] = df[col].fillna(df[col].median())
+
+        return df
+
+
+
+# 3. FEATURE ENGINEERING MODULE
+
+
+class FeatureEngineer:
+
+    def build_cyber_features(self, df):
+        cyber_cols = [
+            "urlhaus_event_count",
+            "urlhaus_unique_url_count",
+            "urlhaus_online_count",
+            "urlhaus_offline_count"
+        ]
+
+        available = [c for c in cyber_cols if c in df.columns]
+
+        df["cyber_intensity_score"] = df[available].sum(axis=1)
+        return df
+
+    def build_hazard_features(self, df):
+
+        required = [
+            "firms_avg_frp",
+            "firms_avg_brightness",
+            "firms_avg_confidence",
+            "firms_event_count"
+        ]
+
+        if not all(c in df.columns for c in required):
+            raise ValueError("Missing required FIRMS columns.")
+
+        df["hazard_severity_index"] = (
+            df["firms_avg_frp"] * 0.35 +
+            df["firms_avg_brightness"] * 0.30 +
+            df["firms_avg_confidence"] * 0.20 +
+            df["firms_event_count"] * 0.15
+        )
+
+        return df
+
+    def build_temporal_features(self, df):
+        if "time_window" not in df.columns:
+            return df
+
+        df = df.sort_values("time_window")
+
+        df["rolling_6h_event_avg"] = df["firms_event_count"].rolling(6, 1).mean()
+        df["lag_1_event_count"] = df["firms_event_count"].shift(1).fillna(0)
+        df["event_spike_ratio"] = df["firms_event_count"] / (df["rolling_6h_event_avg"] + 1)
+
+        return df
+
+    def build_geo_features(self, df):
+        if not all(c in df.columns for c in ["region_lat_bin", "region_lon_bin", "firms_event_count"]):
+            return df
+
+        df["geo_density_score"] = (
+            (df["region_lat_bin"].abs() + df["region_lon_bin"].abs())
+            * df["firms_event_count"]
+        )
+
+        return df
+
+    def build_zscores(self, df):
+        targets = [
+            "firms_event_count",
+            "cyber_intensity_score",
+            "hazard_severity_index"
+        ]
+
+        for col in targets:
+            if col not in df.columns:
+                continue
+
+            std = df[col].std()
+
+            df[f"zscore_{col}"] = 0 if std == 0 or pd.isna(std) else (df[col] - df[col].mean()) / std
+
+        return df
+
+    def transform(self, df):
+        df = self.build_cyber_features(df)
+        df = self.build_hazard_features(df)
+        df = self.build_temporal_features(df)
+        df = self.build_geo_features(df)
+        df = self.build_zscores(df)
+        return df
+
+
+# 4. FEATURE SELECTOR MODULE
 
 
 class FeatureSelector:
 
-    def __init__(self, df: pd.DataFrame):
-        self.df = df.copy()
+    def select(self, df):
+        context = ["time_window", "region_id", "region_lat_bin", "region_lon_bin"]
 
-    # -----------------------------
-    # 1. MAIN FEATURE ENGINEERING
-    # -----------------------------
-    def create_features(self):
+        features = [
+            "cyber_intensity_score",
+            "hazard_severity_index",
+            "rolling_6h_event_avg",
+            "lag_1_event_count",
+            "event_spike_ratio",
+            "geo_density_score",
+            "zscore_firms_event_count",
+            "zscore_cyber_intensity_score",
+            "zscore_hazard_severity_index"
+        ]
 
-        df = self.df
+        cols = [c for c in context + features if c in df.columns]
 
-        # -----------------------------
-        # TEMPORAL FEATURE
-        # -----------------------------
-        if "time_window" in df.columns:
-            df["time_window"] = pd.to_datetime(df["time_window"], errors="coerce")
-            df = df.sort_values("time_window")
+        return df[cols].copy()
 
-            df["hour"] = df["time_window"].dt.hour
-            df["day"] = df["time_window"].dt.day
 
-        # -----------------------------
-        # GEO FEATURES (ALL INCLUDED)
-        # -----------------------------
-        df["geo_width"] = df["region_max_longitude"] - df["region_min_longitude"]
-        df["geo_height"] = df["region_max_latitude"] - df["region_min_latitude"]
-        df["geo_area_proxy"] = df["geo_width"] * df["geo_height"]
 
-        df["geo_center_lat"] = (df["region_max_latitude"] + df["region_min_latitude"]) / 2
-        df["geo_center_lon"] = (df["region_max_longitude"] + df["region_min_longitude"]) / 2
+# 5. SCALER MODULE
 
-        # -----------------------------
-        # FIRMS HAZARD FEATURES
-        # -----------------------------
-        df["firms_risk_index"] = df["firms_event_count"] * df["firms_avg_frp"]
 
-        df["firms_intensity_score"] = (
-            df["firms_avg_brightness"] * df["firms_avg_confidence"]
-        )
+class FeatureScaler:
 
-        df["firms_geo_density"] = df["firms_event_count"] / (df["geo_area_proxy"] + 1e-6)
+    def __init__(self):
+        self.scaler = StandardScaler()
 
-        df["firms_sensor_activity"] = (
-            df["firms_sources"].astype(str).apply(lambda x: len(x.split("|")))
-        )
+    def scale(self, df):
+        context = ["time_window", "region_id", "region_lat_bin", "region_lon_bin"]
 
-        # -----------------------------
-        # URLHAUS CYBER FEATURES
-        # -----------------------------
-        df["cyber_risk_index"] = (
-            df["urlhaus_event_count"] * df["urlhaus_unique_url_count"]
-        )
+        feature_cols = [c for c in df.columns if c not in context]
 
-        df["cyber_activity_score"] = (
-            df["urlhaus_online_count"] - df["urlhaus_offline_count"]
-        )
+        scaled = self.scaler.fit_transform(df[feature_cols])
 
-        df["cyber_threat_density"] = df["urlhaus_event_count"] / (df["firms_event_count"] + 1)
+        scaled_df = pd.DataFrame(scaled, columns=feature_cols)
 
-        # -----------------------------
-        # CROSS DOMAIN INTERACTION (VERY IMPORTANT HD FEATURE)
-        # -----------------------------
-        df["hazard_cyber_interaction"] = (
-            df["firms_event_count"] * df["urlhaus_event_count"]
-        )
+        return pd.concat([df[context].reset_index(drop=True),
+                          scaled_df.reset_index(drop=True)], axis=1)
 
-        df["risk_amplification_index"] = (
-            df["firms_risk_index"] * df["cyber_risk_index"]
-        )
 
-        # -----------------------------
-        # CATEGORICAL FEATURE ENCODING
-        # -----------------------------
-        if "firms_instruments" in df.columns:
-            df["firms_instruments_encoded"] = df["firms_instruments"].astype("category").cat.codes
 
-        if "firms_satellites" in df.columns:
-            df["firms_satellites_encoded"] = df["firms_satellites"].astype("category").cat.codes
+# 6. PIPELINE ORCHESTRATOR (MAIN SYSTEM)
 
-        if "firms_types" in df.columns:
-            df["firms_types_encoded"] = df["firms_types"].astype("category").cat.codes
 
-        if "urlhaus_threats" in df.columns:
-            df["urlhaus_threats_encoded"] = df["urlhaus_threats"].astype("category").cat.codes
+class AnomalyFeaturePipeline:
 
-        if "urlhaus_tags" in df.columns:
-            df["urlhaus_tags_encoded"] = df["urlhaus_tags"].astype("category").cat.codes
+    def __init__(self):
+        self.loader = DataLoader()
+        self.cleaner = DataCleaner()
+        self.engineer = FeatureEngineer()
+        self.selector = FeatureSelector()
+        self.scaler = FeatureScaler()
 
-        # -----------------------------
-        # NORMALISATION FEATURES (ANOMALY READY)
-        # -----------------------------
-        df["firms_zscore"] = (
-            df["firms_event_count"] - df["firms_event_count"].mean()
-        ) / (df["firms_event_count"].std() + 1e-6)
+    def run(self, input_path, output_path):
 
-        df["cyber_zscore"] = (
-            df["urlhaus_event_count"] - df["urlhaus_event_count"].mean()
-        ) / (df["urlhaus_event_count"].std() + 1e-6)
+        print("\n=== AI012 MODULAR FEATURE PIPELINE ===\n")
 
-        # -----------------------------
-        # FINAL CLEANING
-        # -----------------------------
-        df = df.replace([np.inf, -np.inf], np.nan).fillna(0)
+        # Load
+        df = self.loader.load(input_path)
+        print("Loaded:", df.shape)
 
-        self.df = df
-        return self.df
+        # Clean
+        df = self.cleaner.clean(df)
 
-    # -----------------------------
-    # 2. FEATURE LIST (FOR MODEL)
-    # -----------------------------
-    def get_feature_list(self):
+        # Feature engineering
+        df = self.engineer.transform(df)
 
-        return [col for col in self.df.columns if col not in ["time_window"]]
+        # Select features
+        df = self.selector.select(df)
+
+        print("Selected features:", df.columns.tolist())
+
+        # Scale
+        df = self.scaler.scale(df)
+
+        # Save
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        df.to_csv(output_path, index=False)
+
+        print("\nSaved to:", output_path)
+        print("Final shape:", df.shape)
+
+        return df
+
+
+
+# MAIN EXECUTION
+
+
+if __name__ == "__main__":
+
+    BASE_DIR = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..")
+    )
+
+    INPUT_PATH = os.path.join(
+        BASE_DIR,
+        "data",
+        "raw",
+        "anomaly_detection_hourly_2020_2024.csv"
+    )
+
+    OUTPUT_PATH = os.path.join(
+        BASE_DIR,
+        "data",
+        "processed",
+        "features_output.csv"
+    )
+
+    pipeline = AnomalyFeaturePipeline()
+    pipeline.run(INPUT_PATH, OUTPUT_PATH)

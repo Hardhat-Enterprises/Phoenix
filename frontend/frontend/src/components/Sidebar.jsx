@@ -2,11 +2,11 @@ import "./Sidebar.css";
 
 function Sidebar({ setPage, page }) {
   const menuItems = [
-    { label: "Dashboard", target: "dashboard" },
-    { label: "Alerts", target: "alerts" },
-    { label: "Threat Reports", target: "reports" },
-    { label: "About Us", target: "about" },
-    { label: "Settings", target: "settings" },
+    { label: "Dashboard", value: "dashboard" },
+    { label: "Alerts", value: "alerts" },
+    { label: "Threat Reports", value: "reports" },
+    { label: "About Us", value: "about" },
+    { label: "Settings", value: "settings" },
   ];
 
   return (
@@ -17,12 +17,12 @@ function Sidebar({ setPage, page }) {
         <div className="sidebar-menu">
           {menuItems.map((item) => (
             <button
-              key={item.label}
+              key={item.value}
               type="button"
               className={`sidebar-item ${
-                page === item.target ? "active" : ""
+                page === item.value ? "active" : ""
               }`}
-              onClick={() => setPage(item.target)}
+              onClick={() => setPage(item.value)}
             >
               <span className="sidebar-icon"></span>
               <span className="sidebar-text">{item.label}</span>

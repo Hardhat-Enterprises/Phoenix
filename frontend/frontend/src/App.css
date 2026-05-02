@@ -39,14 +39,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden; /* Ensures the image doesn't bleed outside the circle */
+  overflow: hidden;
 }
 
 .temp-logo img {
-  width: 100%;      /* Makes image width match the 44px container */
-  height: 100%;     /* Makes image height match the 44px container */
-  object-fit: cover; /* Crops the image to fill the circle without stretching */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
+
 .temp-header h2 {
   margin: 0;
   font-size: 20px;
@@ -87,6 +88,13 @@ body {
   color: #ffd34d;
   font-size: 18px;
   cursor: pointer;
+}
+
+.search-highlight {
+  background-color: #fff176;
+  color: #10264d;
+  padding: 1px 3px;
+  border-radius: 4px;
 }
 
 .page-content {
@@ -135,8 +143,6 @@ body {
   justify-content: space-between;
   align-items: center;
 }
-
-/* Priyanka - Forgot password task styling */
 
 .forgot {
   font-size: 13px;
@@ -233,13 +239,6 @@ body {
   border-radius: 8px;
   border: 1px solid #ddd;
 }
-  font-family{font-style: Arial, Helvetica, sans-serif;
-  background-color: #edf2f8;
-}
-
-* {
-  box-sizing: border-box;
-}
 
 .about-page {
   display: flex;
@@ -267,6 +266,7 @@ body {
   line-height: 1.7;
   text-align: center;
 }
+
 .report-page {
   padding: 24px;
   background: #f3f6fb;
@@ -488,6 +488,15 @@ body {
   font-size: 13px;
 }
 
+.app-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.content-wrap {
+  flex: 1;
+}
+
 @media (max-width: 768px) {
   .report-upload-grid {
     grid-template-columns: 1fr;
@@ -501,12 +510,4 @@ body {
   .result-row {
     grid-template-columns: 1fr;
   }
-
-.app-container {
-  display: flex;
-  flex-direction: column;
-
-}
-.content-wrap {
-  flex: 1;
 }

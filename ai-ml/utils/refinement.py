@@ -1,149 +1,88 @@
-"""
-AI011 – Risk Refinement Module
---------------------------------
-This module refines baseline risk scores by addressing:
-- Hazard-only overestimation
-- Hazard-cyber correlation
-- Confidence adjustment
-- Score stability
+import json
+from datetime import datetime, timezone
 
-Author: Your Name
-"""
+class RiskRefinementEngine:
+    def __init__(self):
+        self.thresholds = {
+            "low": (0, 24),
+            "medium": (25, 49),
+            "high": (50, 74),
+            "critical": (75, 100)
+        }
 
-# -------------------------------
-# Severity Mapping
-# -------------------------------
-def map_severity(score: float) -> str:
-    """
-    Convert numerical score into severity label.
-    """
-    if score <= 24:
-        return "low"
-    elif score <= 49:
-        return "medium"
-    elif score <= 74:
-        return "high"
-    else:
-        return "critical"
+    def apply_confidence_adjustment(self, raw_score: float, confidence: float) -> int:
+        """Adjusts the raw risk score based on model confidence and normalizes to 0-100."""
+        adjusted_score = raw_score * confidence
+        return int(max(0, min(100, round(adjusted_score))))
 
+    def determine_severity(self, risk_score: int) -> str:
+        """Maps the normalized integer risk score to a predefined severity label."""
+        for severity, (low_bound, high_bound) in self.thresholds.items():
+            if low_bound <= risk_score <= high_bound:
+                return severity
+        return "low" # Fallback
 
-# -------------------------------
-# Confidence Adjustment Logic
-# -------------------------------
-def apply_confidence_adjustment(score: float, confidence: float) -> float:
-    """
-    Adjust risk score based on model confidence.
+    def get_recommended_action(self, severity: str) -> str:
+        """Assigns standardized response directives based on severity."""
+        actions = {
+            "low": "monitor routine logs, standard vigilance",
+            "medium": "verify official sources, elevate monitoring",
+            "high": "issue targeted alerts, deploy mitigation protocols",
+            "critical": "initiate critical incident response, immediate cross-agency escalation"
+        }
+        return actions.get(severity, "monitor")
 
-    Args:
-        score (float): Baseline risk score (0–100)
-        confidence (float): Confidence level (0–1)
+    def refine_output(self, raw_data: dict) -> dict:
+        """Processes raw model predictions into the final A1007 compliant JSON payload."""
+        risk_score = self.apply_confidence_adjustment(
+            raw_data.get('raw_score', 0), 
+            raw_data.get('confidence', 0.0)
+        )
+        severity = self.determine_severity(risk_score)
+        
+        refined_payload = {
+            "event_type": raw_data.get("event_type", "hazard_only"),
+            "risk_score": risk_score,
+            "severity": severity,
+            "confidence": round(raw_data.get("confidence", 0.0), 2),
+            "hazard_type": raw_data.get("hazard_type"),
+            "cyber_threat": raw_data.get("cyber_threat"),
+            "recommended_action": self.get_recommended_action(severity),
+            "top_risk_factors": raw_data.get("top_risk_factors", [])[:3], # Max 3 elements
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "model_version": "v1.0-baseline"
+        }
+        return refined_payload
 
-    Returns:
-        float: Adjusted (refined) risk score
-    """
-
-    # Base adjustment
-    refined_score = score * (0.5 + 0.5 * confidence)
-
-    # Low confidence penalty
-    if confidence < 0.4:
-        refined_score *= 0.8
-
-    # High confidence boost
-    elif confidence > 0.85:
-        refined_score *= 1.05
-
-    # Clamp between 0–100
-    refined_score = max(0, min(refined_score, 100))
-
-    return round(refined_score, 2)
-
-
-# -------------------------------
-# Issue Detection (Analysis Layer)
-# -------------------------------
-def detect_issues(record: dict) -> list:
-    """
-    Identify weak or unstable scoring cases based on raw score review.
-    """
-    issues = []
-
-    # Hazard-only overestimation
-    if record.get("cyber") is None and record["score"] > 70:
-        issues.append("Hazard-only overestimation")
-
-    # Combined event underestimation
-    if record.get("cyber") is not None and record["score"] < 40:
-        issues.append("Combined event underestimation")
-
-    # Confidence ignored
-    if record["confidence"] < 0.5 and record["score"] > 60:
-        issues.append("Confidence not affecting score")
-
-    return issues
-
-
-# -------------------------------
-# Score Refinement Logic
-# -------------------------------
-def refine_score(record: dict) -> float:
-    """
-    Apply refinement logic to baseline score.
-    """
-    score = record["score"]
-    confidence = record["confidence"]
-
-    # Step 1: Confidence adjustment (FIXED)
-    score = apply_confidence_adjustment(score, confidence)
-
-    # Step 2: Boost combined hazard + cyber events
-    if record.get("hazard") and record.get("cyber"):
-        score += 10
-
-    # Step 3: Penalize hazard-only events
-    if record.get("cyber") is None:
-        score -= 10
-
-    # Step 4: Clamp score within range
-    score = max(0, min(score, 100))
-
-    return round(score, 2)
-
-
-# -------------------------------
-# Full Refinement Pipeline
-# -------------------------------
-def refine_risk(record: dict) -> dict:
-    """
-    Full refinement process:
-    Input -> Detect issues -> Refine score -> Map severity
-    """
-    refined_score = refine_score(record)
-
-    return {
-        "event": record.get("event"),
-        "baseline_score": record["score"],
-        "confidence": record["confidence"],
-        "refined_score": refined_score,
-        "original_severity": map_severity(record["score"]),
-        "refined_severity": map_severity(refined_score),
-        "issues_detected": detect_issues(record),
-    }
-
-
-# -------------------------------
-# Example Run (for testing)
-# -------------------------------
-if __name__ == "__main__":
-    sample_data = [
-        {"event": "Flood", "hazard": "flood", "cyber": None, "score": 80, "confidence": 0.8},
-        {"event": "Bushfire+Phishing", "hazard": "bushfire", "cyber": "phishing", "score": 25, "confidence": 0.9},
-        {"event": "Bushfire+Phishing", "hazard": "bushfire", "cyber": "phishing", "score": 85, "confidence": 0.85},
-        {"event": "Bushfire+Phishing", "hazard": "bushfire", "cyber": "phishing", "score": 42, "confidence": 0.6},
-        {"event": "Moderate Storm", "hazard": "storm", "cyber": None, "score": 49, "confidence": 0.7},
-        {"event": "Moderate Storm", "hazard": "storm", "cyber": None, "score": 51, "confidence": 0.7},
+def run_consistency_tests():
+    """Output consistency testing against A1007 Schema Constraints."""
+    engine = RiskRefinementEngine()
+    
+    test_cases = [
+        {
+            "raw_score": 78, "confidence": 0.95, "event_type": "hazard_only",
+            "hazard_type": "bushfire", "cyber_threat": None, 
+            "top_risk_factors": ["rapid spread rate", "proximity to critical infrastructure"]
+        },
+        {
+            "raw_score": 62, "confidence": 0.88, "event_type": "cyber_only",
+            "hazard_type": None, "cyber_threat": "phishing",
+            "top_risk_factors": ["domain spoofing detected", "high volume email burst"]
+        }
     ]
 
-    for record in sample_data:
-        result = refine_risk(record)
-        print(result)
+    print("--- Output Consistency Test Results ---")
+    for i, case in enumerate(test_cases):
+        output = engine.refine_output(case)
+        print(f"\nTest Scenario {i+1}: {case['event_type']}")
+        print(json.dumps(output, indent=2))
+        
+    
+        assert 0 <= output["risk_score"] <= 100, "Risk score out of bounds"
+        assert output["severity"] in ["low", "medium", "high", "critical"], "Invalid severity label"
+        assert 0.00 <= output["confidence"] <= 1.00, "Confidence out of bounds"
+        assert len(output["top_risk_factors"]) <= 3, "Too many risk factors"
+        print("Consistency Check: PASS")
+
+if __name__ == "__main__":
+    run_consistency_tests()

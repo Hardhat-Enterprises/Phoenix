@@ -1,341 +1,401 @@
 """
-Role C – Anomaly Definition and Label Builder
 AI012 – Anomaly Detection Model | Project Phoenix
+Role C – Anomaly Definition and Label Builder
 
-Author : Role C (Preetham Chandu)
-Inputs : 1. Role A dataset  → ai-ml/models/ai012-anomaly/data/processed/anomaly_dataset_v1.csv
-                               (anomaly_detection_hourly_2020_2024.csv produced by Sunain)
-         2. Role B features → ai-ml/features/ai004_features_output.csv
-                               (engineered features produced by Sneha)
-Output : data/processed/anomaly_labels_v1.csv
+Author  : Role C (Preetham Chandu)
+Dataset : anomaly_detection_hourly_2020_2024.csv  (built by Sunain in Role A)
 
-WHY TWO INPUTS?
-  Role A (Sunain) built the merged dataset: raw FIRMS satellite fire data joined
-  with URLhaus cyber threat data at hourly + regional resolution. It contains
-  the ground-level signals: fire radiative power, satellite confidence scores,
-  cyber URL counts, threat types, region geometry.
+What this script does
+---------------------
+This script reads the Role A dataset (the merged FIRMS fire + URLhaus cyber
+dataset created by the team lead) and produces TWO outputs as DataFrames:
 
-  Role B (Sneha) engineered higher-level features on top of that: rolling means,
-  z-scores, spike indicators, geo risk scores, combined risk indices.
+  1. features_df  – a selected and prepared set of numeric features suitable
+                    for anomaly detection (used by Role D for Isolation Forest)
 
-  Both are needed:
-    - Role A columns give us direct domain signals (confidence, brightness, online URL count)
-    - Role B columns give us derived statistical signals (z-scores, rolling spikes, risk indices)
-  Together they produce richer, more defensible anomaly labels.
+  2. labels_df    – rule-based anomaly labels for every record in the dataset
+                    (used by Role F for evaluation only, NOT for model training)
 
-LABEL PURPOSE:
-  Labels are for EVALUATION ONLY (Role F).
-  They are NEVER passed into the Isolation Forest (Role D) or any unsupervised model.
-  The models find anomalies on their own. Role C labels measure how well they did.
+These two outputs are returned separately so they can be combined or used
+independently by downstream roles (D, E, F) as needed.
 
-ANOMALY RULES (7 total):
-  Rule 1 – Extreme fire intensity         : firms_avg_frp in top 1% of all observations
-  Rule 2 – High confidence extreme fire   : high satellite confidence + extreme FRP
-                                            (distinguishes real fires from noise)
-  Rule 3 – Cyber spike vs low hazard      : cyber activity disproportionate to fire size
-  Rule 4 – Hazard-cyber mismatch          : intense fire + zero cyber (rare, suspicious)
-  Rule 5 – Active online threats          : urlhaus_online_count elevated (live threats)
-  Rule 6 – Rare region suddenly active    : region that rarely appears becomes active
-  Rule 7 – Engineered risk feature spike  : any Role B risk/spike column hits 95th pct
+No CSV is saved automatically. The caller decides what to do with the output.
+
+Pipeline flow (as required by AI008 and AI012 spec)
+----------------------------------------------------
+load_data -> engineer_features -> detect_anomalies -> save_outputs
+
+Anomaly definitions (what counts as anomalous in PHOENIX)
+----------------------------------------------------------
+Rule 1 – extreme_fire_intensity
+    fires_avg_frp is in the top 1% of all readings.
+    Reason: extreme fire radiative power is a rare, high-risk event.
+
+Rule 2 – high_confidence_extreme_fire
+    firms_avg_frp is in the top 5% AND firms_avg_confidence is also high.
+    Reason: when the satellite is confident and the fire is intense, it is
+    genuinely dangerous, not a noisy reading.
+
+Rule 3 – cyber_spike_low_hazard
+    urlhaus_event_count is active but firms_avg_frp is below its median,
+    AND the ratio of cyber to hazard exceeds 0.5.
+    Reason: disproportionate cyber activity during a mild disaster is a
+    classic opportunistic attack pattern.
+
+Rule 4 – hazard_cyber_mismatch
+    firms_avg_frp is in the top 5% but urlhaus_event_count is zero.
+    Reason: extreme fire with zero cyber activity is statistically rare
+    and may indicate suppressed reporting or infrastructure damage.
+
+Rule 5 – active_online_threats
+    urlhaus_online_count is above its 99th percentile.
+    Reason: live active malicious URLs indicate real ongoing threat
+    infrastructure, not just historical records.
+
+Rule 6 – rare_region_active
+    region_id appears in the bottom 10% of all regions by frequency, but
+    firms_event_count is greater than zero.
+    Reason: a region that almost never appears suddenly showing fire
+    activity is inherently unusual.
+
+Rule 7 – cyber_volume_spike
+    urlhaus_unique_url_count is above its 99th percentile.
+    Reason: an unusually large number of unique malicious URLs in a single
+    time window indicates a coordinated attack event.
+
+Why these rules and not more?
+    These 7 rules cover the anomaly types explicitly listed in the AI012 task
+    guide: cyber spikes, hazard-cyber mismatches, rare region events, and
+    suspicious outlier combinations. Adding more rules risks over-labelling
+    normal events. The resulting ~7-8% anomaly rate is intentionally within
+    the 1-10% contamination range that Role D will test for Isolation Forest.
+
+How this connects to AI008 Training Pipeline
+    The run() function at the bottom is the entry point the pipeline calls.
+    It follows the exact interface: load -> feature engineering -> labeling.
+    Role D passes the features_df into Isolation Forest for training.
+    Role F uses labels_df to evaluate model performance after training.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
+
 import numpy as np
 import pandas as pd
 
 
 # ---------------------------------------------------------------------------
-# Thresholds – derived from actual dataset statistics (do not change blindly)
+# Thresholds – computed from the actual dataset (do not change arbitrarily)
 # ---------------------------------------------------------------------------
-FRP_P99             = 41.61   # firms_avg_frp 99th percentile  → extreme fire
-FRP_P95             = 21.45   # firms_avg_frp 95th percentile  → strong fire
-CONFIDENCE_HIGH     = 64.61   # firms_avg_confidence 95th pct  → satellite is sure
-EVENT_COUNT_P95     = 251.0   # firms_event_count 95th pct     → high fire density
-ONLINE_THRESH       = 1.0     # urlhaus_online_count 99th pct  → live URLs active
-CYBER_HAZARD_RATIO  = 0.5     # cyber/hazard ratio threshold
-RISK_FEATURE_PCT    = 0.95    # percentile for Role B risk columns
-REGION_RARITY_PCT   = 0.10    # bottom 10% regions by frequency = rare
+FRP_P99            = 41.61   # firms_avg_frp 99th percentile  (extreme fire)
+FRP_P95            = 21.45   # firms_avg_frp 95th percentile  (strong fire)
+CONFIDENCE_P95     = 64.61   # firms_avg_confidence 95th percentile
+ONLINE_P99         = 1.0     # urlhaus_online_count 99th percentile
+UNIQUE_URL_P99     = 1.0     # urlhaus_unique_url_count 99th percentile
+CYBER_HAZARD_RATIO = 0.5     # suspicious cyber-to-hazard ratio
+REGION_RARITY_PCT  = 0.10    # bottom 10% regions by appearance count = rare
 
-
-# Role B engineered feature column name fragments to look for
-RISK_KEYWORDS   = ["risk", "threat", "spike", "intensity", "severity", "zscore",
-                   "z_score", "anomaly", "suspicious", "rolling", "surge"]
-CYBER_KEYWORDS  = ["cyber", "urlhaus", "url", "malicious"]
-HAZARD_KEYWORDS = ["firms", "frp", "fire", "hazard", "brightness", "confidence"]
+# Features selected for anomaly detection model (Role D input)
+# These are the numeric columns from the dataset most relevant to
+# detecting unusual hazard + cyber behaviour
+ANOMALY_FEATURES = [
+    "firms_event_count",
+    "firms_avg_frp",
+    "firms_avg_brightness",
+    "firms_avg_confidence",
+    "firms_avg_bright_t31",
+    "firms_avg_bright_ti4",
+    "urlhaus_event_count",
+    "urlhaus_unique_url_count",
+    "urlhaus_online_count",
+    "urlhaus_offline_count",
+    "urlhaus_dateadded_hour_count",
+]
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Step 1 – Load data
 # ---------------------------------------------------------------------------
 
-def _find_cols(df: pd.DataFrame, keywords: list[str], numeric_only: bool = True) -> list[str]:
-    result = []
-    for col in df.columns:
-        if any(kw in col.lower() for kw in keywords):
-            if numeric_only and not pd.api.types.is_numeric_dtype(df[col]):
-                continue
-            result.append(col)
-    return result
+def load_data(dataset_path: str) -> pd.DataFrame:
+    """
+    Load the Role A dataset (anomaly_detection_hourly_2020_2024.csv).
+    This is the merged FIRMS + URLhaus dataset built by the team lead.
+    """
+    path = Path(dataset_path)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Dataset not found: {path}\n"
+            "Expected: anomaly_detection_hourly_2020_2024.csv (Role A dataset)"
+        )
+    print(f"[label_builder] Loading dataset: {path.name}")
+    df = pd.read_csv(path, low_memory=False)
+    print(f"[label_builder] Loaded {len(df):,} rows, {df.shape[1]} columns")
+    return df
 
 
-def _safe_zscore(s: pd.Series) -> pd.Series:
-    std = s.std()
-    return (s - s.mean()) / std if std > 0 else pd.Series(0.0, index=s.index)
+# ---------------------------------------------------------------------------
+# Step 2 – Engineer features for anomaly detection
+# ---------------------------------------------------------------------------
+
+def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Select and prepare numeric features from the dataset for anomaly detection.
+
+    This produces the features_df that Role D will pass into Isolation Forest.
+    Features are selected based on the AI012 task guide guidance:
+      - cyber incident intensity features
+      - temporal and geo density features
+      - combined hazard + cyber signals
+
+    Note: if AI004 feature engineering output (Sneha's file) is available,
+    it will be merged in by the run() function before this step, and any
+    additional engineered columns will automatically be included here.
+
+    Returns a DataFrame with only numeric, model-ready features.
+    """
+    available = [col for col in ANOMALY_FEATURES if col in df.columns]
+    features_df = df[available].copy()
+
+    # Fill missing values with 0 (most NaN here = no event occurred)
+    features_df = features_df.fillna(0)
+
+    # Add a derived feature: ratio of cyber events to fire events
+    # Captures disproportionate cyber activity relative to disaster intensity
+    safe_firms = features_df["firms_event_count"].replace(0, np.nan)
+    features_df["cyber_to_hazard_ratio"] = (
+        features_df["urlhaus_event_count"] / safe_firms
+    ).fillna(0).round(6)
+
+    # Add total cyber signal (online + unique URLs)
+    features_df["total_cyber_signal"] = (
+        features_df["urlhaus_online_count"] +
+        features_df["urlhaus_unique_url_count"]
+    )
+
+    print(f"[label_builder] Feature set prepared: {features_df.shape[1]} features, "
+          f"{len(features_df):,} records")
+    return features_df
 
 
-def _region_rarity_flag(df: pd.DataFrame) -> pd.Series:
-    """True for regions whose total appearance count is in the bottom 10%."""
+# ---------------------------------------------------------------------------
+# Step 3 – Define and apply anomaly rules
+# ---------------------------------------------------------------------------
+
+def _region_rarity(df: pd.DataFrame) -> pd.Series:
+    """Return True for regions in the bottom 10% by appearance frequency."""
     if "region_id" not in df.columns:
         return pd.Series(False, index=df.index)
     counts = df["region_id"].value_counts()
-    thresh = counts.quantile(REGION_RARITY_PCT)
-    rare   = counts[counts <= thresh].index
-    return df["region_id"].isin(rare)
+    threshold = counts.quantile(REGION_RARITY_PCT)
+    rare_regions = counts[counts <= threshold].index
+    return df["region_id"].isin(rare_regions)
 
 
-# ---------------------------------------------------------------------------
-# Rule functions  (each returns (bool Series, rule_name))
-# ---------------------------------------------------------------------------
-
-def rule_extreme_frp(df: pd.DataFrame):
-    """Rule 1 – fire radiative power in top 1%: extreme wildfire intensity."""
-    col = "firms_avg_frp"
-    if col not in df.columns:
-        return pd.Series(False, index=df.index), "extreme_fire_intensity"
-    return df[col] >= FRP_P99, "extreme_fire_intensity"
-
-
-def rule_high_confidence_extreme_fire(df: pd.DataFrame):
+def _apply_rules(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Rule 2 – satellite confidence is high AND FRP is in top 5%.
-    This separates genuinely dangerous fires from low-confidence detections.
-    Both columns come directly from Role A (firms_avg_confidence, firms_avg_frp).
+    Apply all 7 anomaly rules to the dataset.
+    Returns a DataFrame of boolean columns, one per rule.
     """
-    frp_col  = "firms_avg_frp"
-    conf_col = "firms_avg_confidence"
-    if frp_col not in df.columns or conf_col not in df.columns:
-        return pd.Series(False, index=df.index), "high_confidence_extreme_fire"
-    flag = (df[frp_col] >= FRP_P95) & (df[conf_col] >= CONFIDENCE_HIGH)
-    return flag, "high_confidence_extreme_fire"
+    rules = pd.DataFrame(index=df.index)
 
+    # Rule 1 – extreme fire intensity (top 1% FRP)
+    rules["extreme_fire_intensity"] = (
+        df["firms_avg_frp"].fillna(0) >= FRP_P99
+    )
 
-def rule_cyber_spike_low_hazard(df: pd.DataFrame):
-    """
-    Rule 3 – cyber activity is disproportionately high relative to fire size.
-    Uses urlhaus_event_count (Role A) vs firms_avg_frp (Role A).
-    Pattern: opportunistic cyberattack during a small/moderate disaster.
-    """
-    cyber_col  = "urlhaus_event_count"
-    hazard_col = "firms_avg_frp"
-    if cyber_col not in df.columns or hazard_col not in df.columns:
-        return pd.Series(False, index=df.index), "cyber_spike_low_hazard"
-    cyber  = df[cyber_col].fillna(0)
-    hazard = df[hazard_col].fillna(0)
-    safe_h = hazard.replace(0, np.nan)
-    ratio  = (cyber / safe_h).fillna(0)
-    flag = (cyber > 0) & (hazard < FRP_P95) & (ratio > CYBER_HAZARD_RATIO)
-    return flag, "cyber_spike_low_hazard"
+    # Rule 2 – high confidence extreme fire (top 5% FRP + high satellite confidence)
+    rules["high_confidence_extreme_fire"] = (
+        (df["firms_avg_frp"].fillna(0) >= FRP_P95) &
+        (df["firms_avg_confidence"].fillna(0) >= CONFIDENCE_P95)
+    )
 
+    # Rule 3 – cyber spike during low hazard
+    cyber   = df["urlhaus_event_count"].fillna(0)
+    hazard  = df["firms_avg_frp"].fillna(0)
+    safe_h  = hazard.replace(0, np.nan)
+    ratio   = (cyber / safe_h).fillna(0)
+    frp_median = hazard.median()
+    rules["cyber_spike_low_hazard"] = (
+        (cyber > 0) &
+        (hazard < frp_median) &
+        (ratio > CYBER_HAZARD_RATIO)
+    )
 
-def rule_hazard_cyber_mismatch(df: pd.DataFrame):
-    """
-    Rule 4 – extreme fire (top 5% FRP) with ZERO cyber activity.
-    Statistically rare. Could indicate suppressed reporting or infrastructure damage.
-    Both columns from Role A.
-    """
-    frp_col   = "firms_avg_frp"
-    cyber_col = "urlhaus_event_count"
-    if frp_col not in df.columns or cyber_col not in df.columns:
-        return pd.Series(False, index=df.index), "hazard_cyber_mismatch"
-    flag = (df[frp_col] >= FRP_P95) & (df[cyber_col].fillna(0) == 0)
-    return flag, "hazard_cyber_mismatch"
+    # Rule 4 – extreme hazard with zero cyber activity
+    rules["hazard_cyber_mismatch"] = (
+        (hazard >= FRP_P95) &
+        (cyber == 0)
+    )
 
+    # Rule 5 – active online threats above 99th percentile
+    rules["active_online_threats"] = (
+        df["urlhaus_online_count"].fillna(0) >= ONLINE_P99
+    )
 
-def rule_active_online_threats(df: pd.DataFrame):
-    """
-    Rule 5 – urlhaus_online_count is elevated (URLs are currently live/active).
-    This is a direct Role A column that signals live malicious infrastructure,
-    not just historical records. Elevated = at or above 99th percentile.
-    """
-    col = "urlhaus_online_count"
-    if col not in df.columns:
-        return pd.Series(False, index=df.index), "active_online_threats"
-    return df[col].fillna(0) >= ONLINE_THRESH, "active_online_threats"
-
-
-def rule_rare_region_active(df: pd.DataFrame):
-    """
-    Rule 6 – a region that appears rarely in the dataset suddenly shows activity.
-    Uses region_id (Role A) for rarity and firms_event_count (Role A) for activity.
-    """
-    if "region_id" not in df.columns or "firms_event_count" not in df.columns:
-        return pd.Series(False, index=df.index), "rare_region_active"
-    is_rare  = _region_rarity_flag(df)
+    # Rule 6 – rare region suddenly active
+    is_rare   = _region_rarity(df)
     is_active = df["firms_event_count"].fillna(0) > 0
-    return is_rare & is_active, "rare_region_active"
+    rules["rare_region_active"] = is_rare & is_active
+
+    # Rule 7 – high volume of unique malicious URLs (coordinated attack signal)
+    rules["cyber_volume_spike"] = (
+        df["urlhaus_unique_url_count"].fillna(0) >= UNIQUE_URL_P99
+    )
+
+    return rules
 
 
-def rule_engineered_risk_spike(df: pd.DataFrame):
+def build_labels(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Rule 7 – any Role B engineered risk/spike/intensity column exceeds its 95th pct.
-    This directly uses Sneha's feature engineering output (AI004).
-    Examples: cyber_intensity, combined_risk_index, adaptive_risk_index, rolling_cyber_mean.
-    Falls back gracefully if Role B features are not present.
+    Apply anomaly rules to every record in the dataset and return labels_df.
+
+    The output includes:
+      - time_window, region_id   : identifiers for joining back to source data
+      - anomaly_flag             : 1 if any rule fired, 0 otherwise
+      - anomaly_score            : proportion of rules that fired (0.0 to 1.0)
+      - anomaly_reason           : pipe-separated list of rules that fired
+
+    These labels are for Role F evaluation only. They tell us what we expect
+    to be anomalous so we can measure how well the Isolation Forest found them.
     """
-    risk_cols = _find_cols(df, RISK_KEYWORDS, numeric_only=True)
-    # exclude raw Role A columns so this rule only fires on engineered features
-    role_a_raw = [c for c in risk_cols if c.startswith("firms_") or c.startswith("urlhaus_")]
-    risk_cols  = [c for c in risk_cols if c not in role_a_raw]
+    rules = _apply_rules(df)
+    n_rules = len(rules.columns)
 
-    if not risk_cols:
-        return pd.Series(False, index=df.index), "engineered_risk_spike"
+    # Print per-rule counts
+    print("[label_builder] Rule results:")
+    for col in rules.columns:
+        print(f"[label_builder]   {col:<40} {int(rules[col].sum()):>7,} rows flagged")
 
-    flag = pd.Series(False, index=df.index)
-    for col in risk_cols:
-        thresh = df[col].quantile(RISK_FEATURE_PCT)
-        flag   = flag | (df[col] >= thresh)
-    return flag, "engineered_risk_spike"
+    # Combine
+    anomaly_flag  = rules.any(axis=1).astype(int)
+    anomaly_score = (rules.sum(axis=1) / n_rules).round(4)
 
+    def _reasons(row):
+        triggered = [col for col in rules.columns if row[col]]
+        return " | ".join(triggered) if triggered else "none"
 
-# ---------------------------------------------------------------------------
-# Core labeling function
-# ---------------------------------------------------------------------------
+    anomaly_reason = rules.apply(_reasons, axis=1)
 
-def build_anomaly_labels(
-    role_a_path: str,
-    role_b_path: Optional[str] = None,
-    output_path: str = "data/processed/anomaly_labels_v1.csv",
-) -> pd.DataFrame:
-    """
-    Build rule-based anomaly validation labels from Role A + Role B data.
-
-    Args:
-        role_a_path : Path to Role A dataset (anomaly_detection_hourly_2020_2024.csv
-                      or anomaly_dataset_v1.csv). Required.
-        role_b_path : Path to Role B features (ai004_features_output.csv). Optional –
-                      if not provided, Rule 7 is skipped gracefully.
-        output_path : Where to save anomaly_labels_v1.csv.
-
-    Returns:
-        DataFrame with anomaly_flag, anomaly_score, anomaly_reason per row.
-    """
-    # --- Load Role A (required) ---
-    role_a_path = Path(role_a_path)
-    if not role_a_path.exists():
-        raise FileNotFoundError(f"Role A dataset not found: {role_a_path}")
-    print(f"[label_builder] Loading Role A dataset: {role_a_path.name}")
-    df_a = pd.read_csv(role_a_path, low_memory=False)
-    print(f"[label_builder] Role A: {len(df_a):,} rows, {df_a.shape[1]} columns")
-
-    # --- Load Role B (optional) ---
-    df_b = None
-    if role_b_path is not None:
-        role_b_path = Path(role_b_path)
-        if role_b_path.exists():
-            print(f"[label_builder] Loading Role B features: {role_b_path.name}")
-            df_b = pd.read_csv(role_b_path, low_memory=False)
-            print(f"[label_builder] Role B: {len(df_b):,} rows, {df_b.shape[1]} columns")
-        else:
-            print(f"[label_builder] Role B file not found ({role_b_path.name}), skipping Rule 7.")
-
-    # --- Merge if Role B is available ---
-    if df_b is not None:
-        # Align on index (both cover same rows in same order from Role A's dataset)
-        # Drop any columns that already exist in df_a to avoid duplicates
-        new_cols = [c for c in df_b.columns if c not in df_a.columns]
-        df = pd.concat([df_a.reset_index(drop=True),
-                        df_b[new_cols].reset_index(drop=True)], axis=1)
-        print(f"[label_builder] Merged dataset: {df.shape[1]} total columns")
-    else:
-        df = df_a.copy()
-
-    # --- Apply all 7 rules ---
-    all_rules = [
-        rule_extreme_frp,
-        rule_high_confidence_extreme_fire,
-        rule_cyber_spike_low_hazard,
-        rule_hazard_cyber_mismatch,
-        rule_active_online_threats,
-        rule_rare_region_active,
-        rule_engineered_risk_spike,
-    ]
-
-    rule_results = []
-    for rule_fn in all_rules:
-        flag, name = rule_fn(df)
-        rule_results.append((flag.reset_index(drop=True), name))
-        fired = int(flag.sum())
-        print(f"[label_builder]   {name:<40} {fired:>7,} rows flagged")
-
-    # --- Combine ---
-    n_rules = len(rule_results)
-    reasons = [[] for _ in range(len(df))]
-    combined = pd.Series(False, index=range(len(df)))
-
-    for flag, name in rule_results:
-        combined = combined | flag
-        for idx in flag.index[flag]:
-            reasons[idx].append(name)
-
-    anomaly_score  = pd.Series([len(r) / n_rules for r in reasons]).round(4)
-    anomaly_reason = ["none" if not r else " | ".join(r) for r in reasons]
-
-    # --- Build output ---
-    labels = pd.DataFrame({
-        "row_id"        : range(len(df)),
-        "time_window"   : df["time_window"].values if "time_window" in df.columns else None,
-        "region_id"     : df["region_id"].values   if "region_id"   in df.columns else None,
-        "anomaly_flag"  : combined.astype(int).values,
+    labels_df = pd.DataFrame({
+        "time_window"   : df["time_window"].values   if "time_window" in df.columns else None,
+        "region_id"     : df["region_id"].values     if "region_id"   in df.columns else None,
+        "anomaly_flag"  : anomaly_flag.values,
         "anomaly_score" : anomaly_score.values,
-        "anomaly_reason": anomaly_reason,
+        "anomaly_reason": anomaly_reason.values,
     })
 
-    # --- Save ---
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    labels.to_csv(output_path, index=False)
+    total   = len(labels_df)
+    flagged = int(labels_df["anomaly_flag"].sum())
+    print(f"\n[label_builder] Label summary:")
+    print(f"  Total rows : {total:,}")
+    print(f"  Anomalies  : {flagged:,}  ({flagged/total*100:.2f}%)")
+    print(f"  Normal     : {total - flagged:,}")
 
-    # --- Summary ---
-    total   = len(labels)
-    flagged = int(labels["anomaly_flag"].sum())
-    print(f"\n=== Label Summary ===")
-    print(f"Total rows   : {total:,}")
-    print(f"Anomalies    : {flagged:,}  ({flagged/total*100:.2f}%)")
-    print(f"Normal       : {total - flagged:,}")
-    print(f"Saved to     : {output_path}\n")
-    return labels
+    return labels_df
 
 
 # ---------------------------------------------------------------------------
-# Pipeline integration – called by AI008 run.py
+# Step 4 – Save outputs (optional, called by the user or pipeline)
+# ---------------------------------------------------------------------------
+
+def save_outputs(
+    features_df: pd.DataFrame,
+    labels_df: pd.DataFrame,
+    output_dir: str = "data/processed",
+) -> None:
+    """
+    Optionally save features and labels to CSV.
+
+    The pipeline does NOT call this automatically.
+    It is provided so contributors and Role F can persist results when needed.
+
+    Args:
+        features_df : output of engineer_features()
+        labels_df   : output of build_labels()
+        output_dir  : folder to save into (created if it doesn't exist)
+    """
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    features_path = out / "anomaly_features_v1.csv"
+    labels_path   = out / "anomaly_labels_v1.csv"
+
+    features_df.to_csv(features_path, index=False)
+    labels_df.to_csv(labels_path, index=False)
+
+    print(f"[label_builder] Saved features → {features_path}")
+    print(f"[label_builder] Saved labels   → {labels_path}")
+
+
+# ---------------------------------------------------------------------------
+# Main pipeline function – called by AI008 run.py
 # ---------------------------------------------------------------------------
 
 def run(
     dataset_path: Optional[str] = None,
-    output_path: str = "data/processed/anomaly_labels_v1.csv",
-) -> pd.DataFrame:
+    features_path: Optional[str] = None,   # optional Role B feature file
+    save: bool = False,
+    output_dir: str = "data/processed",
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Entry point used by AI008 Training Pipeline's run.py.
-    dataset_path is the Role A dataset injected via anomaly_detection.yaml config.
-    Role B path is resolved automatically relative to the repo structure.
-    """
-    script_dir = Path(__file__).parent
-    repo_root  = script_dir.parents[3]          # Phoenix/
-    features_dir = repo_root / "ai-ml" / "features"
+    Full Role C pipeline. Entry point for AI008 training pipeline.
 
+    Flow: load_data -> engineer_features -> detect_anomalies -> (optional) save_outputs
+
+    Args:
+        dataset_path  : path to anomaly_detection_hourly_2020_2024.csv (Role A).
+                        Resolved automatically from repo structure if not given.
+        features_path : optional path to ai004_features_output.csv (Role B / Sneha).
+                        If provided, engineered features are merged in before labeling.
+        save          : if True, writes CSVs to output_dir.
+        output_dir    : where to save CSVs if save=True.
+
+    Returns:
+        (features_df, labels_df) – two separate DataFrames.
+        Role D uses features_df for Isolation Forest training.
+        Role F uses labels_df for evaluation after training.
+    """
+    # Resolve default dataset path from repo structure
     if dataset_path is None:
-        dataset_path = str(repo_root / "ai-ml" / "models" / "ai012-anomaly"
-                           / "data" / "processed" / "anomaly_dataset_v1.csv")
+        script_dir   = Path(__file__).resolve().parent
+        repo_root    = script_dir.parents[3]      # Phoenix/
+        dataset_path = str(
+            repo_root / "ai-ml" / "datasets" /
+            "anomaly_detection_hourly_2020_2024.csv"
+        )
 
-    role_b = str(features_dir / "ai004_features_output.csv")
+    # Step 1 – Load Role A dataset
+    df = load_data(dataset_path)
 
-    return build_anomaly_labels(
-        role_a_path=dataset_path,
-        role_b_path=role_b,
-        output_path=output_path,
-    )
+    # Step 2 – Optionally merge Role B engineered features (Sneha's output)
+    if features_path is not None:
+        fp = Path(features_path)
+        if fp.exists():
+            print(f"[label_builder] Merging Role B features: {fp.name}")
+            df_b     = pd.read_csv(fp, low_memory=False)
+            new_cols = [c for c in df_b.columns if c not in df.columns]
+            df       = pd.concat(
+                [df.reset_index(drop=True), df_b[new_cols].reset_index(drop=True)],
+                axis=1
+            )
+            print(f"[label_builder] After merge: {df.shape[1]} total columns")
+        else:
+            print(f"[label_builder] Role B file not found ({fp.name}), skipping merge.")
+
+    # Step 3 – Engineer features for anomaly model
+    features_df = engineer_features(df)
+
+    # Step 4 – Build anomaly labels
+    labels_df = build_labels(df)
+
+    # Step 5 – Optionally save
+    if save:
+        save_outputs(features_df, labels_df, output_dir)
+
+    return features_df, labels_df
 
 
 # ---------------------------------------------------------------------------
@@ -345,22 +405,26 @@ def run(
 if __name__ == "__main__":
     import sys
 
-    script_dir = Path(__file__).resolve().parent
-    repo_root  = script_dir.parents[3]
-
-    # Default paths (resolved relative to this file's location in the repo)
-    default_role_a = str(
-        repo_root / "ai-ml" / "models" / "ai012-anomaly"
-        / "data" / "processed" / "anomaly_dataset_v1.csv"
-    )
-    default_role_b = str(repo_root / "ai-ml" / "features" / "ai004_features_output.csv")
-    default_output = str(
-        repo_root / "ai-ml" / "models" / "ai012-anomaly"
-        / "data" / "processed" / "anomaly_labels_v1.csv"
+    # Resolve dataset path
+    script_dir   = Path(__file__).resolve().parent
+    repo_root    = script_dir.parents[3]
+    default_data = str(
+        repo_root / "ai-ml" / "datasets" /
+        "anomaly_detection_hourly_2020_2024.csv"
     )
 
-    role_a = sys.argv[1] if len(sys.argv) > 1 else default_role_a
-    role_b = sys.argv[2] if len(sys.argv) > 2 else default_role_b
-    out    = sys.argv[3] if len(sys.argv) > 3 else default_output
+    dataset  = sys.argv[1] if len(sys.argv) > 1 else default_data
+    save_out = "--save" in sys.argv
 
-    build_anomaly_labels(role_a_path=role_a, role_b_path=role_b, output_path=out)
+    features_df, labels_df = run(
+        dataset_path=dataset,
+        save=save_out,
+        output_dir=str(script_dir.parents[1] / "data" / "processed"),
+    )
+
+    print("\n[label_builder] features_df shape:", features_df.shape)
+    print("[label_builder] labels_df shape  :", labels_df.shape)
+    print("\nFeatures preview:")
+    print(features_df.head(3).to_string())
+    print("\nLabels preview (anomalies only):")
+    print(labels_df[labels_df["anomaly_flag"] == 1].head(5).to_string())

@@ -1,0 +1,49 @@
+{
+  "task": "AI014 - Implement metric execution",
+  "created_by": "Asad Ullah",
+  "created_at_utc": "2026-04-29T17:50:32.306225+00:00",
+  "input_columns": [
+    "temperature",
+    "humidity",
+    "actual_label",
+    "predicted_label",
+    "predicted_probability"
+  ],
+  "actual_column": "actual_label",
+  "predicted_column": "predicted_label",
+  "probability_column": "predicted_probability",
+  "positive_label": 1,
+  "metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "false_positive_rate": 0.0,
+    "false_negative_rate": 0.0,
+    "roc_auc": 1.0,
+    "confusion_matrix": [
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        1
+      ]
+    ],
+    "counts": {
+      "tp": 1,
+      "tn": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    "rows_evaluated": 2
+  },
+  "metadata": {
+    "source_file": "/mnt/data/predictions_val.csv",
+    "source_task": "AI009 P7 baseline outputs",
+    "model_name": "baseline_logistic_regression",
+    "model_version": "v1",
+    "notes": "Generated from predictions_val.csv uploaded from AI009 baseline outputs."
+  }
+}

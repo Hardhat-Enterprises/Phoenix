@@ -21,12 +21,14 @@ function Sidebar({ setPage, page }) {
               type="button"
               className={`sidebar-item ${
                 (page === "dashboard" && item === "Dashboard") ||
+                (page === "report" && item === "Threat Reports") ||
                 (page === "about" && item === "About Us")
                   ? "active"
                   : ""
               }`}
               onClick={() => {
                 if (item === "Dashboard") setPage("dashboard");
+                if (item === "Threat Reports") setPage("report");
                 if (item === "About Us") setPage("about");
               }}
             >

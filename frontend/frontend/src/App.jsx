@@ -3,6 +3,7 @@ import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
 import Sidebar from "./components/Sidebar";
+import Report from "./Report";
 
 function App() {
   const [page, setPage] = useState("login");
@@ -18,7 +19,7 @@ function App() {
           </div>
         </div>
 
-        {page === "about" && (
+        {(page === "about" || page === "report") && (
           <div className="temp-header-right">
             <input
               type="text"
@@ -48,6 +49,13 @@ function App() {
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} />
             <AboutUs />
+          </div>
+        )}
+
+        {page === "report" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={setPage} />
+            <Report />
           </div>
         )}
       </div>

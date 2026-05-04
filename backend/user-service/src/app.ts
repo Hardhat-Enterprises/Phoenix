@@ -3,11 +3,13 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import * as dotenv from "dotenv";
 import { userHandler } from "./grpc/user.handler";
+import { threatHandler } from "./grpc/threat.handler";
+import { hazardHandler } from "./grpc/hazard.handler";
 import { config, initDatabase } from "@phoenix/common";
 
 dotenv.config();
 
-const PROTO_PATH = path.resolve("libs/proto/user.proto");
+const PROTO_PATH = path.resolve(process.env.USER_PROTO_PATH || "libs/proto/user.proto");
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
@@ -26,7 +28,11 @@ const startGrpcServer = async (): Promise<void> => {
 
     const server = new grpc.Server();
 
-    server.addService(userPackage.UserService.service, userHandler);
+    server.addService(userPackage.UserService.service, {
+      ...userHandler,
+      ...threatHandler,
+      ...hazardHandler,
+    });
 
     server.bindAsync(
       `0.0.0.0:${config.USER_SERVICE_PORT}`,

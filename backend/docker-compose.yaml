@@ -5,7 +5,7 @@ services:
       dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - SERVICE=api-gateway
       - USER_SERVICE_URL=user-service:50051
@@ -24,6 +24,11 @@ services:
       - "50051:50051"
     environment:
       - SERVICE=user-service
+      - POSTGRES_HOST=phoenix-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=phoenix_user
+      - POSTGRES_PASSWORD=phoenix_pass
+      - POSTGRES_DB=phoenix_db
     depends_on:
       - postgres
     command: sh -c "node -r tsconfig-paths/register dist/user-service/src/app.js"

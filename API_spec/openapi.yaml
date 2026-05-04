@@ -2,10 +2,11 @@ openapi: 3.0.0
 info:
   title: PHOENIX TEAVS API
   description: Secure API for Disaster Alert Verification and Cyber Threat Intelligence.
-  version: 1.0.0
+  version: 1.1.0
 
 servers:
   - url: http://localhost:8000/api/v1
+    description: Local development server
 
 components:
   securitySchemes:
@@ -13,7 +14,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-  
+
   schemas:
     AlertRequest:
       type: object
@@ -25,74 +26,76 @@ components:
         threat_type: { type: string, example: "Phishing" }
         severity: { type: string, enum: [Low, Medium, High, Critical] }
         location: { type: string }
-    
+
     AlertResponse:
       type: object
       properties:
-        alert_id: { type: string }
-        status: { type: string }
+        alert_id: { type: string, format: uuid }
+        status: { type: string, example: "Approved" }
         created_at: { type: string, format: date-time }
-    
+
     ErrorResponse:
       type: object
       properties:
         error: { type: string }
         code: { type: integer }
+        retry_after: { type: integer, description: "Seconds to wait before next request" }
 
 paths:
+  /login:
+    post:
+      summary: User Authentication
+      description: Rate Limit - 5 requests per 15 minutes[cite: 3].
+      responses:
+        '200': { description: Login successful }
+        '401': { description: Invalid credentials }
+        '429': { description: Rate limit exceeded - Brute-force protection[cite: 3] }
+
   /alerts:
     post:
-      summary: Create a new emergency alert
+      summary: Create Emergency Alert
       security: [{ BearerAuth: [] }]
+      description: Rate Limit - 10 requests per minute per authenticated user[cite: 3].
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: '#/components/schemas/AlertRequest' }
       responses:
-        '201':
-          description: Alert created successfully
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/AlertResponse' }
-        '400': { description: Invalid input data }
-        '401': { description: Unauthorized - JWT missing or invalid }
-        '403': { description: Forbidden - Insufficient permissions }
-        '429': { description: Too many requests }
+        '201': { description: Alert created successfully }
+        '403': { description: Forbidden - Authorised roles only[cite: 3] }
+        '429': { description: Too many requests - Spam prevention[cite: 3] }
+    get:
+      summary: List all Alerts
+      description: Rate Limit - 60 requests per minute[cite: 3].
+      responses:
+        '200': { description: Success }
+        '429': { description: Excessive API load[cite: 3] }
 
-  /alerts/{id}:
+  /alerts/{id}/verify:
     parameters:
       - name: id
         in: path
         required: true
         schema: { type: string }
-    get:
-      summary: Retrieve a specific alert
-      responses:
-        '200': { description: Success }
-        '404': { description: Alert not found }
-
-  /alerts/{id}/verify:
     post:
-      summary: Verify alert authenticity
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: string }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                signature: { type: string }
+      summary: Verify Alert Authenticity
+      description: Rate Limit - 30 requests per minute per IP[cite: 3].
       responses:
-        '200':
-          description: Verification result
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  valid: { type: boolean }
+        '200': { description: Verification complete }
+        '404': { description: Alert ID not found }
+        '429': { description: Automated abuse detected[cite: 3] }
+
+  /alerts/{id}/status:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    patch:
+      summary: Update Alert Lifecycle
+      security: [{ BearerAuth: [] }]
+      description: Rate Limit - 20 requests per minute per admin[cite: 3].
+      responses:
+        '200': { description: Status updated }
+        '403': { description: Admin only access[cite: 3] }

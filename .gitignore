@@ -1,2 +1,81 @@
 __pycache__/
 *.pyc
+# =========================
+# AI012 - Ignore generated files
+# =========================
+
+# Ignore outputs (generated CSVs)
+ai-ml/models/ai012-anomaly/data/outputs/
+
+# Ignore pipeline checkpoints (NOT model checkpoint)
+ai-ml/training_pipeline/checkpoints/ai012_isolation_forest/
+
+# Ignore pipeline logs (but keep TensorBoard)
+ai-ml/training_pipeline/logs/*.log
+
+# Ignore reports
+ai-ml/training_pipeline/reports/
+
+# Python cache
+__pycache__/
+*.pyc
+EOFcat >> .gitignore <<'EOF'
+# =========================
+# AI012 - Ignore generated files
+# =========================
+
+# Ignore outputs (generated CSVs)
+ai-ml/models/ai012-anomaly/data/outputs/
+
+# Ignore pipeline checkpoints (NOT model checkpoint)
+ai-ml/training_pipeline/checkpoints/ai012_isolation_forest/
+
+# Ignore pipeline logs (but keep TensorBoard)
+ai-ml/training_pipeline/logs/*.log
+
+# Ignore reports
+ai-ml/training_pipeline/reports/
+
+# Python cache
+__pycache__/
+*.pyc
+EOFcat >> .gitignore <<'EOF'
+# =========================
+# AI012 - Ignore generated files
+# =========================
+
+# Ignore outputs (generated CSVs)
+ai-ml/models/ai012-anomaly/data/outputs/
+
+# Ignore pipeline checkpoints (NOT model checkpoint)
+ai-ml/training_pipeline/checkpoints/ai012_isolation_forest/
+
+# Ignore pipeline logs (but keep TensorBoard)
+ai-ml/training_pipeline/logs/*.log
+
+# Ignore reports
+ai-ml/training_pipeline/reports/
+
+# Python cache
+__pycache__/
+*.pyc
+EOFjcat >> .gitignore <<'EOF'
+# =========================
+# AI012 - Ignore generated files
+# =========================
+
+# Ignore outputs (generated CSVs)
+ai-ml/models/ai012-anomaly/data/outputs/
+
+# Ignore pipeline checkpoints (NOT model checkpoint)
+ai-ml/training_pipeline/checkpoints/ai012_isolation_forest/
+
+# Ignore pipeline logs (but keep TensorBoard)
+ai-ml/training_pipeline/logs/*.log
+
+# Ignore reports
+ai-ml/training_pipeline/reports/
+
+# Python cache
+__pycache__/
+*.pyc

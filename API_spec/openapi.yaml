@@ -1,22 +1,98 @@
 openapi: 3.0.0
 info:
   title: PHOENIX TEAVS API
-  [cite_start]description: Framework for verifying disaster alerts and reporting cyber threats[cite: 2].
+  description: Secure API for Disaster Alert Verification and Cyber Threat Intelligence.
   version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api/v1
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    AlertRequest:
+      type: object
+      required: [title, message, disaster_type, severity, location]
+      properties:
+        title: { type: string, minLength: 5, maxLength: 100 }
+        message: { type: string, minLength: 10 }
+        disaster_type: { type: string, enum: [Bushfire, Flood, Storm, Cyclone, Earthquake] }
+        threat_type: { type: string, example: "Phishing" }
+        severity: { type: string, enum: [Low, Medium, High, Critical] }
+        location: { type: string }
+    
+    AlertResponse:
+      type: object
+      properties:
+        alert_id: { type: string }
+        status: { type: string }
+        created_at: { type: string, format: date-time }
+    
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+        code: { type: integer }
+
 paths:
-  /api/alerts:
+  /alerts:
     post:
-      summary: Create Alert (Admin/Council)
-      description: Handles fields like title, message, disaster_type, and severity.
+      summary: Create a new emergency alert
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AlertRequest' }
+      responses:
+        '201':
+          description: Alert created successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AlertResponse' }
+        '400': { description: Invalid input data }
+        '401': { description: Unauthorized - JWT missing or invalid }
+        '403': { description: Forbidden - Insufficient permissions }
+        '429': { description: Too many requests }
+
+  /alerts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
     get:
-      summary: List all Alerts
-  /api/alerts/{id}:
-    get:
-      summary: Get specific alert details
-  /api/alerts/{id}/verify:
+      summary: Retrieve a specific alert
+      responses:
+        '200': { description: Success }
+        '404': { description: Alert not found }
+
+  /alerts/{id}/verify:
     post:
-      summary: Verify Alert Authenticity (Public Access)
-      [cite_start]description: Uses SHA-256 and digital signatures for verification[cite: 86, 153].
-  /api/alerts/{id}/status:
-    patch:
-      summary: Update Alert Lifecycle (Admin Only)
+      summary: Verify alert authenticity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signature: { type: string }
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid: { type: boolean }

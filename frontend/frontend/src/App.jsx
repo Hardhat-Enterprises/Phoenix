@@ -7,6 +7,7 @@ import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer"
 import ForgotPassword from "./ForgotPassword";
 import SettingsPage from "./SettingsPage";
+import AdminCreateUserPage from "./AdminCreateUserPage";
 
 function App() {
   const [page, setPage] = useState("login");
@@ -57,7 +58,12 @@ function App() {
           </div>
         )}
       </div>
-
+      {page === "adminCreateUser" && (
+      <div style={{ display: "flex", width: "100%" }}>
+        <Sidebar setPage={setPage} page={page} />
+        <AdminCreateUserPage />
+      </div>
+      )}
       {page === "settings" && (
         <div style={{ display: "flex" }}>
           <Sidebar setPage={setPage} page={page} />

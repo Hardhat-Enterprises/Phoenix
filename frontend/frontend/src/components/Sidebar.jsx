@@ -7,6 +7,7 @@ function Sidebar({ setPage, page }) {
     "Threat Reports",
     "About Us",
     "Settings",
+    "Create User",
   ];
 
   return (
@@ -22,7 +23,8 @@ function Sidebar({ setPage, page }) {
               className={`sidebar-item ${
                 (page === "dashboard" && item === "Dashboard") ||
                 (page === "about" && item === "About Us") ||
-                (page === "settings" && item === "Settings")
+                (page === "settings" && item === "Settings") ||
+                (page === "adminCreateUser" && item === "Create User")
                   ? "active"
                   : ""
               }`}
@@ -30,6 +32,7 @@ function Sidebar({ setPage, page }) {
                 if (item === "Dashboard") setPage("dashboard");
                 if (item === "About Us") setPage("about");
                 if (item === "Settings") setPage("settings");
+                if (item === "Create User") setPage("adminCreateUser");
               }}
             >
               <span className="sidebar-icon"></span>

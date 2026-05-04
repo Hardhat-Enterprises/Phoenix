@@ -1,0 +1,128 @@
+.admin-user-page {
+  flex: 1;
+  min-height: 100vh;
+  background: #f5f7fb;
+  padding: 28px;
+}
+
+.admin-user-shell {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.admin-user-header {
+  margin-bottom: 24px;
+}
+
+.admin-user-header h1 {
+  margin: 0 0 8px;
+  font-size: 38px;
+  font-weight: 800;
+  color: #0b1b3a;
+}
+
+.admin-user-header p {
+  margin: 0;
+  color: #667085;
+  font-size: 16px;
+}
+
+.admin-user-card {
+  background: #ffffff;
+  border: 1px solid #d9e2ef;
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.admin-user-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.admin-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.admin-form-group label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #243b63;
+  text-align: left;
+  width: 100%;
+}
+
+.admin-form-group input,
+.admin-form-group select {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid #d0d8e5;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+  color: #243b63;
+}
+
+.admin-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: #243b63;
+}
+
+.admin-checkbox-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+}
+
+.admin-action-row {
+  display: flex;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.admin-primary-btn,
+.admin-secondary-btn {
+  padding: 14px 18px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-primary-btn {
+  background: #2563eb;
+  color: white;
+}
+
+.admin-secondary-btn {
+  background: #edf2fb;
+  color: #1d4c9e;
+}
+
+.admin-message {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #1d4c9e;
+}
+
+@media (max-width: 768px) {
+  .admin-user-page {
+    padding: 20px;
+  }
+
+  .admin-user-header h1 {
+    font-size: 32px;
+  }
+
+  .admin-action-row {
+    flex-direction: column;
+  }
+}

@@ -9,6 +9,11 @@ service UserService {
     rpc GetThreat(GetThreatRequest) returns (GetThreatResponse);
     rpc GetHazards(GetHazardsRequest) returns (GetHazardsResponse);
     rpc GetHazard(GetHazardRequest) returns (GetHazardResponse);
+
+    rpc RegisterUser(RegisterUserRequest) returns (AuthResponse);
+    rpc LoginUser(LoginUserRequest) returns (AuthResponse);
+    rpc RefreshToken(RefreshTokenRequest) returns (AuthResponse);
+    rpc LogoutUser(LogoutUserRequest) returns (AuthResponse);
 }
 
 message GetUserHealthRequest {
@@ -116,4 +121,33 @@ message Hazard {
     string description = 7;
     string created_at = 8;
     string updated_at = 9;
+}
+
+message RegisterUserRequest {
+    string username = 1;
+    string password = 2;
+    string role = 3;
+}
+
+message LoginUserRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message RefreshTokenRequest {
+    string refresh_token = 1;
+}
+
+message LogoutUserRequest {
+    string user_id = 1;
+}
+
+message AuthResponse {
+    int32 status = 1;
+    string message = 2;
+    string user_id = 3;
+    string username = 4;
+    string role = 5;
+    string access_token = 6;
+    string refresh_token = 7;
 }

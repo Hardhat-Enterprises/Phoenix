@@ -8,6 +8,7 @@ dotenv.config();
 
 const PROTO_PATH = path.resolve(`${process.env.USER_PROTO_PATH}`);
 logger.info(`Loading gRPC proto file from: ${PROTO_PATH}`);
+
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -25,6 +26,8 @@ const grpcObject = grpc.loadPackageDefinition(packageDefinition) as unknown as {
   };
 };
 
+// ─── Existing Interfaces ───────────────────────────────────────────────────
+
 export interface GetUserHealthRequest {}
 export interface GetUserHealthResponse {
   status: number;
@@ -36,6 +39,37 @@ export interface GetUsersResponse {
   status: number;
   message: string;
   users: [{ user_id: string; username: string; role: string }];
+}
+
+// ─── Auth Interfaces (NEW) ─────────────────────────────────────────────────
+
+export interface RegisterUserRequest {
+  username: string;
+  password: string;
+  role?: string;
+}
+
+export interface LoginUserRequest {
+  username: string;
+  password: string;
+}
+
+export interface RefreshTokenRequest {
+  refresh_token: string;
+}
+
+export interface LogoutUserRequest {
+  user_id: string;
+}
+
+export interface AuthResponse {
+  status: number;
+  message: string;
+  user_id?: string;
+  username?: string;
+  role?: string;
+  access_token?: string;
+  refresh_token?: string;
 }
 
 // ─── Threats ───────────────────────────────────────────────────────────────
@@ -118,34 +152,63 @@ export interface GetHazardResponse {
   hazard?: HazardItem;
 }
 
-// ─── Client interface ──────────────────────────────────────────────────────
+// ─── Client Interface ──────────────────────────────────────────────────────
 
 export interface UserServiceClient {
   GetUserHealth(
     request: GetUserHealthRequest,
     callback: (error: grpc.ServiceError | null, response: GetUserHealthResponse) => void,
   ): void;
+
   GetUsers(
     request: GetUsersRequest,
     callback: (error: grpc.ServiceError | null, response: GetUsersResponse) => void,
   ): void;
+
+  // 🔥 AUTH METHODS
+  RegisterUser(
+    request: RegisterUserRequest,
+    callback: (error: grpc.ServiceError | null, response: AuthResponse) => void,
+  ): void;
+
+  LoginUser(
+    request: LoginUserRequest,
+    callback: (error: grpc.ServiceError | null, response: AuthResponse) => void,
+  ): void;
+
+  RefreshToken(
+    request: RefreshTokenRequest,
+    callback: (error: grpc.ServiceError | null, response: AuthResponse) => void,
+  ): void;
+
+  LogoutUser(
+    request: LogoutUserRequest,
+    callback: (error: grpc.ServiceError | null, response: AuthResponse) => void,
+  ): void;
+
+  // Existing
   GetThreats(
     request: GetThreatsRequest,
     callback: (error: grpc.ServiceError | null, response: GetThreatsResponse) => void,
   ): void;
+
   GetThreat(
     request: GetThreatRequest,
     callback: (error: grpc.ServiceError | null, response: GetThreatResponse) => void,
   ): void;
+
   GetHazards(
     request: GetHazardsRequest,
     callback: (error: grpc.ServiceError | null, response: GetHazardsResponse) => void,
   ): void;
+
   GetHazard(
     request: GetHazardRequest,
     callback: (error: grpc.ServiceError | null, response: GetHazardResponse) => void,
   ): void;
 }
+
+// ─── Client Init ───────────────────────────────────────────────────────────
 
 const userServiceUrl = process.env.USER_SERVICE_URL || "localhost:50051";
 

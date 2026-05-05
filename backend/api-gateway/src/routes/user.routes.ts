@@ -1,17 +1,35 @@
 import { Router } from "express";
-import { getHealth, getUser } from "../controllers/user.controller";
+import {
+  getHealth,
+  getUser,
+  register,
+  login,
+  refresh,
+  logout,
+} from "../controllers/user.controller";
+
 import { getThreats, getThreat } from "../controllers/threat.controller";
 import { getHazards, getHazard } from "../controllers/hazard.controller";
+
+import { authenticate, authorize } from "../middleware/auth.middleware";
 
 const router = Router();
 
 router.get("/health", getHealth);
-router.get("/user", getUser);
 
-router.get("/threats", getThreats);
-router.get("/threats/:threatId", getThreat);
+// Auth routes (no protection)
+router.post("/auth/register", register);
+router.post("/auth/login", login);
+router.post("/auth/refresh", refresh);
+router.post("/auth/logout", logout);
 
-router.get("/hazards", getHazards);
-router.get("/hazards/:hazardId", getHazard);
+// Protected routes
+router.get("/user", authenticate, authorize(["admin"]), getUser);
+
+router.get("/threats", authenticate, getThreats);
+router.get("/threats/:threatId", authenticate, getThreat);
+
+router.get("/hazards", authenticate, getHazards);
+router.get("/hazards/:hazardId", authenticate, getHazard);
 
 export default router;

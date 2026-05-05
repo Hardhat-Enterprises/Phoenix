@@ -14,3 +14,14 @@ export class GetUsersEntity {
     },
   ];
 }
+
+export class GetHazardResponse {status: number;
+  message: string;
+  hazards: [
+    {
+      id: string;
+      type: string;
+      description: string;
+    },
+  ];
+}

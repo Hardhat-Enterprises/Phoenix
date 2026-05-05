@@ -35,4 +35,7 @@ export const userHandler = {
       });
     }
   },
+ GetHazard: () => {
+  //Implement GetHazard handler logic here
+ }
 };

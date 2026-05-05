@@ -56,6 +56,26 @@ export interface UserServiceClient {
       response: GetUsersResponse,
     ) => void,
   ): void;
+  GetHazard(
+    request: GetHazardRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetHazardResponse,
+    ) => void,
+): void;
+}
+
+export interface GetHazardRequest {}
+
+export interface GetHazardResponse {status: number;
+  message: string;
+  hazards: [
+    {
+      id: string;
+      type: string;
+      description: string;
+    },
+  ];
 }
 
 const userServiceUrl = process.env.USER_SERVICE_URL || "localhost:50051";

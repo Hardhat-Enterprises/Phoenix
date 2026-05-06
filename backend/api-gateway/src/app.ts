@@ -7,7 +7,6 @@ import userRoutes from "./routes/user.routes";
 import ingestionRoutes from "./routes/ingestion.routes";
 import notificationRoutes from "./routes/notification.routes";
 // import authRoutes from "./routes/auth.routes";
-import { startCacheConsumer } from "../../libs/common/src/redis/cache.consumer";
 
 dotenv.config();
 
@@ -38,7 +37,6 @@ const startServer = async () => {
     logger.error("Error starting server:", error);
     process.exit(1);
   }
-  await startCacheConsumer();
 };
 
 startServer();

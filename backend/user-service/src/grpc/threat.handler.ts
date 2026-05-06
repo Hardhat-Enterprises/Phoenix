@@ -9,8 +9,6 @@ export const threatHandler = {
     call: ServerUnaryCall<GetThreatsDto, GetThreatsEntity>,
     callback: sendUnaryData<GetThreatsEntity>,
   ) => {
-    const cacheKey = `threats:${JSON.stringify(call.request)}`;
-
     try {
       const response = await getThreats(call.request);
 
@@ -26,9 +24,6 @@ export const threatHandler = {
     call: ServerUnaryCall<GetThreatDto, GetThreatEntity>,
     callback: sendUnaryData<GetThreatEntity>,
   ) => {
-    const { threat_id } = call.request;
-    const cacheKey = `threat:id:${threat_id}`;
-
     try {
       const response = await getThreat(call.request);
 

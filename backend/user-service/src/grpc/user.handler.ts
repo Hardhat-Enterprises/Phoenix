@@ -25,8 +25,6 @@ export const userHandler = {
     call: ServerUnaryCall<GetUsersDto, GetUsersEntity>,
     callback: sendUnaryData<GetUsersEntity>,
   ) => {
-    const cacheKey = "users:list";
-
     try {
       const response = await getUsers(call.request);
 

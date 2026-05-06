@@ -9,8 +9,6 @@ export const hazardHandler = {
     call: ServerUnaryCall<GetHazardsDto, GetHazardsEntity>,
     callback: sendUnaryData<GetHazardsEntity>,
   ) => {
-    const cacheKey = `hazards:${JSON.stringify(call.request)}`;
-
     try {
       const response = await getHazards(call.request);
 
@@ -24,9 +22,6 @@ export const hazardHandler = {
     call: ServerUnaryCall<GetHazardDto, GetHazardEntity>,
     callback: sendUnaryData<GetHazardEntity>,
   ) => {
-    const id = call.request.hazard_event_id;
-    const cacheKey = `hazard:id:${id}`;
-
     try {
       const response = await getHazard(call.request);
 

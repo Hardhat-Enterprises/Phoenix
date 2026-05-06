@@ -8,10 +8,11 @@ import Footer from "./components/Footer";
 import ForgotPassword from "./ForgotPassword";
 import SettingsPage from "./SettingsPage";
 import ReportsPage from "./ReportsPage";
+import Alerts from "./Alerts";
 
 function App() {
   // Change this to "reports" or "dashboard" only for testing
-  const [page, setPage] = useState("login");
+  const [page, setPage] = useState("alerts");
 
   return (
     <div className="login-page">
@@ -29,7 +30,7 @@ function App() {
         </div>
 
         {/* Show search + bell on main pages */}
-        {(page === "about" || page === "dashboard" || page === "reports") && (
+        {(page === "about" || page === "dashboard" || page === "reports" || page === "alerts") && (
           <div className="temp-header-right">
             <input
               type="text"
@@ -56,7 +57,14 @@ function App() {
         {page === "dashboard" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
-            <Dashboard setPage={setPage} />
+            <Dashboard/>
+          </div>
+        )}
+          {/* Alerts */}
+        {page === "alerts" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={setPage} page={page} />
+            <Alerts />
           </div>
         )}
 

@@ -1,7 +1,6 @@
-import Sidebar from "./components/Sidebar";
 import "./Dashboard.css";
 
-function Dashboard({ setPage }) {
+function Dashboard() {
   const threatData = [];
 
   const itemRows = [
@@ -32,8 +31,6 @@ function Dashboard({ setPage }) {
 
   return (
     <div className="dashboard-page">
-      <Sidebar setPage={setPage} />
-
       <main className="dashboard-content">
         <div className="dashboard-main-area">
 

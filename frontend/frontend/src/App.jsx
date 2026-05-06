@@ -2,24 +2,34 @@ import { useState } from "react";
 import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
+import Dashboard from "./Dashboard";
 import Sidebar from "./components/Sidebar";
-import Report from "./Report";
+import Footer from "./components/Footer";
+import ForgotPassword from "./ForgotPassword";
+import SettingsPage from "./SettingsPage";
+import ReportsPage from "./ReportsPage";
 
 function App() {
+  // Change this to "reports" or "dashboard" only for testing
   const [page, setPage] = useState("login");
 
   return (
     <div className="login-page">
+      
+      {/* Header */}
       <div className="temp-header">
         <div className="temp-header-left">
-          <div className="temp-logo">🔥</div>
+          <div className="temp-logo">
+            <img src="/logo.png" alt="Phoenix logo" />
+          </div>
           <div>
             <h2>Phoenix</h2>
             <p>Disaster and Cyber Risk Monitoring Dashboard</p>
           </div>
         </div>
 
-        {(page === "about" || page === "report") && (
+        {/* Show search + bell on main pages */}
+        {(page === "about" || page === "dashboard" || page === "reports") && (
           <div className="temp-header-right">
             <input
               type="text"
@@ -33,32 +43,51 @@ function App() {
         )}
       </div>
 
+      {/* Main Content */}
       <div className="page-content">
+
         {page === "login" && <LoginForm setPage={setPage} />}
 
+        {page === "forgotPassword" && (
+          <ForgotPassword setPage={setPage} />
+        )}
+
+        {/* Dashboard */}
         {page === "dashboard" && (
           <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} />
-            <div style={{ padding: "20px" }}>
-              <h1>Dashboard</h1>
-            </div>
+            <Sidebar setPage={setPage} page={page} />
+            <Dashboard setPage={setPage} />
           </div>
         )}
 
+        {/* About */}
         {page === "about" && (
           <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} />
+            <Sidebar setPage={setPage} page={page} />
             <AboutUs />
           </div>
         )}
 
-        {page === "report" && (
+        {/* Reports (YOUR NEW TASK) */}
+        {page === "reports" && (
           <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} />
-            <Report />
+            <Sidebar setPage={setPage} page={page} />
+            <ReportsPage />
           </div>
         )}
+
+        {/* Settings */}
+        {page === "settings" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={setPage} page={page} />
+            <SettingsPage setPage={setPage} />
+          </div>
+        )}
+
       </div>
+
+      {/* Footer always at bottom */}
+      <Footer />
     </div>
   );
 }

@@ -12,14 +12,25 @@ export default function LoginForm({ setPage }) {
       </button>
 
       <div className="login-extra">
-        <span className="forgot">Forgotten Password?</span>
+        <span
+          className="forgot"
+          onClick={() => setPage("forgotPassword")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              setPage("forgotPassword");
+            }
+          }}
+        >
+          Forgotten Password?
+        </span>
 
         <label className="remember">
           <input type="checkbox" />
           Remember Me
         </label>
       </div>
-
       <button onClick={() => setPage("about")}>
         About Us
       </button>

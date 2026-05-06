@@ -3,32 +3,7 @@ import { GetHealthDto, GetUsersDto } from "../dto/user.dto";
 import { GetHealthEntity, GetUsersEntity } from "../entity/user.entity";
 import { publishToQueue } from "@phoenix/common";
 import { CacheEventType } from "../../../libs/common/src/redis/cache.events";
-import { createUserInDb } from "./user.service"; // Needs a fix
 
-export const createUser = async (req, res) => {
-  try {
-    const user = await createUserInDb(req.body);
-
-    await publishToQueue("cache.events", {
-      type: CacheEventType.USERS_INVALIDATE,
-      payload: {
-        userId: user.id,
-      },
-    });
-
-    return res.status(201).json({
-      success: true,
-      data: user,
-    });
-  } catch (error) {
-    console.error("Error creating user:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to create user",
-    });
-  }
-};
 
 export const getHealth = (getHealthDto: GetHealthDto): GetHealthEntity => {
   return {

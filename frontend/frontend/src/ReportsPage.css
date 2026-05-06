@@ -1,0 +1,144 @@
+.reports-content {
+  flex: 1;
+  padding: 34px 38px;
+  background-color: #eef3f8;
+}
+
+.generated-reports-card {
+  width: 100%;
+  background-color: #ffffff;
+  border: 1px solid #dfe7f2;
+  border-radius: 18px;
+  box-shadow: 0 6px 18px rgba(16, 42, 67, 0.05);
+  overflow: hidden;
+}
+
+.generated-reports-header {
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid #e8eef6;
+}
+
+.generated-reports-header h2 {
+  margin: 0;
+  font-size: 26px;
+  color: #1f3a5f;
+}
+
+.generated-reports-header p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #6b7f96;
+}
+
+.reports-table {
+  width: 100%;
+}
+
+.reports-table-head,
+.reports-row {
+  display: grid;
+  grid-template-columns: 2.5fr 1.1fr 0.8fr 1fr 1fr 0.9fr;
+  align-items: center;
+  column-gap: 18px;
+}
+
+.reports-table-head {
+  padding: 16px 28px;
+  background-color: #f6f8fc;
+  font-size: 14px;
+  font-weight: 700;
+  color: #5c6f86;
+}
+
+.reports-row {
+  padding: 18px 28px;
+  border-top: 1px solid #edf2f8;
+  font-size: 14px;
+  color: #2f3f55;
+}
+
+.reports-row:hover {
+  background-color: #f8fbff;
+}
+
+.report-title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.report-title-cell strong {
+  color: #1f3a5f;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.report-title-cell small {
+  color: #7a8ca3;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.risk-badge {
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.risk-badge.high {
+  background-color: #fde4e4;
+  color: #d93636;
+}
+
+.risk-badge.critical {
+  background-color: #ffe1e8;
+  color: #c91f45;
+}
+
+.risk-badge.medium {
+  background-color: #fff1d8;
+  color: #cf8b00;
+}
+
+.risk-badge.low {
+  background-color: #e2f3eb;
+  color: #17774f;
+}
+
+.download-button {
+  border: 1px solid #c9d8ec;
+  background-color: #f7fbff;
+  color: #1f3a5f;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.download-button:hover {
+  background-color: #e8f1ff;
+}
+
+@media (max-width: 900px) {
+  .reports-content {
+    padding: 22px;
+  }
+
+  .reports-table-head {
+    display: none;
+  }
+
+  .reports-row {
+    grid-template-columns: 1fr;
+    row-gap: 10px;
+    padding: 18px 22px;
+  }
+
+  .download-button {
+    width: fit-content;
+  }
+}

@@ -9,12 +9,15 @@ import ForgotPassword from "./ForgotPassword";
 import SettingsPage from "./SettingsPage";
 import Alerts from "./Alerts";
 import Reports from "./Reports";
+import ReportsPage from "./ReportsPage";
 
 function App() {
+  // Change this to "reports" or "dashboard" only for testing
   const [page, setPage] = useState("login");
 
   return (
     <div className="login-page">
+      
       {/* Header */}
       <div className="temp-header">
         <div className="temp-header-left">
@@ -27,7 +30,8 @@ function App() {
           </div>
         </div>
 
-        {page === "about" && (
+        {/* Show search + bell on main pages */}
+        {(page === "about" || page === "dashboard" || page === "reports") && (
           <div className="temp-header-right">
             <input
               type="text"
@@ -41,35 +45,50 @@ function App() {
         )}
       </div>
 
-      {/* Page Content */}
+      {/* Main Content */}
       <div className="page-content">
-        {/* Login / Forgot Password */}
-        {page === "login" || page === "forgotPassword" ? (
-          <>
-            {page === "login" && (
-              <LoginForm setPage={setPage} />
-            )}
 
-            {page === "forgotPassword" && (
-              <ForgotPassword setPage={setPage} />
-            )}
-          </>
-        ) : (
-          /* All Sidebar pages */
+        {page === "login" && <LoginForm setPage={setPage} />}
+
+        {page === "forgotPassword" && (
+          <ForgotPassword setPage={setPage} />
+        )}
+
+        {/* Dashboard */}
+        {page === "dashboard" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
-
-            <div style={{ flex: 1, padding: "20px" }}>
-              {page === "dashboard" && <Dashboard />}
-              {page === "alerts" && <Alerts />}
-              {page === "reports" && <Reports />}
-              {page === "about" && <AboutUs />}
-              {page === "settings" && <SettingsPage />}
-            </div>
+            <Dashboard setPage={setPage} />
           </div>
         )}
+
+        {/* About */}
+        {page === "about" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={setPage} page={page} />
+            <AboutUs />
+          </div>
+        )}
+
+        {/* Reports (YOUR NEW TASK) */}
+        {page === "reports" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={setPage} page={page} />
+            <ReportsPage />
+          </div>
+        )}
+
+        {/* Settings */}
+        {page === "settings" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={setPage} page={page} />
+            <SettingsPage setPage={setPage} />
+          </div>
+        )}
+
       </div>
 
+      {/* Footer always at bottom */}
       <Footer />
     </div>
   );

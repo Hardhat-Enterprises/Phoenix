@@ -1,9 +1,6 @@
 import { HttpStatusCode, logger, UserAccount } from "@phoenix/common";
 import { GetHealthDto, GetUsersDto } from "../dto/user.dto";
 import { GetHealthEntity, GetUsersEntity } from "../entity/user.entity";
-import { publishToQueue } from "@phoenix/common";
-import { CacheEventType } from "../../../libs/common/src/redis/cache.events";
-
 
 export const getHealth = (getHealthDto: GetHealthDto): GetHealthEntity => {
   return {

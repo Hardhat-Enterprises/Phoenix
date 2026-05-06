@@ -8,6 +8,9 @@ dotenv.config();
 const app = express();
 
 app.use(express.json());
+app.get("/", (_req, res) => {
+  res.send("Phoenix cyber backend is running");
+});
 app.use(securityAlignedRoutes);
 app.use(errorHandler);
 

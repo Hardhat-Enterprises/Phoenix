@@ -8,7 +8,6 @@ import Footer from "./components/Footer";
 import ForgotPassword from "./ForgotPassword";
 import SettingsPage from "./SettingsPage";
 import Alerts from "./Alerts";
-import Reports from "./Reports";
 import ReportsPage from "./ReportsPage";
 
 function App() {

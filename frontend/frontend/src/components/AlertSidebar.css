@@ -1,0 +1,75 @@
+/* Container */
+.sidebar-container {
+  width: 360px;
+}
+
+/* Card */
+.card {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 24px;
+  margin-bottom: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Title */
+.card-title {
+  margin-bottom: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Item row */
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* Colored dot */
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 6px;
+}
+
+/* Text */
+.item-text {
+  margin: 0;
+  font-size: 13.5px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+/* Buttons */
+.action-btn {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Hover effect */
+.action-btn:hover {
+  background: #e2e8f0;
+}
+
+/* Arrow */
+.arrow {
+  font-size: 16px;
+  color: #64748b;
+}

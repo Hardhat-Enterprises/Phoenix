@@ -1,16 +1,16 @@
-export class GetHealthEntity {
+export interface GetHealthEntity {
   status: number;
   message: string;
 }
 
-export class GetUsersEntity {
+export interface UserEntity {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface GetUsersEntity {
   status: number;
   message: string;
-  users?: [
-    {
-      id: number;
-      name: string;
-      email: string;
-    },
-  ];
+  users: UserEntity[];
 }

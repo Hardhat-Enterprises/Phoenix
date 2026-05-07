@@ -6,7 +6,11 @@ import { GeoLocation } from "./models/location-geo.model";
 import { HazardLocation } from "./models/location-hazard.model";
 import { ThreatLocation } from "./models/location-threat.model";
 import { EventStatus } from "./models/status-event.model";
-
+import { User } from "./models/user.model";
+import { LinkedEventType } from "./models/linked-event-type.model";
+import { Season } from "./models/season.model";
+import { ReferenceDay } from "./models/reference-day.model";
+import { ReferenceTime } from "./models/reference-time.model";
 
 HazardEvent.hasMany(RiskAssessment, {
   foreignKey: "related_hazard_event_id",
@@ -75,4 +79,11 @@ export {sequelize,
   GeoLocation,
   HazardLocation,
   ThreatLocation,
-  EventStatus,};
+  EventStatus,
+  User,
+  LinkedEventType,
+  Season,
+  ReferenceDay,
+  ReferenceTime,
+};
+  

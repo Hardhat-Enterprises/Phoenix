@@ -20,13 +20,13 @@ export const userHandler = {
       });
     }
   },
-  GetUsers: (
+    GetUsers: async (
     call: ServerUnaryCall<GetUsersDto, GetUsersEntity>,
-    callback: sendUnaryData<GetUsersEntity>,
+    callback: sendUnaryData<GetUsersEntity>
   ) => {
     try {
-      const response = getUsers(call.request);
-      logger.info(`User service GetUsers response:${response}`);
+      const response = await getUsers(call.request);
+      logger.info(`User service GetUsers response:${JSON.stringify(response)}`);
       callback(null, response);
     } catch (error) {
       callback({

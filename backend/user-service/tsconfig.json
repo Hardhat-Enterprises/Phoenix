@@ -13,7 +13,8 @@
     "skipLibCheck": true,
     "strictPropertyInitialization": false,
     "noEmit": false,
-    "incremental": true
+    "incremental": true,
+    "ignoreDeprecations": "6.0"
   },
   "include": ["src"],
   "references": [{ "path": "../libs/common" }]

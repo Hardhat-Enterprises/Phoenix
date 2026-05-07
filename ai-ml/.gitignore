@@ -13,3 +13,5 @@ datasets/
 
 # Experiment outputs
 Sample Records/
+
+.env

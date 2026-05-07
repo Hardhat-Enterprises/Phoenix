@@ -6,6 +6,8 @@ import { config, connectRabbitMQ, logger } from "@phoenix/common";
 import userRoutes from "./routes/user.routes";
 import ingestionRoutes from "./routes/ingestion.routes";
 import notificationRoutes from "./routes/notification.routes";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "@phoenix/common";
 // import authRoutes from "./routes/auth.routes";
 
 dotenv.config();
@@ -22,13 +24,15 @@ app.get("/health", (_, res) => {
   res.json({ message: "API Gateway is running" });
 });
 
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 app.use("/api/users", userRoutes);
 app.use("/api/ingestion", ingestionRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 const startServer = async () => {
+  await connectRabbitMQ(process.env.RABBITMQ_URL!);
   try {
-    await connectRabbitMQ(process.env.RABBITMQ_URL!);
     (app.listen(config.PORT),
       () => {
         logger.info(`${config.SERVICE_NAME} running on port ${config.PORT}`);

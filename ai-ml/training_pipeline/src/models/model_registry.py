@@ -11,11 +11,8 @@ except Exception:
 
 
 try:
-    from .ai013_forecasting.models.model import LSTMForecaster
+    from models.ai013_forecasting.models.model import LSTMForecaster
 except ImportError:
-    try:
-        from models.ai013_forecasting.models.model import LSTMForecaster
-    except ImportError:
         LSTMForecaster = None
 
 

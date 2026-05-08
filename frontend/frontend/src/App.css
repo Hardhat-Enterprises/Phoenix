@@ -568,3 +568,61 @@ font-family {
   min-height: 500px;
   color: #53657d;
 }
+/* Tai Nguyen - Threat Level Legend */
+
+.threat-details-page {
+  width: 100%;
+  padding: 40px;
+}
+
+.threat-legend-card {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  width: 300px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.threat-legend-title {
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: #7c8aa5;
+  margin-bottom: 24px;
+  font-weight: 700;
+}
+
+.threat-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  font-size: 18px;
+  color: #1f2a44;
+  font-weight: 500;
+}
+
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.no-threat {
+  background-color: #9ca3af;
+}
+
+.low {
+  background-color: #22c55e;
+}
+
+.medium {
+  background-color: #eab308;
+}
+
+.high {
+  background-color: #f97316;
+}
+
+.critical {
+  background-color: #ef4444;
+}

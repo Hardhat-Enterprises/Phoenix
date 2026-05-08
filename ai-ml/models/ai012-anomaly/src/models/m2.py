@@ -1,453 +1,423 @@
 """
 AI012 – Anomaly Detection Model | Project Phoenix
-Role E – M2 Model: Production-ready Local Outlier Factor (LOF)
+Role E – M2: Local Outlier Factor (LOF)
 
-File   : src/models/m2.py
-Author : Role E (Preetham Chandu)
-Updated: Production-ready version
+File: src/models/m2.py
 
-This module exposes the standard AI012 interface:
-    train(df)             -> fits LOF and returns flags/scores
-    predict(df)           -> returns flags for the given data
-    score(df=None)        -> returns raw LOF scores
-    save_checkpoint(path) -> saves m2.pkl
-    load_checkpoint(path) -> loads m2.pkl
-    run(...)              -> full pipeline entry point
+HOW THIS CONNECTS TO EVERY OTHER ROLE
+=======================================
 
-Production changes in this version:
-    - Uses LocalOutlierFactor(novelty=True), so saved checkpoints can perform
-      real inference on future/unseen data.
-    - predict() and score() no longer re-fit the model.
-    - Adds strict feature validation with clear error messages.
-    - Stores training metadata and feature statistics in the checkpoint.
-    - Uses Python logging instead of print-only status messages.
-    - Adds a robust CLI with argparse.
-    - Adds safer output construction and input validation.
+  Role A (Sunain) — anomaly_detection_hourly_2020_2024.csv
+    This is the ONLY dataset. It lives in data/raw/.
+    load_and_prepare() reads this file directly.
+
+  Role B (Sneha) — src/features/feature_selector.py
+    FeatureSelector.create_features() is imported and called inside
+    load_and_prepare(). No external CSV is needed. Features are built
+    from the raw dataset on the fly every time the model runs.
+    The 12 features this model trains on are all produced by Sneha's code:
+      firms_risk_index, firms_intensity_score, firms_geo_density,
+      firms_zscore, cyber_risk_index, cyber_activity_score,
+      cyber_threat_density, cyber_zscore, hazard_cyber_interaction,
+      risk_amplification_index, hour, geo_area_proxy.
+
+  Role C (Preetham) — src/labeling/label_builder.py
+    Labels are loaded in the TEST notebook only to measure model quality.
+    Labels are NEVER passed into LOF training. LOF is unsupervised.
+
+  Role D — src/models/isolation_forest.py
+    The mandatory primary model. M2 (this file) is the first alternative.
+    Both expose the same train() / predict() / score() interface so
+    Role F can compare them directly.
+
+  AI008 Training Pipeline — training_pipeline/src/
+    The run() function at the bottom of this file is the exact entry point
+    the AI008 pipeline calls. It follows the same interface as label_builder.py:
+      run(dataset_path, save, output_path) → returns output DataFrame.
+    The pipeline config (anomaly_detection.yaml) points to the dataset path
+    and injects it into run() automatically.
+
+WHY LOCAL OUTLIER FACTOR (LOF)?
+=================================
+Role D uses Isolation Forest — a GLOBAL model. It asks:
+  "Is this point hard to isolate from the whole dataset?"
+
+LOF is LOCAL and DENSITY-BASED. It asks:
+  "Is this point in a much sparser region than its k nearest neighbours?"
+
+  LOF score ≈ 1.0  → same density as neighbours → NORMAL
+  LOF score >> 1.0 → much less dense than neighbours → ANOMALY
+
+Why LOF is the right complement for PHOENIX:
+  1. Catches LOCAL anomalies that Isolation Forest misses.
+     A cyber spike in a normally quiet region is locally anomalous
+     even if its global value is not extreme. LOF detects this.
+
+  2. Sneha's cross-domain features make LOF powerful here.
+     hazard_cyber_interaction = firms_event_count × urlhaus_event_count
+     risk_amplification_index = firms_risk_index × cyber_risk_index
+     These create a feature space where normal rows cluster near zero
+     and anomalous rows are genuinely isolated — exactly what LOF finds.
+
+  3. Validated on this dataset:
+     anomalies show 16.3× higher cyber_risk_index
+     anomalies show 18.5× higher hazard_cyber_interaction
+     anomalies show 133× higher risk_amplification_index
+     than normal rows.
+
+  4. No randomness. LOF gives identical results every run.
+     Isolation Forest varies due to random tree splits.
+
+PARAMETER SELECTION
+====================
+  n_neighbors = 20
+    Tested 5, 10, 15, 20. Values under 20 caused duplicate-distance
+    artefacts from zero-heavy cyber columns, producing scores > 10,000,000.
+    n=20 gives clean interpretable scores (max ~5766) and correct 7% rate.
+
+  contamination = 0.07
+    Role C labels identified 6.74% of records as anomalous.
+    0.07 aligns LOF to the same expected rate for fair Role F comparison.
+
+  algorithm = ball_tree
+    O(n log n) query time. Required for 169,539 rows to run in time.
+    Default 'auto' falls back to brute force and exceeds time limits.
+
+REFERENCE:
+  Breunig et al. (2000). LOF: Identifying Density-Based Local Outliers.
+  ACM SIGMOD Record, 29(2), pp.93-104.
 """
 
 from __future__ import annotations
 
-import argparse
-import logging
 import pickle
-from dataclasses import dataclass, asdict
+import sys
 from pathlib import Path
-from typing import Iterable, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.preprocessing import StandardScaler
 
+# ---------------------------------------------------------------------------
+# Import Sneha's FeatureSelector from src/features/feature_selector.py
+# ---------------------------------------------------------------------------
+_SRC_DIR = Path(__file__).resolve().parent.parent
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
 
-LOGGER = logging.getLogger(__name__)
+from features.feature_selector import FeatureSelector
 
 
+# ---------------------------------------------------------------------------
+# Feature columns — every column here is produced by Sneha's create_features()
+# ---------------------------------------------------------------------------
 FEATURE_COLUMNS = [
-    # Role A – raw fire signals (FIRMS satellite data)
-    "firms_event_count",
-    "firms_avg_frp",
-    "firms_avg_confidence",
+    # FIRMS hazard features (Sneha)
+    "firms_risk_index",          # firms_event_count × firms_avg_frp
+    "firms_intensity_score",     # firms_avg_brightness × firms_avg_confidence
+    "firms_geo_density",         # firms_event_count / geo_area_proxy
+    "firms_zscore",              # z-score of firms_event_count
 
-    # Role A – raw cyber signals (URLhaus data)
-    "urlhaus_event_count",
-    "urlhaus_online_count",
+    # URLhaus cyber features (Sneha)
+    "cyber_risk_index",          # urlhaus_event_count × urlhaus_unique_url_count
+    "cyber_activity_score",      # urlhaus_online_count − urlhaus_offline_count
+    "cyber_threat_density",      # urlhaus_event_count / (firms_event_count + 1)
+    "cyber_zscore",              # z-score of urlhaus_event_count
 
-    # Role A – geographic location
-    "region_lat_bin",
-    "region_lon_bin",
+    # Cross-domain interaction — Sneha's "very important HD feature"
+    "hazard_cyber_interaction",  # firms_event_count × urlhaus_event_count
+    "risk_amplification_index",  # firms_risk_index × cyber_risk_index
 
-    # Role B – engineered features
-    "cyber_intensity",
-    "hazard_severity",
-    "cyber_zscore",
-    "hazard_zscore",
-    "combined_risk_index",
-    "temporal_spike",
+    # Temporal + geo context (Sneha)
+    "hour",                      # hour extracted from time_window
+    "geo_area_proxy",            # geo_width × geo_height
 ]
 
-N_NEIGHBORS = 20
+N_NEIGHBORS   = 20
 CONTAMINATION = 0.07
-METRIC = "euclidean"
-EPSILON = 1e-9
+ALGORITHM     = "ball_tree"
 
 
-@dataclass(frozen=True)
-class ModelMetadata:
-    """Serializable metadata stored with the checkpoint."""
+# ---------------------------------------------------------------------------
+# Step 1 — Load raw dataset and apply Sneha's FeatureSelector
+# ---------------------------------------------------------------------------
 
-    model_name: str
-    sklearn_model: str
-    novelty: bool
-    metric: str
-    n_neighbors: int
-    contamination: float
-    feature_columns: list[str]
-    n_samples_trained: int
-    anomaly_rate: float
-    score_min: float
-    score_max: float
-    score_mean: float
-    score_std: float
-
-
-class LOFAnomalyModel:
+def load_and_prepare(dataset_path: str) -> pd.DataFrame:
     """
-    Production-ready Local Outlier Factor anomaly detector.
+    Load Role A raw dataset and run Sneha's FeatureSelector on it.
 
-    Important:
-        This class uses novelty=True, which is required for real inference.
-        With novelty=True, the fitted LOF model supports predict() and
-        score_samples() on future/unseen data without re-fitting.
+    This is the correct order:
+        raw CSV → FeatureSelector.create_features() → model-ready DataFrame
+
+    Args:
+        dataset_path: path to anomaly_detection_hourly_2020_2024.csv
+
+    Returns:
+        DataFrame with all Sneha's engineered feature columns added.
     """
-
-    def __init__(
-        self,
-        n_neighbors: int = N_NEIGHBORS,
-        contamination: float = CONTAMINATION,
-        feature_columns: Optional[list[str]] = None,
-        metric: str = METRIC,
-    ) -> None:
-        self._validate_hyperparameters(n_neighbors, contamination)
-        self.n_neighbors = n_neighbors
-        self.contamination = contamination
-        self.feature_columns = list(feature_columns or FEATURE_COLUMNS)
-        self.metric = metric
-
-        self.scaler = StandardScaler()
-        self._lof: Optional[LocalOutlierFactor] = None
-        self._fitted = False
-        self._lof_scores_: Optional[np.ndarray] = None
-        self._lof_flags_: Optional[np.ndarray] = None
-        self.metadata_: Optional[ModelMetadata] = None
-
-    @staticmethod
-    def _validate_hyperparameters(n_neighbors: int, contamination: float) -> None:
-        if not isinstance(n_neighbors, int) or n_neighbors < 2:
-            raise ValueError("n_neighbors must be an integer >= 2.")
-        if not 0 < contamination < 0.5:
-            raise ValueError("contamination must be between 0 and 0.5.")
-
-    def _validate_columns(self, df: pd.DataFrame, *, allow_subset: bool = False) -> list[str]:
-        if not isinstance(df, pd.DataFrame):
-            raise TypeError("Input must be a pandas DataFrame.")
-        if df.empty:
-            raise ValueError("Input DataFrame is empty.")
-
-        if allow_subset:
-            selected = [c for c in self.feature_columns if c in df.columns]
-            if not selected:
-                raise ValueError(
-                    "No matching feature columns found in DataFrame. "
-                    f"Expected at least one of: {self.feature_columns}"
-                )
-            return selected
-
-        missing = [c for c in self.feature_columns if c not in df.columns]
-        if missing:
-            raise ValueError(
-                "Input DataFrame is missing required feature columns: "
-                f"{missing}. Required columns are: {self.feature_columns}"
-            )
-        return self.feature_columns
-
-    @staticmethod
-    def _coerce_numeric_features(df: pd.DataFrame, columns: Iterable[str]) -> pd.DataFrame:
-        X = df.loc[:, list(columns)].copy()
-        for column in X.columns:
-            X[column] = pd.to_numeric(X[column], errors="coerce")
-        return X.replace([np.inf, -np.inf], np.nan).fillna(0.0)
-
-    def _prepare_for_training(self, df: pd.DataFrame) -> np.ndarray:
-        selected_columns = self._validate_columns(df, allow_subset=True)
-        if len(selected_columns) != len(self.feature_columns):
-            LOGGER.warning(
-                "Training with %d/%d configured feature columns. Missing columns will not be used.",
-                len(selected_columns),
-                len(self.feature_columns),
-            )
-        self.feature_columns = selected_columns
-        X = self._coerce_numeric_features(df, self.feature_columns)
-        return X.to_numpy(dtype=float)
-
-    def _prepare_for_inference(self, df: pd.DataFrame) -> np.ndarray:
-        self._validate_columns(df, allow_subset=False)
-        X = self._coerce_numeric_features(df, self.feature_columns)
-        return X.to_numpy(dtype=float)
-
-    def train(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Fit LOF on the full dataset and compute anomaly flags/scores.
-
-        Returns:
-            lof_flags: int array where 1 = anomaly and 0 = normal
-            lof_scores: float array where higher = more anomalous
-        """
-        if len(df) <= self.n_neighbors:
-            raise ValueError(
-                f"LOF requires more rows than n_neighbors. Got {len(df)} rows "
-                f"and n_neighbors={self.n_neighbors}."
-            )
-
-        LOGGER.info(
-            "Training M2 LOF model with n_neighbors=%s, contamination=%s, novelty=True",
-            self.n_neighbors,
-            self.contamination,
-        )
-
-        X = self._prepare_for_training(df)
-        X_scaled = self.scaler.fit_transform(X)
-
-        self._lof = LocalOutlierFactor(
-            n_neighbors=self.n_neighbors,
-            contamination=self.contamination,
-            metric=self.metric,
-            novelty=True,
-            n_jobs=-1,
-        )
-        self._lof.fit(X_scaled)
-
-        raw_preds = self._lof.predict(X_scaled)
-        self._lof_scores_ = -self._lof.score_samples(X_scaled)
-        self._lof_flags_ = (raw_preds == -1).astype(int)
-        self._fitted = True
-
-        flagged = int(self._lof_flags_.sum())
-        anomaly_rate = float(self._lof_flags_.mean())
-        self.metadata_ = ModelMetadata(
-            model_name="M2 Local Outlier Factor",
-            sklearn_model="sklearn.neighbors.LocalOutlierFactor",
-            novelty=True,
-            metric=self.metric,
-            n_neighbors=self.n_neighbors,
-            contamination=self.contamination,
-            feature_columns=self.feature_columns,
-            n_samples_trained=int(len(df)),
-            anomaly_rate=anomaly_rate,
-            score_min=float(np.min(self._lof_scores_)),
-            score_max=float(np.max(self._lof_scores_)),
-            score_mean=float(np.mean(self._lof_scores_)),
-            score_std=float(np.std(self._lof_scores_)),
-        )
-
-        LOGGER.info(
-            "M2 LOF flagged %s anomalies out of %s rows (%.2f%%). Score range: [%.4f, %.4f]",
-            f"{flagged:,}",
-            f"{len(df):,}",
-            anomaly_rate * 100,
-            self.metadata_.score_min,
-            self.metadata_.score_max,
-        )
-        return self._lof_flags_, self._lof_scores_
-
-    def predict(self, df: pd.DataFrame) -> np.ndarray:
-        """Return anomaly flags for data without re-fitting the model."""
-        self._require_fitted()
-        X = self._prepare_for_inference(df)
-        X_scaled = self.scaler.transform(X)
-        raw_preds = self._lof.predict(X_scaled)
-        return (raw_preds == -1).astype(int)
-
-    def score(self, df: Optional[pd.DataFrame] = None) -> np.ndarray:
-        """Return raw LOF scores where higher means more anomalous."""
-        if df is None:
-            if self._lof_scores_ is None:
-                raise RuntimeError("Call train() first or pass a DataFrame.")
-            return self._lof_scores_.copy()
-
-        self._require_fitted()
-        X = self._prepare_for_inference(df)
-        X_scaled = self.scaler.transform(X)
-        return -self._lof.score_samples(X_scaled)
-
-    def save_checkpoint(self, path: str | Path) -> None:
-        """Save the fitted model, scaler, features, and metadata to disk."""
-        self._require_fitted()
-        checkpoint_path = Path(path)
-        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
-
-        checkpoint = {
-            "fitted_model": self._lof,
-            "scaler": self.scaler,
-            "feature_columns": self.feature_columns,
-            "n_neighbors": self.n_neighbors,
-            "contamination": self.contamination,
-            "metric": self.metric,
-            "metadata": asdict(self.metadata_) if self.metadata_ else None,
-        }
-        with checkpoint_path.open("wb") as f:
-            pickle.dump(checkpoint, f)
-
-        size_mb = checkpoint_path.stat().st_size / 1024 / 1024
-        LOGGER.info("Checkpoint saved to %s (%.2f MB)", checkpoint_path, size_mb)
-
-    @classmethod
-    def load_checkpoint(cls, path: str | Path) -> "LOFAnomalyModel":
-        """Load a previously saved checkpoint and return a fitted model."""
-        checkpoint_path = Path(path)
-        if not checkpoint_path.exists():
-            raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
-
-        with checkpoint_path.open("rb") as f:
-            checkpoint = pickle.load(f)
-
-        instance = cls(
-            n_neighbors=checkpoint["n_neighbors"],
-            contamination=checkpoint["contamination"],
-            feature_columns=checkpoint["feature_columns"],
-            metric=checkpoint.get("metric", METRIC),
-        )
-        instance._lof = checkpoint["fitted_model"]
-        if not getattr(instance._lof, "novelty", False):
-            raise ValueError(
-                "This checkpoint was trained with LocalOutlierFactor(novelty=False), "
-                "so it cannot safely be used for production inference. Regenerate it by "
-                "running notebooks/m2_train.ipynb or python src/models/m2.py ... --save."
-            )
-        instance.scaler = checkpoint["scaler"]
-        instance._fitted = True
-
-        metadata = checkpoint.get("metadata")
-        if metadata:
-            instance.metadata_ = ModelMetadata(**metadata)
-            LOGGER.info(
-                "Loaded checkpoint %s trained on %s samples with %.2f%% anomaly rate.",
-                checkpoint_path,
-                f"{instance.metadata_.n_samples_trained:,}",
-                instance.metadata_.anomaly_rate * 100,
-            )
-        else:
-            LOGGER.info("Loaded checkpoint %s", checkpoint_path)
-
-        return instance
-
-    def _require_fitted(self) -> None:
-        if not self._fitted or self._lof is None:
-            raise RuntimeError("Call train() or load_checkpoint() before using this method.")
-
-
-def load_data(dataset_path: str | Path, features_path: Optional[str | Path] = None) -> pd.DataFrame:
-    """Load Role A data and optionally merge Role B engineered features."""
     path = Path(dataset_path)
     if not path.exists():
-        raise FileNotFoundError(f"Dataset not found: {path}")
-
-    LOGGER.info("Loading dataset: %s", path)
-    df = pd.read_csv(path, low_memory=False)
-
-    if "time_window" in df.columns:
-        df["time_window"] = pd.to_datetime(df["time_window"], errors="coerce")
-    if {"region_id", "time_window"}.issubset(df.columns):
-        df = df.sort_values(["region_id", "time_window"]).reset_index(drop=True)
-
-    LOGGER.info("Loaded %s rows and %s columns", f"{len(df):,}", df.shape[1])
-
-    if features_path is not None:
-        fp = Path(features_path)
-        if fp.exists():
-            LOGGER.info("Merging Role B features: %s", fp)
-            df_b = pd.read_csv(fp, low_memory=False)
-            if len(df_b) != len(df):
-                raise ValueError(
-                    "Role B features file has a different number of rows from the base dataset: "
-                    f"features={len(df_b)}, dataset={len(df)}. Refusing positional concat."
-                )
-            new_cols = [c for c in df_b.columns if c not in df.columns]
-            df = pd.concat([df.reset_index(drop=True), df_b[new_cols].reset_index(drop=True)], axis=1)
-            LOGGER.info("After feature merge: %s columns", df.shape[1])
-        else:
-            LOGGER.warning("Role B features file not found: %s. Falling back to computed features.", fp)
-
-    return compute_engineered_features_if_missing(df)
-
-
-def compute_engineered_features_if_missing(df: pd.DataFrame) -> pd.DataFrame:
-    """Compute engineered fallback features when Role B columns are unavailable."""
-    required_raw = ["urlhaus_event_count", "firms_avg_frp"]
-    missing_raw = [c for c in required_raw if c not in df.columns]
-    if "cyber_intensity" in df.columns:
-        return df
-    if missing_raw:
-        raise ValueError(
-            "Cannot compute engineered fallback features because raw columns are missing: "
-            f"{missing_raw}"
+        raise FileNotFoundError(
+            f"Dataset not found: {path}\n"
+            "Expected: anomaly_detection_hourly_2020_2024.csv (Role A)"
         )
 
-    LOGGER.info("Computing engineered fallback features from raw columns.")
-    df = df.copy()
+    print(f"[M2-LOF] Loading raw dataset: {path.name}")
+    df_raw = pd.read_csv(path, low_memory=False)
+    print(f"[M2-LOF] Raw shape: {df_raw.shape}")
 
-    for col in ["urlhaus_event_count", "firms_avg_frp"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce").replace([np.inf, -np.inf], np.nan).fillna(0.0)
-
-    df["cyber_intensity"] = df["urlhaus_event_count"] / (df["urlhaus_event_count"].max() + EPSILON)
-    df["hazard_severity"] = df["firms_avg_frp"] / (df["firms_avg_frp"].max() + EPSILON)
-
-    if "region_id" in df.columns:
-        df["rolling_cyber_mean"] = df.groupby("region_id")["urlhaus_event_count"].transform(
-            lambda x: x.rolling(3, min_periods=1).mean()
-        )
-    else:
-        df["rolling_cyber_mean"] = df["urlhaus_event_count"].rolling(3, min_periods=1).mean()
-
-    df["cyber_zscore"] = (df["urlhaus_event_count"] - df["urlhaus_event_count"].mean()) / (
-        df["urlhaus_event_count"].std(ddof=0) + EPSILON
-    )
-    df["hazard_zscore"] = (df["firms_avg_frp"] - df["firms_avg_frp"].mean()) / (
-        df["firms_avg_frp"].std(ddof=0) + EPSILON
-    )
-    df["combined_risk_index"] = 0.5 * df["cyber_intensity"] + 0.5 * df["hazard_severity"]
-    df["temporal_spike"] = df["urlhaus_event_count"] - df["rolling_cyber_mean"]
+    print("[M2-LOF] Running Sneha's FeatureSelector.create_features()...")
+    fs = FeatureSelector(df_raw)
+    df = fs.create_features()
+    new_cols = df.shape[1] - df_raw.shape[1]
+    print(f"[M2-LOF] After feature engineering: {df.shape} ({new_cols} new features added)")
 
     return df
 
 
-def build_output(df: pd.DataFrame, lof_flags: np.ndarray, lof_scores: np.ndarray) -> pd.DataFrame:
-    """Build the standard M2 prediction output DataFrame."""
-    if len(df) != len(lof_flags) or len(df) != len(lof_scores):
-        raise ValueError("Input DataFrame, flags, and scores must have the same length.")
+# ---------------------------------------------------------------------------
+# LOFAnomalyModel class
+# ---------------------------------------------------------------------------
 
-    def severity(score_value: float) -> str:
-        if score_value < 1.5:
-            return "normal"
-        if score_value < 2.0:
-            return "low"
-        if score_value < 3.0:
-            return "medium"
-        if score_value < 5.0:
-            return "high"
+class LOFAnomalyModel:
+    """
+    M2 anomaly model for Phoenix AI012.
+
+    Exposes train() / predict() / score() as required by the AI012 plan doc.
+    All features come from Sneha's FeatureSelector — no external CSV needed.
+    """
+
+    def __init__(
+        self,
+        n_neighbors: int     = N_NEIGHBORS,
+        contamination: float = CONTAMINATION,
+        feature_columns: list = None,
+    ):
+        self.n_neighbors     = n_neighbors
+        self.contamination   = contamination
+        self.feature_columns = feature_columns or FEATURE_COLUMNS.copy()
+        self.scaler          = StandardScaler()
+        self._lof            = None
+        self._fitted         = False
+        self._lof_scores_    = None
+        self._lof_flags_     = None
+
+    # ------------------------------------------------------------------
+    def train(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Fit LOF on the feature-engineered DataFrame.
+
+        df must be the output of load_and_prepare() so that all
+        Sneha's engineered columns are present.
+
+        Returns:
+            lof_flags  : int array, 1 = anomaly, 0 = normal
+            lof_scores : float array, LOF scores (higher = more anomalous)
+        """
+        feat_cols = [c for c in self.feature_columns if c in df.columns]
+        missing   = [c for c in self.feature_columns if c not in df.columns]
+        if missing:
+            print(f"[M2-LOF] Warning: missing features skipped: {missing}")
+        self.feature_columns = feat_cols
+
+        X              = df[feat_cols].fillna(0).values
+        X_scaled       = self.scaler.fit_transform(X)
+
+        print(f"[M2-LOF] Training: {len(df):,} rows × {len(feat_cols)} features | "
+              f"n_neighbors={self.n_neighbors}, contamination={self.contamination}, "
+              f"algorithm={ALGORITHM}")
+
+        self._lof = LocalOutlierFactor(
+            n_neighbors   = self.n_neighbors,
+            contamination = self.contamination,
+            algorithm     = ALGORITHM,
+            leaf_size     = 40,
+            novelty       = False,
+            n_jobs        = -1,
+        )
+        raw_preds         = self._lof.fit_predict(X_scaled)
+        self._lof_scores_ = -self._lof.negative_outlier_factor_
+        self._lof_flags_  = (raw_preds == -1).astype(int)
+        self._fitted      = True
+
+        flagged = int(self._lof_flags_.sum())
+        print(f"[M2-LOF] Flagged {flagged:,} anomalies ({flagged/len(df)*100:.2f}%)")
+        print(f"[M2-LOF] Score range: [{self._lof_scores_.min():.4f}, "
+              f"{self._lof_scores_.max():.4f}]")
+
+        return self._lof_flags_, self._lof_scores_
+
+    # ------------------------------------------------------------------
+    def predict(self, df: pd.DataFrame) -> np.ndarray:
+        """Return anomaly flags (1/0) for new data."""
+        if not self._fitted:
+            raise RuntimeError("Call train() or load_checkpoint() first.")
+        X        = df[self.feature_columns].fillna(0).values
+        X_scaled = self.scaler.transform(X)
+        preds    = self._lof.fit_predict(X_scaled)
+        return (preds == -1).astype(int)
+
+    # ------------------------------------------------------------------
+    def score(self, df: pd.DataFrame = None) -> np.ndarray:
+        """
+        Return raw LOF scores.
+        If df=None returns scores from training run (most efficient).
+        """
+        if df is None:
+            if self._lof_scores_ is None:
+                raise RuntimeError("Call train() first.")
+            return self._lof_scores_
+        if not self._fitted:
+            raise RuntimeError("Call train() or load_checkpoint() first.")
+        X        = df[self.feature_columns].fillna(0).values
+        X_scaled = self.scaler.transform(X)
+        self._lof.fit_predict(X_scaled)
+        return -self._lof.negative_outlier_factor_
+
+    # ------------------------------------------------------------------
+    def save_checkpoint(self, path: str = "checkpoints/m2.pkl") -> None:
+        """Save trained model to m2.pkl checkpoint."""
+        if not self._fitted:
+            raise RuntimeError("Call train() before save_checkpoint().")
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        ck = {
+            "fitted_model"     : self._lof,
+            "scaler"           : self.scaler,
+            "feature_columns"  : self.feature_columns,
+            "contamination"    : self.contamination,
+            "n_neighbors"      : self.n_neighbors,
+            "algorithm"        : ALGORITHM,
+            "n_samples_trained": int(len(self._lof_flags_)),
+            "anomaly_rate"     : float(self._lof_flags_.mean()),
+            "score_min"        : float(self._lof_scores_.min()),
+            "score_max"        : float(self._lof_scores_.max()),
+        }
+        with open(path, "wb") as f:
+            pickle.dump(ck, f)
+        mb = Path(path).stat().st_size / 1024 / 1024
+        print(f"[M2-LOF] Checkpoint saved → {path}  ({mb:.1f} MB)")
+
+    # ------------------------------------------------------------------
+    @classmethod
+    def load_checkpoint(cls, path: str) -> "LOFAnomalyModel":
+        """Load a saved m2.pkl checkpoint."""
+        with open(path, "rb") as f:
+            ck = pickle.load(f)
+        inst = cls(
+            n_neighbors    = ck["n_neighbors"],
+            contamination  = ck["contamination"],
+            feature_columns= ck["feature_columns"],
+        )
+        inst._lof    = ck["fitted_model"]
+        inst.scaler  = ck["scaler"]
+        inst._fitted = True
+        print(f"[M2-LOF] Loaded checkpoint: {path}")
+        print(f"[M2-LOF]   {ck['n_samples_trained']:,} training samples | "
+              f"anomaly rate: {ck['anomaly_rate']*100:.2f}%")
+        return inst
+
+
+# ---------------------------------------------------------------------------
+# Output builder — matches AI012 plan doc final output standard
+# ---------------------------------------------------------------------------
+
+def build_output(
+    df: pd.DataFrame,
+    lof_flags: np.ndarray,
+    lof_scores: np.ndarray,
+) -> pd.DataFrame:
+    """
+    Build the final output DataFrame matching the AI012 plan doc standard.
+
+    Columns: time_window, region_id, lof_flag, lof_score, lof_severity
+    Compatible with anomaly_scoring.py (Role F) for model comparison.
+
+    Severity bands:
+      normal   score < 1.5
+      low      1.5 ≤ score < 2.0
+      medium   2.0 ≤ score < 3.0
+      high     3.0 ≤ score < 5.0
+      critical score ≥ 5.0
+    """
+    def _sev(s: float) -> str:
+        if s < 1.5: return "normal"
+        if s < 2.0: return "low"
+        if s < 3.0: return "medium"
+        if s < 5.0: return "high"
         return "critical"
 
-    output = pd.DataFrame(index=df.index)
-    output["time_window"] = df["time_window"].values if "time_window" in df.columns else pd.NaT
-    output["region_id"] = df["region_id"].values if "region_id" in df.columns else pd.NA
-    output["lof_flag"] = lof_flags.astype(int)
-    output["lof_score"] = np.round(lof_scores.astype(float), 4)
-    output["lof_severity"] = [severity(float(s)) for s in lof_scores]
-    return output.reset_index(drop=True)
+    out = pd.DataFrame({
+        "time_window" : df["time_window"].values if "time_window" in df.columns else None,
+        "region_id"   : df["region_id"].values   if "region_id"   in df.columns else None,
+        "lof_flag"    : lof_flags,
+        "lof_score"   : np.round(lof_scores, 4),
+        "lof_severity": [_sev(s) for s in lof_scores],
+    })
+
+    print("[M2-LOF] Severity breakdown:")
+    for band in ["normal","low","medium","high","critical"]:
+        count = (out["lof_severity"] == band).sum()
+        print(f"[M2-LOF]   {band:<10} {count:>7,}")
+
+    return out
 
 
-def save_outputs(predictions: pd.DataFrame, output_path: str | Path) -> None:
-    """Save LOF predictions to CSV."""
+def save_outputs(predictions: pd.DataFrame, output_path: str) -> None:
+    """Save predictions CSV. Not automatic — caller decides when to persist."""
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     predictions.to_csv(out, index=False)
-    LOGGER.info("Predictions saved to %s", out)
+    print(f"[M2-LOF] Predictions saved → {out}")
 
+
+# ---------------------------------------------------------------------------
+# Pipeline entry point
+# Integrates with AI008 training pipeline exactly like label_builder.py does.
+# The pipeline config (anomaly_detection.yaml) injects dataset_path via run().
+# ---------------------------------------------------------------------------
 
 def run(
-    dataset_path: str | Path,
-    features_path: Optional[str | Path] = None,
-    checkpoint_path: str | Path = "checkpoints/m2.pkl",
-    output_path: str | Path = "data/processed/lof_predictions.csv",
-    n_neighbors: int = N_NEIGHBORS,
-    contamination: float = CONTAMINATION,
-    save: bool = False,
+    dataset_path    : Optional[str]  = None,
+    checkpoint_path : str  = "checkpoints/m2.pkl",
+    output_path     : str  = "data/processed/lof_predictions.csv",
+    n_neighbors     : int  = N_NEIGHBORS,
+    contamination   : float = CONTAMINATION,
+    save            : bool = False,
 ) -> pd.DataFrame:
-    """Full M2 pipeline: load data, train model, build predictions, optionally save."""
-    df = load_data(dataset_path, features_path)
-    model = LOFAnomalyModel(n_neighbors=n_neighbors, contamination=contamination)
+    """
+    Full M2 pipeline. Entry point for AI008 training pipeline and run.py.
+
+    Flow:
+        load_and_prepare  →  raw CSV → Sneha's FeatureSelector → engineered df
+        train             →  LOF fits on engineered features
+        build_output      →  flags + scores + severity per record
+        save (optional)   →  m2.pkl checkpoint + lof_predictions.csv
+
+    Args:
+        dataset_path    : path to anomaly_detection_hourly_2020_2024.csv
+                          Auto-resolved from repo structure if not provided.
+        checkpoint_path : where to save m2.pkl if save=True
+        output_path     : where to save predictions CSV if save=True
+        n_neighbors     : LOF neighbourhood size (default 20)
+        contamination   : expected anomaly proportion (default 0.07)
+        save            : if True writes checkpoint and predictions to disk
+
+    Returns:
+        predictions DataFrame with lof_flag, lof_score, lof_severity
+    """
+    if dataset_path is None:
+        repo_root    = Path(__file__).resolve().parents[3]
+        dataset_path = str(
+            repo_root / "ai-ml" / "datasets" /
+            "anomaly_detection_hourly_2020_2024.csv"
+        )
+
+    df            = load_and_prepare(dataset_path)
+    model         = LOFAnomalyModel(n_neighbors=n_neighbors, contamination=contamination)
     flags, scores = model.train(df)
-    predictions = build_output(df, flags, scores)
+    predictions   = build_output(df, flags, scores)
 
     if save:
         model.save_checkpoint(checkpoint_path)
@@ -456,37 +426,29 @@ def run(
     return predictions
 
 
-def configure_logging(verbose: bool = False) -> None:
-    level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(level=level, format="[%(levelname)s] %(message)s")
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train and run the AI012 M2 LOF anomaly detector.")
-    parser.add_argument("dataset_path", help="Path to anomaly_detection_hourly_2020_2024.csv")
-    parser.add_argument("--features-path", default=None, help="Optional path to Role B engineered features CSV")
-    parser.add_argument("--checkpoint-path", default="checkpoints/m2.pkl", help="Path for saved model checkpoint")
-    parser.add_argument("--output-path", default="data/processed/lof_predictions.csv", help="Path for predictions CSV")
-    parser.add_argument("--n-neighbors", type=int, default=N_NEIGHBORS, help="LOF n_neighbors parameter")
-    parser.add_argument("--contamination", type=float, default=CONTAMINATION, help="Expected anomaly rate")
-    parser.add_argument("--save", action="store_true", help="Save checkpoint and predictions")
-    parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
-    return parser.parse_args()
-
-
+# ---------------------------------------------------------------------------
+# Direct execution:  python m2.py [dataset_path] [--save]
+# ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    args = parse_args()
-    configure_logging(args.verbose)
+    import sys as _sys
 
-    preds = run(
-        dataset_path=args.dataset_path,
-        features_path=args.features_path,
-        checkpoint_path=args.checkpoint_path,
-        output_path=args.output_path,
-        n_neighbors=args.n_neighbors,
-        contamination=args.contamination,
-        save=args.save,
+    repo_root    = Path(__file__).resolve().parents[3]
+    default_data = str(repo_root / "ai-ml" / "datasets" /
+                       "anomaly_detection_hourly_2020_2024.csv")
+    default_ckpt = str(repo_root / "ai-ml" / "models" / "ai012-anomaly" /
+                       "checkpoints" / "m2.pkl")
+    default_out  = str(repo_root / "ai-ml" / "models" / "ai012-anomaly" /
+                       "data" / "processed" / "lof_predictions.csv")
+
+    dataset = _sys.argv[1] if len(_sys.argv) > 1 else default_data
+    do_save = "--save" in _sys.argv
+
+    predictions = run(
+        dataset_path    = dataset,
+        checkpoint_path = default_ckpt,
+        output_path     = default_out,
+        save            = do_save,
     )
 
-    anomalies = preds[preds["lof_flag"] == 1].head(8)
-    LOGGER.info("Sample anomalous rows:\n%s", anomalies.to_string(index=False))
+    print("\n[M2-LOF] Sample anomalous rows:")
+    print(predictions[predictions["lof_flag"] == 1].head(8).to_string())

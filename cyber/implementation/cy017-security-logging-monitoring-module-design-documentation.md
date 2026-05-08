@@ -37,8 +37,7 @@
 22. [Future Integration Notes](#22-future-integration-notes)
 23. [Future Scalability Notes](#23-future-scalability-notes)
 24. [Assumptions and Open Items](#24-assumptions-and-open-items)
-25. [Self-Review Checklist](#25-self-review-checklist)
-26. [Document History](#26-document-history)
+25. [Document History](#25-document-history)
 
 
 ---
@@ -1034,35 +1033,7 @@ The first implementation should remain console-based. Replacing console output w
 
 ---
 
-## 25. Self-Review Checklist
-
-| Requirement | Status |
-|---|---|
-| Failed login attempts tracked | Done |
-| Invalid or expired tokens tracked | Done |
-| Token issuance audit supported | Done |
-| RBAC failures tracked | Done |
-| Suspicious or invalid inputs tracked | Done |
-| Request size failures tracked | Done |
-| Rate limit triggers / API abuse tracked | Done |
-| Throttling decisions tracked | Done |
-| Duplicate alert detection tracked | Done |
-| `validation_failure` expanded with reasons | Done |
-| `access_restricted` revised for sync + async logging | Done |
-| Four synchronous access restriction reasons added exactly | Done |
-| Async access restriction reasons separated and justified | Done |
-| Rule 8 logging coverage preserved | Done |
-| Rule 9 15-minute initial restriction and escalation supported | Done |
-| HTTP response mappings clarified | Done |
-| Request context fields included | Done |
-| Logger responsibility separated from detection/blocking responsibility | Done |
-| Database and SIEM kept out of current implementation scope | Done |
-| Node.js + Express + TypeScript target confirmed | Done |
-| Ready for  TypeScript implementation | Done |
-
----
-
-## 26. Document History
+## 25. Document History
 
 | Version | Change |
 |---|---|

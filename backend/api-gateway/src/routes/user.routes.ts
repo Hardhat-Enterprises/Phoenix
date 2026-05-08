@@ -20,4 +20,5 @@ router.get("/meta/linked-event-types", getLinkedEventTypes);
 router.get("/meta/seasons", getSeasons);
 router.get("/meta/reference-days", getReferenceDays);
 router.get("/meta/reference-times", getReferenceTimes);
+
 export default router;

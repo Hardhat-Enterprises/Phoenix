@@ -63,7 +63,7 @@ export interface UserServiceClient {
 
 const userServiceUrl = process.env.USER_SERVICE_URL || "localhost:50051";
 
-export const userGrpcClient = new grpcObject.user.UserService(
+export const userGrpcClient: any = new grpcObject.user.UserService(
   userServiceUrl,
   grpc.credentials.createInsecure(),
 );

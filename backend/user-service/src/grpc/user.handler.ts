@@ -1,6 +1,6 @@
 import { GetHealthDto, GetUsersDto } from "../dto/user.dto";
 import { ServerUnaryCall, sendUnaryData } from "@grpc/grpc-js";
-import { getHealth, getUsers } from "../services/user.service";
+import { getHealth, getUsers, getLocations,getEventStatuses,getLinkedEventTypes,getSeasons,getReferenceDays,getReferenceTimes } from "../services/user.service";
 import { GetHealthEntity, GetUsersEntity } from "../entity/user.entity";
 import { logger } from "@phoenix/common";
 
@@ -11,7 +11,7 @@ export const userHandler = {
   ) => {
     try {
       const response = getHealth(call.request);
-      logger.info(`User service GetHealth response:${response}`);
+      logger.info(`User service GetHealth response:${JSON.stringify(response)}`);
       callback(null, response);
     } catch (error) {
       callback({
@@ -20,9 +20,10 @@ export const userHandler = {
       });
     }
   },
-    GetUsers: async (
+
+  GetUsers: async (
     call: ServerUnaryCall<GetUsersDto, GetUsersEntity>,
-    callback: sendUnaryData<GetUsersEntity>
+    callback: sendUnaryData<GetUsersEntity>,
   ) => {
     try {
       const response = await getUsers(call.request);
@@ -35,4 +36,94 @@ export const userHandler = {
       });
     }
   },
+
+  GetLocations: async (
+    call: ServerUnaryCall<any, any>,
+    callback: sendUnaryData<any>,
+  ) => {
+    try {
+      const response = await getLocations();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+
+  GetEventStatuses: async (
+    call: ServerUnaryCall<any, any>,
+    callback: sendUnaryData<any>,
+  ) => {
+    try {
+      const response = await getEventStatuses();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+
+  GetLinkedEventTypes: async (
+    call: ServerUnaryCall<any, any>,
+    callback: sendUnaryData<any>,
+  ) => {
+    try {
+      const response = await getLinkedEventTypes();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+    GetSeasons: async (
+    call: ServerUnaryCall<any, any>,
+    callback: sendUnaryData<any>,
+  ) => {
+    try {
+      const response = await getSeasons();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+
+    GetReferenceDays: async (
+    call: ServerUnaryCall<any, any>,
+    callback: sendUnaryData<any>,
+  ) => {
+    try {
+      const response = await getReferenceDays();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+
+    GetReferenceTimes: async (
+    call: ServerUnaryCall<any, any>,
+    callback: sendUnaryData<any>,
+  ) => {
+    try {
+      const response = await getReferenceTimes();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
 };
+

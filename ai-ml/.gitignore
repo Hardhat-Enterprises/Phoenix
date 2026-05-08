@@ -13,3 +13,28 @@ datasets/
 
 # Experiment outputs
 Sample Records/
+
+# Python
+__pycache__/
+*.pyc
+*.pkl
+
+# Virtual environment
+.venv/
+
+# Logs & TensorBoard
+logs/
+tensorboard/
+runs/
+
+# Checkpoints (ML models)
+checkpoints/
+
+# Data (raw + processed)
+data/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OS
+.DS_Store

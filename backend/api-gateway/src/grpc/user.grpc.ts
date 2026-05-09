@@ -118,6 +118,45 @@ export interface GetHazardResponse {
   hazard?: HazardItem;
 }
 
+// ─── Risks ───────────────────────────────────────────────────────────────
+
+export interface RiskItem {
+  integration_event_id: string;
+  related_threat_id: string;
+  correlation_score: string;
+  linkage_reason: string;
+  integration_confidence: string;
+  linked_event_type: string;
+  event_status: string;
+  event_type: string;
+ }
+
+export interface GetRisksRequest {
+  hazard_id: string;
+  threat_id: string;
+  event_status: string;
+  linked_event_type: string;
+  page?: number;
+  limit?: number;
+}
+export interface GetRisksResponse {
+  status: number;
+  message: string;
+  hazards: RiskItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface GetRiskRequest {
+  integration_event_id: string;
+}
+export interface GetRiskResponse {
+  status: number;
+  message: string;
+  hazard?: RiskItem;
+}
+
 // ─── Client interface ──────────────────────────────────────────────────────
 
 export interface UserServiceClient {
@@ -144,6 +183,14 @@ export interface UserServiceClient {
   GetHazard(
     request: GetHazardRequest,
     callback: (error: grpc.ServiceError | null, response: GetHazardResponse) => void,
+  ): void;
+  GetRisks(
+    request: GetRisksRequest,
+    callback: (error: grpc.ServiceError | null, response: GetRisksResponse) => void,
+  ): void;
+  GetRisk(
+    request: GetRiskRequest,
+    callback: (error: grpc.ServiceError | null, response: GetRiskResponse) => void,
   ): void;
 }
 

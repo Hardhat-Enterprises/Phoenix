@@ -14,4 +14,7 @@ router.get("/threats/:threatId", getThreat);
 router.get("/hazards", getHazards);
 router.get("/hazards/:hazardId", getHazard);
 
+router.get("/risks", getRisks);
+router.get("/risks/:riskId", getRisk);
+
 export default router;

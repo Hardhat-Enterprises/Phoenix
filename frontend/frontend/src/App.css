@@ -497,7 +497,13 @@ body {
   flex: 1;
 }
 
-<<<<<<< HEAD
+.search-highlight {
+  background-color: #fff176;
+  color: #10264d;
+  padding: 1px 3px;
+  border-radius: 4px;
+}
+
 @media (max-width: 768px) {
   .report-upload-grid {
     grid-template-columns: 1fr;
@@ -511,11 +517,4 @@ body {
   .result-row {
     grid-template-columns: 1fr;
   }
-=======
-.search-highlight {
-  background-color: #fff176;
-  color: #10264d;
-  padding: 1px 3px;
-  border-radius: 4px;
->>>>>>> c9825ef (Added functional search highlighting and reports updates)
 }

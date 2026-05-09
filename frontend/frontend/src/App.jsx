@@ -34,9 +34,15 @@ function highlightPageText(query) {
       acceptNode(node) {
         if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
         if (node.parentElement.closest("mark")) return NodeFilter.FILTER_REJECT;
-        if (["SCRIPT", "STYLE", "INPUT", "BUTTON"].includes(node.parentElement.tagName)) {
+
+        if (
+          ["SCRIPT", "STYLE", "INPUT", "BUTTON"].includes(
+            node.parentElement.tagName
+          )
+        ) {
           return NodeFilter.FILTER_REJECT;
         }
+
         return NodeFilter.FILTER_ACCEPT;
       },
     }
@@ -74,21 +80,14 @@ function App() {
           <div className="temp-logo">
             <img src="/logo.png" alt="Phoenix logo" />
           </div>
+
           <div>
             <h2>Phoenix</h2>
             <p>Disaster and Cyber Risk Monitoring Dashboard</p>
           </div>
         </div>
 
-<<<<<<< HEAD
-        {(page === "about" ||
-          page === "dashboard" ||
-          page === "reports" ||
-          page === "alerts" ||
-          page === "settings") && (
-=======
         {page !== "login" && page !== "forgotPassword" && (
->>>>>>> c9825ef (Added functional search highlighting and reports updates)
           <div className="temp-header-right">
             <input
               type="text"
@@ -96,6 +95,7 @@ function App() {
               className="temp-search"
               onChange={(e) => highlightPageText(e.target.value)}
             />
+
             <button className="temp-bell" aria-label="Notifications">
               🔔
             </button>
@@ -106,7 +106,6 @@ function App() {
       <div className="page-content">
         {page === "login" && <LoginForm setPage={setPage} />}
 
-<<<<<<< HEAD
         {page === "forgotPassword" && (
           <ForgotPassword setPage={setPage} />
         )}
@@ -124,11 +123,6 @@ function App() {
             <Alerts />
           </div>
         )}
-=======
-        {page === "forgotPassword" && <ForgotPassword setPage={setPage} />}
-
-        {page === "dashboard" && <Dashboard setPage={setPage} page={page} />}
->>>>>>> c9825ef (Added functional search highlighting and reports updates)
 
         {page === "about" && (
           <div style={{ display: "flex" }}>
@@ -140,11 +134,7 @@ function App() {
         {page === "reports" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
-<<<<<<< HEAD
             <ReportsPage />
-=======
-            <Reports />
->>>>>>> c9825ef (Added functional search highlighting and reports updates)
           </div>
         )}
 

@@ -79,3 +79,22 @@ ai-ml/training_pipeline/reports/
 # Python cache
 __pycache__/
 *.pyc
+
+# Ignore AI012 datasets
+ai-ml/models/ai012-anomaly/data/raw/*.csv
+
+# Ignore generated outputs
+ai-ml/models/ai012-anomaly/data/outputs/*.csv
+
+# Ignore training pipeline checkpoints
+ai-ml/training_pipeline/checkpoints/ai012_isolation_forest/
+
+# Ignore training logs
+ai-ml/training_pipeline/logs/*.log
+
+# Ignore reports
+ai-ml/training_pipeline/reports/
+
+# Python cache
+__pycache__/
+*.pyc

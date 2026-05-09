@@ -1,3 +1,5 @@
+import os
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
@@ -5,59 +7,48 @@ from sklearn.preprocessing import StandardScaler
 
 
 class AI012IsolationForest:
-    """
-    AI012 Role D: Isolation Forest baseline model.
-
-    This model is designed to plug into the AI009 TrainingPipeline.
-    It exposes train(), predict(), score(), fit(), and decision_function().
-    """
-
     def __init__(self, contamination=0.05, random_state=42):
         self.contamination = contamination
         self.random_state = random_state
+        self.classes_ = np.array([0, 1])
         self.scaler = StandardScaler()
         self.model = IsolationForest(
-            n_estimators=100,
+            n_estimators=150,
             contamination=contamination,
             random_state=random_state,
             n_jobs=-1
         )
         self.feature_columns = None
 
-    def prepare_features(self, df):
-        exclude_columns = [
-            "event_id",
-            "timestamp",
-            "region",
-            "location",
-            "hazard_type",
-            "threat_type",
-            "anomaly_label",
-            "anomaly_flag",
-            "anomaly_score",
-            "anomaly_rank",
-            "dummy_target"
-        ]
+    def prepare_features(self, X):
+        if isinstance(X, pd.DataFrame):
+            exclude_columns = [
+                "event_id", "timestamp", "region", "location",
+                "hazard_type", "threat_type", "anomaly_label",
+                "anomaly_flag", "anomaly_score", "anomaly_rank",
+                "dummy_target"
+            ]
 
-        X = df.drop(
-            columns=[col for col in exclude_columns if col in df.columns],
-            errors="ignore"
-        )
+            X = X.drop(
+                columns=[c for c in exclude_columns if c in X.columns],
+                errors="ignore"
+            )
 
-        X = X.select_dtypes(include=[np.number]).copy()
-        X = X.replace([np.inf, -np.inf], np.nan)
-        X = X.fillna(X.median(numeric_only=True))
+            X = X.select_dtypes(include=[np.number]).copy()
+            X = X.replace([np.inf, -np.inf], np.nan)
+            X = X.fillna(X.median(numeric_only=True))
 
-        if X.empty:
-            raise ValueError("No numeric features available for Isolation Forest.")
+            if self.feature_columns is None:
+                self.feature_columns = list(X.columns)
+            else:
+                X = X.reindex(columns=self.feature_columns, fill_value=0)
 
-        self.feature_columns = list(X.columns)
-        return X
+            return X
+
+        return np.asarray(X)
 
     def fit(self, X, y=None):
-        if isinstance(X, pd.DataFrame):
-            X = self.prepare_features(X)
-
+        X = self.prepare_features(X)
         X_scaled = self.scaler.fit_transform(X)
         self.model.fit(X_scaled)
         return self
@@ -65,43 +56,48 @@ class AI012IsolationForest:
     def train(self, X):
         return self.fit(X)
 
-    def predict(self, X):
-        if isinstance(X, pd.DataFrame):
-            X = self.prepare_features(X)
-
-        X_scaled = self.scaler.transform(X)
-        raw_predictions = self.model.predict(X_scaled)
-
-        # Isolation Forest output:
-        # -1 = anomaly
-        #  1 = normal
-        # Convert to:
-        # 1 = anomaly
-        # 0 = normal
-        return np.where(raw_predictions == -1, 1, 0)
-
     def score(self, X):
-        if isinstance(X, pd.DataFrame):
-            X = self.prepare_features(X)
-
+        X = self.prepare_features(X)
         X_scaled = self.scaler.transform(X)
-        raw_scores = self.model.decision_function(X_scaled)
+        return -self.model.decision_function(X_scaled)
 
-        # Higher score should mean more anomalous
-        return -raw_scores
+    def predict(self, X):
+        X = self.prepare_features(X)
+        X_scaled = self.scaler.transform(X)
+        raw_preds = self.model.predict(X_scaled)
+        return np.where(raw_preds == -1, 1, 0)
+
+    def predict_proba(self, X):
+        scores = self.score(X)
+
+        min_score = np.min(scores)
+        max_score = np.max(scores)
+
+        if max_score == min_score:
+            anomaly_prob = np.zeros_like(scores)
+        else:
+            anomaly_prob = (scores - min_score) / (max_score - min_score)
+
+        normal_prob = 1 - anomaly_prob
+        return np.vstack([normal_prob, anomaly_prob]).T
 
     def decision_function(self, X):
         return self.score(X)
 
     def build_output(self, df):
-        X = self.prepare_features(df)
-
         output_df = df.copy()
-        output_df["anomaly_score"] = self.score(X)
-        output_df["anomaly_flag"] = self.predict(X)
+        output_df["anomaly_score"] = self.score(df)
+        output_df["anomaly_flag"] = self.predict(df)
         output_df["anomaly_rank"] = output_df["anomaly_score"].rank(
             ascending=False,
             method="dense"
         ).astype(int)
-
         return output_df.sort_values("anomaly_rank")
+
+    def save(self, path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        joblib.dump(self, path)
+
+    @staticmethod
+    def load(path):
+        return joblib.load(path)

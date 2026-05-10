@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder      # ADDED
+
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -600,6 +602,18 @@ def _run_training_pipeline_impl(
     )
 
     x, y = DatasetLoader.separate_features_and_target(processed_df, target_column=target_column)
+    
+    # ADDED Encode target labels to integers for sklearn/XGBoost
+    label_encoder = None
+    if y is not None:
+        label_encoder = LabelEncoder()
+        y = pd.Series(label_encoder.fit_transform(y), name=target_column)
+        log_run_event(
+            logger,
+            "Label encoding applied",
+            classes=list(label_encoder.classes_),
+        )
+    
     split_data = DatasetSplitter.split(
         x=x,
         y=y,
@@ -608,6 +622,8 @@ def _run_training_pipeline_impl(
         random_seed=seed,
         stratify=bool(dataset_cfg.get("stratify", True)),
     )
+    
+    
 
     training_verbose = bool(config.get("training", {}).get("verbose", False))
     if model_instance is None:

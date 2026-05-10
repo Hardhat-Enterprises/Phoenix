@@ -1,0 +1,50 @@
+2026-05-10 19:53:39,261 | INFO | training_pipeline | CONFIG SNAPSHOT
+2026-05-10 19:53:39,262 | INFO | training_pipeline | CONFIG | section=dataset | value={"path": "../datasets/phoenix_combined_dataset_large.csv", "target_column": "hazard_severity", "train_split": 0.7, "val_split": 0.15, "test_split": 0.15, "random_seed": 42, "stratify": true, "abnormal_path": ""}
+2026-05-10 19:53:39,264 | INFO | training_pipeline | CONFIG | section=cleaning | value={"remove_duplicates": {"enabled": true}, "missing_values": {"enabled": true, "strategy": "fill"}, "text_cleaning": {"enabled": true, "lowercase": true, "remove_urls": true, "remove_punctuation": true, "remove_extra_whitespace": true}}
+2026-05-10 19:53:39,265 | INFO | training_pipeline | CONFIG | section=preprocessing | value={"datetime_features": {"enabled": true, "columns": ["timestamp", "hazard_timestamp"], "drop_original": true}, "url_features": {"enabled": true, "columns": ["url"], "drop_original": true}, "text_vectorization": {"enabled": true, "column": "text", "max_features": 3000, "ngram_range": [1, 2]}, "label_encoding": {"enabled": false}, "encoding": "onehot", "normalization": "standard", "feature_selection": false, "missing_value_strategy": "mean", "selected_features": []}
+2026-05-10 19:53:39,266 | INFO | training_pipeline | CONFIG | section=model | value={"type": "sklearn", "name": "xgboost", "hyperparameters": {"n_estimators": 100, "learning_rate": 0.1, "max_depth": 3, "random_state": 42, "use_label_encoder": false, "eval_metric": "mlogloss"}, "task_type": ""}
+2026-05-10 19:53:39,266 | INFO | training_pipeline | CONFIG | section=training | value={"evaluate_on_test": true, "tensorboard_enabled": true, "verbose": true, "batch_size": 32, "epochs": 50, "learning_rate": 0.001, "tensorboard_log_dir": "logs/tensorboard"}
+2026-05-10 19:53:39,267 | INFO | training_pipeline | CONFIG | section=output | value={"run_id": "trey_gb_core_v1", "log_dir": "logs/", "checkpoint_dir": "checkpoints/", "report_dir": "reports/", "path": "checkpoints/", "save_best_only": true, "organize_checkpoints_by_run": true, "previous_checkpoints_to_keep": 3, "checkpoint_prefix": "model", "log_path": "logs/", "reports_path": "reports/"}
+2026-05-10 19:53:39,285 | INFO | training_pipeline | Dataset loaded | main_rows=2000 | abnormal_rows=0 | combined_rows=2000
+2026-05-10 19:53:39,317 | INFO | training_pipeline | Preprocessing complete | processed_rows=2000 | processed_columns=3572 | preprocessing_events=11
+2026-05-10 19:53:39,334 | INFO | training_pipeline | Label encoding applied | classes=["critical", "high", "low", "medium"]
+2026-05-10 19:53:39,358 | INFO | training_pipeline | Training started | model_name=xgboost | model_type=sklearn | epochs=50 | batch_size=32 | train_rows=1400
+2026-05-10 19:53:45,952 | INFO | training_pipeline | Training complete | model_name=xgboost | model_type=sklearn | task_type=classification
+2026-05-10 19:53:48,044 | INFO | training_pipeline | METRIC | metric=val_accuracy | value=0.7566666666666667
+2026-05-10 19:53:48,045 | INFO | training_pipeline | METRIC | metric=val_precision | value=0.755655737704918
+2026-05-10 19:53:48,046 | INFO | training_pipeline | METRIC | metric=val_recall | value=0.7566666666666667
+2026-05-10 19:53:48,046 | INFO | training_pipeline | METRIC | metric=val_f1 | value=0.7528471768040114
+2026-05-10 19:53:48,048 | INFO | training_pipeline | METRIC | metric=val_confusion_matrix | value=[[91, 0, 0, 0], [0, 57, 0, 28], [0, 0, 46, 0], [0, 45, 0, 33]]
+2026-05-10 19:53:48,049 | INFO | training_pipeline | METRIC | metric=val_auc | value=0.9127617501222153
+2026-05-10 19:53:48,050 | INFO | training_pipeline | METRIC | metric=test_accuracy | value=0.7233333333333334
+2026-05-10 19:53:48,051 | INFO | training_pipeline | METRIC | metric=test_precision | value=0.7220619195046439
+2026-05-10 19:53:48,052 | INFO | training_pipeline | METRIC | metric=test_recall | value=0.7233333333333334
+2026-05-10 19:53:48,053 | INFO | training_pipeline | METRIC | metric=test_f1 | value=0.7214827905091273
+2026-05-10 19:53:48,054 | INFO | training_pipeline | METRIC | metric=test_confusion_matrix | value=[[90, 0, 0, 0], [0, 48, 0, 36], [0, 0, 47, 0], [0, 47, 0, 32]]
+2026-05-10 19:53:48,055 | INFO | training_pipeline | METRIC | metric=test_auc | value=0.9005817761577566
+2026-05-10 19:53:48,077 | INFO | training_pipeline | Checkpoint saved | checkpoint_path=checkpoints/trey_xgb_core_v1/model_xgboost_trey_xgb_core_v1_final.joblib
+2026-05-10 19:55:01,986 | INFO | training_pipeline | CONFIG SNAPSHOT
+2026-05-10 19:55:01,987 | INFO | training_pipeline | CONFIG | section=dataset | value={"path": "../datasets/phoenix_combined_dataset_large.csv", "target_column": "hazard_severity", "train_split": 0.7, "val_split": 0.15, "test_split": 0.15, "random_seed": 42, "stratify": true, "abnormal_path": ""}
+2026-05-10 19:55:01,988 | INFO | training_pipeline | CONFIG | section=cleaning | value={"remove_duplicates": {"enabled": true}, "missing_values": {"enabled": true, "strategy": "fill"}, "text_cleaning": {"enabled": true, "lowercase": true, "remove_urls": true, "remove_punctuation": true, "remove_extra_whitespace": true}}
+2026-05-10 19:55:01,990 | INFO | training_pipeline | CONFIG | section=preprocessing | value={"datetime_features": {"enabled": true, "columns": ["timestamp", "hazard_timestamp"], "drop_original": true}, "url_features": {"enabled": true, "columns": ["url"], "drop_original": true}, "text_vectorization": {"enabled": true, "column": "text", "max_features": 3000, "ngram_range": [1, 2]}, "label_encoding": {"enabled": false}, "encoding": "onehot", "normalization": "standard", "feature_selection": false, "missing_value_strategy": "mean", "selected_features": []}
+2026-05-10 19:55:01,991 | INFO | training_pipeline | CONFIG | section=model | value={"type": "sklearn", "name": "xgboost", "hyperparameters": {"n_estimators": 100, "learning_rate": 0.1, "max_depth": 3, "random_state": 42, "use_label_encoder": false, "eval_metric": "mlogloss"}, "task_type": ""}
+2026-05-10 19:55:01,992 | INFO | training_pipeline | CONFIG | section=training | value={"evaluate_on_test": true, "tensorboard_enabled": true, "verbose": true, "batch_size": 32, "epochs": 50, "learning_rate": 0.001, "tensorboard_log_dir": "logs/tensorboard"}
+2026-05-10 19:55:01,993 | INFO | training_pipeline | CONFIG | section=output | value={"run_id": "trey_gb_core_v1", "log_dir": "logs/", "checkpoint_dir": "checkpoints/", "report_dir": "reports/", "path": "checkpoints/", "save_best_only": true, "organize_checkpoints_by_run": true, "previous_checkpoints_to_keep": 3, "checkpoint_prefix": "model", "log_path": "logs/", "reports_path": "reports/"}
+2026-05-10 19:55:02,010 | INFO | training_pipeline | Dataset loaded | main_rows=2000 | abnormal_rows=0 | combined_rows=2000
+2026-05-10 19:55:02,046 | INFO | training_pipeline | Preprocessing complete | processed_rows=2000 | processed_columns=3572 | preprocessing_events=11
+2026-05-10 19:55:02,063 | INFO | training_pipeline | Label encoding applied | classes=["critical", "high", "low", "medium"]
+2026-05-10 19:55:02,088 | INFO | training_pipeline | Training started | model_name=xgboost | model_type=sklearn | epochs=50 | batch_size=32 | train_rows=1400
+2026-05-10 19:55:07,281 | INFO | training_pipeline | Training complete | model_name=xgboost | model_type=sklearn | task_type=classification
+2026-05-10 19:55:09,519 | INFO | training_pipeline | METRIC | metric=val_accuracy | value=0.7566666666666667
+2026-05-10 19:55:09,520 | INFO | training_pipeline | METRIC | metric=val_precision | value=0.755655737704918
+2026-05-10 19:55:09,521 | INFO | training_pipeline | METRIC | metric=val_recall | value=0.7566666666666667
+2026-05-10 19:55:09,522 | INFO | training_pipeline | METRIC | metric=val_f1 | value=0.7528471768040114
+2026-05-10 19:55:09,522 | INFO | training_pipeline | METRIC | metric=val_confusion_matrix | value=[[91, 0, 0, 0], [0, 57, 0, 28], [0, 0, 46, 0], [0, 45, 0, 33]]
+2026-05-10 19:55:09,523 | INFO | training_pipeline | METRIC | metric=val_auc | value=0.9127617501222153
+2026-05-10 19:55:09,526 | INFO | training_pipeline | METRIC | metric=test_accuracy | value=0.7233333333333334
+2026-05-10 19:55:09,526 | INFO | training_pipeline | METRIC | metric=test_precision | value=0.7220619195046439
+2026-05-10 19:55:09,527 | INFO | training_pipeline | METRIC | metric=test_recall | value=0.7233333333333334
+2026-05-10 19:55:09,528 | INFO | training_pipeline | METRIC | metric=test_f1 | value=0.7214827905091273
+2026-05-10 19:55:09,529 | INFO | training_pipeline | METRIC | metric=test_confusion_matrix | value=[[90, 0, 0, 0], [0, 48, 0, 36], [0, 0, 47, 0], [0, 47, 0, 32]]
+2026-05-10 19:55:09,529 | INFO | training_pipeline | METRIC | metric=test_auc | value=0.9005817761577566
+2026-05-10 19:55:09,569 | INFO | training_pipeline | Checkpoint saved | checkpoint_path=checkpoints/trey_xgb_core_v1/model_xgboost_trey_xgb_core_v1_final.joblib

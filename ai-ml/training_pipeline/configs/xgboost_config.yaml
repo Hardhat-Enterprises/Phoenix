@@ -1,0 +1,74 @@
+dataset:
+  path: "../datasets/phoenix_combined_dataset_large.csv"
+  target_column: hazard_severity
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  random_seed: 42
+  stratify: true
+
+cleaning:
+  remove_duplicates:
+    enabled: true
+  missing_values:
+    enabled: true
+    strategy: fill
+  text_cleaning:
+    enabled: true
+    lowercase: true
+    remove_urls: true
+    remove_punctuation: true
+    remove_extra_whitespace: true
+
+preprocessing:
+  datetime_features:
+    enabled: true
+    columns:
+      - timestamp
+      - hazard_timestamp
+    drop_original: true
+  url_features:
+    enabled: true
+    columns:
+      - url
+    drop_original: true
+  text_vectorization:
+    enabled: true
+    column: text
+    max_features: 3000
+    ngram_range:
+      - 1
+      - 2
+  label_encoding:
+    enabled: false        # target is encoded by pipeline.py — never here
+  encoding: onehot
+  normalization: standard
+  feature_selection: false
+
+model:
+  type: sklearn
+  name: xgboost
+  hyperparameters:
+    n_estimators: 100
+    learning_rate: 0.1
+    max_depth: 3
+    random_state: 42
+    use_label_encoder: false
+    eval_metric: mlogloss
+
+training:
+  evaluate_on_test: true
+  tensorboard_enabled: true
+  verbose: true
+
+output:
+  run_id: "trey_gb_core_v1"
+  log_dir: "logs/"
+  checkpoint_dir: "checkpoints/"
+  report_dir: "reports/"
+
+  path: "checkpoints/"
+  save_best_only: true
+  organize_checkpoints_by_run: true
+  previous_checkpoints_to_keep: 3
+  checkpoint_prefix: model

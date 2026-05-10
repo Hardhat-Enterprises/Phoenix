@@ -19,6 +19,9 @@ SKLEARN_MODEL_ALIASES = {
     "decisiontree": "decision_tree",
     "gradientboosting": "gradient_boosting",
     "extratrees": "extra_trees",
+    
+    "xgb": "xgboost",          # ADDED
+    "xgboost": "xgboost",      # ADDED
 }
 
 SKLEARN_TASK_TYPE_HINTS = {
@@ -29,6 +32,7 @@ SKLEARN_TASK_TYPE_HINTS = {
     "gradient_boosting": "classification",
     "extra_trees": "classification",
     "isolation_forest": "anomaly",
+    "xgboost": "classification",   # ADDED
 }
 
 
@@ -62,6 +66,8 @@ def load_sklearn_model(model_name: str, model_params: Dict[str, Any]) -> Any:
     from sklearn.neural_network import MLPClassifier
     from sklearn.tree import DecisionTreeClassifier
 
+    from xgboost import XGBClassifier          # ADDED
+
     registry = {
         "random_forest": RandomForestClassifier,
         "isolation_forest": IsolationForest,
@@ -70,6 +76,7 @@ def load_sklearn_model(model_name: str, model_params: Dict[str, Any]) -> Any:
         "decision_tree": DecisionTreeClassifier,
         "gradient_boosting": GradientBoostingClassifier,
         "extra_trees": ExtraTreesClassifier,
+        "xgboost": XGBClassifier,              # ADDED
     }
 
     normalized_name = _normalize_model_name(model_name)

@@ -23,8 +23,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_DEFAULT_USER: phoenix
+      RABBITMQ_DEFAULT_PASS: phoenix_123
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 5s
@@ -77,9 +77,9 @@ services:
       - SERVICE=user-service
       - POSTGRES_HOST=phoenix-postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=phoenix_user
+      - POSTGRES_PASSWORD=phoenix_pass
+      - POSTGRES_DB=phoenix_db
       - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
       - REDIS_URL=redis://redis:6379
       - PORT=3000
@@ -105,9 +105,9 @@ services:
       - INGESTION_SERVICE_PORT=50053
       - POSTGRES_HOST=phoenix-postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=phoenix_user
+      - POSTGRES_PASSWORD=phoenix_pass
+      - POSTGRES_DB=phoenix_db
       - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
       - REDIS_URL=redis://redis:6379
       - PORT=3000

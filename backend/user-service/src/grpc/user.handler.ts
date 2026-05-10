@@ -39,7 +39,9 @@ export const userHandler = {
   ) => {
     try {
       const response = await getUsers(call.request);
+
       logger.info(`User service GetUsers response:${response}`);
+
       callback(null, response);
     } catch (error) {
       callback({

@@ -6,6 +6,7 @@ export const getHealth = (req: Request, res: Response) => {
   userGrpcClient.GetUserHealth({}, (error, response) => {
     if (error) {
       logger.error(`Error calling GetUserHealth: ${error}`);
+
       return res
         .status(
           response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
@@ -66,6 +67,7 @@ export const getUserDashboard = (req: Request, res: Response) => {
       status: response?.status || HttpStatusCode.HTTP_STATUS_OK,
       message:
         response?.message || "Dashboard overview retrieved successfully",
+
       data: [
         {
           total_hazards: response?.total_hazards,
@@ -77,6 +79,98 @@ export const getUserDashboard = (req: Request, res: Response) => {
           last_updated: response?.last_updated || new Date().toISOString(),
         },
       ],
+    });
+  });
+};
+
+export const getUserDashboardCharts = (
+  req: Request,
+  res: Response,
+) => {
+  userGrpcClient.GetUserDashboardCharts({}, (error, response) => {
+    if (error) {
+      logger.error(`Error calling GetUserDashboardCharts: ${error}`);
+
+      return res
+        .status(
+          response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+        )
+        .json({
+          status:
+            response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+          message: "Error fetching dashboard charts",
+          data: [],
+        });
+    }
+
+    logger.info(
+      `GetUserDashboardCharts response from gRPC: ${JSON.stringify(response)}`,
+    );
+
+    return res.status(response.status || HttpStatusCode.HTTP_STATUS_OK).json({
+      status: response?.status || HttpStatusCode.HTTP_STATUS_OK,
+      message:
+        response?.message || "Dashboard charts retrieved successfully",
+
+      data: {
+        hazards_by_severity: JSON.parse(
+          response?.hazards_by_severity || "{}",
+        ),
+
+        threats_by_risk_level: JSON.parse(
+          response?.threats_by_risk_level || "{}",
+        ),
+
+        risks_by_level: JSON.parse(response?.risks_by_level || "{}"),
+
+        last_updated:
+          response?.last_updated || new Date().toISOString(),
+      },
+    });
+  });
+};
+
+export const getUserDashboardActivity = (
+  req: Request,
+  res: Response,
+) => {
+  userGrpcClient.GetUserDashboardActivity({}, (error, response) => {
+    if (error) {
+      logger.error(`Error calling GetUserDashboardActivity: ${error}`);
+
+      return res
+        .status(
+          response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+        )
+        .json({
+          status:
+            response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+          message: "Error fetching dashboard activity",
+          data: [],
+        });
+    }
+
+    logger.info(
+      `GetUserDashboardActivity response from gRPC: ${JSON.stringify(response)}`,
+    );
+
+    return res.status(response.status || HttpStatusCode.HTTP_STATUS_OK).json({
+      status: response?.status || HttpStatusCode.HTTP_STATUS_OK,
+      message:
+        response?.message || "Dashboard activity retrieved successfully",
+
+      data: {
+        recent_hazards: JSON.parse(
+          response?.recent_hazards || "[]",
+        ),
+
+        recent_threats: JSON.parse(
+          response?.recent_threats || "[]",
+        ),
+
+        last_updated:
+          response?.last_updated || new Date().toISOString(),
+      },
     });
   });
 };

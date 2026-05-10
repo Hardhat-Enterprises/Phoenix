@@ -1,8 +1,11 @@
 import { Router } from "express";
+
 import {
   getHealth,
   getUser,
   getUserDashboard,
+  getUserDashboardCharts,
+  getUserDashboardActivity,
 } from "../controllers/user.controller";
 
 import { getThreats, getThreat } from "../controllers/threat.controller";
@@ -40,6 +43,8 @@ router.get("/user", getUser);
  * Dashboard Routes
  */
 router.get("/dashboard/overview", getUserDashboard);
+router.get("/dashboard/charts", getUserDashboardCharts);
+router.get("/dashboard/activity", getUserDashboardActivity);
 
 /**
  * Threat Routes

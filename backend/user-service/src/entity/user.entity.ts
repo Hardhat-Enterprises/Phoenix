@@ -6,13 +6,11 @@ export class GetHealthEntity {
 export class GetUsersEntity {
   status: number;
   message: string;
-  users?: [
-    {
-      user_id: string;
-      username: string;
-      role: string;
-    },
-  ];
+  users?: {
+    user_id: string;
+    username: string;
+    role: string;
+  }[];
 
   static toEntity(item: any): GetUsersEntity {
     const response = new GetUsersEntity();
@@ -45,11 +43,27 @@ export class GetUserDashboardEntity {
     response.active_hazards = item.active_hazards;
     response.total_threats = item.total_threats;
     response.active_threats = item.active_threats;
-    response.total_risk_assessments =
-      item.total_risk_assessments;
+    response.total_risk_assessments = item.total_risk_assessments;
     response.critical_risks = item.critical_risks;
     response.last_updated = item.last_updated;
 
     return response;
   }
+}
+
+export class GetUserDashboardChartsEntity {
+  status: number;
+  message: string;
+  hazards_by_severity: string;
+  threats_by_risk_level: string;
+  risks_by_level: string;
+  last_updated: string;
+}
+
+export class GetUserDashboardActivityEntity {
+  status: number;
+  message: string;
+  recent_hazards: string;
+  recent_threats: string;
+  last_updated: string;
 }

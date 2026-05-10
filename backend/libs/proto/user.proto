@@ -6,6 +6,8 @@ service UserService {
     rpc GetUserHealth(GetUserHealthRequest) returns (GetUserHealthResponse);
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
     rpc GetUserDashboard(GetUserDashboardRequest) returns (GetUserDashboardResponse);
+    rpc GetUserDashboardCharts(GetUserDashboardChartsRequest) returns (GetUserDashboardChartsResponse);
+    rpc GetUserDashboardActivity(GetUserDashboardActivityRequest) returns (GetUserDashboardActivityResponse);
     rpc GetThreats(GetThreatsRequest) returns (GetThreatsResponse);
     rpc GetThreat(GetThreatRequest) returns (GetThreatResponse);
     rpc GetHazards(GetHazardsRequest) returns (GetHazardsResponse);
@@ -48,6 +50,29 @@ message GetUserDashboardResponse {
     int32 total_risk_assessments = 7;
     int32 critical_risks = 8;
     string last_updated = 9;
+}
+
+message GetUserDashboardChartsRequest {
+}
+
+message GetUserDashboardChartsResponse {
+    int32 status = 1;
+    string message = 2;
+    string hazards_by_severity = 3;
+    string threats_by_risk_level = 4;
+    string risks_by_level = 5;
+    string last_updated = 6;
+}
+
+message GetUserDashboardActivityRequest {
+}
+
+message GetUserDashboardActivityResponse {
+    int32 status = 1;
+    string message = 2;
+    string recent_hazards = 3;
+    string recent_threats = 4;
+    string last_updated = 5;
 }
 
 // ─── Threats ───────────────────────────────────────────────────────────────

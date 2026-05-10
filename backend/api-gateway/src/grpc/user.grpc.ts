@@ -59,6 +59,27 @@ export interface GetUserDashboardResponse {
   last_updated: string;
 }
 
+export interface GetUserDashboardChartsRequest {}
+
+export interface GetUserDashboardChartsResponse {
+  status: number;
+  message: string;
+  hazards_by_severity: string;
+  threats_by_risk_level: string;
+  risks_by_level: string;
+  last_updated: string;
+}
+
+export interface GetUserDashboardActivityRequest {}
+
+export interface GetUserDashboardActivityResponse {
+  status: number;
+  message: string;
+  recent_hazards: string;
+  recent_threats: string;
+  last_updated: string;
+}
+
 // ─── Threats ───────────────────────────────────────────────────────────────
 
 export interface ThreatItem {
@@ -162,6 +183,30 @@ export interface UserServiceClient {
     ) => void,
   ): void;
 
+  GetUserDashboard(
+    request: GetUserDashboardRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetUserDashboardResponse,
+    ) => void,
+  ): void;
+
+  GetUserDashboardCharts(
+    request: GetUserDashboardChartsRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetUserDashboardChartsResponse,
+    ) => void,
+  ): void;
+
+  GetUserDashboardActivity(
+    request: GetUserDashboardActivityRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetUserDashboardActivityResponse,
+    ) => void,
+  ): void;
+
   GetThreats(
     request: GetThreatsRequest,
     callback: (
@@ -191,14 +236,6 @@ export interface UserServiceClient {
     callback: (
       error: grpc.ServiceError | null,
       response: GetHazardResponse,
-    ) => void,
-  ): void;
-
-  GetUserDashboard(
-    request: GetUserDashboardRequest,
-    callback: (
-      error: grpc.ServiceError | null,
-      response: GetUserDashboardResponse,
     ) => void,
   ): void;
 }

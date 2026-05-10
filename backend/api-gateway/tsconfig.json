@@ -13,7 +13,12 @@
     "skipLibCheck": true,
     "strictPropertyInitialization": false,
     "noEmit": false,
-    "incremental": true
+    "incremental": true,
+    "baseUrl": "..",
+    "paths": {
+      "@phoenix/common": ["libs/common/src/index.ts"],
+      "@phoenix/common/*": ["libs/common/src/*"]
+    }
   },
   "include": ["src"],
   "references": [{ "path": "../libs/common" }]

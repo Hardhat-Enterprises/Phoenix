@@ -30,6 +30,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
   redis:
     image: redis:7
     container_name: phoenix-redis
@@ -40,6 +41,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
   api-gateway:
     build:
       context: ./
@@ -80,7 +82,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
       - REDIS_URL=redis://redis:6379
-      - PORT = 3000
+      - PORT=3000
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -108,7 +110,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
       - REDIS_URL=redis://redis:6379
-      - PORT = 3000
+      - PORT=3000
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -117,3 +119,4 @@ services:
       postgres:
         condition: service_healthy
     command: sh -c "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
+    

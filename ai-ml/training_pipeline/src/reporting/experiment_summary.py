@@ -57,6 +57,8 @@ def build_experiment_summary(
     """Build the leadership-facing experiment summary payload."""
     dataset_path = result.get("dataset_used") or config.get("dataset", {}).get("path")
     checkpoint_path = result.get("best_checkpoint_path") or result.get("checkpoint_path")
+    if checkpoint_path is not None and not Path(checkpoint_path).is_absolute():
+        checkpoint_path = root_dir / checkpoint_path
 
     return {
         "generated_at_utc": datetime.utcnow().isoformat(timespec="seconds") + "Z",

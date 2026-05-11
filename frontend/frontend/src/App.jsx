@@ -9,7 +9,8 @@ import ForgotPassword from "./ForgotPassword";
 import SettingsPage from "./SettingsPage";
 import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
-import Alerts from "./Alerts";
+import ThreatDetails from "./ThreatDetails";
+
 
 function App() {
   // Change this to "reports" or "dashboard" only for testing
@@ -82,6 +83,13 @@ function App() {
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
             <ReportsPage />
+          </div>
+        )}
+        {/* Threats */}
+        {page === "threats" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={setPage} page={page} />
+            <ThreatDetails />
           </div>
         )}
 

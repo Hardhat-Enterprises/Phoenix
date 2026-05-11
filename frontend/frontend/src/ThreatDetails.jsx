@@ -1,4 +1,5 @@
 import React from "react";
+import "./ThreatDetails.css";
 
 const threatLevels = [
   { label: "No Threat", className: "no-threat" },

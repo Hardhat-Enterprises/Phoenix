@@ -138,6 +138,17 @@ FEATURE_COLUMNS = [
 N_NEIGHBORS   = 20
 CONTAMINATION = 0.07
 ALGORITHM     = "ball_tree"
+CHECKPOINT_MISSING_MESSAGE = (
+    "Checkpoint not found. Run training first or provide a valid checkpoint path."
+)
+
+
+def _repo_root() -> Path:
+    """Find the repository root from this file without relying on fixed depth."""
+    for parent in Path(__file__).resolve().parents:
+        if (parent / ".git").exists():
+            return parent
+    raise RuntimeError("Could not locate repository root from m2.py")
 
 
 # ---------------------------------------------------------------------------
@@ -234,11 +245,12 @@ class LOFAnomalyModel:
             contamination = self.contamination,
             algorithm     = ALGORITHM,
             leaf_size     = 40,
-            novelty       = False,
+            novelty       = True,
             n_jobs        = -1,
         )
-        raw_preds         = self._lof.fit_predict(X_scaled)
-        self._lof_scores_ = -self._lof.negative_outlier_factor_
+        self._lof.fit(X_scaled)
+        raw_preds         = self._lof.predict(X_scaled)
+        self._lof_scores_ = -self._lof.decision_function(X_scaled)
         self._lof_flags_  = (raw_preds == -1).astype(int)
         self._fitted      = True
 
@@ -250,13 +262,16 @@ class LOFAnomalyModel:
         return self._lof_flags_, self._lof_scores_
 
     # ------------------------------------------------------------------
-    def predict(self, df: pd.DataFrame) -> np.ndarray:
+    def predict(self, df: pd.DataFrame, checkpoint_path: Optional[str] = None) -> np.ndarray:
         """Return anomaly flags (1/0) for new data."""
+        if checkpoint_path is not None:
+            loaded = self.load_checkpoint(checkpoint_path)
+            self.__dict__.update(loaded.__dict__)
         if not self._fitted:
             raise RuntimeError("Call train() or load_checkpoint() first.")
         X        = df[self.feature_columns].fillna(0).values
         X_scaled = self.scaler.transform(X)
-        preds    = self._lof.fit_predict(X_scaled)
+        preds    = self._lof.predict(X_scaled)
         return (preds == -1).astype(int)
 
     # ------------------------------------------------------------------
@@ -273,12 +288,11 @@ class LOFAnomalyModel:
             raise RuntimeError("Call train() or load_checkpoint() first.")
         X        = df[self.feature_columns].fillna(0).values
         X_scaled = self.scaler.transform(X)
-        self._lof.fit_predict(X_scaled)
-        return -self._lof.negative_outlier_factor_
+        return -self._lof.decision_function(X_scaled)
 
     # ------------------------------------------------------------------
-    def save_checkpoint(self, path: str = "checkpoints/m2.pkl") -> None:
-        """Save trained model to m2.pkl checkpoint."""
+    def save_checkpoint(self, path: str = "checkpoints/best.pkl") -> None:
+        """Save trained model checkpoint."""
         if not self._fitted:
             raise RuntimeError("Call train() before save_checkpoint().")
         Path(path).parent.mkdir(parents=True, exist_ok=True)
@@ -297,12 +311,15 @@ class LOFAnomalyModel:
         with open(path, "wb") as f:
             pickle.dump(ck, f)
         mb = Path(path).stat().st_size / 1024 / 1024
-        print(f"[M2-LOF] Checkpoint saved → {path}  ({mb:.1f} MB)")
+        print(f"[M2-LOF] Checkpoint saved -> {path}  ({mb:.1f} MB)")
 
     # ------------------------------------------------------------------
     @classmethod
     def load_checkpoint(cls, path: str) -> "LOFAnomalyModel":
-        """Load a saved m2.pkl checkpoint."""
+        """Load a saved checkpoint."""
+        checkpoint = Path(path)
+        if not checkpoint.exists():
+            raise FileNotFoundError(f"{CHECKPOINT_MISSING_MESSAGE} Path: {checkpoint}")
         with open(path, "rb") as f:
             ck = pickle.load(f)
         inst = cls(
@@ -349,12 +366,18 @@ def build_output(
         return "critical"
 
     out = pd.DataFrame({
+        "row_id"      : df.index,
         "time_window" : df["time_window"].values if "time_window" in df.columns else None,
         "region_id"   : df["region_id"].values   if "region_id"   in df.columns else None,
+        "anomaly_score": np.round(lof_scores, 4),
+        "is_anomaly"  : lof_flags,
+        "model_name"  : "LOF",
         "lof_flag"    : lof_flags,
         "lof_score"   : np.round(lof_scores, 4),
         "lof_severity": [_sev(s) for s in lof_scores],
     })
+    out["confidence_score"] = np.clip(np.abs(out["anomaly_score"]), 0, None)
+    out["risk_level"] = out["lof_severity"]
 
     print("[M2-LOF] Severity breakdown:")
     for band in ["normal","low","medium","high","critical"]:
@@ -369,7 +392,7 @@ def save_outputs(predictions: pd.DataFrame, output_path: str) -> None:
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     predictions.to_csv(out, index=False)
-    print(f"[M2-LOF] Predictions saved → {out}")
+    print(f"[M2-LOF] Predictions saved -> {out}")
 
 
 # ---------------------------------------------------------------------------
@@ -380,7 +403,7 @@ def save_outputs(predictions: pd.DataFrame, output_path: str) -> None:
 
 def run(
     dataset_path    : Optional[str]  = None,
-    checkpoint_path : str  = "checkpoints/m2.pkl",
+    checkpoint_path : str  = "checkpoints/best.pkl",
     output_path     : str  = "data/processed/lof_predictions.csv",
     n_neighbors     : int  = N_NEIGHBORS,
     contamination   : float = CONTAMINATION,
@@ -393,12 +416,12 @@ def run(
         load_and_prepare  →  raw CSV → Sneha's FeatureSelector → engineered df
         train             →  LOF fits on engineered features
         build_output      →  flags + scores + severity per record
-        save (optional)   →  m2.pkl checkpoint + lof_predictions.csv
+        save (optional)   →  best.pkl checkpoint + lof_predictions.csv
 
     Args:
         dataset_path    : path to anomaly_detection_hourly_2020_2024.csv
                           Auto-resolved from repo structure if not provided.
-        checkpoint_path : where to save m2.pkl if save=True
+        checkpoint_path : where to save best.pkl if save=True
         output_path     : where to save predictions CSV if save=True
         n_neighbors     : LOF neighbourhood size (default 20)
         contamination   : expected anomaly proportion (default 0.07)
@@ -408,7 +431,7 @@ def run(
         predictions DataFrame with lof_flag, lof_score, lof_severity
     """
     if dataset_path is None:
-        repo_root    = Path(__file__).resolve().parents[3]
+        repo_root    = _repo_root()
         dataset_path = str(
             repo_root / "ai-ml" / "datasets" /
             "anomaly_detection_hourly_2020_2024.csv"
@@ -427,21 +450,21 @@ def run(
 
 
 # ---------------------------------------------------------------------------
-# Direct execution:  python m2.py [dataset_path] [--save]
+# Direct execution:  python m2.py [dataset_path] [--no-save]
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import sys as _sys
 
-    repo_root    = Path(__file__).resolve().parents[3]
+    repo_root    = _repo_root()
     default_data = str(repo_root / "ai-ml" / "datasets" /
                        "anomaly_detection_hourly_2020_2024.csv")
     default_ckpt = str(repo_root / "ai-ml" / "models" / "ai012-anomaly" /
-                       "checkpoints" / "m2.pkl")
+                       "checkpoints" / "best.pkl")
     default_out  = str(repo_root / "ai-ml" / "models" / "ai012-anomaly" /
                        "data" / "processed" / "lof_predictions.csv")
 
     dataset = _sys.argv[1] if len(_sys.argv) > 1 else default_data
-    do_save = "--save" in _sys.argv
+    do_save = "--no-save" not in _sys.argv
 
     predictions = run(
         dataset_path    = dataset,

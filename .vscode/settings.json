@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./ai-ml/models/ai012-anomaly/src"
+    ]
+}

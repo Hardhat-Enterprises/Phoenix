@@ -9,14 +9,15 @@ import ForgotPassword from "./ForgotPassword";
 import SettingsPage from "./SettingsPage";
 import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
+import ThreatDetails from "./ThreatDetails";
 
 function App() {
-  // Change this to "reports" or "dashboard" only for testing
   const [page, setPage] = useState("login");
+  const [selectedThreat, setSelectedThreat] = useState(null);
 
   return (
     <div className="login-page">
-      
+
       {/* Header */}
       <div className="temp-header">
         <div className="temp-header-left">
@@ -29,8 +30,10 @@ function App() {
           </div>
         </div>
 
-        {/* Show search + bell on main pages */}
-        {(page === "about" || page === "dashboard" || page === "reports") && (
+        {(page === "about" ||
+          page === "dashboard" ||
+          page === "reports" ||
+          page === "threatdetails") && (
           <div className="temp-header-right">
             <input
               type="text"
@@ -57,7 +60,18 @@ function App() {
         {page === "dashboard" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
-            <Dashboard setPage={setPage} />
+            <Dashboard
+              setPage={setPage}
+              setSelectedThreat={setSelectedThreat}
+            />
+          </div>
+        )}
+
+        {/* Threat Details */}
+        {page === "threatdetails" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={setPage} page={page} />
+            <ThreatDetails selectedThreat={selectedThreat} />
           </div>
         )}
 
@@ -69,7 +83,7 @@ function App() {
           </div>
         )}
 
-        {/* Reports (YOUR NEW TASK) */}
+        {/* Reports */}
         {page === "reports" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
@@ -87,7 +101,6 @@ function App() {
 
       </div>
 
-      {/* Footer always at bottom */}
       <Footer />
     </div>
   );

@@ -1,30 +1,38 @@
-import Sidebar from "./components/Sidebar";
 import "./Dashboard.css";
 
-function Dashboard({ setPage }) {
+function Dashboard({ setPage, setSelectedThreat }) {
   const threatData = [];
 
   const itemRows = [
     {
       id: 1,
-      name: "Item 1",
-      vulnerability: "Safe",
-      status: "Safe",
-      className: "safe",
+      name: "Emergency Donation Scam",
+      vulnerability: "High",
+      status: "Active",
+      className: "unsafe",
+      description: "Fake donation campaign targeting bushfire victims through malicious SMS links.",
+      source: "SMS Campaign",
+      region: "Victoria",
     },
     {
       id: 2,
-      name: "Item 2",
-      vulnerability: "Unverified",
-      status: "Unverified",
+      name: "Evacuation Alert Spoof",
+      vulnerability: "Medium",
+      status: "Investigating",
       className: "unverified",
+      description: "Fraudulent emergency evacuation notifications sent through email.",
+      source: "Email",
+      region: "NSW",
     },
     {
       id: 3,
-      name: "Item 3",
-      vulnerability: "Unsafe",
-      status: "Unsafe",
+      name: "Flood Relief Login Scam",
+      vulnerability: "Critical",
+      status: "Escalated",
       className: "unsafe",
+      description: "Credential harvesting portal impersonating official flood relief services.",
+      source: "Fake Website",
+      region: "Queensland",
     },
   ];
 
@@ -32,17 +40,16 @@ function Dashboard({ setPage }) {
 
   return (
     <div className="dashboard-page">
-
       <main className="dashboard-content">
         <div className="dashboard-main-area">
 
-          {/* Map Section (Jack) */}
+          {/* Map Section */}
           <section className="map-card">
             <div className="map-header">
               <h2>Risk Map</h2>
               <p>
                 This area is reserved for a future map component
-                (e.g. Bushire and incident locations).
+                (e.g. bushfire and incident locations).
               </p>
             </div>
 
@@ -53,7 +60,7 @@ function Dashboard({ setPage }) {
             </div>
           </section>
 
-          {/* Threat Chart (Sathvik) */}
+          {/* Threat Chart */}
           <section className="threat-chart-section">
             <div className="threat-chart-header">
               <div>
@@ -133,7 +140,7 @@ function Dashboard({ setPage }) {
             </div>
           </section>
 
-          {/* Item List Section (Manaal) */}
+          {/* Item List Section */}
           <section className="item-list-card">
             <div className="item-list-header">
               <h2>Item List</h2>
@@ -150,7 +157,15 @@ function Dashboard({ setPage }) {
               </div>
 
               {itemRows.map((item) => (
-                <div className="item-list-row" key={item.id}>
+                <div
+                  className="item-list-row"
+                  key={item.id}
+                  onClick={() => {
+                    setSelectedThreat(item);
+                    setPage("threatdetails");
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
                   <div className="item-name-cell">
                     <span className="item-check-box">✓</span>
                     <span>{item.name}</span>

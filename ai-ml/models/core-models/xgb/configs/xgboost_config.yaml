@@ -1,0 +1,44 @@
+dataset:
+  path: "ai-ml/datasets/phoenix_combined_dataset_large.csv"
+  target_column: "hazard_severity"
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  random_seed: 42
+  stratify: true
+
+preprocessing:
+  missing_value_strategy: "mean"
+  normalization: "none"
+  encoding: "onehot"
+  feature_selection: false
+  selected_features: []
+
+model:
+  type: "sklearn"
+  name: "xgboost"
+  task_type: "classification"
+  hyperparameters:
+    n_estimators: 120
+    learning_rate: 0.1
+    max_depth: 3
+    random_state: 42
+    eval_metric: "mlogloss"
+
+training:
+  batch_size: 32
+  epochs: 100
+  checkpoint_interval: 10
+  learning_rate: 0.001
+  verbose: true
+  tensorboard_enabled: true
+  tensorboard_log_dir: "ai-ml/models/core-models/xgb/logs/tensorboard"
+
+output:
+  path: "ai-ml/models/core-models/xgb/checkpoints/"
+  log_path: "ai-ml/models/core-models/xgb/logs/"
+  reports_path: "ai-ml/models/core-models/xgb/reports/"
+  save_best_only: true
+  organize_checkpoints_by_run: true
+  previous_checkpoints_to_keep: 4
+  checkpoint_prefix: "core_xgb"

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder      # ADDED
+from sklearn.preprocessing import LabelEncoder
 
 
 try:
@@ -457,6 +457,14 @@ def _infer_task_type(config: dict[str, Any], training_config: TrainingConfig) ->
     return "classification"
 
 
+def _requires_target_label_encoding(config: dict[str, Any]) -> bool:
+    model_cfg = config.get("model", {})
+    if str(model_cfg.get("type", "")).strip().lower() != "sklearn":
+        return False
+    model_name = str(model_cfg.get("name", "")).strip().lower()
+    return model_name in {"xgb", "xgboost"}
+
+
 def _safe_predict_scores(engine: GenericTrainingEngine, features: pd.DataFrame) -> Any | None:
     try:
         return engine.predict_proba(features)
@@ -602,10 +610,9 @@ def _run_training_pipeline_impl(
     )
 
     x, y = DatasetLoader.separate_features_and_target(processed_df, target_column=target_column)
-    
-    # ADDED Encode target labels to integers for sklearn/XGBoost
+
     label_encoder = None
-    if y is not None:
+    if y is not None and _requires_target_label_encoding(config):
         label_encoder = LabelEncoder()
         y = pd.Series(label_encoder.fit_transform(y), name=target_column)
         log_run_event(
@@ -613,7 +620,7 @@ def _run_training_pipeline_impl(
             "Label encoding applied",
             classes=list(label_encoder.classes_),
         )
-    
+
     split_data = DatasetSplitter.split(
         x=x,
         y=y,
@@ -622,8 +629,6 @@ def _run_training_pipeline_impl(
         random_seed=seed,
         stratify=bool(dataset_cfg.get("stratify", True)),
     )
-    
-    
 
     training_verbose = bool(config.get("training", {}).get("verbose", False))
     if model_instance is None:

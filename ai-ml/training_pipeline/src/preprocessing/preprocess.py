@@ -6,11 +6,11 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse # ADDED
+from urllib.parse import urlparse
 
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler, StandardScaler, LabelEncoder # ADDED
-from sklearn.feature_extraction.text import TfidfVectorizer # ADDED
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler, StandardScaler
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 def find_project_root(start: Path) -> Path:
@@ -60,7 +60,6 @@ def load_preprocessing_config(config_path: Path) -> dict[str, Any]:
     with open(config_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
-# ADDED
 def apply_datetime_features(
     df: pd.DataFrame,
     config: dict[str, Any],
@@ -87,7 +86,6 @@ def apply_datetime_features(
     _log(events, "datetime_features", f"columns={columns}")
     return df
 
-# ADDED
 def apply_url_features(
     df: pd.DataFrame,
     config: dict[str, Any],
@@ -113,7 +111,6 @@ def apply_url_features(
     _log(events, "url_features", f"columns={columns}")
     return df
 
-# ADDED
 def apply_text_vectorization(
     df: pd.DataFrame,
     config: dict[str, Any],
@@ -191,13 +188,11 @@ def apply_normalization(
     _log(events, "normalization", f"method={method}; columns={columns}")
     return df
 
-# ADDED
-
 def apply_label_encoding(
     df: pd.DataFrame,
     config: dict[str, Any],
     events: list[dict[str, str]],
-    exclude_columns: set[str] | None = None,  # target is passed in here
+    exclude_columns: set[str] | None = None,
 ) -> pd.DataFrame:
     if not config.get("enabled", False):
         _log(events, "label_encoding", "skipped_disabled")
@@ -322,9 +317,9 @@ def preprocess_features(
     encoding_config = dict(preprocessing_config.get("encoding", {}))
     normalization_config = dict(preprocessing_config.get("normalization", {}))
 
-    protected: set[str] = set()                     # ADDED
+    protected: set[str] = set()
     if target_column and target_column in processed.columns:
-        protected.add(target_column)                                    # ADDED
+        protected.add(target_column)
         encoding_exclude = set(encoding_config.get("exclude_columns", []))
         normalization_exclude = set(normalization_config.get("exclude_columns", []))
         encoding_exclude.add(target_column)
@@ -333,7 +328,6 @@ def preprocess_features(
         normalization_config["exclude_columns"] = sorted(normalization_exclude)
         _log(events, "target_protection", f"excluded_from_transform={target_column}")
 
-    # ADDED, used for XGBoost
     processed = apply_datetime_features(
         processed, dict(preprocessing_config.get("datetime_features", {})), events
     )
@@ -343,12 +337,11 @@ def preprocess_features(
     processed = apply_text_vectorization(
         processed, dict(preprocessing_config.get("text_vectorization", {})), events
     )
-    # ADDED Label encoding for non-target categoricals only
     processed = apply_label_encoding(
         processed,
         dict(preprocessing_config.get("label_encoding", {})),
         events,
-        exclude_columns=protected,   # target is always protected here
+        exclude_columns=protected,
     )
 
     processed = apply_encoding(

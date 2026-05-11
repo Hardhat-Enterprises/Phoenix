@@ -19,9 +19,8 @@ SKLEARN_MODEL_ALIASES = {
     "decisiontree": "decision_tree",
     "gradientboosting": "gradient_boosting",
     "extratrees": "extra_trees",
-    
-    "xgb": "xgboost",          # ADDED
-    "xgboost": "xgboost",      # ADDED
+    "xgb": "xgboost",
+    "xgboost": "xgboost",
 }
 
 SKLEARN_TASK_TYPE_HINTS = {
@@ -32,7 +31,7 @@ SKLEARN_TASK_TYPE_HINTS = {
     "gradient_boosting": "classification",
     "extra_trees": "classification",
     "isolation_forest": "anomaly",
-    "xgboost": "classification",   # ADDED
+    "xgboost": "classification",
 }
 
 
@@ -56,6 +55,8 @@ def list_supported_models(model_type: str = "sklearn") -> list[str]:
 
 
 def load_sklearn_model(model_name: str, model_params: Dict[str, Any]) -> Any:
+    normalized_name = _normalize_model_name(model_name)
+
     from sklearn.ensemble import (
         ExtraTreesClassifier,
         GradientBoostingClassifier,
@@ -66,8 +67,6 @@ def load_sklearn_model(model_name: str, model_params: Dict[str, Any]) -> Any:
     from sklearn.neural_network import MLPClassifier
     from sklearn.tree import DecisionTreeClassifier
 
-    from xgboost import XGBClassifier          # ADDED
-
     registry = {
         "random_forest": RandomForestClassifier,
         "isolation_forest": IsolationForest,
@@ -76,12 +75,19 @@ def load_sklearn_model(model_name: str, model_params: Dict[str, Any]) -> Any:
         "decision_tree": DecisionTreeClassifier,
         "gradient_boosting": GradientBoostingClassifier,
         "extra_trees": ExtraTreesClassifier,
-        "xgboost": XGBClassifier,              # ADDED
     }
 
-    normalized_name = _normalize_model_name(model_name)
+    if normalized_name == "xgboost":
+        try:
+            from xgboost import XGBClassifier
+        except ImportError as exc:
+            raise ImportError(
+                "XGBoost requested but package is not installed in phoenix environment"
+            ) from exc
+        registry["xgboost"] = XGBClassifier
+
     if normalized_name not in registry:
-        supported = ", ".join(sorted(registry.keys()))
+        supported = ", ".join(sorted([*registry.keys(), "xgboost"]))
         raise ValueError(
             f"Unsupported sklearn model: {model_name!r}. Supported models: {supported}"
         )

@@ -1,56 +1,4 @@
 services:
-  api-gateway:
-    build: 
-      context: ./
-      dockerfile: api-gateway/Dockerfile
-    container_name: api-gateway
-    ports:
-      - "3000:3000"
-    environment:
-      - SERVICE=api-gateway
-      - USER_SERVICE_URL=user-service:50051
-      - INGESTION_SERVICE_URL=data-ingestion-service:50053
-    depends_on:
-      - user-service
-      - data-ingestion-service
-    command: sh -c "node -r tsconfig-paths/register dist/api-gateway/src/app.js"
-
-  user-service:
-    build: 
-      context: ./
-      dockerfile: user-service/Dockerfile
-    container_name: user-service
-    ports:
-      - "50051:50051"
-    environment:
-      - SERVICE=user-service
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=phoenix_user
-      - DB_PASSWORD=phoenix_pass
-      - DB_NAME=phoenix_db
-    depends_on:
-      - postgres
-    command: sh -c "node -r tsconfig-paths/register dist/user-service/src/app.js"
-
-  data-ingestion-service:
-    build: 
-      context: ./
-      dockerfile: data-ingestion-service/Dockerfile
-    container_name: ingestion-service
-    ports:
-      - "50053:50053"
-    environment:
-      - SERVICE=data-ingestion-service
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=phoenix_user
-      - DB_PASSWORD=phoenix_pass
-      - DB_NAME=phoenix_db
-    depends_on:
-      - postgres
-    command: sh -c "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
-
   postgres:
     image: postgres:16
     container_name: phoenix-postgres
@@ -58,7 +6,117 @@ services:
       POSTGRES_DB: phoenix_db
       POSTGRES_USER: phoenix_user
       POSTGRES_PASSWORD: phoenix_pass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U phoenix_user -d phoenix_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
-      - ./backend/database:/docker-entrypoint-initdb.d
+      - ./database:/docker-entrypoint-initdb.d
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: phoenix-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: phoenix
+      RABBITMQ_DEFAULT_PASS: phoenix_123
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: phoenix-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api-gateway:
+    build:
+      context: ./
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "3001:3000"
+    environment:
+      - SERVICE=api-gateway
+      - USER_SERVICE_URL=user-service:50051
+      - INGESTION_SERVICE_URL=data-ingestion-service:50053
+      - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=production
+      - SWAGGER_SERVER_URL=http://localhost:3001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: sh -c "node -r tsconfig-paths/register dist/api-gateway/src/app.js"
+
+  user-service:
+    build:
+      context: ./
+      dockerfile: user-service/Dockerfile
+    container_name: user-service
+    ports:
+      - "50051:50051"
+    environment:
+      - SERVICE=user-service
+      - POSTGRES_HOST=phoenix-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=phoenix_user
+      - POSTGRES_PASSWORD=phoenix_pass
+      - POSTGRES_DB=phoenix_db
+      - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: sh -c "node -r tsconfig-paths/register dist/user-service/src/app.js"
+
+  data-ingestion-service:
+    build:
+      context: ./
+      dockerfile: data-ingestion-service/Dockerfile
+    container_name: ingestion-service
+    ports:
+      - "50053:50053"
+    environment:
+      - SERVICE=data-ingestion-service
+      - INGESTION_PROTO_PATH=dist/libs/proto/ingestion.proto
+      - INGESTION_SERVICE_PORT=50053
+      - POSTGRES_HOST=phoenix-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=phoenix_user
+      - POSTGRES_PASSWORD=phoenix_pass
+      - POSTGRES_DB=phoenix_db
+      - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: sh -c "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
+    

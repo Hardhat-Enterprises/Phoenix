@@ -13,8 +13,8 @@ const handleGrpcError = (res: Response, message: string, error: unknown) => {
 };
 
 export const getHealth = (req: Request, res: Response) => {
-userGrpcClient.GetUserHealth({}, (error: any, response: any) => {
-      if (error) {
+  userGrpcClient.GetUserHealth({}, (error: any, response: any) => {
+    if (error) {
       return handleGrpcError(res, "Error fetching user health", error);
     }
 
@@ -25,8 +25,8 @@ userGrpcClient.GetUserHealth({}, (error: any, response: any) => {
 };
 
 export const getUser = (req: Request, res: Response) => {
-userGrpcClient.GetUsers({}, (error: any, response: any) => {
-      if (error) {
+  userGrpcClient.GetUsers({}, (error: any, response: any) => {
+    if (error) {
       return handleGrpcError(res, "Error fetching users", error);
     }
 

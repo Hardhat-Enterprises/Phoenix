@@ -36,5 +36,5 @@ ReferenceTime.init(
     sequelize,
     tableName: "reference_time",
     timestamps: false,
-  }
+  },
 );

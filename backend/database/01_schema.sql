@@ -196,6 +196,32 @@ CREATE TABLE user_account (
         DEFAULT gen_random_uuid()
     ,password_hashed                VARCHAR(255)
     ,role                           VARCHAR(50)
+    ,access_token                   VARCHAR(255)
+    ,refresh_token                  VARCHAR(255)
+    ,username                       VARCHAR(100)
+        UNIQUE
+    ,created_at                     TIMESTAMPTZ
+        DEFAULT CURRENT_TIMESTAMP
+    ,updated_at                     TIMESTAMPTZ
+        DEFAULT CURRENT_TIMESTAMP  
+);
+
+/*DATA_INGESTION_STREAMING_LOG TABLE
+  Stores logs for incoming streamed ingestion records */
+CREATE TABLE data_ingestion_streaming_log (
+    ingestion_log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_id UUID,
+    ingestion_type VARCHAR(50) NOT NULL
+        CHECK (ingestion_type IN ('hazard', 'cyber_threat', 'risk_assessment')),
+    payload JSONB,
+    processing_status VARCHAR(50) NOT NULL DEFAULT 'received'
+        CHECK (processing_status IN ('received', 'processing', 'processed', 'failed')),
+    fail_reason TEXT,
+    received_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    processed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (source_id) REFERENCES data_source(source_id)
 );
 
 
@@ -224,3 +250,12 @@ CREATE INDEX idx_threat_detected_at
 
 CREATE INDEX idx_threat_status_detected_at
     ON cyber_threat(status, detected_at);
+
+CREATE INDEX idx_streaming_log_type
+    ON data_ingestion_streaming_log(ingestion_type);
+
+CREATE INDEX idx_streaming_log_status
+    ON data_ingestion_streaming_log(processing_status);
+
+CREATE INDEX idx_streaming_log_received_at
+    ON data_ingestion_streaming_log(received_at);

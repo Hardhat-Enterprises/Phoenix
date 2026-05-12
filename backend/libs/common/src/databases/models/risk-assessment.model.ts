@@ -65,7 +65,7 @@ RiskAssessment.init(
       allowNull: true,
     },
     related_threat_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
     },
     correlation_score: {
@@ -81,11 +81,11 @@ RiskAssessment.init(
       allowNull: true,
     },
     linked_event_type: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
     },
     event_status: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
     },
     event_time: {
@@ -115,5 +115,5 @@ RiskAssessment.init(
     sequelize,
     tableName: "risk_assessment",
     timestamps: false,
-  }
+  },
 );

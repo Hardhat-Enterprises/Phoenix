@@ -6,10 +6,7 @@ interface SeasonAttributes {
   season_description: string;
 }
 
-export class Season
-  extends Model<SeasonAttributes>
-  implements SeasonAttributes
-{
+export class Season extends Model<SeasonAttributes> implements SeasonAttributes {
   declare season_id: number;
   declare season_description: string;
 }
@@ -30,5 +27,5 @@ Season.init(
     sequelize,
     tableName: "season",
     timestamps: false,
-  }
+  },
 );

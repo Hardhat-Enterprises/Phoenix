@@ -49,7 +49,7 @@ export class CyberThreat
 CyberThreat.init(
   {
     threat_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       autoIncrement: true,
       primaryKey: true,
     },
@@ -58,7 +58,7 @@ CyberThreat.init(
       allowNull: false,
     },
     source_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
     },
     title: {
@@ -110,5 +110,5 @@ CyberThreat.init(
     sequelize,
     tableName: "cyber_threat",
     timestamps: false,
-  }
+  },
 );

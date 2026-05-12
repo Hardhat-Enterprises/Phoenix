@@ -7,7 +7,8 @@ import { HazardLocation } from "./models/location-hazard.model";
 import { ThreatLocation } from "./models/location-threat.model";
 import { EventStatus } from "./models/status-event.model";
 import { User } from "./models/user.model";
-import { LinkedEventType } from "./models/linked-event-type.model";
+import { DataSource } from "./models/data-source.model";
+import { LinkedEventType } from "./models/linked-event-typed";
 import { Season } from "./models/season.model";
 import { ReferenceDay } from "./models/reference-day.model";
 import { ReferenceTime } from "./models/reference-time.model";
@@ -66,13 +67,64 @@ GeoLocation.belongsToMany(CyberThreat, {
   otherKey: "threat_id",
 });
 
+DataSource.hasMany(HazardEvent, {
+  foreignKey: "source_id",
+  sourceKey: "source_id",
+});
+
+HazardEvent.belongsTo(DataSource, {
+  foreignKey: "source_id",
+  targetKey: "source_id",
+});
+
+DataSource.hasMany(CyberThreat, {
+  foreignKey: "source_id",
+  sourceKey: "source_id",
+});
+
+CyberThreat.belongsTo(DataSource, {
+  foreignKey: "source_id",
+  targetKey: "source_id",
+});
+
+LinkedEventType.hasMany(RiskAssessment, {
+  foreignKey: "linked_event_type",
+  sourceKey: "linked_event_type_id",
+});
+
+RiskAssessment.belongsTo(LinkedEventType, {
+  foreignKey: "linked_event_type",
+  targetKey: "linked_event_type_id",
+});
+
+EventStatus.hasMany(RiskAssessment, {
+  foreignKey: "event_status",
+  sourceKey: "event_status_id",
+});
+
+RiskAssessment.belongsTo(EventStatus, {
+  foreignKey: "event_status",
+  targetKey: "event_status_id",
+});
+
+Season.hasMany(ReferenceDay, {
+  foreignKey: "season",
+  sourceKey: "season_id",
+});
+
+ReferenceDay.belongsTo(Season, {
+  foreignKey: "season",
+  targetKey: "season_id",
+});
+
 export async function initDatabase(): Promise<void> {
   await connectDatabase();
   await sequelize.sync({ alter: true });
   console.log("Database synced successfully.");
 }
 
-export {sequelize,
+export {
+  sequelize,
   HazardEvent,
   CyberThreat,
   RiskAssessment,
@@ -81,9 +133,11 @@ export {sequelize,
   ThreatLocation,
   EventStatus,
   User,
+  DataSource,
   LinkedEventType,
   Season,
   ReferenceDay,
   ReferenceTime,
 };
-  
+
+export * from "./models";

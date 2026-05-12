@@ -55,5 +55,5 @@ ReferenceDay.init(
     sequelize,
     tableName: "reference_day",
     timestamps: false,
-  }
+  },
 );

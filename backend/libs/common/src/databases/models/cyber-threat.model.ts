@@ -50,7 +50,6 @@ CyberThreat.init(
   {
     threat_id: {
       type: DataTypes.UUID,
-      autoIncrement: true,
       primaryKey: true,
     },
     threat_type: {

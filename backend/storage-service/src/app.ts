@@ -2,16 +2,13 @@ import * as path from "path";
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import * as dotenv from "dotenv";
-import { userHandler } from "./grpc/user.handler";
-import { threatHandler } from "./grpc/threat.handler";
-import { hazardHandler } from "./grpc/hazard.handler";
-import { riskHandler } from "./grpc/risk.handler";
-import { config, initDatabase, syncDatabase } from "@phoenix/common";
+import { config, initDatabase } from "@phoenix/common";
+import { storageHandler } from "./grpc/storage.handler";
 
 dotenv.config();
 
 const PROTO_PATH = path.resolve(
-  process.env.USER_PROTO_PATH || "libs/proto/user.proto",
+  process.env.STORAGE_PROTO_PATH || "libs/proto/storage.proto",
 );
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
@@ -23,32 +20,28 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 });
 
 const grpcObject = grpc.loadPackageDefinition(packageDefinition) as any;
-const userPackage = grpcObject.user;
+const storagePackage = grpcObject.storage;
 
 const startGrpcServer = async (): Promise<void> => {
   try {
     await initDatabase();
-    await syncDatabase();
 
     const server = new grpc.Server();
 
-    server.addService(userPackage.UserService.service, {
-      ...userHandler,
-      ...threatHandler,
-      ...hazardHandler,
-      ...riskHandler,
+    server.addService(storagePackage.StorageService.service, {
+      ...storageHandler,
     });
 
     server.bindAsync(
-      `0.0.0.0:${config.USER_SERVICE_PORT}`,
+      `0.0.0.0:${config.STORAGE_SERVICE_PORT}`,
       grpc.ServerCredentials.createInsecure(),
       (error, boundPort) => {
         if (error) {
-          console.error("Failed to start user-service:", error);
+          console.error("Failed to start storage-service:", error);
           return;
         }
 
-        console.log(`User service gRPC running on port ${boundPort}`);
+        console.log(`Storage service gRPC running on port ${boundPort}`);
       },
     );
   } catch (error) {

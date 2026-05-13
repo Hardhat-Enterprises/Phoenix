@@ -25,6 +25,7 @@ const grpcObject = grpc.loadPackageDefinition(packageDefinition) as unknown as {
     ) => UserServiceClient;
   };
 };
+// ─── Client interface ──────────────────────────────────────────────────────
 
 export interface GetUserHealthRequest {}
 
@@ -164,7 +165,129 @@ export interface GetHazardResponse {
   hazard?: HazardItem;
 }
 
-// ─── Client interface ──────────────────────────────────────────────────────
+export interface GetLocationsRequest {}
+
+export interface GetLocationsResponse {
+  status: number;
+  message: string;
+  locations: LocationItem[];
+}
+
+export interface LocationItem {
+  geo_location_id: string;
+  country: string;
+  state_region: string;
+  local_government_area: string;
+  suburb: string;
+  latitude: number;
+  longitude: number;
+  geo_precision: string;
+}
+
+export interface GetEventStatusesRequest {}
+
+export interface GetEventStatusesResponse {
+  status: number;
+  message: string;
+  eventStatuses: EventStatusItem[];
+}
+
+export interface EventStatusItem {
+  event_status_id: string;
+  event_status_description: string;
+}
+
+export interface GetLinkedEventTypesRequest {}
+
+export interface GetLinkedEventTypesResponse {
+  status: number;
+  message: string;
+  linkedEventTypes: LinkedEventTypeItem[];
+}
+
+export interface LinkedEventTypeItem {
+  linked_event_type_id: string;
+  linked_event_type_description: string;
+}
+
+export interface GetSeasonsRequest {}
+
+export interface GetSeasonsResponse {
+  status: number;
+  message: string;
+  seasons: SeasonItem[];
+}
+
+export interface SeasonItem {
+  season_id: string;
+  season_description: string;
+}
+
+export interface GetReferenceDaysRequest {}
+
+export interface GetReferenceDaysResponse {
+  status: number;
+  message: string;
+  referenceDays: ReferenceDayItem[];
+}
+
+export interface ReferenceDayItem {
+  reference_day_id: string;
+  reference_day_description: string;
+}
+
+export interface ReferenceTimesRequest {}
+
+export interface ReferenceTimesResponse {
+  status: number;
+  message: string;
+  referenceTimes: ReferenceTimeItem[];
+}
+
+export interface ReferenceTimeItem {
+  ref_time: string;
+  is_nighttime: boolean;
+  is_business_hours: boolean;
+}
+
+export interface GetRisksRequest {
+  hazard_id: string;
+  threat_id: string;
+  event_status: string;
+  page: number;
+  limit: number;
+  linked_event_type: string;
+}
+
+export interface GetRisksResponse {
+  status: number;
+  message: string;
+  risks: RiskItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface RiskItem {
+  integration_event_id: string;
+  related_threat_id: string;
+  correlation_score: number;
+  linkage_reason: string;
+  integration_confidence: number;
+  linked_event_type: string;
+  event_status: string;
+  event_type: string;
+}
+
+export interface GetRiskRequest {
+  integration_event_id: string;
+}
+
+export interface GetRiskResponse {
+  status: number;
+  message: string;
+  risk?: RiskItem;
+}
 
 export interface UserServiceClient {
   GetUserHealth(
@@ -236,6 +359,70 @@ export interface UserServiceClient {
     callback: (
       error: grpc.ServiceError | null,
       response: GetHazardResponse,
+    ) => void,
+  ): void;
+
+  GetLocations(
+    request: GetLocationsRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetLocationsResponse,
+    ) => void,
+  ): void;
+
+  GetEventStatuses(
+    request: GetEventStatusesRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetEventStatusesResponse,
+    ) => void,
+  ): void;
+
+  GetLinkedEventTypes(
+    request: GetLinkedEventTypesRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetLinkedEventTypesResponse,
+    ) => void,
+  ): void;
+
+  GetSeasons(
+    request: GetSeasonsRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetSeasonsResponse,
+    ) => void,
+  ): void;
+
+  GetReferenceDays(
+    request: GetReferenceDaysRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetReferenceDaysResponse,
+    ) => void,
+  ): void;
+
+  GetReferenceTimes(
+    request: ReferenceTimesRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: ReferenceTimesResponse,
+    ) => void,
+  ): void;
+
+  GetRisks(
+    request: GetRisksRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetRisksResponse,
+    ) => void,
+  ): void;
+
+  GetRisk(
+    request: GetRiskRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetRiskResponse,
     ) => void,
   ): void;
 }

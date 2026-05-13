@@ -9,6 +9,7 @@ interface Config {
   AUTH_JWT_SECRET: string;
   LOG_LEVEL: string;
   USER_SERVICE_PORT: number;
+  STORAGE_SERVICE_PORT: number;
   NOTIFICATION_SERVICE_PORT: number;
   POSTGRES_HOST: string;
   POSTGRES_PORT: number;
@@ -24,6 +25,7 @@ export const config: Config = {
   AUTH_JWT_SECRET: process.env.AUTH_JWT_SECRET as string,
   LOG_LEVEL: process.env.LOG_LEVEL || "info",
   USER_SERVICE_PORT: Number(process.env.USER_SERVICE_PORT) || 50051,
+  STORAGE_SERVICE_PORT: Number(process.env.STORAGE_SERVICE_PORT) || 50054,
   NOTIFICATION_SERVICE_PORT:
     Number(process.env.NOTIFICATION_SERVICE_PORT) || 50052,
   POSTGRES_HOST: process.env.POSTGRES_HOST as string,

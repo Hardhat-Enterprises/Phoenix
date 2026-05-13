@@ -29,7 +29,6 @@ User.init(
   {
     id: {
       type: DataTypes.INTEGER,
-      autoIncrement: true,
       primaryKey: true,
     },
     name: {
@@ -56,5 +55,5 @@ User.init(
     sequelize,
     tableName: "users",
     timestamps: false,
-  }
+  },
 );

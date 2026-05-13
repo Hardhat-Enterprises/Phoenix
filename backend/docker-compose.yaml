@@ -51,6 +51,7 @@ services:
       - "3001:3000"
     environment:
       - SERVICE=api-gateway
+      - USER_PROTO_PATH=/app/dist/libs/proto/user.proto
       - USER_SERVICE_URL=user-service:50051
       - INGESTION_SERVICE_URL=data-ingestion-service:50053
       - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672

@@ -8,6 +8,7 @@ import { config, connectRabbitMQ, logger } from "@phoenix/common";
 import userRoutes from "./routes/user.routes";
 import ingestionRoutes from "./routes/ingestion.routes";
 import notificationRoutes from "./routes/notification.routes";
+import threatRoutes from "./routes/threat.routes";
 
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "@phoenix/common";
@@ -31,6 +32,7 @@ app.get("/health", (_, res) => {
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use("/api/users", userRoutes);
+app.use("/api/users/threats", threatRoutes);
 app.use("/api/ingestion", ingestionRoutes);
 app.use("/api/notifications", notificationRoutes);
 

@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const PROTO_PATH = path.resolve("libs/proto/user.proto");
+const PROTO_PATH = process.env.USER_PROTO_PATH || path.resolve("libs/proto/user.proto");
 logger.info(`Loading gRPC proto file from: ${PROTO_PATH}`);
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {

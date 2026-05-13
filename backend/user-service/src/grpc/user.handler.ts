@@ -11,6 +11,12 @@ import { ServerUnaryCall, sendUnaryData } from "@grpc/grpc-js";
 import {
   getHealth,
   getUsers,
+  getLocations,
+  getEventStatuses,
+  getLinkedEventTypes,
+  getSeasons,
+  getReferenceDays,
+  getReferenceTimes,
   getUserDashboard,
   getUserDashboardCharts,
   getUserDashboardActivity,
@@ -33,9 +39,7 @@ export const userHandler = {
   ) => {
     try {
       const response = getHealth(call.request);
-
-      logger.info(`User service GetHealth response:${response}`);
-
+      logger.info(`User service GetHealth response:${JSON.stringify(response)}`);
       callback(null, response);
     } catch (error) {
       callback({
@@ -51,9 +55,97 @@ export const userHandler = {
   ) => {
     try {
       const response = await getUsers(call.request);
+      logger.info(`User service GetUsers response:${JSON.stringify(response)}`);
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
 
-      logger.info(`User service GetUsers response:${response}`);
+  GetLocations: async (
+    call: ServerUnaryCall<any, any>,
+    callback: sendUnaryData<any>,
+  ) => {
+    try {
+      const response = await getLocations();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
 
+  GetEventStatuses: async (
+    call: ServerUnaryCall<any, any>,
+    callback: sendUnaryData<any>,
+  ) => {
+    try {
+      const response = await getEventStatuses();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+
+  GetLinkedEventTypes: async (
+    call: ServerUnaryCall<any, any>,
+    callback: sendUnaryData<any>,
+  ) => {
+    try {
+      const response = await getLinkedEventTypes();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+
+  GetSeasons: async (
+    call: ServerUnaryCall<any, any>,
+    callback: sendUnaryData<any>,
+  ) => {
+    try {
+      const response = await getSeasons();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+
+  GetReferenceDays: async (
+    call: ServerUnaryCall<any, any>,
+    callback: sendUnaryData<any>,
+  ) => {
+    try {
+      const response = await getReferenceDays();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+
+  GetReferenceTimes: async (
+    call: ServerUnaryCall<any, any>,
+    callback: sendUnaryData<any>,
+  ) => {
+    try {
+      const response = await getReferenceTimes();
       callback(null, response);
     } catch (error) {
       callback({
@@ -69,9 +161,9 @@ export const userHandler = {
   ) => {
     try {
       const response = await getUserDashboard(call.request);
-
-      logger.info(`User service GetUserDashboard response:${response}`);
-
+      logger.info(
+        `User service GetUserDashboard response:${JSON.stringify(response)}`,
+      );
       callback(null, response);
     } catch (error) {
       callback({
@@ -90,11 +182,9 @@ export const userHandler = {
   ) => {
     try {
       const response = await getUserDashboardCharts(call.request);
-
       logger.info(
-        `User service GetUserDashboardCharts response:${response}`,
+        `User service GetUserDashboardCharts response:${JSON.stringify(response)}`,
       );
-
       callback(null, response);
     } catch (error) {
       callback({
@@ -113,11 +203,9 @@ export const userHandler = {
   ) => {
     try {
       const response = await getUserDashboardActivity(call.request);
-
       logger.info(
-        `User service GetUserDashboardActivity response:${response}`,
+        `User service GetUserDashboardActivity response:${JSON.stringify(response)}`,
       );
-
       callback(null, response);
     } catch (error) {
       callback({

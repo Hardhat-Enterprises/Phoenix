@@ -1,8 +1,20 @@
 import { DataTypes, Model } from "sequelize";
 import { sequelize } from "../sequelize-connection-handler";
 
-export class ReferenceDay extends Model {
-  declare ref_date: Date;
+interface ReferenceDayAttributes {
+  ref_date: string;
+  locale_id: number;
+  dow: string;
+  is_weekend: boolean;
+  season: number;
+  is_holiday: boolean;
+}
+
+export class ReferenceDay
+  extends Model<ReferenceDayAttributes>
+  implements ReferenceDayAttributes
+{
+  declare ref_date: string;
   declare locale_id: number;
   declare dow: string;
   declare is_weekend: boolean;
@@ -13,24 +25,30 @@ export class ReferenceDay extends Model {
 ReferenceDay.init(
   {
     ref_date: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
+      allowNull: false,
       primaryKey: true,
     },
     locale_id: {
       type: DataTypes.INTEGER,
+      allowNull: false,
       primaryKey: true,
     },
     dow: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     is_weekend: {
       type: DataTypes.BOOLEAN,
+      allowNull: false,
     },
     season: {
       type: DataTypes.INTEGER,
+      allowNull: false,
     },
     is_holiday: {
       type: DataTypes.BOOLEAN,
+      allowNull: false,
     },
   },
   {

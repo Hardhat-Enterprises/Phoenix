@@ -6,10 +6,12 @@ import { GeoLocation } from "./models/location-geo.model";
 import { HazardLocation } from "./models/location-hazard.model";
 import { ThreatLocation } from "./models/location-threat.model";
 import { EventStatus } from "./models/status-event.model";
+import { User } from "./models/user.model";
 import { DataSource } from "./models/data-source.model";
 import { LinkedEventType } from "./models/linked-event-typed";
-import { ReferenceDay } from "./models/reference-day.model";
 import { Season } from "./models/season.model";
+import { ReferenceDay } from "./models/reference-day.model";
+import { ReferenceTime } from "./models/reference-time.model";
 
 HazardEvent.hasMany(RiskAssessment, {
   foreignKey: "related_hazard_event_id",
@@ -120,5 +122,22 @@ export async function initDatabase(): Promise<void> {
   await sequelize.sync({ alter: true });
   console.log("Database synced successfully.");
 }
+
+export {
+  sequelize,
+  HazardEvent,
+  CyberThreat,
+  RiskAssessment,
+  GeoLocation,
+  HazardLocation,
+  ThreatLocation,
+  EventStatus,
+  User,
+  DataSource,
+  LinkedEventType,
+  Season,
+  ReferenceDay,
+  ReferenceTime,
+};
 
 export * from "./models";

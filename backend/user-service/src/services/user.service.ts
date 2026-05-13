@@ -1,5 +1,4 @@
 import { Op } from "sequelize";
-
 import {
   CyberThreat,
   HazardEvent,
@@ -7,6 +6,12 @@ import {
   logger,
   RiskAssessment,
   UserAccount,
+  GeoLocation,
+  EventStatus,
+  LinkedEventType,
+  Season,
+  ReferenceDay,
+  ReferenceTime,
 } from "@phoenix/common";
 
 import {
@@ -41,20 +46,121 @@ export const getUsers = async (
     logger.info("Fetching users from database...");
 
     const users = await UserAccount.findAll({});
-
     logger.info(`Fetched ${users.length} users from database.`);
-
-    const returnUser = GetUsersEntity.toEntity({ users });
 
     return {
       status: HttpStatusCode.HTTP_STATUS_OK,
       message: "Users fetched successfully",
-      users: returnUser.users,
+      users: users.map((user: any) => ({
+        user_id: user.user_id,
+        username: user.username,
+        role: user.role,
+      })),
     };
   } catch (error) {
     logger.error(`Error fetching users: ${error}`);
     throw new Error("Error fetching users");
   }
+};
+
+export const getLocations = async () => {
+  logger.info("Fetching locations from database...");
+
+  const locations = await GeoLocation.findAll({
+    attributes: [
+      "geo_location_id",
+      "country",
+      "state_region",
+      "local_government_area",
+      "suburb",
+      "latitude",
+      "longitude",
+      "geo_precision",
+    ],
+  });
+
+  return {
+    status: HttpStatusCode.HTTP_STATUS_OK,
+    message: "Locations fetched successfully",
+    locations,
+  };
+};
+
+export const getEventStatuses = async () => {
+  logger.info("Fetching event statuses from database...");
+
+  const eventStatuses = await EventStatus.findAll({
+    attributes: ["event_status_id", "event_status_description"],
+  });
+
+  return {
+    status: HttpStatusCode.HTTP_STATUS_OK,
+    message: "Event statuses fetched successfully",
+    eventStatuses,
+  };
+};
+
+export const getLinkedEventTypes = async () => {
+  logger.info("Fetching linked event types from database...");
+
+  const linkedEventTypes = await LinkedEventType.findAll({
+    attributes: ["linked_event_type_id", "linked_event_type_description"],
+  });
+
+  return {
+    status: HttpStatusCode.HTTP_STATUS_OK,
+    message: "Linked event types fetched successfully",
+    linkedEventTypes,
+  };
+};
+
+export const getSeasons = async () => {
+  logger.info("Fetching seasons from database...");
+
+  const seasons = await Season.findAll({
+    attributes: ["season_id", "season_description"],
+  });
+
+  return {
+    status: HttpStatusCode.HTTP_STATUS_OK,
+    message: "Seasons fetched successfully",
+    seasons,
+  };
+};
+
+export const getReferenceDays = async () => {
+  logger.info("Fetching reference days from database...");
+
+  const referenceDays = await ReferenceDay.findAll({
+    attributes: [
+      "ref_date",
+      "locale_id",
+      "dow",
+      "is_weekend",
+      "season",
+      "is_holiday",
+    ],
+  });
+
+  return {
+    status: HttpStatusCode.HTTP_STATUS_OK,
+    message: "Reference days fetched successfully",
+    referenceDays,
+  };
+};
+
+export const getReferenceTimes = async () => {
+  logger.info("Fetching reference times from database...");
+
+  const referenceTimes = await ReferenceTime.findAll({
+    attributes: ["ref_time", "is_nighttime", "is_business_hours"],
+  });
+
+  return {
+    status: HttpStatusCode.HTTP_STATUS_OK,
+    message: "Reference times fetched successfully",
+    referenceTimes,
+  };
 };
 
 export const getUserDashboard = async (
@@ -72,23 +178,10 @@ export const getUserDashboard = async (
       criticalRisks,
     ] = await Promise.all([
       HazardEvent.count(),
-
-      HazardEvent.count({
-        where: {
-          event_status: "active",
-        },
-      }),
-
+      HazardEvent.count({ where: { event_status: "active" } }),
       CyberThreat.count(),
-
-      CyberThreat.count({
-        where: {
-          status: "active",
-        },
-      }),
-
+      CyberThreat.count({ where: { status: "active" } }),
       RiskAssessment.count(),
-
       RiskAssessment.count({
         where: {
           integration_confidence: {
@@ -126,65 +219,23 @@ export const getUserDashboardCharts = async (
       mediumHazards,
       highHazards,
       criticalHazards,
-
       lowThreats,
       mediumThreats,
       highThreats,
       criticalThreats,
-
       lowRisks,
       mediumRisks,
       highRisks,
       criticalRisks,
     ] = await Promise.all([
-      HazardEvent.count({
-        where: {
-          severity_level: "low",
-        },
-      }),
-
-      HazardEvent.count({
-        where: {
-          severity_level: "medium",
-        },
-      }),
-
-      HazardEvent.count({
-        where: {
-          severity_level: "high",
-        },
-      }),
-
-      HazardEvent.count({
-        where: {
-          severity_level: "critical",
-        },
-      }),
-
-      CyberThreat.count({
-        where: {
-          risk_level: "low",
-        },
-      }),
-
-      CyberThreat.count({
-        where: {
-          risk_level: "medium",
-        },
-      }),
-
-      CyberThreat.count({
-        where: {
-          risk_level: "high",
-        },
-      }),
-
-      CyberThreat.count({
-        where: {
-          risk_level: "critical",
-        },
-      }),
-
+      HazardEvent.count({ where: { severity_level: "low" } }),
+      HazardEvent.count({ where: { severity_level: "medium" } }),
+      HazardEvent.count({ where: { severity_level: "high" } }),
+      HazardEvent.count({ where: { severity_level: "critical" } }),
+      CyberThreat.count({ where: { risk_level: "low" } }),
+      CyberThreat.count({ where: { risk_level: "medium" } }),
+      CyberThreat.count({ where: { risk_level: "high" } }),
+      CyberThreat.count({ where: { risk_level: "critical" } }),
       RiskAssessment.count({
         where: {
           integration_confidence: {
@@ -192,7 +243,6 @@ export const getUserDashboardCharts = async (
           },
         },
       }),
-
       RiskAssessment.count({
         where: {
           integration_confidence: {
@@ -201,7 +251,6 @@ export const getUserDashboardCharts = async (
           },
         },
       }),
-
       RiskAssessment.count({
         where: {
           integration_confidence: {
@@ -210,7 +259,6 @@ export const getUserDashboardCharts = async (
           },
         },
       }),
-
       RiskAssessment.count({
         where: {
           integration_confidence: {
@@ -223,28 +271,24 @@ export const getUserDashboardCharts = async (
     return {
       status: HttpStatusCode.HTTP_STATUS_OK,
       message: "Dashboard chart data retrieved successfully",
-
       hazards_by_severity: JSON.stringify({
         low: lowHazards,
         medium: mediumHazards,
         high: highHazards,
         critical: criticalHazards,
       }),
-
       threats_by_risk_level: JSON.stringify({
         low: lowThreats,
         medium: mediumThreats,
         high: highThreats,
         critical: criticalThreats,
       }),
-
       risks_by_level: JSON.stringify({
         low: lowRisks,
         medium: mediumRisks,
         high: highRisks,
         critical: criticalRisks,
       }),
-
       last_updated: new Date().toISOString(),
     };
   } catch (error) {
@@ -264,7 +308,6 @@ export const getUserDashboardActivity = async (
         limit: 5,
         order: [["created_at", "DESC"]],
       }),
-
       CyberThreat.findAll({
         limit: 5,
         order: [["created_at", "DESC"]],
@@ -274,11 +317,8 @@ export const getUserDashboardActivity = async (
     return {
       status: HttpStatusCode.HTTP_STATUS_OK,
       message: "Dashboard activity data retrieved successfully",
-
       recent_hazards: JSON.stringify(recentHazards),
-
       recent_threats: JSON.stringify(recentThreats),
-
       last_updated: new Date().toISOString(),
     };
   } catch (error) {

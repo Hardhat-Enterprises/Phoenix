@@ -2,39 +2,35 @@ import { Request, Response } from "express";
 import { userGrpcClient } from "../grpc/user.grpc";
 import { HttpStatusCode, logger } from "@phoenix/common";
 
-export const getHealth = (req: Request, res: Response) => {
-  userGrpcClient.GetUserHealth({}, (error, response) => {
-    if (error) {
-      logger.error(`Error calling GetUserHealth: ${error}`);
+const handleGrpcError = (res: Response, message: string, error: unknown) => {
+  logger.error(`${message}: ${error}`);
 
-      return res
-        .status(
-          response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        )
-        .json({ message: "Error fetching user health" });
+  return res.status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR).json({
+    status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    message,
+    error: `${error}`,
+  });
+};
+
+export const getHealth = (req: Request, res: Response) => {
+  userGrpcClient.GetUserHealth({}, (error: any, response: any) => {
+    if (error) {
+      return handleGrpcError(res, "Error fetching user health", error);
     }
 
-    return res
-      .status(response.status || HttpStatusCode.HTTP_STATUS_OK)
-      .json({ message: response?.message });
+    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
+      message: response?.message,
+    });
   });
 };
 
 export const getUser = (req: Request, res: Response) => {
-  userGrpcClient.GetUsers({}, (error, response) => {
+  userGrpcClient.GetUsers({}, (error: any, response: any) => {
     if (error) {
-      logger.error(`Error calling GetUsers: ${error}`);
-
-      return res
-        .status(
-          response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        )
-        .json({ message: "Error fetching users" });
+      return handleGrpcError(res, "Error fetching users", error);
     }
 
-    logger.info(`GetUsers response from gRPC: ${JSON.stringify(response)}`);
-
-    return res.status(response.status || HttpStatusCode.HTTP_STATUS_OK).json({
+    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
       status: response?.status,
       message: response?.message,
       user: response?.users,
@@ -42,135 +38,86 @@ export const getUser = (req: Request, res: Response) => {
   });
 };
 
-export const getUserDashboard = (req: Request, res: Response) => {
-  userGrpcClient.GetUserDashboard({}, (error, response) => {
+export const getLocations = (req: Request, res: Response) => {
+  userGrpcClient.GetLocations({}, (error: any, response: any) => {
     if (error) {
-      logger.error(`Error calling GetUserDashboard: ${error}`);
-
-      return res
-        .status(
-          response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        )
-        .json({
-          status:
-            response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-          message: "Error fetching dashboard overview",
-          data: [],
-        });
+      return handleGrpcError(res, "Error fetching locations", error);
     }
 
-    logger.info(
-      `GetUserDashboard response from gRPC: ${JSON.stringify(response)}`,
-    );
-
-    return res.status(response.status || HttpStatusCode.HTTP_STATUS_OK).json({
-      status: response?.status || HttpStatusCode.HTTP_STATUS_OK,
-      message:
-        response?.message || "Dashboard overview retrieved successfully",
-
-      data: [
-        {
-          total_hazards: response?.total_hazards,
-          active_hazards: response?.active_hazards,
-          total_threats: response?.total_threats,
-          active_threats: response?.active_threats,
-          total_risk_assessments: response?.total_risk_assessments,
-          critical_risks: response?.critical_risks,
-          last_updated: response?.last_updated || new Date().toISOString(),
-        },
-      ],
+    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
+      status: response?.status,
+      message: response?.message,
+      locations: response?.locations,
     });
   });
 };
 
-export const getUserDashboardCharts = (
-  req: Request,
-  res: Response,
-) => {
-  userGrpcClient.GetUserDashboardCharts({}, (error, response) => {
+export const getEventStatuses = (req: Request, res: Response) => {
+  userGrpcClient.GetEventStatuses({}, (error: any, response: any) => {
     if (error) {
-      logger.error(`Error calling GetUserDashboardCharts: ${error}`);
-
-      return res
-        .status(
-          response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        )
-        .json({
-          status:
-            response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-          message: "Error fetching dashboard charts",
-          data: [],
-        });
+      return handleGrpcError(res, "Error fetching event statuses", error);
     }
 
-    logger.info(
-      `GetUserDashboardCharts response from gRPC: ${JSON.stringify(response)}`,
-    );
-
-    return res.status(response.status || HttpStatusCode.HTTP_STATUS_OK).json({
-      status: response?.status || HttpStatusCode.HTTP_STATUS_OK,
-      message:
-        response?.message || "Dashboard charts retrieved successfully",
-
-      data: {
-        hazards_by_severity: JSON.parse(
-          response?.hazards_by_severity || "{}",
-        ),
-
-        threats_by_risk_level: JSON.parse(
-          response?.threats_by_risk_level || "{}",
-        ),
-
-        risks_by_level: JSON.parse(response?.risks_by_level || "{}"),
-
-        last_updated:
-          response?.last_updated || new Date().toISOString(),
-      },
+    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
+      status: response?.status,
+      message: response?.message,
+      eventStatuses: response?.eventStatuses,
     });
   });
 };
 
-export const getUserDashboardActivity = (
-  req: Request,
-  res: Response,
-) => {
-  userGrpcClient.GetUserDashboardActivity({}, (error, response) => {
+export const getLinkedEventTypes = (req: Request, res: Response) => {
+  userGrpcClient.GetLinkedEventTypes({}, (error: any, response: any) => {
     if (error) {
-      logger.error(`Error calling GetUserDashboardActivity: ${error}`);
-
-      return res
-        .status(
-          response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        )
-        .json({
-          status:
-            response?.status || HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-          message: "Error fetching dashboard activity",
-          data: [],
-        });
+      return handleGrpcError(res, "Error fetching linked event types", error);
     }
 
-    logger.info(
-      `GetUserDashboardActivity response from gRPC: ${JSON.stringify(response)}`,
-    );
+    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
+      status: response?.status,
+      message: response?.message,
+      linkedEventTypes: response?.linkedEventTypes,
+    });
+  });
+};
 
-    return res.status(response.status || HttpStatusCode.HTTP_STATUS_OK).json({
-      status: response?.status || HttpStatusCode.HTTP_STATUS_OK,
-      message:
-        response?.message || "Dashboard activity retrieved successfully",
+export const getSeasons = (req: Request, res: Response) => {
+  userGrpcClient.GetSeasons({}, (error: any, response: any) => {
+    if (error) {
+      return handleGrpcError(res, "Error fetching seasons", error);
+    }
 
-      data: {
-        recent_hazards: JSON.parse(
-          response?.recent_hazards || "[]",
-        ),
+    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
+      status: response?.status,
+      message: response?.message,
+      seasons: response?.seasons,
+    });
+  });
+};
 
-        recent_threats: JSON.parse(
-          response?.recent_threats || "[]",
-        ),
+export const getReferenceDays = (req: Request, res: Response) => {
+  userGrpcClient.GetReferenceDays({}, (error: any, response: any) => {
+    if (error) {
+      return handleGrpcError(res, "Error fetching reference days", error);
+    }
 
-        last_updated:
-          response?.last_updated || new Date().toISOString(),
-      },
+    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
+      status: response?.status,
+      message: response?.message,
+      referenceDays: response?.referenceDays,
+    });
+  });
+};
+
+export const getReferenceTimes = (req: Request, res: Response) => {
+  userGrpcClient.GetReferenceTimes({}, (error: any, response: any) => {
+    if (error) {
+      return handleGrpcError(res, "Error fetching reference times", error);
+    }
+
+    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
+      status: response?.status,
+      message: response?.message,
+      referenceTimes: response?.referenceTimes,
     });
   });
 };

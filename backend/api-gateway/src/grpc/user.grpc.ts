@@ -45,6 +45,35 @@ export interface GetUsersResponse {
   }[];
 }
 
+export interface RegisterUserRequest {
+  username: string;
+  password: string;
+  role?: string;
+}
+
+export interface LoginUserRequest {
+  username: string;
+  password: string;
+}
+
+export interface RefreshTokenRequest {
+  refresh_token: string;
+}
+
+export interface LogoutUserRequest {
+  user_id: string;
+}
+
+export interface AuthResponse {
+  status: number;
+  message: string;
+  user_id?: string;
+  username?: string;
+  role?: string;
+  access_token?: string;
+  refresh_token?: string;
+}
+
 export interface GetUserDashboardRequest {}
 
 export interface GetUserDashboardResponse {
@@ -180,6 +209,38 @@ export interface UserServiceClient {
     callback: (
       error: grpc.ServiceError | null,
       response: GetUsersResponse,
+    ) => void,
+  ): void;
+
+  RegisterUser(
+    request: RegisterUserRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: AuthResponse,
+    ) => void,
+  ): void;
+
+  LoginUser(
+    request: LoginUserRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: AuthResponse,
+    ) => void,
+  ): void;
+
+  RefreshToken(
+    request: RefreshTokenRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: AuthResponse,
+    ) => void,
+  ): void;
+
+  LogoutUser(
+    request: LogoutUserRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: AuthResponse,
     ) => void,
   ): void;
 

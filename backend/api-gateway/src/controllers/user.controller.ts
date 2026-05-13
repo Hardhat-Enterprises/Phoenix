@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { userGrpcClient } from "../grpc/user.grpc";
 import { HttpStatusCode, logger } from "@phoenix/common";
 
+const REFRESH_COOKIE_NAME = "refresh_token";
+
 export const getHealth = (req: Request, res: Response) => {
   userGrpcClient.GetUserHealth({}, (error, response) => {
     if (error) {
@@ -40,6 +42,140 @@ export const getUser = (req: Request, res: Response) => {
       user: response?.users,
     });
   });
+};
+
+export const register = (req: Request, res: Response) => {
+  const { username, password, role } = req.body;
+
+  userGrpcClient.RegisterUser(
+    { username, password, role },
+    (error, response) => {
+      if (error) {
+        logger.error(`Error calling RegisterUser: ${error}`);
+
+        return res
+          .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+          .json({ message: "Error registering user" });
+      }
+
+      return res
+        .status(response?.status || HttpStatusCode.HTTP_STATUS_CREATED)
+        .json({
+          status: response?.status,
+          message: response?.message,
+          user_id: response?.user_id,
+          username: response?.username,
+          role: response?.role,
+        });
+    },
+  );
+};
+
+export const login = (req: Request, res: Response) => {
+  const { username, password } = req.body;
+
+  userGrpcClient.LoginUser(
+    { username, password },
+    (error, response) => {
+      if (error) {
+        logger.error(`Error calling LoginUser: ${error}`);
+
+        return res
+          .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+          .json({ message: "Error logging in" });
+      }
+
+      if (response?.refresh_token) {
+        res.cookie(REFRESH_COOKIE_NAME, response.refresh_token, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "strict",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+      }
+
+      return res
+        .status(response?.status || HttpStatusCode.HTTP_STATUS_OK)
+        .json({
+          status: response?.status,
+          message: response?.message,
+          user_id: response?.user_id,
+          username: response?.username,
+          role: response?.role,
+          access_token: response?.access_token,
+          refresh_token: response?.refresh_token,
+        });
+    },
+  );
+};
+
+export const refresh = (req: Request, res: Response) => {
+  const refresh_token =
+    req.cookies?.refresh_token || req.body?.refresh_token;
+
+  if (!refresh_token) {
+    return res
+      .status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED)
+      .json({ message: "No refresh token provided" });
+  }
+
+  userGrpcClient.RefreshToken(
+    { refresh_token },
+    (error, response) => {
+      if (error) {
+        logger.error(`Error calling RefreshToken: ${error}`);
+
+        return res
+          .status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED)
+          .json({ message: "Invalid or expired refresh token" });
+      }
+
+      return res
+        .status(response?.status || HttpStatusCode.HTTP_STATUS_OK)
+        .json({
+          status: response?.status,
+          message: response?.message,
+          user_id: response?.user_id,
+          username: response?.username,
+          role: response?.role,
+          access_token: response?.access_token,
+          refresh_token: response?.refresh_token,
+        });
+    },
+  );
+};
+
+export const logout = (req: Request, res: Response) => {
+  const user_id = String(req.params.userId);
+  const loggedInUser = (req as any).user;
+
+  if (!loggedInUser || loggedInUser.user_id !== user_id) {
+    return res.status(HttpStatusCode.HTTP_STATUS_FORBIDDEN).json({
+      message: "You are not authorized to logout this user",
+    });
+  }
+
+  userGrpcClient.LogoutUser(
+    { user_id },
+    (error, response) => {
+      if (error) {
+        logger.error(`Error calling LogoutUser: ${error}`);
+
+        return res
+          .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+          .json({ message: "Error logging out" });
+      }
+
+      res.clearCookie(REFRESH_COOKIE_NAME);
+
+      return res
+        .status(response?.status || HttpStatusCode.HTTP_STATUS_OK)
+        .json({
+          status: response?.status,
+          message: response?.message,
+        });
+    },
+  );
 };
 
 export const getUserDashboard = (req: Request, res: Response) => {

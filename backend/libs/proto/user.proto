@@ -5,11 +5,19 @@ package user;
 service UserService {
     rpc GetUserHealth(GetUserHealthRequest) returns (GetUserHealthResponse);
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+
+    rpc RegisterUser(RegisterUserRequest) returns (AuthResponse);
+    rpc LoginUser(LoginUserRequest) returns (AuthResponse);
+    rpc RefreshToken(RefreshTokenRequest) returns (AuthResponse);
+    rpc LogoutUser(LogoutUserRequest) returns (AuthResponse);
+
     rpc GetUserDashboard(GetUserDashboardRequest) returns (GetUserDashboardResponse);
     rpc GetUserDashboardCharts(GetUserDashboardChartsRequest) returns (GetUserDashboardChartsResponse);
     rpc GetUserDashboardActivity(GetUserDashboardActivityRequest) returns (GetUserDashboardActivityResponse);
+
     rpc GetThreats(GetThreatsRequest) returns (GetThreatsResponse);
     rpc GetThreat(GetThreatRequest) returns (GetThreatResponse);
+
     rpc GetHazards(GetHazardsRequest) returns (GetHazardsResponse);
     rpc GetHazard(GetHazardRequest) returns (GetHazardResponse);
 }
@@ -36,6 +44,39 @@ message User {
     string username = 2;
     string role = 3;
 }
+
+// ─── Authentication ────────────────────────────────────────────────────────
+
+message RegisterUserRequest {
+    string username = 1;
+    string password = 2;
+    string role = 3;
+}
+
+message LoginUserRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message RefreshTokenRequest {
+    string refresh_token = 1;
+}
+
+message LogoutUserRequest {
+    string user_id = 1;
+}
+
+message AuthResponse {
+    int32 status = 1;
+    string message = 2;
+    string user_id = 3;
+    string username = 4;
+    string role = 5;
+    string access_token = 6;
+    string refresh_token = 7;
+}
+
+// ─── Dashboard ─────────────────────────────────────────────────────────────
 
 message GetUserDashboardRequest {
 }

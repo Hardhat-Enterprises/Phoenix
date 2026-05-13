@@ -18,6 +18,9 @@ service UserService {
     rpc GetThreat(GetThreatRequest) returns (GetThreatResponse);
     rpc GetHazards(GetHazardsRequest) returns (GetHazardsResponse);
     rpc GetHazard(GetHazardRequest) returns (GetHazardResponse);
+    rpc GetRisks(GetRisksRequest) returns (GetRisksResponse);
+    rpc GetRisk(GetRiskRequest) returns (GetRiskResponse);
+
 }
 
 message GetUserHealthRequest {
@@ -165,91 +168,43 @@ message Hazard {
     string updated_at = 9;
 }
 
-message GetLocationsRequest {}
+// ─── Risks ───────────────────────────────────────────────────────────────
 
-message GetLocationsResponse {
+message GetRisksRequest {
+    string hazard_id = 1;
+    string threat_id = 2;
+    string event_status = 3;
+    string linked_event_type = 4;
+    int32 page = 5;
+    int32 limit = 6;
+}
+
+message GetRisksResponse {
     int32 status = 1;
     string message = 2;
-    repeated Location locations = 3;
+    repeated Risk risks = 3;
+    int32 total = 4;
+    int32 page = 5;
+    int32 limit = 6;
 }
 
-message Location {
-    string geo_location_id = 1;
-    string country = 2;
-    string state_region = 3;
-    string local_government_area = 4;
-    string suburb = 5;
-    double latitude = 6;
-    double longitude = 7;
-    string geo_precision = 8;
+message GetRiskRequest {
+    string integration_event_id = 1;
 }
 
-message GetEventStatusesRequest {}
-
-message GetEventStatusesResponse {
+message GetRiskResponse {
     int32 status = 1;
     string message = 2;
-    repeated EventStatus eventStatuses = 3;
+    Risk risk = 3;
 }
 
-message EventStatus {
-    string event_status_id = 1;
-    string event_status_description = 2;
-}
-
-message GetLinkedEventTypesRequest {}
-
-message GetLinkedEventTypesResponse {
-    int32 status = 1;
-    string message = 2;
-    repeated LinkedEventType linkedEventTypes = 3;
-}
-
-message LinkedEventType {
-    string linked_event_type_id = 1;
-    string linked_event_type_description = 2;
-}
-
-message GetSeasonsRequest {}
-
-message GetSeasonsResponse {
-    int32 status = 1;
-    string message = 2;
-    repeated Season seasons = 3;
-}
-
-message Season {
-    int32 season_id = 1;
-    string season_description = 2;
-}
-
-message GetReferenceDaysRequest {}
-
-message GetReferenceDaysResponse {
-    int32 status = 1;
-    string message = 2;
-    repeated ReferenceDay referenceDays = 3;
-}
-
-message ReferenceDay {
-    string ref_date = 1;
-    int32 locale_id = 2;
-    string dow = 3;
-    bool is_weekend = 4;
-    int32 season = 5;
-    bool is_holiday = 6;
-}
-
-message GetReferenceTimesRequest {}
-
-message GetReferenceTimesResponse {
-    int32 status = 1;
-    string message = 2;
-    repeated ReferenceTime referenceTimes = 3;
-}
-
-message ReferenceTime {
-    string ref_time = 1;
-    bool is_nighttime = 2;
-    bool is_business_hours = 3;
+message Risk {
+    string integration_event_id = 1;
+    string related_threat_id = 2;
+    int32 correlation_score = 3;
+    string linkage_reason = 4;
+    int32 integration_confidence = 5;
+    string linked_event_type = 6;
+    string event_status = 7;
+    string event_type = 8;
 }

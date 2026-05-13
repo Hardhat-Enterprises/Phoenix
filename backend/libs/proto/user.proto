@@ -9,8 +9,8 @@ service UserService {
     rpc GetThreat(GetThreatRequest) returns (GetThreatResponse);
     rpc GetHazards(GetHazardsRequest) returns (GetHazardsResponse);
     rpc GetHazard(GetHazardRequest) returns (GetHazardResponse);
-    rpc GeRisks(GetRisksRequest) returns (GetRisksResponse);
-    rpc GetRisk(GetRiskRequest) returns (GetHazardRisk);
+    rpc GetRisks(GetRisksRequest) returns (GetRisksResponse);
+    rpc GetRisk(GetRiskRequest) returns (GetRiskResponse);
 
 }
 
@@ -127,7 +127,7 @@ message GetRisksRequest {
     string hazard_id = 1;
     string threat_id = 2;
     string event_status = 3;
-    string linked_event_type = 4
+    string linked_event_type = 4;
     int32 page = 5;
     int32 limit = 6;
 }
@@ -151,13 +151,13 @@ message GetRiskResponse {
     Risk risk = 3;
 }
 
-message Hazard {
+message Risk {
     string integration_event_id = 1;
     string related_threat_id = 2;
-    string correlation_score = 3;
+    int32 correlation_score = 3;
     string linkage_reason = 4;
-    string integration_confidence = 5;
+    int32 integration_confidence = 5;
     string linked_event_type = 6;
     string event_status = 7;
     string event_type = 8;
-    }
+}

@@ -4,6 +4,7 @@ export class GetRisksDto {
   event_status?: string;
   page?: number;
   limit?: number;
+  linked_event_type?: string;
 }
 
 export class GetRiskDto {

@@ -123,13 +123,13 @@ export interface GetHazardResponse {
 export interface RiskItem {
   integration_event_id: string;
   related_threat_id: string;
-  correlation_score: string;
+  correlation_score: number;
   linkage_reason: string;
-  integration_confidence: string;
+  integration_confidence: number;
   linked_event_type: string;
   event_status: string;
   event_type: string;
- }
+}
 
 export interface GetRisksRequest {
   hazard_id: string;
@@ -142,7 +142,7 @@ export interface GetRisksRequest {
 export interface GetRisksResponse {
   status: number;
   message: string;
-  hazards: RiskItem[];
+  risks: RiskItem[];
   total: number;
   page: number;
   limit: number;
@@ -154,7 +154,7 @@ export interface GetRiskRequest {
 export interface GetRiskResponse {
   status: number;
   message: string;
-  hazard?: RiskItem;
+  risk?: RiskItem;
 }
 
 // ─── Client interface ──────────────────────────────────────────────────────
@@ -162,35 +162,59 @@ export interface GetRiskResponse {
 export interface UserServiceClient {
   GetUserHealth(
     request: GetUserHealthRequest,
-    callback: (error: grpc.ServiceError | null, response: GetUserHealthResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetUserHealthResponse,
+    ) => void,
   ): void;
   GetUsers(
     request: GetUsersRequest,
-    callback: (error: grpc.ServiceError | null, response: GetUsersResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetUsersResponse,
+    ) => void,
   ): void;
   GetThreats(
     request: GetThreatsRequest,
-    callback: (error: grpc.ServiceError | null, response: GetThreatsResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetThreatsResponse,
+    ) => void,
   ): void;
   GetThreat(
     request: GetThreatRequest,
-    callback: (error: grpc.ServiceError | null, response: GetThreatResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetThreatResponse,
+    ) => void,
   ): void;
   GetHazards(
     request: GetHazardsRequest,
-    callback: (error: grpc.ServiceError | null, response: GetHazardsResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetHazardsResponse,
+    ) => void,
   ): void;
   GetHazard(
     request: GetHazardRequest,
-    callback: (error: grpc.ServiceError | null, response: GetHazardResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetHazardResponse,
+    ) => void,
   ): void;
   GetRisks(
     request: GetRisksRequest,
-    callback: (error: grpc.ServiceError | null, response: GetRisksResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetRisksResponse,
+    ) => void,
   ): void;
   GetRisk(
     request: GetRiskRequest,
-    callback: (error: grpc.ServiceError | null, response: GetRiskResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetRiskResponse,
+    ) => void,
   ): void;
 }
 

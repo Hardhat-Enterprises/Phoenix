@@ -1,11 +1,11 @@
 import { ServerUnaryCall, sendUnaryData } from "@grpc/grpc-js";
 import { logger } from "@phoenix/common";
-import { GetRiskssDto, GetRiskDto } from "../dto/risk.dto";
+import { GetRisksDto, GetRiskDto } from "../dto/risk.dto";
 import { GetRisksEntity, GetRiskEntity } from "../entity/risk.entity";
-import { getRisks, getRisk } from "../services/risk.service";
+import { getRisk, getRisks } from "../services/risk.service";
 
 export const riskHandler = {
-  GetHazards: async (
+  GetRisks: async (
     call: ServerUnaryCall<GetRisksDto, GetRisksEntity>,
     callback: sendUnaryData<GetRisksEntity>,
   ) => {

@@ -10,7 +10,9 @@ import { config, initDatabase } from "@phoenix/common";
 
 dotenv.config();
 
-const PROTO_PATH = path.resolve(process.env.USER_PROTO_PATH || "libs/proto/user.proto");
+const PROTO_PATH = path.resolve(
+  process.env.USER_PROTO_PATH || "libs/proto/user.proto",
+);
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
@@ -33,6 +35,7 @@ const startGrpcServer = async (): Promise<void> => {
       ...userHandler,
       ...threatHandler,
       ...hazardHandler,
+      ...riskHandler,
     });
 
     server.bindAsync(
@@ -45,7 +48,7 @@ const startGrpcServer = async (): Promise<void> => {
         }
 
         console.log(`User service gRPC running on port ${boundPort}`);
-      }
+      },
     );
   } catch (error) {
     console.error("Failed to initialize application:", error);

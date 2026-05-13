@@ -1,9 +1,9 @@
 export interface RiskItem {
   integration_event_id: string;
   related_threat_id: string;
-  correlation_score: string;
+  correlation_score: number;
   linkage_reason: string;
-  integration_confidence: string;
+  integration_confidence: number;
   linked_event_type: string;
   event_status: string;
   event_type: string;
@@ -12,7 +12,7 @@ export interface RiskItem {
 export class GetRisksEntity {
   status: number;
   message: string;
-  hazards: RiskItem[];
+  risks: RiskItem[];
   total: number;
   page: number;
   limit: number;
@@ -21,8 +21,9 @@ export class GetRisksEntity {
     return items.map((r) => ({
       integration_event_id: r.integration_event_id ?? "",
       related_threat_id: r.related_threat_id ?? "",
-      correlation_score: r.correlation_score ?? "",
+      correlation_score: r.correlation_score ?? 0,
       linkage_reason: r.linkage_Reason ?? "",
+      integration_confidence: r.integration_confidence ?? 0,
       linked_event_type: r.linked_Event_type ?? "",
       event_status: r.event_status ?? "",
       event_type: r.event_type ?? "",

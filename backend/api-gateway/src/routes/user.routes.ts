@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getHealth, getUser } from "../controllers/user.controller";
 import { getThreats, getThreat } from "../controllers/threat.controller";
 import { getHazards, getHazard } from "../controllers/hazard.controller";
+import { getRisk, getRisks } from "../controllers/risk.controller";
 
 const router = Router();
 

@@ -3,7 +3,16 @@ import { userGrpcClient } from "../grpc/user.grpc";
 import { HttpStatusCode, logger } from "@phoenix/common";
 
 export const getRisks = (req: Request, res: Response) => {
-  const { hazard_id, threat_id, event_status, linked_event_type, from, to, page limit } = req.query;
+  const {
+    hazard_id,
+    threat_id,
+    event_status,
+    linked_event_type,
+    from,
+    to,
+    page,
+    limit,
+  } = req.query;
 
   const grpcRequest = {
     hazard_id: (hazard_id as string) || "",
@@ -27,7 +36,7 @@ export const getRisks = (req: Request, res: Response) => {
     return res.status(response.status || HttpStatusCode.HTTP_STATUS_OK).json({
       status: response.status,
       message: response.message,
-      hazards: response.hazards,
+      risks: response.risks,
       total: response.total,
       page: response.page,
       limit: response.limit,
@@ -38,18 +47,21 @@ export const getRisks = (req: Request, res: Response) => {
 export const getRisk = (req: Request, res: Response) => {
   const riskId = req.params.riskId as string;
 
-  userGrpcClient.GetRisk({ integration_event_id: riskId }, (error, response) => {
-    if (error) {
-      logger.error(`Error calling GetRisk: ${error}`);
-      return res
-        .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-        .json({ message: "Error fetching hazard" });
-    }
-    logger.info(`GetRisk response from gRPC: ${JSON.stringify(response)}`);
-    return res.status(response.status || HttpStatusCode.HTTP_STATUS_OK).json({
-      status: response.status,
-      message: response.message,
-      hazard: response.hazard,
-    });
-  });
+  userGrpcClient.GetRisk(
+    { integration_event_id: riskId },
+    (error, response) => {
+      if (error) {
+        logger.error(`Error calling GetRisk: ${error}`);
+        return res
+          .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+          .json({ message: "Error fetching risk" });
+      }
+      logger.info(`GetRisk response from gRPC: ${JSON.stringify(response)}`);
+      return res.status(response.status || HttpStatusCode.HTTP_STATUS_OK).json({
+        status: response.status,
+        message: response.message,
+        risk: response.risk,
+      });
+    },
+  );
 };

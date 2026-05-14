@@ -1,30 +1,40 @@
 import Sidebar from "./components/Sidebar";
 import "./Dashboard.css";
 
-function Dashboard({ setPage }) {
+function Dashboard({ setPage,setSeletedThreat }) {
   const threatData = [];
 
   const itemRows = [
     {
       id: 1,
-      name: "Item 1",
-      vulnerability: "Safe",
-      status: "Safe",
-      className: "safe",
+      name: "Emergency Donation Scam",
+      vulnerability: "High",
+      status: "Active",
+      className: "unsafe",
+      description: "Fake donation campaign targeting bushfire victims through malicious SMS links.",
+      source: "SMS Campaign",
+      region: "Victoria",
+      
     },
     {
       id: 2,
-      name: "Item 2",
-      vulnerability: "Unverified",
-      status: "Unverified",
+      name: "Evacuation Alert Spoof",
+      vulnerability: "Medium",
+      status: "Investigating",
       className: "unverified",
+      description: "Fraudulent emergency evacuation notifications sent through email.",
+      source: "Email",
+      region: "NSW",
     },
     {
       id: 3,
-      name: "Item 3",
-      vulnerability: "Unsafe",
-      status: "Unsafe",
+      name: "Flood Relief Login Scam",
+      vulnerability: "Critical",
+      status: "Escalated",
       className: "unsafe",
+      description: "Credential harvesting portal impersonating official flood relief services.",
+      source: "Fake Website",
+      region: "Queensland",
     },
   ];
 
@@ -150,8 +160,15 @@ function Dashboard({ setPage }) {
               </div>
 
               {itemRows.map((item) => (
-                <div className="item-list-row" key={item.id}>
-                  <div className="item-name-cell">
+                <div
+                  className="item-list-row"
+                  key={item.id}
+                  onClick={() => {
+                    setSelectedThreat(item);
+                    setPage("threatdetails");
+                  }}
+                  style={{ cursor: "pointer" }}
+                >  <div className="item-name-cell">
                     <span className="item-check-box">✓</span>
                     <span>{item.name}</span>
                   </div>

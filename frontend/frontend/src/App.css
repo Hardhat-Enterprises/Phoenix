@@ -43,6 +43,8 @@ body {
 }
 
 .temp-logo img {
+  width: 100%; /* Makes image width match the 44px container */
+  height: 100%; /* Makes image height match the 44px container */
   width: 100%;      /* Makes image width match the 44px container */
   height: 100%;     /* Makes image height match the 44px container */
   object-fit: cover; /* Crops the image to fill the circle without stretching */
@@ -232,13 +234,6 @@ body {
   padding: 16px;
   border-radius: 8px;
   border: 1px solid #ddd;
-}
-  font-family{font-style: Arial, Helvetica, sans-serif;
-  background-color: #edf2f8;
-}
-
-* {
-  box-sizing: border-box;
 }
 
 .about-page {
@@ -501,11 +496,135 @@ body {
   .result-row {
     grid-template-columns: 1fr;
   }
+}
+/* Tai Nguyen - Alerts filtering UI */
+
+.alerts-page-layout {
+  width: 100%;
+  padding: 32px 40px;
+}
+
+.alerts-main-content {
+  width: 100%;
+}
+
+.alerts-main-content h2 {
+  margin: 0 0 18px;
+  color: #071633;
+  font-size: 28px;
+}
+
+.alert-filter-panel {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px;
+  margin: 18px 0;
+  background: #ffffff;
+  border: 1px solid #e3eaf5;
+  border-radius: 14px;
+.alert-filter-panel {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px;
+  margin: 18px 0;
+  background: #ffffff;
+  border: 1px solid #e3eaf5;
+  border-radius: 14px;
+}
+
+.alert-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
 .app-container {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  gap: 6px;
+}
+  padding: 0 12px;
+  border: 1px solid #d7e1ef;
+  border-radius: 10px;
+  background: #f9fbfe;
+  color: #1f2f46;
+}
 
+.alert-filter-button {
+  height: 38px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  background: #3b82f6;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.alerts-placeholder-content {
+  min-height: 500px;
+  color: #53657d;
+}
+/* Tai Nguyen - Threat Level Legend */
+
+.threat-details-page {
+  width: 100%;
+  padding: 40px;
+}
+
+.threat-legend-card {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  width: 300px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.threat-legend-title {
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: #7c8aa5;
+  margin-bottom: 24px;
+  font-weight: 700;
+}
+
+.threat-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  font-size: 18px;
+  color: #1f2a44;
+  font-weight: 500;
+}
+
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.no-threat {
+  background-color: #9ca3af;
+}
+
+.low {
+  background-color: #22c55e;
+}
+
+.medium {
+  background-color: #eab308;
+}
+
+.high {
+  background-color: #f97316;
+}
+
+.critical {
+  background-color: #ef4444;
 }
 .content-wrap {
   flex: 1;

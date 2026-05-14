@@ -6,7 +6,7 @@ import { GeoLocation } from "./models/location-geo.model";
 import { HazardLocation } from "./models/location-hazard.model";
 import { ThreatLocation } from "./models/location-threat.model";
 import { EventStatus } from "./models/status-event.model";
-import { User } from "./models/user.model";
+import { UserAccount } from "./models/user-account.model";
 import { DataSource } from "./models/data-source.model";
 import { LinkedEventType } from "./models/linked-event-typed";
 import { Season } from "./models/season.model";
@@ -121,10 +121,7 @@ export async function initDatabase(): Promise<void> {
   await connectDatabase();
   console.log("Database connected successfully.");
 }
-export const syncDatabase = async (): Promise<void> => {
-  await sequelize.sync({ alter: true });
-  console.log("Database synced successfully.");
-};
+
 export {
   sequelize,
   HazardEvent,
@@ -134,7 +131,7 @@ export {
   HazardLocation,
   ThreatLocation,
   EventStatus,
-  User,
+  UserAccount,
   DataSource,
   LinkedEventType,
   Season,

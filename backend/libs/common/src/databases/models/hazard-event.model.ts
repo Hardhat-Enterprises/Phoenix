@@ -106,6 +106,8 @@ HazardEvent.init(
   {
     sequelize,
     tableName: "hazard_event",
-    timestamps: false,
-  }
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  },
 );

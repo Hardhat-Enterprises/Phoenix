@@ -54,6 +54,8 @@ ReferenceDay.init(
   {
     sequelize,
     tableName: "reference_day",
-    timestamps: false,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   },
 );

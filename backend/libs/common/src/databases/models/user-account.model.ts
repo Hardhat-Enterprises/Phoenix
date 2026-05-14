@@ -22,8 +22,6 @@ type UserCreationAttributes = Optional<
   | "created_at"
   | "updated_at"
   | "role"
-  | "created_at"
-  | "updated_at"
 >;
 
 export class UserAccount
@@ -82,6 +80,8 @@ UserAccount.init(
   {
     sequelize,
     tableName: "user_account",
-    timestamps: false,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   },
 );

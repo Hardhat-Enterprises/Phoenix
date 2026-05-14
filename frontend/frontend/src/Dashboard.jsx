@@ -1,6 +1,7 @@
+import Sidebar from "./components/Sidebar";
 import "./Dashboard.css";
 
-function Dashboard() {
+function Dashboard({ setPage }) {
   const threatData = [];
 
   const itemRows = [
@@ -31,10 +32,28 @@ function Dashboard() {
 
   return (
     <div className="dashboard-page">
+
       <main className="dashboard-content">
         <div className="dashboard-main-area">
 
-          {/* Threat Chart Section (Sathvik) */}
+          {/* Map Section (Jack) */}
+          <section className="map-card">
+            <div className="map-header">
+              <h2>Risk Map</h2>
+              <p>
+                This area is reserved for a future map component
+                (e.g. Bushire and incident locations).
+              </p>
+            </div>
+
+            <div className="map-placeholder">
+              <div className="map-box">
+                <span>Map Component Coming Soon</span>
+              </div>
+            </div>
+          </section>
+
+          {/* Threat Chart (Sathvik) */}
           <section className="threat-chart-section">
             <div className="threat-chart-header">
               <div>
@@ -114,7 +133,7 @@ function Dashboard() {
             </div>
           </section>
 
-          {/* Item List Section */}
+          {/* Item List Section (Manaal) */}
           <section className="item-list-card">
             <div className="item-list-header">
               <h2>Item List</h2>

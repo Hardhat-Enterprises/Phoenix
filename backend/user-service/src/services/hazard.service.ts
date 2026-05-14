@@ -1,5 +1,11 @@
 import { Op, WhereOptions } from "sequelize";
-import { HazardEvent, HttpStatusCode, logger } from "@phoenix/common";
+import {
+  HazardEvent,
+  GeoLocation,
+  DataSource,
+  HttpStatusCode,
+  logger,
+} from "@phoenix/common";
 import { GetHazardsDto, GetHazardDto } from "../dto/hazard.dto";
 import { GetHazardsEntity, GetHazardEntity } from "../entity/hazard.entity";
 
@@ -37,11 +43,31 @@ export const getHazards = async (dto: GetHazardsDto): Promise<GetHazardsEntity> 
   }
 };
 
+(HazardEvent as any).belongsTo(GeoLocation, {
+  foreignKey: "geo_location_id",
+  as: "geo_location",
+});
+
+(HazardEvent as any).belongsTo(DataSource, {
+  foreignKey: "source_id",
+  as: "source",
+});
 export const getHazard = async (dto: GetHazardDto): Promise<GetHazardEntity> => {
   try {
     logger.info(`Fetching hazard with id: ${dto.hazard_event_id}`);
 
-    const hazard = await (HazardEvent as any).findByPk(dto.hazard_event_id);
+    const hazard = await (HazardEvent as any).findByPk(dto.hazard_event_id, {
+  include: [
+    {
+      model: GeoLocation,
+      as: "geo_location",
+    },
+    {
+      model: DataSource,
+      as: "source",
+    },
+  ],
+});
 
     if (!hazard) {
       return {

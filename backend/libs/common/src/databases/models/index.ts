@@ -4,6 +4,7 @@ export * from "./location-geo.model";
 export * from "./location-hazard.model";
 export * from "./location-threat.model";
 export * from "./risk-assessment.model";
+export * from "./data-source.model";
 export * from "./status-event.model";
 export * from "./user-account.model";
 export * from "./data-ingestion-log.model";

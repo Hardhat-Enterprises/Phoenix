@@ -1,0 +1,34 @@
+actual_column: actual_label
+created_at_utc: '2026-05-14T08:19:10.832102+00:00'
+created_by: Asad Ullah
+input_columns:
+- temperature
+- humidity
+- actual_label
+- predicted_label
+- predicted_probability
+metadata:
+  source: fallback sample based on AI009 validation output
+metrics:
+  accuracy: 1.0
+  confusion_matrix:
+  - - 1
+    - 0
+  - - 0
+    - 1
+  counts:
+    fn: 0
+    fp: 0
+    tn: 1
+    tp: 1
+  f1_score: 1.0
+  false_negative_rate: 0.0
+  false_positive_rate: 0.0
+  precision: 1.0
+  recall: 1.0
+  roc_auc: 1.0
+  rows_evaluated: 2
+positive_label: 1
+predicted_column: predicted_label
+probability_column: predicted_probability
+task: AI014 - Implement metric execution

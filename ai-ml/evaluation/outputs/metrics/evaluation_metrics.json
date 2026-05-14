@@ -1,7 +1,7 @@
 {
   "task": "AI014 - Implement metric execution",
   "created_by": "Asad Ullah",
-  "created_at_utc": "2026-04-29T17:50:32.306225+00:00",
+  "created_at_utc": "2026-05-14T08:19:10.832102+00:00",
   "input_columns": [
     "temperature",
     "humidity",
@@ -40,10 +40,6 @@
     "rows_evaluated": 2
   },
   "metadata": {
-    "source_file": "/mnt/data/predictions_val.csv",
-    "source_task": "AI009 P7 baseline outputs",
-    "model_name": "baseline_logistic_regression",
-    "model_version": "v1",
-    "notes": "Generated from predictions_val.csv uploaded from AI009 baseline outputs."
+    "source": "fallback sample based on AI009 validation output"
   }
 }

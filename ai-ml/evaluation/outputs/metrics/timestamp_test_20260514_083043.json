@@ -1,0 +1,45 @@
+{
+    "task": "AI014 - Implement metric execution",
+    "created_by": "Asad Ullah",
+    "created_at_utc": "2026-05-14T08:19:10.832102+00:00",
+    "input_columns": [
+        "temperature",
+        "humidity",
+        "actual_label",
+        "predicted_label",
+        "predicted_probability"
+    ],
+    "actual_column": "actual_label",
+    "predicted_column": "predicted_label",
+    "probability_column": "predicted_probability",
+    "positive_label": 1,
+    "metrics": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "false_positive_rate": 0.0,
+        "false_negative_rate": 0.0,
+        "roc_auc": 1.0,
+        "confusion_matrix": [
+            [
+                1,
+                0
+            ],
+            [
+                0,
+                1
+            ]
+        ],
+        "counts": {
+            "tp": 1,
+            "tn": 1,
+            "fp": 0,
+            "fn": 0
+        },
+        "rows_evaluated": 2
+    },
+    "metadata": {
+        "source": "fallback sample based on AI009 validation output"
+    }
+}

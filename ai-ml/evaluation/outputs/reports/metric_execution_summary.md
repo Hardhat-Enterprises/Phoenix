@@ -1,4 +1,4 @@
-# AI014 Metric Execution Summary - Asad Ullah
+# AI014 Metric Execution Summary - Asad Ullah, Trey Martin
 
 ## Scope
 This work covers the AI014 checklist item: **Implement metric execution**.

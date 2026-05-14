@@ -5,8 +5,8 @@ interface UserAccountAttributes {
   user_id: string;
   username: string;
   password_hashed: string;
-  access_token: string;
-  refresh_token: string;
+  access_token?: string;
+  refresh_token?: string;
   created_at?: Date;
   updated_at?: Date;
   role: string;

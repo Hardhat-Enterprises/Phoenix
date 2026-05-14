@@ -1,14 +1,14 @@
+import { HttpStatusCode, UserAccount } from "@phoenix/common";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET =
-  process.env.AUTH_JWT_SECRET || process.env.JWT_SECRET;
+const JWT_SECRET = process.env.AUTH_JWT_SECRET || process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
   throw new Error("JWT secret is not defined");
 }
 
-export const authenticate = (
+export const authenticate = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -16,7 +16,8 @@ export const authenticate = (
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    return res.status(401).json({
+    return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
+      status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
       message: "No token provided",
     });
   }
@@ -24,28 +25,32 @@ export const authenticate = (
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-
+    const decoded: any = jwt.verify(token, JWT_SECRET);
+    const user = await UserAccount.findByPk(decoded.user_id);
+    if (!user || user.access_token !== token) {
+      return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
+        status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
+        message: "Logged out",
+      });
+    }
     (req as any).user = decoded;
 
     next();
   } catch (error) {
-    return res.status(401).json({
+    return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
+      status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
       message: "Invalid token",
     });
   }
 };
 
 export const authorize = (roles: string[]) => {
-  return (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
 
     if (!user || !roles.includes(user.role)) {
-      return res.status(403).json({
+      return res.status(HttpStatusCode.HTTP_STATUS_FORBIDDEN).json({
+        status: HttpStatusCode.HTTP_STATUS_FORBIDDEN,
         message: "Access denied",
       });
     }
@@ -54,35 +59,26 @@ export const authorize = (roles: string[]) => {
   };
 };
 
-export const authorizeSelfOrRoles = (
-  roles: string[],
-  paramName = "userId",
-) => {
-  return (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) => {
+export const authorizeSelfOrRoles = (roles: string[], paramName = "userId") => {
+  return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
 
     const requestedUserId = req.params[paramName];
 
     if (!user) {
-      return res.status(401).json({
+      return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
+        status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
         message: "Unauthorized",
       });
     }
 
-    if (
-      roles.includes(user.role) ||
-      user.user_id === requestedUserId
-    ) {
+    if (roles.includes(user.role) || user.user_id === requestedUserId) {
       return next();
     }
 
-    return res.status(403).json({
-      message:
-        "You are not authorized to access this user account",
+    return res.status(HttpStatusCode.HTTP_STATUS_FORBIDDEN).json({
+      status: HttpStatusCode.HTTP_STATUS_FORBIDDEN,
+      message: "You are not authorized to access this user account",
     });
   };
 };

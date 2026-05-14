@@ -9,6 +9,7 @@ import {
   logger,
   RiskAssessment,
   UserAccount,
+  UserRole,
 } from "@phoenix/common";
 
 import {
@@ -32,9 +33,7 @@ import {
   AuthEntity,
 } from "../entity/user.entity";
 
-export const getHealth = (
-  getHealthDto: GetHealthDto,
-): GetHealthEntity => {
+export const getHealth = (getHealthDto: GetHealthDto): GetHealthEntity => {
   return {
     status: HttpStatusCode.HTTP_STATUS_OK,
     message: "User service is running",
@@ -317,6 +316,13 @@ export const registerUser = async (
       };
     }
 
+    if (dto.role && !Object.values(UserRole).includes(dto.role as UserRole)) {
+      return {
+        status: HttpStatusCode.HTTP_STATUS_BAD_REQUEST,
+        message: "Invalid user role",
+      };
+    }
+
     const existingUser = await UserAccount.findOne({
       where: { username: dto.username },
     });
@@ -349,9 +355,7 @@ export const registerUser = async (
   }
 };
 
-export const loginUser = async (
-  dto: LoginUserDto,
-): Promise<AuthEntity> => {
+export const loginUser = async (dto: LoginUserDto): Promise<AuthEntity> => {
   try {
     if (!dto.username || !dto.password) {
       return {
@@ -474,9 +478,7 @@ export const refreshToken = async (
   }
 };
 
-export const logoutUser = async (
-  dto: LogoutUserDto,
-): Promise<AuthEntity> => {
+export const logoutUser = async (dto: LogoutUserDto): Promise<AuthEntity> => {
   try {
     if (!dto.user_id) {
       return {

@@ -7,6 +7,7 @@ import { threatHandler } from "./grpc/threat.handler";
 import { hazardHandler } from "./grpc/hazard.handler";
 import { riskHandler } from "./grpc/risk.handler";
 import { config, initDatabase, syncDatabase } from "@phoenix/common";
+import { trainingModelHandler } from "./grpc/training-model.handler";
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ const startGrpcServer = async (): Promise<void> => {
       ...threatHandler,
       ...hazardHandler,
       ...riskHandler,
+      ...trainingModelHandler,
     });
 
     server.bindAsync(

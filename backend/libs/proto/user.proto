@@ -20,6 +20,8 @@ service UserService {
     rpc GetHazard(GetHazardRequest) returns (GetHazardResponse);
     rpc GetRisks(GetRisksRequest) returns (GetRisksResponse);
     rpc GetRisk(GetRiskRequest) returns (GetRiskResponse);
+    rpc GetTrainingModels(GetTrainingModelsRequest) returns (GetTrainingModelsResponse);
+    rpc GetOneTrainingModel(GetOneTrainingModelRequest) returns (GetOneTrainingModelResponse);
 
 }
 
@@ -308,4 +310,30 @@ message Risk {
     string linked_event_type = 6;
     string event_status = 7;
     string event_type = 8;
+}
+
+// ─── Training Models ───────────────────────────────────────────────────────────────
+message GetTrainingModelsRequest {
+}
+
+message GetTrainingModelsResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated TrainingModel models = 3;
+}
+
+message TrainingModel {
+  string file_id = 1;
+  string original_name = 2;
+  string mime_type = 3;
+}
+
+message GetOneTrainingModelRequest {
+  string file_id = 1;
+}
+
+message GetOneTrainingModelResponse {
+  int32 status = 1;
+  string message = 2;
+  TrainingModel model = 3;
 }

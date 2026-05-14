@@ -7,3 +7,4 @@ export * from "./risk-assessment.model";
 export * from "./status-event.model";
 export * from "./user-account.model";
 export * from "./data-ingestion-log.model";
+export * from "./stored-file.model";

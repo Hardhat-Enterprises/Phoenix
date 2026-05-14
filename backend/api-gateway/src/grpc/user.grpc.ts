@@ -289,6 +289,30 @@ export interface GetRiskResponse {
   risk?: RiskItem;
 }
 
+export interface GetTrainingModelsRequest {}
+
+export interface GetTrainingModelsResponse {
+  status: number;
+  message: string;
+  models?: TrainingModelItem[];
+}
+
+export interface TrainingModelItem {
+  file_id: string;
+  original_name: string;
+  mime_type: string;
+}
+
+export interface GetOneTrainingModelRequest {
+  file_id: string;
+}
+
+export interface GetOneTrainingModelResponse {
+  status: number;
+  message: string;
+  model?: TrainingModelItem[];
+}
+
 export interface UserServiceClient {
   GetUserHealth(
     request: GetUserHealthRequest,
@@ -423,6 +447,21 @@ export interface UserServiceClient {
     callback: (
       error: grpc.ServiceError | null,
       response: GetRiskResponse,
+    ) => void,
+  ): void;
+
+  GetTrainingModels(
+    request: GetTrainingModelsRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetTrainingModelsResponse,
+    ) => void,
+  ): void;
+  GetOneTrainingModel(
+    request: GetOneTrainingModelRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetOneTrainingModelResponse,
     ) => void,
   ): void;
 }

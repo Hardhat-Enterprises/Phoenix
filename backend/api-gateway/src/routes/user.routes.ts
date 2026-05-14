@@ -8,6 +8,8 @@ import {
   getSeasons,
   getReferenceDays,
   getReferenceTimes,
+  getOneTrainingModel,
+  getTrainingModels,
 } from "../controllers/user.controller";
 import { getThreats, getThreat } from "../controllers/threat.controller";
 import { getHazards, getHazard } from "../controllers/hazard.controller";
@@ -32,5 +34,8 @@ router.get("/hazards/:hazardId", getHazard);
 
 router.get("/risks", getRisks);
 router.get("/risks/:riskId", getRisk);
+
+router.get("/training-models", getTrainingModels);
+router.get("/training-models/:file_id", getOneTrainingModel);
 
 export default router;

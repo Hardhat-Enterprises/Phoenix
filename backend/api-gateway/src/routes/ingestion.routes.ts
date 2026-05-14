@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { getHealth, ingestData } from "../controllers/ingestion.controller";
+import {
+  coreModelIntegration,
+  getHealth,
+  ingestData,
+} from "../controllers/ingestion.controller";
 
 const router = Router();
 
@@ -166,5 +170,7 @@ router.get("/health", getHealth);
  *         description: Internal server error
  */
 router.post("/stream", ingestData);
+
+router.post("/core", coreModelIntegration);
 
 export default router;

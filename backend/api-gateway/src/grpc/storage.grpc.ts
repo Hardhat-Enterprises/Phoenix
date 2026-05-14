@@ -33,12 +33,31 @@ export interface GetStorageHealthResponse {
   message: string;
 }
 
+export interface UploadFileRequest {
+  file_path: string;
+  original_name: string;
+  mime_type: string;
+  size: number;
+}
+
+export interface UploadFileResponse {
+  status: number;
+  message: string;
+}
+
 export interface StorageServiceClient {
   GetStorageHealth(
     request: GetStorageHealthRequest,
     callback: (
       error: grpc.ServiceError | null,
       response: GetStorageHealthResponse,
+    ) => void,
+  ): void;
+  UploadFile(
+    request: UploadFileRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: UploadFileResponse,
     ) => void,
   ): void;
 }

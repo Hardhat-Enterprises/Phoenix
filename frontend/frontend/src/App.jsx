@@ -10,14 +10,35 @@ import SettingsPage from "./SettingsPage";
 import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
 import ThreatDetails from "./ThreatDetails";
+import { logoutUser } from "./services/authApi";
 
 function App() {
-  const [page, setPage] = useState("login");
+  const [page, setPage] = useState("dashboard");
+  const [authSession, setAuthSession] = useState(null);
   const [selectedThreat, setSelectedThreat] = useState(null);
+  const mainPages = [
+    "about",
+    "dashboard",
+    "reports",
+    "alerts",
+    "threats",
+    "settings",
+  ];
+  const isLoggedIn = Boolean(authSession?.accessToken);
+
+  const handleLogin = (session) => {
+    setAuthSession(session);
+    setPage("dashboard");
+  };
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setAuthSession(null);
+    setPage("dashboard");
+  };
 
   return (
     <div className="login-page">
-      {/* Header */}
       <div className="temp-header">
         <div className="temp-header-left">
           <div className="temp-logo">
@@ -30,44 +51,61 @@ function App() {
           </div>
         </div>
 
-        {/* Show search + bell on main pages */}
-        {(page === "about" ||
-          page === "dashboard" ||
-          page === "reports" ||
-          page === "alerts" ||
-          page === "threats" ||
-          page === "settings") && (
-          <div className="temp-header-right">
-            <input
-              type="text"
-              placeholder="Search in site"
-              className="temp-search"
-            />
+        <div className="temp-header-right">
+          {mainPages.includes(page) && (
+            <>
+              <input
+                type="text"
+                placeholder="Search in site"
+                className="temp-search"
+              />
 
-            <button className="temp-bell" aria-label="Notifications">
-              🔔
+              <button className="temp-bell" aria-label="Notifications">
+                !
+              </button>
+            </>
+          )}
+
+          {isLoggedIn ? (
+            <div className="header-auth-summary">
+              <span className="header-role">{authSession.user?.role || "user"}</span>
+              <button
+                type="button"
+                className="header-auth-button"
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="header-auth-button"
+              onClick={() => setPage("login")}
+            >
+              Login
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Main Content */}
       <div className="page-content">
-        {/* Login */}
-        {page === "login" && <LoginForm setPage={setPage} />}
+        {page === "login" && (
+          <LoginForm setPage={setPage} onLogin={handleLogin} />
+        )}
 
-        {/* Forgot Password */}
         {page === "forgotPassword" && <ForgotPassword setPage={setPage} />}
 
-        {/* Dashboard */}
         {page === "dashboard" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
-            <Dashboard setPage={setPage} />
+            <Dashboard
+              setPage={setPage}
+              setSelectedThreat={setSelectedThreat}
+            />
           </div>
         )}
 
-        {/* Alerts */}
         {page === "alerts" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
@@ -78,7 +116,6 @@ function App() {
           </div>
         )}
 
-        {/* About */}
         {page === "about" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
@@ -86,7 +123,6 @@ function App() {
           </div>
         )}
 
-        {/* Reports */}
         {page === "reports" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
@@ -94,7 +130,6 @@ function App() {
           </div>
         )}
 
-        {/* Threat Details */}
         {page === "threats" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
@@ -102,7 +137,6 @@ function App() {
           </div>
         )}
 
-        {/* Settings */}
         {page === "settings" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
@@ -111,7 +145,6 @@ function App() {
         )}
       </div>
 
-      {/* Footer always at bottom */}
       <Footer />
     </div>
   );

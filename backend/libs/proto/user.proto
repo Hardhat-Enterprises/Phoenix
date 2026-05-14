@@ -11,11 +11,19 @@ service UserService {
     rpc GetSeasons(GetSeasonsRequest) returns (GetSeasonsResponse);
     rpc GetReferenceDays(GetReferenceDaysRequest) returns (GetReferenceDaysResponse);
     rpc GetReferenceTimes(GetReferenceTimesRequest) returns (GetReferenceTimesResponse);
+
+    rpc RegisterUser(RegisterUserRequest) returns (AuthResponse);
+    rpc LoginUser(LoginUserRequest) returns (AuthResponse);
+    rpc RefreshToken(RefreshTokenRequest) returns (AuthResponse);
+    rpc LogoutUser(LogoutUserRequest) returns (AuthResponse);
+
     rpc GetUserDashboard(GetUserDashboardRequest) returns (GetUserDashboardResponse);
     rpc GetUserDashboardCharts(GetUserDashboardChartsRequest) returns (GetUserDashboardChartsResponse);
     rpc GetUserDashboardActivity(GetUserDashboardActivityRequest) returns (GetUserDashboardActivityResponse);
+
     rpc GetThreats(GetThreatsRequest) returns (GetThreatsResponse);
     rpc GetThreat(GetThreatRequest) returns (GetThreatResponse);
+
     rpc GetHazards(GetHazardsRequest) returns (GetHazardsResponse);
     rpc GetHazard(GetHazardRequest) returns (GetHazardResponse);
     rpc GetRisks(GetRisksRequest) returns (GetRisksResponse);
@@ -146,6 +154,38 @@ message ReferenceTime {
     bool is_nighttime = 2;
     bool is_business_hours = 3;
 }
+// ─── Authentication ────────────────────────────────────────────────────────
+
+message RegisterUserRequest {
+    string username = 1;
+    string password = 2;
+    string role = 3;
+}
+
+message LoginUserRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message RefreshTokenRequest {
+    string refresh_token = 1;
+}
+
+message LogoutUserRequest {
+    string user_id = 1;
+}
+
+message AuthResponse {
+    int32 status = 1;
+    string message = 2;
+    string user_id = 3;
+    string username = 4;
+    string role = 5;
+    string access_token = 6;
+    string refresh_token = 7;
+}
+
+// ─── Dashboard ─────────────────────────────────────────────────────────────
 
 message GetUserDashboardRequest {
 }

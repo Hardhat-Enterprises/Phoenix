@@ -4,6 +4,10 @@ import {
   GetUserDashboardDto,
   GetUserDashboardChartsDto,
   GetUserDashboardActivityDto,
+  RegisterUserDto,
+  LoginUserDto,
+  RefreshTokenDto,
+  LogoutUserDto,
 } from "../dto/user.dto";
 
 import { ServerUnaryCall, sendUnaryData } from "@grpc/grpc-js";
@@ -20,6 +24,10 @@ import {
   getUserDashboard,
   getUserDashboardCharts,
   getUserDashboardActivity,
+  registerUser,
+  loginUser,
+  refreshToken,
+  logoutUser,
 } from "../services/user.service";
 
 import {
@@ -28,6 +36,7 @@ import {
   GetUserDashboardEntity,
   GetUserDashboardChartsEntity,
   GetUserDashboardActivityEntity,
+  AuthEntity,
 } from "../entity/user.entity";
 
 import { logger } from "@phoenix/common";
@@ -39,7 +48,9 @@ export const userHandler = {
   ) => {
     try {
       const response = getHealth(call.request);
-      logger.info(`User service GetHealth response:${JSON.stringify(response)}`);
+      logger.info(
+        `User service GetHealth response:${JSON.stringify(response)}`,
+      );
       callback(null, response);
     } catch (error) {
       callback({
@@ -79,6 +90,21 @@ export const userHandler = {
       });
     }
   },
+  RegisterUser: async (
+    call: ServerUnaryCall<RegisterUserDto, AuthEntity>,
+    callback: sendUnaryData<AuthEntity>,
+  ) => {
+    try {
+      const response = await registerUser(call.request);
+      logger.info(`RegisterUser response:${JSON.stringify(response)}`);
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
 
   GetEventStatuses: async (
     call: ServerUnaryCall<any, any>,
@@ -94,6 +120,21 @@ export const userHandler = {
       });
     }
   },
+  LoginUser: async (
+    call: ServerUnaryCall<LoginUserDto, AuthEntity>,
+    callback: sendUnaryData<AuthEntity>,
+  ) => {
+    try {
+      const response = await loginUser(call.request);
+      logger.info(`LoginUser response:${JSON.stringify(response)}`);
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
 
   GetLinkedEventTypes: async (
     call: ServerUnaryCall<any, any>,
@@ -101,6 +142,21 @@ export const userHandler = {
   ) => {
     try {
       const response = await getLinkedEventTypes();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+  RefreshToken: async (
+    call: ServerUnaryCall<RefreshTokenDto, AuthEntity>,
+    callback: sendUnaryData<AuthEntity>,
+  ) => {
+    try {
+      const response = await refreshToken(call.request);
+      logger.info(`RefreshToken response:${JSON.stringify(response)}`);
       callback(null, response);
     } catch (error) {
       callback({
@@ -146,6 +202,21 @@ export const userHandler = {
   ) => {
     try {
       const response = await getReferenceTimes();
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+  LogoutUser: async (
+    call: ServerUnaryCall<LogoutUserDto, AuthEntity>,
+    callback: sendUnaryData<AuthEntity>,
+  ) => {
+    try {
+      const response = await logoutUser(call.request);
+      logger.info(`LogoutUser response:${JSON.stringify(response)}`);
       callback(null, response);
     } catch (error) {
       callback({

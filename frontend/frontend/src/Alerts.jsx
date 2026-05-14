@@ -3,23 +3,42 @@ import AlertSidebar from "./components/AlertSidebar";
 
 const Alerts = () => {
   return (
-    <div style={{ display: "flex", gap: "20px" }}>
-
-      {/* LEFT MAIN CONTENT */}
-      <div style={{ flex: 1 }}>
-        <h2>Alert Notifications</h2>
-
-        {/* simulate content height */}
-        <div style={{ height: "800px" }}>
-          <p>Main alerts content here...</p>
-        </div>
+    <div
+      style={{
+        display: "flex",
+        width: "100%",
+        padding: "20px",
+        gap: "24px",
+        alignItems: "flex-start",
+      }}
+    >
+      {/* LEFT CONTENT */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: "100vh",
+        }}
+      >
+        <h2
+          style={{
+            color: "#64748b",
+            fontWeight: "500",
+          }}
+        >
+          Main alerts content here...
+        </h2>
       </div>
 
       {/* RIGHT SIDEBAR */}
-      <div style={{ width: "360px", marginTop: "120px" }}>
+      <div
+        style={{
+          width: "360px",
+          marginTop: "300px",
+         
+        }}
+      >
         <AlertSidebar />
       </div>
-
     </div>
   );
 };

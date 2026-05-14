@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package storage;
+
+service StorageService {
+  rpc GetStorageHealth (GetHealthRequest) returns (GetHealthResponse);
+}
+
+message GetHealthRequest {
+}
+
+message GetHealthResponse {
+  int32 status = 1;
+  string message = 2;
+}

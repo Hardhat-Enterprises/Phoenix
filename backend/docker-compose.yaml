@@ -53,6 +53,8 @@ services:
       - SERVICE=api-gateway
       - USER_SERVICE_URL=user-service:50051
       - INGESTION_SERVICE_URL=data-ingestion-service:50053
+      - STORAGE_SERVICE_URL=storage-service:50054
+      - STORAGE_PROTO_PATH=dist/libs/proto/storage.proto
       - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
@@ -119,4 +121,30 @@ services:
       postgres:
         condition: service_healthy
     command: sh -c "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
-    
+  storage-service:
+    build:
+      context: ./
+      dockerfile: storage-service/Dockerfile
+    container_name: storage-service
+    ports:
+      - "50054:50054"
+    environment:
+      - SERVICE=storage-service
+      - STORAGE_PROTO_PATH=dist/libs/proto/storage.proto
+      - STORAGE_SERVICE_PORT=50054
+      - POSTGRES_HOST=phoenix-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=phoenix_user
+      - POSTGRES_PASSWORD=phoenix_pass
+      - POSTGRES_DB=phoenix_db
+      - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: sh -c "node -r tsconfig-paths/register dist/storage-service/src/app.js"

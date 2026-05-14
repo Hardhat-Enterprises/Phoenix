@@ -8,6 +8,7 @@ import { config, connectRabbitMQ, logger } from "@phoenix/common";
 import userRoutes from "./routes/user.routes";
 import ingestionRoutes from "./routes/ingestion.routes";
 import notificationRoutes from "./routes/notification.routes";
+import storageRoutes from "./routes/storage.routes";
 
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "@phoenix/common";
@@ -33,6 +34,7 @@ app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/users", userRoutes);
 app.use("/api/ingestion", ingestionRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/storage", storageRoutes);
 
 const startServer = async () => {
   try {
@@ -41,9 +43,7 @@ const startServer = async () => {
 
     // Start the Express server
     app.listen(config.PORT, () => {
-      logger.info(
-        `${config.SERVICE_NAME} running on port ${config.PORT}`,
-      );
+      logger.info(`${config.SERVICE_NAME} running on port ${config.PORT}`);
     });
   } catch (error) {
     logger.error(`Error starting server: ${error}`);

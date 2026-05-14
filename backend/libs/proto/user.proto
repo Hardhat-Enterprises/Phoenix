@@ -46,6 +46,107 @@ message User {
     string role = 3;
 }
 
+message GetLocationsRequest {
+
+}
+
+message GetLocationsResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated Location locations = 3;
+}
+
+message Location {
+    string geo_location_id = 1;
+    string country = 2;
+    string state_region = 3;
+    string local_government_area = 4;
+    string suburb = 5;
+    float latitude = 6;
+    float longitude = 7;
+    string geo_precision = 8;
+}
+
+message GetEventStatusesRequest{
+
+}
+
+message GetEventStatusesResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated EventStatus event_statuses = 3;
+}
+
+message EventStatus {
+    string event_status_id = 1;
+    string event_status_description = 2;
+}
+
+message GetLinkedEventTypesRequest {
+
+}
+
+message GetLinkedEventTypesResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated LinkedEventType linked_event_types = 3;
+}
+
+message LinkedEventType {
+    string linked_event_type_id = 1;
+    string linked_event_type_description = 2;
+}
+
+message GetSeasonsRequest {
+
+}
+
+message GetSeasonsResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated Season seasons = 3;
+}
+
+message Season {
+    string season_id = 1;
+    string season_description = 2;
+}
+
+message GetReferenceDaysRequest {
+
+}
+
+message GetReferenceDaysResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated ReferenceDay reference_days = 3;
+}
+
+message ReferenceDay {
+    string ref_date = 1;
+    string locale_id = 2;
+    string dow = 3;
+    bool is_weekend = 4;
+    string season = 5;
+    bool is_holiday = 6;
+}
+
+message GetReferenceTimesRequest {
+
+}
+
+message GetReferenceTimesResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated ReferenceTime reference_times = 3;
+}
+
+message ReferenceTime {
+    string ref_time = 1;
+    bool is_nighttime = 2;
+    bool is_business_hours = 3;
+}
+
 message GetUserDashboardRequest {
 }
 

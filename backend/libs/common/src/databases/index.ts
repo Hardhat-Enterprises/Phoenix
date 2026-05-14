@@ -119,10 +119,12 @@ ReferenceDay.belongsTo(Season, {
 
 export async function initDatabase(): Promise<void> {
   await connectDatabase();
+  console.log("Database connected successfully.");
+}
+export const syncDatabase = async (): Promise<void> => {
   await sequelize.sync({ alter: true });
   console.log("Database synced successfully.");
-}
-
+};
 export {
   sequelize,
   HazardEvent,

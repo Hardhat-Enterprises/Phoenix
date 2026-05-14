@@ -42,6 +42,26 @@ export const getUser = (req: Request, res: Response) => {
   });
 };
 
+/**
+ * BE11.7 — GET /api/users/dashboard/overview
+ *
+ * Returns a high-level overview of the system dashboard.
+ * Response is cached in Redis for 2 minutes (see BE12.3).
+ *
+ * @route   GET /api/users/dashboard/overview
+ * @access  Authenticated users
+ *
+ * @returns {200} JSON payload with:
+ *   - total_hazards          {number} — Total hazard events in the system
+ *   - active_hazards         {number} — Hazard events currently marked active
+ *   - total_threats          {number} — Total cyber threats in the system
+ *   - active_threats         {number} — Cyber threats currently marked active
+ *   - total_risk_assessments {number} — Total risk assessments recorded
+ *   - critical_risks         {number} — Assessments with confidence >= 0.8
+ *   - last_updated           {string} — ISO timestamp of when data was fetched
+ *
+ * @returns {500} Internal Server Error if the user service is unreachable
+ */
 export const getUserDashboard = (req: Request, res: Response) => {
   userGrpcClient.GetUserDashboard({}, (error, response) => {
     if (error) {
@@ -83,6 +103,23 @@ export const getUserDashboard = (req: Request, res: Response) => {
   });
 };
 
+/**
+ * BE11.7 — GET /api/users/dashboard/charts
+ *
+ * Returns aggregated count data for dashboard charts.
+ * Response is cached in Redis for 2 minutes (see BE12.3).
+ *
+ * @route   GET /api/users/dashboard/charts
+ * @access  Authenticated users
+ *
+ * @returns {200} JSON payload with:
+ *   - hazards_by_severity   {object} — Hazard counts keyed by severity level (low/medium/high/critical)
+ *   - threats_by_risk_level {object} — Threat counts keyed by risk level (low/medium/high/critical)
+ *   - risks_by_level        {object} — Risk assessment counts keyed by confidence band
+ *   - last_updated          {string} — ISO timestamp of when data was fetched
+ *
+ * @returns {500} Internal Server Error if the user service is unreachable
+ */
 export const getUserDashboardCharts = (
   req: Request,
   res: Response,
@@ -130,6 +167,22 @@ export const getUserDashboardCharts = (
   });
 };
 
+/**
+ * BE11.7 — GET /api/users/dashboard/activity
+ *
+ * Returns the 5 most recent hazard events and cyber threats for the activity feed.
+ * Response is cached in Redis for 2 minutes (see BE12.3).
+ *
+ * @route   GET /api/users/dashboard/activity
+ * @access  Authenticated users
+ *
+ * @returns {200} JSON payload with:
+ *   - recent_hazards {Array} — 5 most recent hazard events ordered by created_at DESC
+ *   - recent_threats {Array} — 5 most recent cyber threats ordered by created_at DESC
+ *   - last_updated   {string} — ISO timestamp of when data was fetched
+ *
+ * @returns {500} Internal Server Error if the user service is unreachable
+ */
 export const getUserDashboardActivity = (
   req: Request,
   res: Response,

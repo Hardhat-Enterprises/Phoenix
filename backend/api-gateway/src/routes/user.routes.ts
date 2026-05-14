@@ -40,10 +40,48 @@ router.get("/health", getHealth);
 router.get("/user", getUser);
 
 /**
- * Dashboard Routes
+ * @swagger
+ * /api/users/dashboard/overview:
+ *   get:
+ *     summary: Get dashboard overview
+ *     tags:
+ *       - Dashboard
+ *     responses:
+ *       200:
+ *         description: Dashboard overview retrieved successfully
+ *       500:
+ *         description: Internal server error
  */
 router.get("/dashboard/overview", getUserDashboard);
+
+/**
+ * @swagger
+ * /api/users/dashboard/charts:
+ *   get:
+ *     summary: Get dashboard chart data
+ *     tags:
+ *       - Dashboard
+ *     responses:
+ *       200:
+ *         description: Dashboard chart data retrieved successfully
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/dashboard/charts", getUserDashboardCharts);
+
+/**
+ * @swagger
+ * /api/users/dashboard/activity:
+ *   get:
+ *     summary: Get dashboard activity feed
+ *     tags:
+ *       - Dashboard
+ *     responses:
+ *       200:
+ *         description: Dashboard activity retrieved successfully
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/dashboard/activity", getUserDashboardActivity);
 
 /**

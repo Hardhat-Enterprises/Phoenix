@@ -122,3 +122,4 @@ export async function initDatabase(): Promise<void> {
 }
 
 export * from "./models";
+export { default as redis } from "./redis";

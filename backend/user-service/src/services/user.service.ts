@@ -5,6 +5,7 @@ import {
   HazardEvent,
   HttpStatusCode,
   logger,
+  redis,
   RiskAssessment,
   UserAccount,
 } from "@phoenix/common";
@@ -61,6 +62,16 @@ export const getUserDashboard = async (
   getUserDashboardDto: GetUserDashboardDto,
 ): Promise<GetUserDashboardEntity> => {
   try {
+    const cached = await redis.get("dashboard:overview");
+    if (cached) {
+      logger.info("Dashboard overview served from Redis cache");
+      return JSON.parse(cached);
+    }
+  } catch (err) {
+    logger.error(`Redis GET error (overview): ${err}`);
+  }
+
+  try {
     logger.info("Fetching dashboard overview data from database...");
 
     const [
@@ -72,33 +83,16 @@ export const getUserDashboard = async (
       criticalRisks,
     ] = await Promise.all([
       HazardEvent.count(),
-
-      HazardEvent.count({
-        where: {
-          event_status: "active",
-        },
-      }),
-
+      HazardEvent.count({ where: { event_status: "active" } }),
       CyberThreat.count(),
-
-      CyberThreat.count({
-        where: {
-          status: "active",
-        },
-      }),
-
+      CyberThreat.count({ where: { status: "active" } }),
       RiskAssessment.count(),
-
       RiskAssessment.count({
-        where: {
-          integration_confidence: {
-            [Op.gte]: 0.8,
-          },
-        },
+        where: { integration_confidence: { [Op.gte]: 0.8 } },
       }),
     ]);
 
-    return GetUserDashboardEntity.toEntity({
+    const response = GetUserDashboardEntity.toEntity({
       status: HttpStatusCode.HTTP_STATUS_OK,
       message: "Dashboard overview retrieved successfully",
       total_hazards: totalHazards,
@@ -109,6 +103,15 @@ export const getUserDashboard = async (
       critical_risks: criticalRisks,
       last_updated: new Date().toISOString(),
     });
+
+    try {
+      await redis.set("dashboard:overview", JSON.stringify(response), "EX", 120);
+      logger.info("Dashboard overview written to Redis cache (TTL: 2 min)");
+    } catch (err) {
+      logger.error(`Redis SET error (overview): ${err}`);
+    }
+
+    return response;
   } catch (error) {
     logger.error(`Error fetching dashboard overview data: ${error}`);
     throw new Error("Error fetching dashboard overview data");
@@ -119,134 +122,54 @@ export const getUserDashboardCharts = async (
   dto: GetUserDashboardChartsDto,
 ): Promise<GetUserDashboardChartsEntity> => {
   try {
+    const cached = await redis.get("dashboard:charts");
+    if (cached) {
+      logger.info("Dashboard charts served from Redis cache");
+      return JSON.parse(cached);
+    }
+  } catch (err) {
+    logger.error(`Redis GET error (charts): ${err}`);
+  }
+
+  try {
     logger.info("Fetching dashboard chart data from database...");
 
     const [
-      lowHazards,
-      mediumHazards,
-      highHazards,
-      criticalHazards,
-
-      lowThreats,
-      mediumThreats,
-      highThreats,
-      criticalThreats,
-
-      lowRisks,
-      mediumRisks,
-      highRisks,
-      criticalRisks,
+      lowHazards, mediumHazards, highHazards, criticalHazards,
+      lowThreats, mediumThreats, highThreats, criticalThreats,
+      lowRisks, mediumRisks, highRisks, criticalRisks,
     ] = await Promise.all([
-      HazardEvent.count({
-        where: {
-          severity_level: "low",
-        },
-      }),
-
-      HazardEvent.count({
-        where: {
-          severity_level: "medium",
-        },
-      }),
-
-      HazardEvent.count({
-        where: {
-          severity_level: "high",
-        },
-      }),
-
-      HazardEvent.count({
-        where: {
-          severity_level: "critical",
-        },
-      }),
-
-      CyberThreat.count({
-        where: {
-          risk_level: "low",
-        },
-      }),
-
-      CyberThreat.count({
-        where: {
-          risk_level: "medium",
-        },
-      }),
-
-      CyberThreat.count({
-        where: {
-          risk_level: "high",
-        },
-      }),
-
-      CyberThreat.count({
-        where: {
-          risk_level: "critical",
-        },
-      }),
-
-      RiskAssessment.count({
-        where: {
-          integration_confidence: {
-            [Op.lt]: 0.25,
-          },
-        },
-      }),
-
-      RiskAssessment.count({
-        where: {
-          integration_confidence: {
-            [Op.gte]: 0.25,
-            [Op.lt]: 0.5,
-          },
-        },
-      }),
-
-      RiskAssessment.count({
-        where: {
-          integration_confidence: {
-            [Op.gte]: 0.5,
-            [Op.lt]: 0.8,
-          },
-        },
-      }),
-
-      RiskAssessment.count({
-        where: {
-          integration_confidence: {
-            [Op.gte]: 0.8,
-          },
-        },
-      }),
+      HazardEvent.count({ where: { severity_level: "low" } }),
+      HazardEvent.count({ where: { severity_level: "medium" } }),
+      HazardEvent.count({ where: { severity_level: "high" } }),
+      HazardEvent.count({ where: { severity_level: "critical" } }),
+      CyberThreat.count({ where: { risk_level: "low" } }),
+      CyberThreat.count({ where: { risk_level: "medium" } }),
+      CyberThreat.count({ where: { risk_level: "high" } }),
+      CyberThreat.count({ where: { risk_level: "critical" } }),
+      RiskAssessment.count({ where: { integration_confidence: { [Op.lt]: 0.25 } } }),
+      RiskAssessment.count({ where: { integration_confidence: { [Op.gte]: 0.25, [Op.lt]: 0.5 } } }),
+      RiskAssessment.count({ where: { integration_confidence: { [Op.gte]: 0.5, [Op.lt]: 0.8 } } }),
+      RiskAssessment.count({ where: { integration_confidence: { [Op.gte]: 0.8 } } }),
     ]);
 
-    return {
+    const response: GetUserDashboardChartsEntity = {
       status: HttpStatusCode.HTTP_STATUS_OK,
       message: "Dashboard chart data retrieved successfully",
-
-      hazards_by_severity: JSON.stringify({
-        low: lowHazards,
-        medium: mediumHazards,
-        high: highHazards,
-        critical: criticalHazards,
-      }),
-
-      threats_by_risk_level: JSON.stringify({
-        low: lowThreats,
-        medium: mediumThreats,
-        high: highThreats,
-        critical: criticalThreats,
-      }),
-
-      risks_by_level: JSON.stringify({
-        low: lowRisks,
-        medium: mediumRisks,
-        high: highRisks,
-        critical: criticalRisks,
-      }),
-
+      hazards_by_severity: JSON.stringify({ low: lowHazards, medium: mediumHazards, high: highHazards, critical: criticalHazards }),
+      threats_by_risk_level: JSON.stringify({ low: lowThreats, medium: mediumThreats, high: highThreats, critical: criticalThreats }),
+      risks_by_level: JSON.stringify({ low: lowRisks, medium: mediumRisks, high: highRisks, critical: criticalRisks }),
       last_updated: new Date().toISOString(),
     };
+
+    try {
+      await redis.set("dashboard:charts", JSON.stringify(response), "EX", 120);
+      logger.info("Dashboard charts written to Redis cache (TTL: 2 min)");
+    } catch (err) {
+      logger.error(`Redis SET error (charts): ${err}`);
+    }
+
+    return response;
   } catch (error) {
     logger.error(`Error fetching dashboard chart data: ${error}`);
     throw new Error("Error fetching dashboard chart data");
@@ -257,30 +180,39 @@ export const getUserDashboardActivity = async (
   dto: GetUserDashboardActivityDto,
 ): Promise<GetUserDashboardActivityEntity> => {
   try {
+    const cached = await redis.get("dashboard:activity");
+    if (cached) {
+      logger.info("Dashboard activity served from Redis cache");
+      return JSON.parse(cached);
+    }
+  } catch (err) {
+    logger.error(`Redis GET error (activity): ${err}`);
+  }
+
+  try {
     logger.info("Fetching dashboard activity data from database...");
 
     const [recentHazards, recentThreats] = await Promise.all([
-      HazardEvent.findAll({
-        limit: 5,
-        order: [["created_at", "DESC"]],
-      }),
-
-      CyberThreat.findAll({
-        limit: 5,
-        order: [["created_at", "DESC"]],
-      }),
+      HazardEvent.findAll({ limit: 5, order: [["created_at", "DESC"]] }),
+      CyberThreat.findAll({ limit: 5, order: [["created_at", "DESC"]] }),
     ]);
 
-    return {
+    const response: GetUserDashboardActivityEntity = {
       status: HttpStatusCode.HTTP_STATUS_OK,
       message: "Dashboard activity data retrieved successfully",
-
       recent_hazards: JSON.stringify(recentHazards),
-
       recent_threats: JSON.stringify(recentThreats),
-
       last_updated: new Date().toISOString(),
     };
+
+    try {
+      await redis.set("dashboard:activity", JSON.stringify(response), "EX", 120);
+      logger.info("Dashboard activity written to Redis cache (TTL: 2 min)");
+    } catch (err) {
+      logger.error(`Redis SET error (activity): ${err}`);
+    }
+
+    return response;
   } catch (error) {
     logger.error(`Error fetching dashboard activity data: ${error}`);
     throw new Error("Error fetching dashboard activity data");

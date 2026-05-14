@@ -52,6 +52,8 @@ DataSource.init(
   {
     sequelize,
     tableName: "data_source",
-    timestamps: false,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   },
 );

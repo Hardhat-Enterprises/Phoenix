@@ -6,7 +6,7 @@ import { userHandler } from "./grpc/user.handler";
 import { threatHandler } from "./grpc/threat.handler";
 import { hazardHandler } from "./grpc/hazard.handler";
 import { riskHandler } from "./grpc/risk.handler";
-import { config, initDatabase, syncDatabase } from "@phoenix/common";
+import { config, initDatabase } from "@phoenix/common";
 
 dotenv.config();
 
@@ -28,7 +28,6 @@ const userPackage = grpcObject.user;
 const startGrpcServer = async (): Promise<void> => {
   try {
     await initDatabase();
-    await syncDatabase();
 
     const server = new grpc.Server();
 

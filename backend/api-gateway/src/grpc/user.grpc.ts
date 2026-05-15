@@ -315,7 +315,7 @@ export interface GetIntegrationRequest {
 export interface GetIntegrationResponse {
   status: number;
   message: string;
-  risk?: IntegrationItem;
+  integration?: IntegrationItem;
 }
 
 export interface GetTrainingModelsRequest {}

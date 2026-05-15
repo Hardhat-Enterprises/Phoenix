@@ -7,7 +7,7 @@ import {
   HazardEvent,
   HttpStatusCode,
   logger,
-  RiskAssessment,
+  IntegrationLog,
   UserAccount,
   GeoLocation,
   EventStatus,
@@ -178,35 +178,26 @@ export const getUserDashboard = async (
 
     const [
       totalHazards,
-      activeHazards,
+      criticalHazards,
       totalThreats,
       activeThreats,
-      totalRiskAssessments,
-      criticalRisks,
+      totalIngestionLog,
     ] = await Promise.all([
       HazardEvent.count(),
-      HazardEvent.count({ where: { event_status: "active" } }),
+      HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.8 } } }),
       CyberThreat.count(),
       CyberThreat.count({ where: { status: "active" } }),
-      RiskAssessment.count(),
-      RiskAssessment.count({
-        where: {
-          integration_confidence: {
-            [Op.gte]: 0.8,
-          },
-        },
-      }),
+      IntegrationLog.count(),
     ]);
 
     return GetUserDashboardEntity.toEntity({
       status: HttpStatusCode.HTTP_STATUS_OK,
       message: "Dashboard overview retrieved successfully",
       total_hazards: totalHazards,
-      active_hazards: activeHazards,
+      critical_hazards: criticalHazards,
       total_threats: totalThreats,
       active_threats: activeThreats,
-      total_risk_assessments: totalRiskAssessments,
-      critical_risks: criticalRisks,
+      total_ingestions: totalIngestionLog,
       last_updated: new Date().toISOString(),
     });
   } catch (error) {
@@ -230,49 +221,15 @@ export const getUserDashboardCharts = async (
       mediumThreats,
       highThreats,
       criticalThreats,
-      lowRisks,
-      mediumRisks,
-      highRisks,
-      criticalRisks,
     ] = await Promise.all([
-      HazardEvent.count({ where: { severity_level: "low" } }),
-      HazardEvent.count({ where: { severity_level: "medium" } }),
-      HazardEvent.count({ where: { severity_level: "high" } }),
-      HazardEvent.count({ where: { severity_level: "critical" } }),
+      HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.2 } } }),
+      HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.4 } } }),
+      HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.6 } } }),
+      HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.8 } } }),
       CyberThreat.count({ where: { risk_level: "low" } }),
       CyberThreat.count({ where: { risk_level: "medium" } }),
       CyberThreat.count({ where: { risk_level: "high" } }),
       CyberThreat.count({ where: { risk_level: "critical" } }),
-      RiskAssessment.count({
-        where: {
-          integration_confidence: {
-            [Op.lt]: 0.25,
-          },
-        },
-      }),
-      RiskAssessment.count({
-        where: {
-          integration_confidence: {
-            [Op.gte]: 0.25,
-            [Op.lt]: 0.5,
-          },
-        },
-      }),
-      RiskAssessment.count({
-        where: {
-          integration_confidence: {
-            [Op.gte]: 0.5,
-            [Op.lt]: 0.8,
-          },
-        },
-      }),
-      RiskAssessment.count({
-        where: {
-          integration_confidence: {
-            [Op.gte]: 0.8,
-          },
-        },
-      }),
     ]);
 
     return {
@@ -289,12 +246,6 @@ export const getUserDashboardCharts = async (
         medium: mediumThreats,
         high: highThreats,
         critical: criticalThreats,
-      }),
-      risks_by_level: JSON.stringify({
-        low: lowRisks,
-        medium: mediumRisks,
-        high: highRisks,
-        critical: criticalRisks,
       }),
       last_updated: new Date().toISOString(),
     };

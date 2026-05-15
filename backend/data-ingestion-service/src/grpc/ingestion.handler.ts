@@ -1,7 +1,7 @@
 import { ServerUnaryCall, sendUnaryData } from "@grpc/grpc-js";
 import { logger } from "@phoenix/common";
 import { GetHealthDto, IngestDataDto } from "../dto/ingestion.dto";
-import { GetHealthEntity, IngestDataEntity } from "../entity/ingestion.entity";
+import { GetHealthEntity } from "../entity/ingestion.entity";
 import { getHealth } from "../services/ingestion.service";
 
 export const ingestionHandler = {

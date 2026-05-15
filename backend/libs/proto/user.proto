@@ -26,8 +26,8 @@ service UserService {
 
     rpc GetHazards(GetHazardsRequest) returns (GetHazardsResponse);
     rpc GetHazard(GetHazardRequest) returns (GetHazardResponse);
-    rpc GetRisks(GetRisksRequest) returns (GetRisksResponse);
-    rpc GetRisk(GetRiskRequest) returns (GetRiskResponse);
+    rpc GetIntegrations(GetIntegrationsRequest) returns (GetIntegrationsResponse);
+    rpc GetIntegration(GetIntegrationRequest) returns (GetIntegrationResponse);
 
 }
 
@@ -197,9 +197,8 @@ message GetUserDashboardResponse {
     int32 active_hazards = 4;
     int32 total_threats = 5;
     int32 active_threats = 6;
-    int32 total_risk_assessments = 7;
-    int32 critical_risks = 8;
-    string last_updated = 9;
+    int32 total_ingestions = 7;
+    string last_updated = 8;
 }
 
 message GetUserDashboardChartsRequest {
@@ -210,8 +209,7 @@ message GetUserDashboardChartsResponse {
     string message = 2;
     string hazards_by_severity = 3;
     string threats_by_risk_level = 4;
-    string risks_by_level = 5;
-    string last_updated = 6;
+    string last_updated = 5;
 }
 
 message GetUserDashboardActivityRequest {
@@ -272,8 +270,8 @@ message Threat {
 
 message GetHazardsRequest {
     string hazard_type = 1;
-    string severity_level = 2;
-    string event_status = 3;
+    string hazard_severity = 2;
+    string hazard_status = 3;
     int32 page = 4;
     int32 limit = 5;
 }
@@ -299,19 +297,23 @@ message GetHazardResponse {
 
 message Hazard {
     string hazard_event_id = 1;
-    string hazard_type = 2;
-    string severity_level = 3;
-    string event_status = 4;
-    string start_time = 5;
-    string end_time = 6;
-    string description = 7;
-    string created_at = 8;
-    string updated_at = 9;
+    string url = 2;
+    string text = 3;
+    string timestamp = 4;
+    string hazard_type = 5;
+    int32  hazard_severity = 6;
+    string hazard_timestamp = 7;
+    string hazard_location = 8;
+    string hazard_status = 9;
+    string alert_level = 10;
+    string source = 11;
+    string created_at = 12;
+    string updated_at = 13;
 }
 
-// ─── Risks ───────────────────────────────────────────────────────────────
+// ─── Integrations ───────────────────────────────────────────────────────────────
 
-message GetRisksRequest {
+message GetIntegrationsRequest {
     string hazard_id = 1;
     string threat_id = 2;
     string event_status = 3;
@@ -320,32 +322,32 @@ message GetRisksRequest {
     int32 limit = 6;
 }
 
-message GetRisksResponse {
+message GetIntegrationsResponse {
     int32 status = 1;
     string message = 2;
-    repeated Risk risks = 3;
+    repeated Integration integrations = 3;
     int32 total = 4;
     int32 page = 5;
     int32 limit = 6;
 }
 
-message GetRiskRequest {
+message GetIntegrationRequest {
     string integration_event_id = 1;
 }
 
-message GetRiskResponse {
+message GetIntegrationResponse {
     int32 status = 1;
     string message = 2;
-    Risk risk = 3;
+    Integration integration = 3;
 }
 
-message Risk {
+message Integration {
     string integration_event_id = 1;
-    string related_threat_id = 2;
-    int32 correlation_score = 3;
-    string linkage_reason = 4;
-    int32 integration_confidence = 5;
-    string linked_event_type = 6;
-    string event_status = 7;
-    string event_type = 8;
+    string integration_type = 2;
+    string input = 3;
+    string output = 4;
+    string status = 5;
+    string note = 6;
+    string created_at = 7;
+    string updated_at = 8;
 }

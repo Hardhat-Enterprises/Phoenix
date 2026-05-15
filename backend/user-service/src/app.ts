@@ -5,7 +5,7 @@ import * as dotenv from "dotenv";
 import { userHandler } from "./grpc/user.handler";
 import { threatHandler } from "./grpc/threat.handler";
 import { hazardHandler } from "./grpc/hazard.handler";
-import { riskHandler } from "./grpc/risk.handler";
+import { integrationHandler } from "./grpc/integration.handler";
 import { config, initDatabase } from "@phoenix/common";
 
 dotenv.config();
@@ -35,7 +35,7 @@ const startGrpcServer = async (): Promise<void> => {
       ...userHandler,
       ...threatHandler,
       ...hazardHandler,
-      ...riskHandler,
+      ...integrationHandler,
     });
 
     server.bindAsync(

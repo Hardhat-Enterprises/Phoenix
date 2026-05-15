@@ -14,9 +14,8 @@ import sys
 import os
 from typing import List, Sequence, Optional
 from pathlib import Path
-cwd = Path.cwd()
 
-evaluation_root = cwd.parent.parent
+evaluation_root = Path(__file__).resolve().parents[2]
 
 try:
     from ..metrics.generic_metrics import roc_auc_score_binary
@@ -143,8 +142,7 @@ def generate_evaluation_plots(results: dict, y_true: Sequence[int],
     Generate and save all plots for a model evaluation.
     """
 
-    base_dir = evaluation_root / "outputs" / "plots" / f"{model_name}_{dataset_name}"
-    ensure_dir(base_dir)
+    base_dir = evaluation_root /  "outputs" / "plots" / f"{model_name}_{dataset_name}"
 
     timestamp = get_timestamp()
 

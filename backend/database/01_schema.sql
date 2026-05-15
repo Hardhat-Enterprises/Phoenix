@@ -224,6 +224,53 @@ CREATE TABLE data_ingestion_streaming_log (
     FOREIGN KEY (source_id) REFERENCES data_source(source_id)
 );
 
+/*AIML Model Tables
+  Inputs and outputs for front end mainly */
+  CREATE TABLE anomaly_detection_input (
+    anomaly_input_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    time_window TIMESTAMPTZ,
+    region_id VARCHAR,
+    firms_event_count INT,
+    firms_avg_brightness REAL,
+    fire_confidence_high_count INT,
+    urlhaus_event_count INT,
+    malicious_url_count INT,
+    phishing_tag_count INT,
+    threat_spike_ratio REAL,
+    hour_of_day INT CHECK (hour_of_day>=0 and hour_of_day<24),
+    day_of_week INT CHECK (day_of_week>=0 and day_of_week <7) --guess at the convention here
+  );
+
+  CREATE TABLE anomaly_detection_output (
+    anomaly_output_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    time_window TIMESTAMPTZ,
+    region_id VARCHAR,
+    anomaly_score REAL,
+    is_anomaly BOOLEAN,
+    risk_level VARCHAR, --any constrained values to check?
+    main_drivers TEXT, --flattened, delimited values
+    confidence_score REAL
+  );
+
+  CREATE TABLE time_series_input (
+    time_input_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    region: VARCHAR,
+    forecast_horizon VARCHAR
+  );
+
+  CREATE TABLE time_series_output (
+    time_output_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    region VARCHAR,
+    forecast_horizon VARCHAR,
+  );
+
+  CREATE TABLE time_series_output_predictions (
+    time_output_id UUID,
+    prediction_timestamp TIMESTAMPTZ,
+    predicted_risk_score REAL,
+    FOREIGN KEY (time_output_id) REFERENCES time_series_output(time_output_id)
+  );
+ 
 
 /*INDEXES
   Based on schema documentation */

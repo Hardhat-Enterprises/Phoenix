@@ -1,8 +1,9 @@
 import "./ReportsPage.css";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import ReportPDF from "./components/ReportPDF";
 
-// This page is for my assigned report task.
-// My part is the Generated Verification Reports section with placeholder report data.
-
+{/*This component shows a list of mockup previous verification reports for suspicious links.
+  each report has a "Download" button that generates a PDF version of the report using react-pdf*/}
 function ReportsPage() {
   const reports = [
     {
@@ -42,6 +43,7 @@ function ReportsPage() {
   return (
     <main className="reports-content">
       <section className="generated-reports-card">
+
         <div className="generated-reports-header">
           <div>
             <h2>Generated Verification Reports</h2>
@@ -52,6 +54,7 @@ function ReportsPage() {
         </div>
 
         <div className="reports-table">
+
           <div className="reports-table-head">
             <span>Report</span>
             <span>Link Type</span>
@@ -63,6 +66,7 @@ function ReportsPage() {
 
           {reports.map((report) => (
             <div className="reports-row" key={report.title}>
+
               <div className="report-title-cell">
                 <strong>{report.title}</strong>
                 <small>{report.description}</small>
@@ -77,11 +81,20 @@ function ReportsPage() {
               <span>{report.status}</span>
               <span>{report.date}</span>
 
-              <button type="button" className="download-button">
-                Download
-              </button>
+              {/* PDF Download Button */}
+              <PDFDownloadLink
+                document={<ReportPDF report={report} />}
+                fileName={`${report.title.replace(/\s+/g, "_")}.pdf`}
+                className="download-button"
+              >
+                {({ loading }) =>
+                  loading ? "Generating PDF" : "Download"
+                }
+              </PDFDownloadLink>
+
             </div>
           ))}
+
         </div>
       </section>
     </main>

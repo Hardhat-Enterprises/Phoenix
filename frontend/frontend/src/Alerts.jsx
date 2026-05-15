@@ -90,7 +90,15 @@ const Alerts = () => {
           </button>
         </div>
         <div className="alerts-placeholder-content">
-          <p>Main alerts content here...</p>
+          {/* simulate content height */}
+          <div style={{ height: "800px" }}>
+            <p>Main alerts content here...</p>
+          </div>
+        </div>
+
+        {/* RIGHT SIDEBAR */}
+        <div style={{ width: "360px", marginTop: "120px" }}>
+          <AlertSidebar />
         </div>
       </div>
     </div>

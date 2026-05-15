@@ -38,52 +38,60 @@ export const ingestData = async (req: Request, res: Response) => {
     const channel = getChannel();
     const body = req.body as DataStreamRequest;
 
-    await Promise.all([
-      channel.assertQueue(RabbitMQQueueType.HAZARD_CREATION_QUEUE, {
-        durable: true,
-      }),
-      channel.assertQueue(RabbitMQQueueType.CYBER_CREATION_QUEUE, {
-        durable: true,
-      }),
-    ]);
-    switch (body.event_type) {
-      case DataStreamEventType.HAZARD_ONLY:
-        channel.sendToQueue(
-          RabbitMQQueueType.HAZARD_CREATION_QUEUE,
-          Buffer.from(JSON.stringify(body)),
-          {
-            persistent: true,
-          },
-        );
-        break;
-      case DataStreamEventType.CYBER_ONLY:
-        channel.sendToQueue(
-          RabbitMQQueueType.CYBER_CREATION_QUEUE,
-          Buffer.from(JSON.stringify(body)),
-          {
-            persistent: true,
-          },
-        );
-        break;
-      case DataStreamEventType.COMBINED_CORRELATION:
-        channel.sendToQueue(
-          RabbitMQQueueType.HAZARD_CREATION_QUEUE,
-          Buffer.from(JSON.stringify(body)),
-          {
-            persistent: true,
-          },
-        );
-        channel.sendToQueue(
-          RabbitMQQueueType.CYBER_CREATION_QUEUE,
-          Buffer.from(JSON.stringify(body)),
-          {
-            persistent: true,
-          },
-        );
-        break;
-      default:
-        break;
-    }
+    // await Promise.all([
+    await channel.assertQueue(RabbitMQQueueType.HAZARD_CREATION_QUEUE, {
+      durable: true,
+    });
+    // channel.assertQueue(RabbitMQQueueType.CYBER_CREATION_QUEUE, {
+    //   durable: true,
+    // }),
+    // ]);
+
+    channel.sendToQueue(
+      RabbitMQQueueType.HAZARD_CREATION_QUEUE,
+      Buffer.from(JSON.stringify(body)),
+      {
+        persistent: true,
+      },
+    );
+    // switch (body.event_type) {
+    //   case DataStreamEventType.HAZARD_ONLY:
+    //     channel.sendToQueue(
+    //       RabbitMQQueueType.HAZARD_CREATION_QUEUE,
+    //       Buffer.from(JSON.stringify(body)),
+    //       {
+    //         persistent: true,
+    //       },
+    //     );
+    //     break;
+    //   case DataStreamEventType.CYBER_ONLY:
+    //     channel.sendToQueue(
+    //       RabbitMQQueueType.CYBER_CREATION_QUEUE,
+    //       Buffer.from(JSON.stringify(body)),
+    //       {
+    //         persistent: true,
+    //       },
+    //     );
+    //     break;
+    //   case DataStreamEventType.COMBINED_CORRELATION:
+    //     channel.sendToQueue(
+    //       RabbitMQQueueType.HAZARD_CREATION_QUEUE,
+    //       Buffer.from(JSON.stringify(body)),
+    //       {
+    //         persistent: true,
+    //       },
+    //     );
+    //     channel.sendToQueue(
+    //       RabbitMQQueueType.CYBER_CREATION_QUEUE,
+    //       Buffer.from(JSON.stringify(body)),
+    //       {
+    //         persistent: true,
+    //       },
+    //     );
+    //     break;
+    //   default:
+    //     break;
+    // }
     res.status(HttpStatusCode.HTTP_STATUS_ACCEPTED).json({
       status: HttpStatusCode.HTTP_STATUS_ACCEPTED,
       message: "Data ingested successfully",

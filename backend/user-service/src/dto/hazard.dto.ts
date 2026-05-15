@@ -1,7 +1,7 @@
 export class GetHazardsDto {
   hazard_type?: string;
-  severity_level?: string;
-  event_status?: string;
+  hazard_severity?: string;
+  hazard_status?: string;
   page?: number;
   limit?: number;
 }

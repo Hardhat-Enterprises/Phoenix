@@ -32,24 +32,21 @@ export class GetUserDashboardEntity {
   status: number;
   message: string;
   total_hazards: number;
-  active_hazards: number;
+  critical_hazards: number;
   total_threats: number;
   active_threats: number;
-  total_risk_assessments: number;
-  critical_risks: number;
+  total_ingestions: number;
   last_updated: string;
 
   static toEntity(item: any): GetUserDashboardEntity {
     const response = new GetUserDashboardEntity();
-
     response.status = item.status;
     response.message = item.message;
     response.total_hazards = item.total_hazards;
-    response.active_hazards = item.active_hazards;
+    response.critical_hazards = item.critical_hazards;
     response.total_threats = item.total_threats;
     response.active_threats = item.active_threats;
-    response.total_risk_assessments = item.total_risk_assessments;
-    response.critical_risks = item.critical_risks;
+    response.total_ingestions = item.total_ingestions;
     response.last_updated = item.last_updated;
 
     return response;
@@ -61,7 +58,6 @@ export class GetUserDashboardChartsEntity {
   message: string;
   hazards_by_severity: string;
   threats_by_risk_level: string;
-  risks_by_level: string;
   last_updated: string;
 }
 

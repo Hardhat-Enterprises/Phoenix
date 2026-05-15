@@ -209,11 +209,10 @@ export const getUserDashboard = (req: Request, res: Response) => {
       data: [
         {
           total_hazards: response?.total_hazards,
-          active_hazards: response?.active_hazards,
+          critical_hazards: response?.critical_hazards,
           total_threats: response?.total_threats,
           active_threats: response?.active_threats,
-          total_risk_assessments: response?.total_risk_assessments,
-          critical_risks: response?.critical_risks,
+          total_ingestions: response?.total_ingestions,
           last_updated: response?.last_updated || new Date().toISOString(),
         },
       ],
@@ -267,8 +266,6 @@ export const getUserDashboardCharts = (req: Request, res: Response) => {
         threats_by_risk_level: JSON.parse(
           response?.threats_by_risk_level || "{}",
         ),
-
-        risks_by_level: JSON.parse(response?.risks_by_level || "{}"),
 
         last_updated: response?.last_updated || new Date().toISOString(),
       },

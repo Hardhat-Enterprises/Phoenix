@@ -1,0 +1,11 @@
+{
+  "run_id": "breast_cancer_demo_run",
+  "model": {
+    "model_type": "pytorch",
+    "model_name": "simple_mlp",
+    "task_type": "classification"
+  },
+  "best_f1": 0.9904761904761905,
+  "best_epoch": 7,
+  "dataset_used": "in_memory:breast_cancer_demo"
+}

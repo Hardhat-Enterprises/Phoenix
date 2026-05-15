@@ -1,0 +1,45 @@
+{
+  "dataset": {
+    "path": "data/raw/example.csv",
+    "abnormal_path": "",
+    "target_column": "label",
+    "train_split": 0.7,
+    "val_split": 0.15,
+    "test_split": 0.15,
+    "random_seed": 42,
+    "stratify": true
+  },
+  "preprocessing": {
+    "missing_value_strategy": "mean",
+    "normalization": "standard",
+    "encoding": "none",
+    "feature_selection": false,
+    "selected_features": []
+  },
+  "model": {
+    "type": "random_forest",
+    "task_type": "classification",
+    "hyperparameters": {
+      "n_estimators": 100,
+      "max_depth": 6
+    },
+    "name": ""
+  },
+  "training": {
+    "batch_size": 32,
+    "epochs": 1,
+    "learning_rate": 0.001,
+    "verbose": false,
+    "tensorboard_enabled": true,
+    "tensorboard_log_dir": "logs/tensorboard"
+  },
+  "output": {
+    "path": "checkpoints/",
+    "log_path": "logs/",
+    "reports_path": "reports/",
+    "save_best_only": true,
+    "organize_checkpoints_by_run": true,
+    "previous_checkpoints_to_keep": 1,
+    "checkpoint_prefix": "demo_pipeline"
+  }
+}

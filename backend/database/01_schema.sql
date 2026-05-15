@@ -89,27 +89,23 @@ CREATE TABLE reference_time (
 /*HAZARD_EVENT TABLE
   Entity table */
 CREATE TABLE hazard_event (
-    hazard_event_id                 UUID
-        PRIMARY KEY
-        DEFAULT gen_random_uuid()
-    ,hazard_type                    TEXT
-        NOT NULL
-    ,severity_level                 TEXT
-        NOT NULL
-        CHECK (severity_level IN ('low', 'medium', 'high', 'critical'))
-    ,event_status                   TEXT
-    ,start_time                     TIMESTAMPTZ
-    ,end_time                       TIMESTAMPTZ
-    ,geo_location_id                UUID
-    ,source_id                      UUID
-    ,source_ref_event               TEXT
-    ,description                    TEXT
-    ,updated_at                     TIMESTAMPTZ
-        DEFAULT CURRENT_TIMESTAMP
-    ,created_at                     TIMESTAMPTZ
-        DEFAULT CURRENT_TIMESTAMP
-    ,FOREIGN KEY (geo_location_id) REFERENCES geo_location(geo_location_id)
-    ,FOREIGN KEY (source_id) REFERENCES data_source(source_id)
+    hazard_event_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    url TEXT NOT NULL,
+    text TEXT NOT NULL,
+    timestamp TIMESTAMPTZ NOT NULL,
+
+    hazard_type VARCHAR(100) NOT NULL,
+    hazard_severity NUMERIC(3, 2) NOT NULL,
+    hazard_timestamp TIMESTAMPTZ NOT NULL,
+    hazard_location VARCHAR(100) NOT NULL,
+    hazard_status VARCHAR(50) NOT NULL,
+    alert_level VARCHAR(50) NOT NULL,
+
+    source VARCHAR(100) NOT NULL,
+
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 
@@ -141,28 +137,21 @@ CREATE TABLE cyber_threat (
 
 /*RISK_ASSESSMENT OR INTEGRATION TABLE
   Fact table */
-CREATE TABLE risk_assessment (
+CREATE TABLE integration_log (
     integration_event_id            UUID
         PRIMARY KEY
         DEFAULT gen_random_uuid()
-    ,related_hazard_event_id        UUID
-    ,related_threat_id              UUID
-    ,correlation_score              REAL
-    ,linkage_reason                 TEXT
-    ,integration_confidence         REAL
-    ,linked_event_type              UUID
-    ,event_status                   UUID
-    ,event_time                     TIMESTAMPTZ
-    ,detected_at                    TIMESTAMPTZ
-    ,reported_at                    TIMESTAMPTZ
+    ,integration_type               TEXT
+        NOT NULL CHECK (integration_type in ('core', 'anomaly', 'time-series'))
+    ,input                          TEXT
+    ,output                         TEXT
+    ,status                         TEXT
+        NOT NULL CHECK (status in ('created', 'processing', 'completed', 'error'))
+    ,note                           TEXT
     ,created_at                     TIMESTAMPTZ
         DEFAULT CURRENT_TIMESTAMP
     ,updated_at                     TIMESTAMPTZ
         DEFAULT CURRENT_TIMESTAMP
-    ,FOREIGN KEY (related_hazard_event_id) REFERENCES hazard_event(hazard_event_id)
-    ,FOREIGN KEY (related_threat_id) REFERENCES cyber_threat(threat_id)
-    ,FOREIGN KEY (linked_event_type) REFERENCES linked_event_type(linked_event_type_id)
-    ,FOREIGN KEY (event_status) REFERENCES event_status(event_status_id)
 );
 
 
@@ -212,7 +201,7 @@ CREATE TABLE data_ingestion_streaming_log (
     ingestion_log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     source_id UUID,
     ingestion_type VARCHAR(50) NOT NULL
-        CHECK (ingestion_type IN ('hazard', 'cyber_threat', 'risk_assessment')),
+        CHECK (ingestion_type IN ('hazard', 'cyber_threat')),
     payload JSONB,
     processing_status VARCHAR(50) NOT NULL DEFAULT 'received'
         CHECK (processing_status IN ('received', 'processing', 'processed', 'failed')),
@@ -259,3 +248,9 @@ CREATE INDEX idx_streaming_log_status
 
 CREATE INDEX idx_streaming_log_received_at
     ON data_ingestion_streaming_log(received_at);
+
+CREATE INDEX idx_integration_log_integration_type
+    ON integration_log(integration_type);
+
+CREATE INDEX idx_integration_log_status
+    ON integration_log(status);

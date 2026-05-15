@@ -13,7 +13,7 @@ export const getHazards = (req: Request, res: Response) => {
     limit: limit ? parseInt(limit as string, 10) : 10,
   };
 
-  userGrpcClient.GetHazards(grpcRequest, (error, response) => {
+  userGrpcClient.GetHazards(grpcRequest, (error: any, response: any) => {
     if (error) {
       logger.error(`Error calling GetHazards: ${error}`);
       return res
@@ -35,7 +35,7 @@ export const getHazards = (req: Request, res: Response) => {
 export const getHazard = (req: Request, res: Response) => {
   const hazardId = req.params.hazardId as string;
 
-  userGrpcClient.GetHazard({ hazard_event_id: hazardId }, (error, response) => {
+  userGrpcClient.GetHazard({ hazard_event_id: hazardId }, (error: any, response: any) => {
     if (error) {
       logger.error(`Error calling GetHazard: ${error}`);
       return res

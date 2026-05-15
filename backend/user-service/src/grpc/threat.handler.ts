@@ -11,7 +11,9 @@ export const threatHandler = {
   ) => {
     try {
       const response = await getThreats(call.request);
-      logger.info(`GetThreats response: ${JSON.stringify(response)}`);
+
+      logger.info("GetThreats response", response);
+
       callback(null, response);
     } catch (error) {
       callback({ code: 13, message: `${error}` || "Internal server error" });
@@ -24,7 +26,9 @@ export const threatHandler = {
   ) => {
     try {
       const response = await getThreat(call.request);
-      logger.info(`GetThreat response: ${JSON.stringify(response)}`);
+
+      logger.info("GetThreat response", response);
+
       callback(null, response);
     } catch (error) {
       callback({ code: 13, message: `${error}` || "Internal server error" });

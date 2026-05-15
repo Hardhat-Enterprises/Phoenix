@@ -1,4 +1,30 @@
 services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: phoenix-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: phoenix
+      RABBITMQ_DEFAULT_PASS: phoenix_123
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: phoenix-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   api-gateway:
     build:
       context: ./
@@ -10,9 +36,20 @@ services:
       - SERVICE=api-gateway
       - USER_SERVICE_URL=user-service:50051
       - INGESTION_SERVICE_URL=data-ingestion-service:50053
+      - STORAGE_SERVICE_URL=storage-service:50054
+      - STORAGE_PROTO_PATH=dist/libs/proto/storage.proto
+      - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=production
+      - SWAGGER_SERVER_URL=http://localhost:3001
+      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
+      - AUTH_JWT_SECRET=${AUTH_JWT_SECRET}
+      - AUTH_JWT_REFRESH_SECRET=${AUTH_JWT_REFRESH_SECRET}
     depends_on:
-      - user-service
-      - data-ingestion-service
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     command: sh -c "node -r tsconfig-paths/register dist/api-gateway/src/app.js"
 
   user-service:
@@ -24,13 +61,17 @@ services:
       - "50051:50051"
     environment:
       - SERVICE=user-service
-      - POSTGRES_HOST=phoenix-postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=phoenix_user
-      - POSTGRES_PASSWORD=phoenix_pass
-      - POSTGRES_DB=phoenix_db
+      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
+      - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+      - AUTH_JWT_SECRET=${AUTH_JWT_SECRET}
+      - AUTH_JWT_REFRESH_SECRET=${AUTH_JWT_REFRESH_SECRET}
     depends_on:
-      - postgres
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     command: sh -c "node -r tsconfig-paths/register dist/user-service/src/app.js"
 
   data-ingestion-service:
@@ -42,28 +83,36 @@ services:
       - "50053:50053"
     environment:
       - SERVICE=data-ingestion-service
+      - INGESTION_PROTO_PATH=dist/libs/proto/ingestion.proto
+      - INGESTION_SERVICE_PORT=50053
+      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
+      - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
     depends_on:
-      - postgres
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     command: sh -c "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
-
-  postgres:
-    image: postgres:16
-    container_name: phoenix-postgres
-    environment:
-      POSTGRES_DB: phoenix_db
-      POSTGRES_USER: phoenix_user
-      POSTGRES_PASSWORD: phoenix_pass
+  storage-service:
+    build:
+      context: ./
+      dockerfile: storage-service/Dockerfile
+    container_name: storage-service
     ports:
-      - "5434:5432"
-    volumes:
-      - ./database:/docker-entrypoint-initdb.d
-
-  rabbitmq:
-    image: rabbitmq:4-management
-    container_name: phoenix-rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "50054:50054"
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      - SERVICE=storage-service
+      - STORAGE_PROTO_PATH=dist/libs/proto/storage.proto
+      - STORAGE_SERVICE_PORT=50054
+      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
+      - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: sh -c "node -r tsconfig-paths/register dist/storage-service/src/app.js"

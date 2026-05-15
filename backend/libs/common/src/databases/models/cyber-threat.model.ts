@@ -50,7 +50,6 @@ CyberThreat.init(
   {
     threat_id: {
       type: DataTypes.UUID,
-      autoIncrement: true,
       primaryKey: true,
     },
     threat_type: {
@@ -109,6 +108,8 @@ CyberThreat.init(
   {
     sequelize,
     tableName: "cyber_threat",
-    timestamps: false,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
   },
 );

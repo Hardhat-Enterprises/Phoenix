@@ -30,6 +30,8 @@ HazardLocation.init(
   {
     sequelize,
     tableName: "hazard_location",
-    timestamps: false,
-  }
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  },
 );

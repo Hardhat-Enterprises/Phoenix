@@ -34,6 +34,8 @@ EventStatus.init(
   {
     sequelize,
     tableName: "event_status",
-    timestamps: false,
-  }
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  },
 );

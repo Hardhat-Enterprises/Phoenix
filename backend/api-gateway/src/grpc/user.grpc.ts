@@ -8,6 +8,7 @@ dotenv.config();
 
 const PROTO_PATH = path.resolve(`${process.env.USER_PROTO_PATH}`);
 logger.info(`Loading gRPC proto file from: ${PROTO_PATH}`);
+
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -24,18 +25,89 @@ const grpcObject = grpc.loadPackageDefinition(packageDefinition) as unknown as {
     ) => UserServiceClient;
   };
 };
+// ─── Client interface ──────────────────────────────────────────────────────
 
 export interface GetUserHealthRequest {}
+
 export interface GetUserHealthResponse {
   status: number;
   message: string;
 }
 
 export interface GetUsersRequest {}
+
 export interface GetUsersResponse {
   status: number;
   message: string;
-  users: [{ user_id: string; username: string; role: string }];
+  users: {
+    user_id: string;
+    username: string;
+    role: string;
+  }[];
+}
+
+export interface RegisterUserRequest {
+  username: string;
+  password: string;
+  role?: string;
+}
+
+export interface LoginUserRequest {
+  username: string;
+  password: string;
+}
+
+export interface RefreshTokenRequest {
+  refresh_token: string;
+}
+
+export interface LogoutUserRequest {
+  user_id: string;
+}
+
+export interface AuthResponse {
+  status: number;
+  message: string;
+  user_id?: string;
+  username?: string;
+  role?: string;
+  access_token?: string;
+  refresh_token?: string;
+}
+
+export interface GetUserDashboardRequest {}
+
+export interface GetUserDashboardResponse {
+  status: number;
+  message: string;
+  total_hazards: number;
+  active_hazards: number;
+  total_threats: number;
+  active_threats: number;
+  total_risk_assessments: number;
+  critical_risks: number;
+  last_updated: string;
+}
+
+export interface GetUserDashboardChartsRequest {}
+
+export interface GetUserDashboardChartsResponse {
+  status: number;
+  message: string;
+  hazards_by_severity: string;
+  threats_by_risk_level: string;
+  risks_by_level: string;
+  last_updated: string;
+}
+
+export interface GetUserDashboardActivityRequest {}
+
+export interface GetUserDashboardActivityResponse {
+  status: number;
+  message: string;
+  recent_hazards: string;
+  recent_threats: string;
+  last_updated: string;
 }
 
 // ─── Threats ───────────────────────────────────────────────────────────────
@@ -61,6 +133,7 @@ export interface GetThreatsRequest {
   page?: number;
   limit?: number;
 }
+
 export interface GetThreatsResponse {
   status: number;
   message: string;
@@ -73,6 +146,7 @@ export interface GetThreatsResponse {
 export interface GetThreatRequest {
   threat_id: string;
 }
+
 export interface GetThreatResponse {
   status: number;
   message: string;
@@ -100,6 +174,7 @@ export interface GetHazardsRequest {
   page?: number;
   limit?: number;
 }
+
 export interface GetHazardsResponse {
   status: number;
   message: string;
@@ -112,38 +187,304 @@ export interface GetHazardsResponse {
 export interface GetHazardRequest {
   hazard_event_id: string;
 }
+
 export interface GetHazardResponse {
   status: number;
   message: string;
   hazard?: HazardItem;
 }
 
-// ─── Client interface ──────────────────────────────────────────────────────
+export interface GetLocationsRequest {}
+
+export interface GetLocationsResponse {
+  status: number;
+  message: string;
+  locations: LocationItem[];
+}
+
+export interface LocationItem {
+  geo_location_id: string;
+  country: string;
+  state_region: string;
+  local_government_area: string;
+  suburb: string;
+  latitude: number;
+  longitude: number;
+  geo_precision: string;
+}
+
+export interface GetEventStatusesRequest {}
+
+export interface GetEventStatusesResponse {
+  status: number;
+  message: string;
+  eventStatuses: EventStatusItem[];
+}
+
+export interface EventStatusItem {
+  event_status_id: string;
+  event_status_description: string;
+}
+
+export interface GetLinkedEventTypesRequest {}
+
+export interface GetLinkedEventTypesResponse {
+  status: number;
+  message: string;
+  linkedEventTypes: LinkedEventTypeItem[];
+}
+
+export interface LinkedEventTypeItem {
+  linked_event_type_id: string;
+  linked_event_type_description: string;
+}
+
+export interface GetSeasonsRequest {}
+
+export interface GetSeasonsResponse {
+  status: number;
+  message: string;
+  seasons: SeasonItem[];
+}
+
+export interface SeasonItem {
+  season_id: string;
+  season_description: string;
+}
+
+export interface GetReferenceDaysRequest {}
+
+export interface GetReferenceDaysResponse {
+  status: number;
+  message: string;
+  referenceDays: ReferenceDayItem[];
+}
+
+export interface ReferenceDayItem {
+  reference_day_id: string;
+  reference_day_description: string;
+}
+
+export interface ReferenceTimesRequest {}
+
+export interface ReferenceTimesResponse {
+  status: number;
+  message: string;
+  referenceTimes: ReferenceTimeItem[];
+}
+
+export interface ReferenceTimeItem {
+  ref_time: string;
+  is_nighttime: boolean;
+  is_business_hours: boolean;
+}
+
+export interface GetRisksRequest {
+  hazard_id: string;
+  threat_id: string;
+  event_status: string;
+  page: number;
+  limit: number;
+  linked_event_type: string;
+}
+
+export interface GetRisksResponse {
+  status: number;
+  message: string;
+  risks: RiskItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface RiskItem {
+  integration_event_id: string;
+  related_threat_id: string;
+  correlation_score: number;
+  linkage_reason: string;
+  integration_confidence: number;
+  linked_event_type: string;
+  event_status: string;
+  event_type: string;
+}
+
+export interface GetRiskRequest {
+  integration_event_id: string;
+}
+
+export interface GetRiskResponse {
+  status: number;
+  message: string;
+  risk?: RiskItem;
+}
 
 export interface UserServiceClient {
   GetUserHealth(
     request: GetUserHealthRequest,
-    callback: (error: grpc.ServiceError | null, response: GetUserHealthResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetUserHealthResponse,
+    ) => void,
   ): void;
+
   GetUsers(
     request: GetUsersRequest,
-    callback: (error: grpc.ServiceError | null, response: GetUsersResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetUsersResponse,
+    ) => void,
   ): void;
+
+  RegisterUser(
+    request: RegisterUserRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: AuthResponse,
+    ) => void,
+  ): void;
+
+  LoginUser(
+    request: LoginUserRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: AuthResponse,
+    ) => void,
+  ): void;
+
+  RefreshToken(
+    request: RefreshTokenRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: AuthResponse,
+    ) => void,
+  ): void;
+
+  LogoutUser(
+    request: LogoutUserRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: AuthResponse,
+    ) => void,
+  ): void;
+
+  GetUserDashboard(
+    request: GetUserDashboardRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetUserDashboardResponse,
+    ) => void,
+  ): void;
+
+  GetUserDashboardCharts(
+    request: GetUserDashboardChartsRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetUserDashboardChartsResponse,
+    ) => void,
+  ): void;
+
+  GetUserDashboardActivity(
+    request: GetUserDashboardActivityRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetUserDashboardActivityResponse,
+    ) => void,
+  ): void;
+
   GetThreats(
     request: GetThreatsRequest,
-    callback: (error: grpc.ServiceError | null, response: GetThreatsResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetThreatsResponse,
+    ) => void,
   ): void;
+
   GetThreat(
     request: GetThreatRequest,
-    callback: (error: grpc.ServiceError | null, response: GetThreatResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetThreatResponse,
+    ) => void,
   ): void;
+
   GetHazards(
     request: GetHazardsRequest,
-    callback: (error: grpc.ServiceError | null, response: GetHazardsResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetHazardsResponse,
+    ) => void,
   ): void;
+
   GetHazard(
     request: GetHazardRequest,
-    callback: (error: grpc.ServiceError | null, response: GetHazardResponse) => void,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetHazardResponse,
+    ) => void,
+  ): void;
+
+  GetLocations(
+    request: GetLocationsRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetLocationsResponse,
+    ) => void,
+  ): void;
+
+  GetEventStatuses(
+    request: GetEventStatusesRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetEventStatusesResponse,
+    ) => void,
+  ): void;
+
+  GetLinkedEventTypes(
+    request: GetLinkedEventTypesRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetLinkedEventTypesResponse,
+    ) => void,
+  ): void;
+
+  GetSeasons(
+    request: GetSeasonsRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetSeasonsResponse,
+    ) => void,
+  ): void;
+
+  GetReferenceDays(
+    request: GetReferenceDaysRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetReferenceDaysResponse,
+    ) => void,
+  ): void;
+
+  GetReferenceTimes(
+    request: ReferenceTimesRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: ReferenceTimesResponse,
+    ) => void,
+  ): void;
+
+  GetRisks(
+    request: GetRisksRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetRisksResponse,
+    ) => void,
+  ): void;
+
+  GetRisk(
+    request: GetRiskRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetRiskResponse,
+    ) => void,
   ): void;
 }
 

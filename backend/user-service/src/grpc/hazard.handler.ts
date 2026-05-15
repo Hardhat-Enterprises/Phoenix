@@ -11,7 +11,7 @@ export const hazardHandler = {
   ) => {
     try {
       const response = await getHazards(call.request);
-      logger.info(`GetHazards response: ${JSON.stringify(response)}`);
+
       callback(null, response);
     } catch (error) {
       callback({ code: 13, message: `${error}` || "Internal server error" });
@@ -24,10 +24,15 @@ export const hazardHandler = {
   ) => {
     try {
       const response = await getHazard(call.request);
-      logger.info(`GetHazard response: ${JSON.stringify(response)}`);
+
+      logger.info("GetHazard response", response);
+
       callback(null, response);
     } catch (error) {
-      callback({ code: 13, message: `${error}` || "Internal server error" });
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
     }
   },
 };

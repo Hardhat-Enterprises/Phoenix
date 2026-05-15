@@ -13,7 +13,7 @@ export const getThreats = (req: Request, res: Response) => {
     limit: limit ? parseInt(limit as string, 10) : 10,
   };
 
-  userGrpcClient.GetThreats(grpcRequest, (error, response) => {
+  userGrpcClient.GetThreats(grpcRequest, (error: any, response: any) => {
     if (error) {
       logger.error(`Error calling GetThreats: ${error}`);
       return res
@@ -35,7 +35,7 @@ export const getThreats = (req: Request, res: Response) => {
 export const getThreat = (req: Request, res: Response) => {
   const threatId = req.params.threatId as string;
 
-  userGrpcClient.GetThreat({ threat_id: threatId }, (error, response) => {
+  userGrpcClient.GetThreat({ threat_id: threatId }, (error: any, response: any) => {
     if (error) {
       logger.error(`Error calling GetThreat: ${error}`);
       return res

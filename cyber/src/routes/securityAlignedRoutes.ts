@@ -1,15 +1,15 @@
 import { Router, Request, Response } from "express";
-import { authenticateToken } from "../middleware/auth";
-import { requireRole } from "../middleware/rbac";
-import { validate } from "../middleware/validate";
+import { authenticateToken } from "../middleware/auth.ts";
+import { requireRole } from "../middleware/rbac.ts";
+import { validate } from "../middleware/validate.ts";
 import {
   loginRateLimit,
   registerRateLimit,
   moderateReadRateLimit,
   ingestionRateLimit,
-} from "../middleware/rateLimit";
-import { loginSchema, registerSchema } from "../schemas/authSchemas";
-import { ingestionSchema } from "../schemas/ingestionSchemas";
+} from "../middleware/rateLimit.ts";
+import { loginSchema, registerSchema } from "../schemas/authSchemas.ts";
+import { ingestionSchema } from "../schemas/ingestionSchemas.ts";
 
 const router = Router();
 

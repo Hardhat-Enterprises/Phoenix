@@ -1,9 +1,11 @@
-import { Request, Response, NextFunction } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
-import { UserRole } from "../types/roles";
+import type { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import type { JwtPayload } from "jsonwebtoken";
+import type { UserRole } from "../types/roles.ts";
 
 interface TokenPayload extends JwtPayload {
-  userId: string;
+  userId?: string;
+  user_id?: string;
   role: UserRole;
 }
 
@@ -25,6 +27,7 @@ export function authenticateToken(
 ): void {
   const authHeader = req.headers.authorization;
 
+  // Check Authorization header
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     res.status(401).json({
       status: 401,
@@ -34,7 +37,10 @@ export function authenticateToken(
     return;
   }
 
+  // Extract token
   const token = authHeader.split(" ")[1];
+
+  // Get JWT secret
   const secret = process.env.JWT_SECRET;
 
   if (!secret) {
@@ -47,10 +53,25 @@ export function authenticateToken(
   }
 
   try {
+    // Verify token
     const decoded = jwt.verify(token, secret) as TokenPayload;
 
+    // Handle different backend payload naming
+    const userId = decoded.userId || decoded.user_id;
+
+    // Validate token payload
+    if (!userId || !decoded.role) {
+      res.status(401).json({
+        status: 401,
+        message: "Invalid token payload",
+        data: [],
+      });
+      return;
+    }
+
+    // Attach user to request
     req.user = {
-      id: decoded.userId,
+      id: userId,
       role: decoded.role,
     };
 

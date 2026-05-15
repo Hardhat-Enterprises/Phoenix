@@ -1,5 +1,8 @@
 # TEAVS API Endpoint Design
+## Alignment Note
+This document defines the original secure design for TEAVS alert-related API behaviour. It is used as a subsystem-level security reference.
 
+The current backend API draft is treated as the implementation baseline for PHOENIX. Security controls from this TEAVS design should be aligned with the implemented backend endpoints where relevant.
 ## 1. Create Alert
 - Path: /api/alerts
 - Method: POST

@@ -12,6 +12,9 @@ app.get("/", (_req, res) => {
   res.send("Phoenix cyber backend is running");
 });
 app.use(securityAlignedRoutes);
+app.get("/test-error", (_req, _res) => {
+  throw new Error("Test error");
+});
 app.use(errorHandler);
 
 export default app;

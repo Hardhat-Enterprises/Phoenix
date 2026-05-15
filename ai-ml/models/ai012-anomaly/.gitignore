@@ -1,0 +1,34 @@
+
+# Generated data, reports, and logs
+data/outputs/
+data/processed/*.csv
+logs/
+reports/
+checkpoints/
+*.csv
+*.pkl
+*.pt
+events.out.tfevents.*
+
+# Autoencoder generated artifacts
+autoencoder/outputs/**
+autoencoder/reports/
+
+# Keep only the final selected checkpoint when explicitly force-added.
+!autoencoder/outputs/
+!autoencoder/outputs/checkpoints/
+!autoencoder/outputs/checkpoints/autoencoder_best.pt
+!autoencoder/outputs/checkpoints/autoencoder_preprocessing.pkl
+
+# Historical model archive: keep source, configs, notebooks, JSON reports, and images.
+!other_models/
+!other_models/**
+other_models/**/outputs/**/*.csv
+other_models/**/data/**/*.csv
+other_models/**/*.csv
+other_models/**/*.pkl
+other_models/**/*.pt
+
+# Local cache
+__pycache__/
+*.py[cod]

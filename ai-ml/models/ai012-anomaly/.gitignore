@@ -1,0 +1,25 @@
+# Keep the selected model path small for GitHub.
+
+# Archived alternatives and benchmark outputs
+other_models/
+comparison/
+
+# Generated data, reports, and logs
+data/outputs/
+data/processed/*.csv
+logs/
+reports/
+checkpoints/
+
+# Autoencoder generated artifacts
+autoencoder/outputs/**
+autoencoder/reports/
+
+# Keep only the final selected checkpoint when explicitly force-added.
+!autoencoder/outputs/
+!autoencoder/outputs/checkpoints/
+!autoencoder/outputs/checkpoints/autoencoder_best.pt
+
+# Local cache
+__pycache__/
+*.py[cod]

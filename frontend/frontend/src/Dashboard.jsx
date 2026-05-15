@@ -1,7 +1,15 @@
+import { useState } from "react";
+
 import Sidebar from "./components/Sidebar";
 import "./Dashboard.css";
 
 function Dashboard({ setPage }) {
+
+  //Anomaly detection state
+  const [selectedLocation, setSelectedLocation] = useState("Sydney");
+  const [loading, setLoading] = useState(false);
+  const [apiResult, setApiResult] = useState(null);
+
   const threatData = [];
 
   const itemRows = [
@@ -30,11 +38,135 @@ function Dashboard({ setPage }) {
 
   const hasThreatData = threatData.length > 0;
 
+  //Score mapping function
+  const getThreatLevel = (score) => {
+    if (score <= 0.2) return "Minimal";
+    if (score <= 0.4) return "Low";
+    if (score <= 0.6) return "Moderate";
+    if (score <= 0.8) return "High";
+    return "Critical";
+  };
+
+  //API Call function
+  const runDetection = async () => {
+    try {
+      setLoading(true);
+
+      const timestamp = new Date().toISOString();
+
+      const response = await fetch("http://localhost:5000/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          location: selectedLocation,
+          timestamp,
+        }),
+      });
+
+      if (!response.ok) throw new Error("API failed");
+
+      const data = await response.json();
+      setApiResult(data);
+
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="dashboard-page">
 
       <main className="dashboard-content">
         <div className="dashboard-main-area">
+
+          <section
+            className="ai-detection-card"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: "24px",
+              padding: "20px",
+              border: "1px solid #ddd",
+              borderRadius: "12px",
+              marginBottom: "20px",
+            }}
+          >
+
+            {/* Left: controls */}
+            <div style={{ flex: 1 }}>
+              <h2>Regional Anomaly Detection</h2>
+
+              <label>Select Australian Location</label>
+
+              <select
+                value={selectedLocation}
+                onChange={(e) => setSelectedLocation(e.target.value)}
+                style={{
+                  padding: "10px",
+                  borderRadius: "8px",
+                  width: "220px",
+                  marginTop: "8px",
+                }}
+              >
+                <option value="Sydney">Sydney</option>
+                <option value="Melbourne">Melbourne</option>
+                <option value="Perth">Perth</option>
+                <option value="Brisbane">Brisbane</option>
+                <option value="Adelaide">Adelaide</option>
+              </select>
+
+              <br /><br />
+
+              <button
+                onClick={runDetection}
+                disabled={loading}
+                className="view-all-button"
+              >
+                {loading ? "Running Detection..." : "Run Detection"}
+              </button>
+            </div>
+
+            {/* Right: output */}
+            <div
+              style={{
+                flex: 1,
+                borderLeft: "1px solid #eee",
+                paddingLeft: "20px",
+              }}
+            >
+              <h3>Detection Output</h3>
+
+              {!apiResult ? (
+                <p>No result yet. Run detection to see output.</p>
+              ) : (
+                <>
+                  <p>
+                    <strong>Location:</strong> {apiResult.location}
+                  </p>
+
+                  <p>
+                    <strong>Score:</strong>{" "}
+                    {apiResult.score.toFixed(2)}
+                  </p>
+
+                  <p>
+                    <strong>Threat Level:</strong>{" "}
+                    {getThreatLevel(apiResult.score)}
+                  </p>
+
+                  <p>
+                    <strong>Timestamp:</strong>{" "}
+                    {apiResult.timestamp}
+                  </p>
+                </>
+              )}
+            </div>
+
+          </section>
 
           {/* Map Section (Jack) */}
           <section className="map-card">

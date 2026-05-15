@@ -89,6 +89,8 @@ services:
       - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
       - REDIS_URL=redis://redis:6379
       - PORT=3000
+      - PYTHON_BIN = /app/.venv/bin/python
+      - CORE_MODEL_SCRIPT_PATH = /app/libs/common/src/helper/core_model_integration.py
     depends_on:
       rabbitmq:
         condition: service_healthy

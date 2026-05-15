@@ -26,6 +26,8 @@ service UserService {
 
     rpc GetHazards(GetHazardsRequest) returns (GetHazardsResponse);
     rpc GetHazard(GetHazardRequest) returns (GetHazardResponse);
+    rpc GetTrainingModels(GetTrainingModelsRequest) returns (GetTrainingModelsResponse);
+    rpc GetOneTrainingModel(GetOneTrainingModelRequest) returns (GetOneTrainingModelResponse);
     rpc GetIntegrations(GetIntegrationsRequest) returns (GetIntegrationsResponse);
     rpc GetIntegration(GetIntegrationRequest) returns (GetIntegrationResponse);
 
@@ -350,4 +352,30 @@ message Integration {
     string note = 6;
     string created_at = 7;
     string updated_at = 8;
+}
+
+// ─── Training Models ───────────────────────────────────────────────────────────────
+message GetTrainingModelsRequest {
+}
+
+message GetTrainingModelsResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated TrainingModel models = 3;
+}
+
+message TrainingModel {
+  string file_id = 1;
+  string original_name = 2;
+  string mime_type = 3;
+}
+
+message GetOneTrainingModelRequest {
+  string file_id = 1;
+}
+
+message GetOneTrainingModelResponse {
+  int32 status = 1;
+  string message = 2;
+  TrainingModel model = 3;
 }

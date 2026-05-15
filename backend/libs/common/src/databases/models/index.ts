@@ -6,4 +6,5 @@ export * from "./location-threat.model";
 export * from "./integration_log.model";
 export * from "./status-event.model";
 export * from "./user-account.model";
+export * from "./stored-file.model";
 export * from "./data-ingestion-streaming-log.model";

@@ -365,3 +365,48 @@ export const getReferenceTimes = (req: Request, res: Response) => {
     });
   });
 };
+
+export const getTrainingModels = (req: Request, res: Response) => {
+  userGrpcClient.GetTrainingModels({}, (error: any, response: any) => {
+    if (error) {
+      return res.status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR).json({
+        status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+        message: "Error fetching training models",
+        error: `${error}`,
+      });
+    }
+
+    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
+      status: response?.status,
+      message: response?.message,
+      models: response?.models || [],
+    });
+  });
+};
+
+export const getOneTrainingModel = (req: Request, res: Response) => {
+  const file_id = req.params.file_id as string;
+
+  userGrpcClient.GetOneTrainingModel(
+    { file_id },
+    (error: any, response: any) => {
+      if (error) {
+        return res
+          .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+          .json({
+            status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+            message: "Error fetching training model",
+            error: `${error}`,
+          });
+      }
+
+      return res
+        .status(response?.status || HttpStatusCode.HTTP_STATUS_OK)
+        .json({
+          status: response?.status,
+          message: response?.message,
+          models: response?.model || null,
+        });
+    },
+  );
+};

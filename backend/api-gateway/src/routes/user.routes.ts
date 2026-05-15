@@ -8,6 +8,8 @@ import {
   getSeasons,
   getReferenceDays,
   getReferenceTimes,
+  getOneTrainingModel,
+  getTrainingModels,
   register,
   login,
   refresh,
@@ -49,6 +51,8 @@ router.get("/hazards/:hazardId", getHazard);
 router.get("/integration", getIntegrations);
 router.get("/integration/:integration", getIntegration);
 
+router.get("/training-models", getTrainingModels);
+router.get("/training-models/:file_id", getOneTrainingModel);
 /**
  * Authentication Routes
  */

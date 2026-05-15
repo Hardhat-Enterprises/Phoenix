@@ -1,7 +1,10 @@
 import { sequelize, connectDatabase } from "./sequelize-connection-handler";
+
 import { HazardEvent } from "./models/hazard-event.model";
 import { CyberThreat } from "./models/cyber-threat.model";
-import { RiskAssessment } from "./models/risk-assessment.model";
+import { IntegrationLog } from "./models/integration_log.model";
+import { DataIngestionStreamingLog } from "./models/data-ingestion-streaming-log.model";
+
 import { GeoLocation } from "./models/location-geo.model";
 import { HazardLocation } from "./models/location-hazard.model";
 import { ThreatLocation } from "./models/location-threat.model";
@@ -13,108 +16,31 @@ import { Season } from "./models/season.model";
 import { ReferenceDay } from "./models/reference-day.model";
 import { ReferenceTime } from "./models/reference-time.model";
 
-HazardEvent.hasMany(RiskAssessment, {
-  foreignKey: "related_hazard_event_id",
-  sourceKey: "hazard_event_id",
-});
-
-RiskAssessment.belongsTo(HazardEvent, {
-  foreignKey: "related_hazard_event_id",
-  targetKey: "hazard_event_id",
-});
-
-CyberThreat.hasMany(RiskAssessment, {
-  foreignKey: "related_threat_id",
-  sourceKey: "threat_id",
-});
-
-RiskAssessment.belongsTo(CyberThreat, {
-  foreignKey: "related_threat_id",
-  targetKey: "threat_id",
-});
-
-GeoLocation.hasMany(HazardEvent, {
-  foreignKey: "geo_location_id",
-  sourceKey: "geo_location_id",
-});
-
-HazardEvent.belongsTo(GeoLocation, {
-  foreignKey: "geo_location_id",
-  targetKey: "geo_location_id",
-});
-
-HazardEvent.belongsToMany(GeoLocation, {
-  through: HazardLocation,
-  foreignKey: "hazard_event_id",
-  otherKey: "geo_location_id",
-});
-
-GeoLocation.belongsToMany(HazardEvent, {
-  through: HazardLocation,
-  foreignKey: "geo_location_id",
-  otherKey: "hazard_event_id",
-});
-
-CyberThreat.belongsToMany(GeoLocation, {
-  through: ThreatLocation,
-  foreignKey: "threat_id",
-  otherKey: "geo_location_id",
-});
-
-GeoLocation.belongsToMany(CyberThreat, {
-  through: ThreatLocation,
-  foreignKey: "geo_location_id",
-  otherKey: "threat_id",
-});
-
-DataSource.hasMany(HazardEvent, {
+DataSource.hasMany(DataIngestionStreamingLog, {
   foreignKey: "source_id",
   sourceKey: "source_id",
+  as: "streaming_logs",
 });
 
-HazardEvent.belongsTo(DataSource, {
+DataIngestionStreamingLog.belongsTo(DataSource, {
   foreignKey: "source_id",
   targetKey: "source_id",
+  as: "source",
 });
 
-DataSource.hasMany(CyberThreat, {
-  foreignKey: "source_id",
-  sourceKey: "source_id",
-});
-
-CyberThreat.belongsTo(DataSource, {
-  foreignKey: "source_id",
-  targetKey: "source_id",
-});
-
-LinkedEventType.hasMany(RiskAssessment, {
-  foreignKey: "linked_event_type",
-  sourceKey: "linked_event_type_id",
-});
-
-RiskAssessment.belongsTo(LinkedEventType, {
-  foreignKey: "linked_event_type",
-  targetKey: "linked_event_type_id",
-});
-
-EventStatus.hasMany(RiskAssessment, {
-  foreignKey: "event_status",
-  sourceKey: "event_status_id",
-});
-
-RiskAssessment.belongsTo(EventStatus, {
-  foreignKey: "event_status",
-  targetKey: "event_status_id",
-});
-
+/**
+ * Existing reference-data relationship.
+ */
 Season.hasMany(ReferenceDay, {
   foreignKey: "season",
   sourceKey: "season_id",
+  as: "reference_days",
 });
 
 ReferenceDay.belongsTo(Season, {
   foreignKey: "season",
   targetKey: "season_id",
+  as: "season_ref",
 });
 
 export async function initDatabase(): Promise<void> {
@@ -126,7 +52,8 @@ export {
   sequelize,
   HazardEvent,
   CyberThreat,
-  RiskAssessment,
+  IntegrationLog,
+  DataIngestionStreamingLog,
   GeoLocation,
   HazardLocation,
   ThreatLocation,

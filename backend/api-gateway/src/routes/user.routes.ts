@@ -49,7 +49,7 @@ router.get("/hazards", getHazards);
 router.get("/hazards/:hazardId", getHazard);
 
 router.get("/integration", getIntegrations);
-router.get("/integration/:integration", getIntegration);
+router.get("/integration/:integrationId", getIntegration);
 
 router.get("/training-models", getTrainingModels);
 router.get("/training-models/:file_id", getOneTrainingModel);

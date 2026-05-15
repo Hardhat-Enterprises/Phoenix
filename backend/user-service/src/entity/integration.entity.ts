@@ -36,5 +36,5 @@ export class GetIntegrationsEntity {
 export class GetIntegrationEntity {
   status: number;
   message: string;
-  hazard?: IntegrationItem;
+  integration?: IntegrationItem;
 }

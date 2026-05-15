@@ -53,22 +53,22 @@ export const getIntegration = async (
   dto: GetIntegrationDto,
 ): Promise<GetIntegrationEntity> => {
   try {
-    logger.info(`Fetching risk  with id: ${dto.integration_event_id}`);
+    logger.info(`Fetching integration  with id: ${dto.integration_event_id}`);
 
-    const risk = await IntegrationLog.findByPk(dto.integration_event_id);
+    const integration = await IntegrationLog.findByPk(dto.integration_event_id);
 
-    if (!risk) {
+    if (!integration) {
       return {
         status: HttpStatusCode.HTTP_STATUS_NOT_FOUND,
         message: `Integration with id ${dto.integration_event_id} not found`,
       };
     }
 
-    const [mapped] = GetIntegrationsEntity.toEntity([risk]);
+    const [mapped] = GetIntegrationsEntity.toEntity([integration]);
     return {
       status: HttpStatusCode.HTTP_STATUS_OK,
       message: "Integration  fetched successfully",
-      hazard: mapped,
+      integration: mapped,
     };
   } catch (error) {
     logger.error(`Error fetching risk: ${error}`);

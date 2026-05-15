@@ -151,14 +151,82 @@
     },
     "type_conversion": {
       "int": ["severity"],
-      "datetime": ["timestamp"]
+      "datetime": [
+        "timestamp",
+        "event_start_time",
+        "event_end_time"
+      ],
+      "float": [
+        "min_temperature",
+        "max_temperature",
+        "rainfall",
+        "cyber_incidents",
+        "risk_score",
+        "latitude",
+        "longitude"
+      ]
     },
     "string_standardisation": [
       "event_type",
       "location",
       "cyber_threat_type",
-      "threat_severity"
-    ]
+      "threat_severity",
+      "region",
+      "subregion",
+      "hazard_type"
+    ],
+    "advanced_validation": {
+      "temperature_logic": {
+        "min_column": "min_temperature",
+        "max_column": "max_temperature"
+      },
+      "timestamp_sequence": {
+        "start_column": "event_start_time",
+        "end_column": "event_end_time"
+      },
+      "region_subregion": {
+        "region_column": "region",
+        "subregion_column": "subregion",
+        "fallback_value": "Unknown",
+        "valid_map": {
+          "Victoria": [
+            "Melbourne",
+            "Geelong",
+            "Ballarat"
+          ],
+          "New South Wales": [
+            "Sydney",
+            "Newcastle",
+            "Wollongong"
+          ],
+          "Queensland": [
+            "Brisbane",
+            "Gold Coast",
+            "Cairns"
+          ]
+        }
+      },
+      "partial_null_dependencies": {
+        "groups": [
+          [
+            "latitude",
+            "longitude"
+          ],
+          [
+            "event_start_time",
+            "event_end_time"
+          ]
+        ]
+      },
+      "non_negative_values": {
+        "columns": [
+          "rainfall",
+          "severity",
+          "cyber_incidents",
+          "risk_score"
+        ]
+      }
+    }
   },
   "validation": {
     "required_columns": [

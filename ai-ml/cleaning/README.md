@@ -127,6 +127,74 @@ Per column (`validation.column_rules.<column>`):
 - `type_conversion.int|float|datetime`: coercive conversion
 - `string_standardisation`: trim + normalize configured text columns
 
+
+This update extends the pipeline by adding an optional `advanced_validation` stage after the existing cleaning steps.
+
+The pipeline order is:
+
+- type_conversion
+- missing_values
+- duplicates
+- string_standardisation
+- advanced_validation
+
+## Advanced Validation Rules
+
+### temperature_logic
+Checks that a maximum value is not lower than a minimum value.
+
+### timestamp_sequence
+Checks that an end time does not occur before a start time.
+
+### region_subregion
+Checks that a subregion belongs to the correct region.
+
+### partial_null_dependencies
+Checks that related columns are either complete together or missing together.
+
+### non_negative_values
+Checks that selected numeric columns do not contain negative values.
+
+
+Example:
+
+```json
+"advanced_validation": {
+  "temperature_logic": {
+    "min_column": "min_temperature",
+    "max_column": "max_temperature"
+  },
+  "timestamp_sequence": {
+    "start_column": "event_start_time",
+    "end_column": "event_end_time"
+  },
+  "region_subregion": {
+    "region_column": "region",
+    "subregion_column": "subregion",
+    "fallback_value": "Unknown",
+    "valid_map": {
+      "Victoria": ["Melbourne", "Geelong", "Ballarat"]
+    }
+  },
+  "partial_null_dependencies": {
+    "groups": [
+      ["latitude", "longitude"]
+    ]
+  },
+  "non_negative_values": {
+    "columns": ["rainfall", "severity", "risk_score"]
+  }
+}
+```
+
+## Only include the advanced validation rules for those that match the dataset.
+
+- For min-max columns use temperature_logic rule.
+- If start-end time are present, use timestamp_sequence rule.
+- If there is a parent-child category relationship, use region_subregion rule.
+- If there are paired columns, use partial_null_dependencies rule.
+- For columns that cannot be negative, use non_negative_values rule.
+
 ## Notes
 
 - Input is expected to be CSV.

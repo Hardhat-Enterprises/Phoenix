@@ -1,0 +1,10 @@
+# Local editor state
+.vscode/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# OS metadata
+.DS_Store
+Thumbs.db

@@ -7,9 +7,15 @@ import {
   ProcessingStatus,
   StoredFile,
   runInference,
+  IntegrationType,
+  IntegrationStatus,
 } from "@phoenix/common";
-import { HazardEvent, GeoLocation } from "@phoenix/common/databases/models";
-import { DataSource } from "@phoenix/common/databases/models/data-source.model";
+import {
+  HazardEvent,
+  GeoLocation,
+  IntegrationLog,
+  DataSource,
+} from "@phoenix/common";
 import { GetHealthDto } from "../dto/ingestion.dto";
 import { GetHealthEntity } from "../entity/ingestion.entity";
 import { DataIngestionStreamingLog } from "@phoenix/common";
@@ -95,26 +101,92 @@ export const createHazardData = async (content: any) => {
 export const createCyberData = (content: any) => {};
 
 export const coreModelIntegration = async (payload: any) => {
-  console.log("Received core model integration data:", payload);
-  const trainingModel = await StoredFile.findOne({
-    where: { file_id: payload.model },
+  const integrationLog = await IntegrationLog.create({
+    integration_type: IntegrationType.CORE,
+    input: JSON.stringify(payload),
+    status: IntegrationStatus.CREATED,
   });
-  if (!trainingModel) {
-    logger.error(`Training model with file_id ${payload.model} not found`);
-    return {
-      status: HttpStatusCode.HTTP_STATUS_NOT_FOUND,
-      message: "Training model not found",
-    };
+
+  try {
+    if (!payload) {
+      logger.error("Core model integration failed: Payload empty");
+
+      await integrationLog.update({
+        status: IntegrationStatus.ERROR,
+        note: "Payload empty",
+      });
+
+      return;
+    }
+
+    console.log("Received core model integration data:", payload);
+
+    const trainingModel = await StoredFile.findOne({
+      where: {
+        original_name:
+          "final_core_xgb_xgboost_trey_xgb_core_v2_epoch_100.joblib",
+      },
+    });
+
+    if (!trainingModel) {
+      logger.error("Training model not found");
+
+      await integrationLog.update({
+        status: IntegrationStatus.ERROR,
+        note: "Training model not found",
+      });
+
+      return;
+    }
+
+    if (!trainingModel.file_data) {
+      logger.error("Training model file_data is empty");
+
+      await integrationLog.update({
+        status: IntegrationStatus.ERROR,
+        note: "Training model file_data is empty",
+      });
+
+      return;
+    }
+
+    const modelInput = payload.input_data ?? payload;
+
+    if (!modelInput) {
+      logger.error("Model input data is empty");
+
+      await integrationLog.update({
+        status: IntegrationStatus.ERROR,
+        note: "Model input data is empty",
+      });
+
+      return;
+    }
+
+    await integrationLog.update({
+      status: IntegrationStatus.PROCESSING,
+    });
+
+    const result = await runInference(trainingModel.file_data, modelInput);
+
+    console.log("Core model inference result:", result);
+
+    await integrationLog.update({
+      output: JSON.stringify(result),
+      status: IntegrationStatus.COMPLETED,
+    });
+
+    return result;
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    logger.error(`Core model integration error: ${errorMessage}`);
+
+    await integrationLog.update({
+      status: IntegrationStatus.ERROR,
+      note: errorMessage,
+    });
+
+    return;
   }
-
-  const modelPath = `/tmp/${trainingModel.original_name}.pt`;
-
-  await fs.writeFile(modelPath, trainingModel.file_data);
-
-  const result = await runInference(modelPath, payload.input_data);
-  return {
-    status: HttpStatusCode.HTTP_STATUS_OK,
-    message: "Core model integration data received successfully",
-    data: result,
-  };
 };

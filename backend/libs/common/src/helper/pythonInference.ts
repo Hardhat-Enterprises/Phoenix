@@ -1,31 +1,103 @@
 import { spawn } from "child_process";
+import fs from "fs/promises";
+import os from "os";
+import path from "path";
+import crypto from "crypto";
 
-export const runInference = (
-  modelPath: string,
+const cleanEnvPath = (value?: string) => {
+  return value?.replace(/^['"]|['"]$/g, "").trim();
+};
+
+const resolveProjectPath = (value: string) => {
+  return path.isAbsolute(value) ? value : path.resolve(process.cwd(), value);
+};
+
+export const runInference = async (
+  modelBuffer: Buffer,
   inputData: any,
 ): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    const py = spawn("python3", ["inference.py", modelPath]);
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "phoenix-model-"));
+  const tempModelPath = path.join(tempDir, `${crypto.randomUUID()}.joblib`);
 
-    let output = "";
-    let error = "";
+  try {
+    await fs.writeFile(tempModelPath, modelBuffer);
 
-    py.stdin.write(JSON.stringify(inputData));
-    py.stdin.end();
+    const pythonBinEnv = cleanEnvPath(process.env.PYTHON_BIN);
+    const scriptPathEnv = cleanEnvPath(process.env.CORE_MODEL_SCRIPT_PATH);
 
-    py.stdout.on("data", (data) => {
-      output += data.toString();
-    });
+    const pythonBin = pythonBinEnv
+      ? resolveProjectPath(pythonBinEnv)
+      : "python3";
 
-    py.stderr.on("data", (data) => {
-      error += data.toString();
-    });
+    const pythonScriptPath = scriptPathEnv
+      ? resolveProjectPath(scriptPathEnv)
+      : path.resolve(
+          process.cwd(),
+          "libs/common/src/helper/core_model_integration.py",
+        );
 
-    py.on("close", (code) => {
-      if (code !== 0) {
-        return reject(error);
+    return await new Promise((resolve, reject) => {
+      const py = spawn(pythonBin, [pythonScriptPath, tempModelPath]);
+
+      let output = "";
+      let error = "";
+
+      const timeout = setTimeout(() => {
+        py.kill();
+        reject(new Error("Python inference timed out"));
+      }, 30000);
+
+      const inputJson = JSON.stringify(inputData);
+
+      if (!inputJson) {
+        clearTimeout(timeout);
+        py.kill();
+        reject(new Error("Input data is undefined or cannot be stringified"));
+        return;
       }
-      resolve(JSON.parse(output));
+
+      py.stdin.write(inputJson);
+      py.stdin.end();
+
+      py.stdout.on("data", (data) => {
+        output += data.toString();
+      });
+
+      py.stderr.on("data", (data) => {
+        error += data.toString();
+      });
+
+      py.on("error", (err) => {
+        clearTimeout(timeout);
+        reject(err);
+      });
+
+      py.on("close", (code) => {
+        clearTimeout(timeout);
+
+        try {
+          const parsed = JSON.parse(output);
+
+          if (code !== 0 || parsed.success === false) {
+            return reject(
+              new Error(parsed.error || error || "Python inference failed"),
+            );
+          }
+
+          resolve(parsed.data);
+        } catch {
+          reject(
+            new Error(
+              `Failed to parse Python output. Code: ${code}. Output: ${output}. Error: ${error}`,
+            ),
+          );
+        }
+      });
     });
-  });
+  } finally {
+    await fs.rm(tempDir, {
+      recursive: true,
+      force: true,
+    });
+  }
 };

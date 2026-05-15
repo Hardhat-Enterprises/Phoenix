@@ -14,6 +14,7 @@ datasets/
 # Experiment outputs
 Sample Records/
 
+.env
 ai-ml/models/ai012-anomaly/data/
 ai-ml/models/ai012-anomaly/checkpoints/*.pkl
 !ai-ml/models/ai012-anomaly/checkpoints/best.pkl

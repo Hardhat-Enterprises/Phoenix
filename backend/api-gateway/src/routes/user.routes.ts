@@ -20,7 +20,10 @@ import {
 } from "../controllers/user.controller";
 import { getThreats, getThreat } from "../controllers/threat.controller";
 import { getHazards, getHazard } from "../controllers/hazard.controller";
-import { getRisk, getRisks } from "../controllers/risk.controller";
+import {
+  getIntegrations,
+  getIntegration,
+} from "../controllers/integration.controller";
 
 import {
   authenticate,
@@ -45,8 +48,8 @@ router.get("/threats/:threatId", getThreat);
 router.get("/hazards", getHazards);
 router.get("/hazards/:hazardId", getHazard);
 
-router.get("/risks", getRisks);
-router.get("/risks/:riskId", getRisk);
+router.get("/integration", getIntegrations);
+router.get("/integration/:integration", getIntegration);
 
 router.get("/training-models", getTrainingModels);
 router.get("/training-models/:file_id", getOneTrainingModel);

@@ -1,6 +1,6 @@
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
-import { logger } from "@phoenix/common";
+import { IntegrationStatus, IntegrationType, logger } from "@phoenix/common";
 import * as path from "path";
 import dotenv from "dotenv";
 
@@ -81,11 +81,10 @@ export interface GetUserDashboardResponse {
   status: number;
   message: string;
   total_hazards: number;
-  active_hazards: number;
+  critical_hazards: number;
   total_threats: number;
   active_threats: number;
-  total_risk_assessments: number;
-  critical_risks: number;
+  total_ingestions: number;
   last_updated: string;
 }
 
@@ -96,7 +95,6 @@ export interface GetUserDashboardChartsResponse {
   message: string;
   hazards_by_severity: string;
   threats_by_risk_level: string;
-  risks_by_level: string;
   last_updated: string;
 }
 
@@ -157,20 +155,24 @@ export interface GetThreatResponse {
 
 export interface HazardItem {
   hazard_event_id: string;
+  url: string;
+  text: string;
+  timestamp: Date;
   hazard_type: string;
-  severity_level: string;
-  event_status: string;
-  start_time: string;
-  end_time: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
+  hazard_severity: number;
+  hazard_timestamp: Date;
+  hazard_location: string;
+  hazard_status: string;
+  alert_level: string;
+  source: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface GetHazardsRequest {
   hazard_type?: string;
-  severity_level?: string;
-  event_status?: string;
+  hazard_severity?: string;
+  hazard_status?: string;
   page?: number;
   limit?: number;
 }
@@ -279,43 +281,41 @@ export interface ReferenceTimeItem {
   is_business_hours: boolean;
 }
 
-export interface GetRisksRequest {
-  hazard_id: string;
-  threat_id: string;
-  event_status: string;
+export interface GetIntegrationsRequest {
+  from: string;
+  to: string;
   page: number;
   limit: number;
-  linked_event_type: string;
 }
 
-export interface GetRisksResponse {
+export interface GetIntegrationsResponse {
   status: number;
   message: string;
-  risks: RiskItem[];
+  integrations: IntegrationItem[];
   total: number;
   page: number;
   limit: number;
 }
 
-export interface RiskItem {
+export interface IntegrationItem {
   integration_event_id: string;
-  related_threat_id: string;
-  correlation_score: number;
-  linkage_reason: string;
-  integration_confidence: number;
-  linked_event_type: string;
-  event_status: string;
-  event_type: string;
+  integration_type: IntegrationType;
+  input: string;
+  output: string;
+  status: IntegrationStatus;
+  note: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
-export interface GetRiskRequest {
+export interface GetIntegrationRequest {
   integration_event_id: string;
 }
 
-export interface GetRiskResponse {
+export interface GetIntegrationResponse {
   status: number;
   message: string;
-  risk?: RiskItem;
+  risk?: IntegrationItem;
 }
 
 export interface GetTrainingModelsRequest {}
@@ -361,34 +361,22 @@ export interface UserServiceClient {
 
   RegisterUser(
     request: RegisterUserRequest,
-    callback: (
-      error: grpc.ServiceError | null,
-      response: AuthResponse,
-    ) => void,
+    callback: (error: grpc.ServiceError | null, response: AuthResponse) => void,
   ): void;
 
   LoginUser(
     request: LoginUserRequest,
-    callback: (
-      error: grpc.ServiceError | null,
-      response: AuthResponse,
-    ) => void,
+    callback: (error: grpc.ServiceError | null, response: AuthResponse) => void,
   ): void;
 
   RefreshToken(
     request: RefreshTokenRequest,
-    callback: (
-      error: grpc.ServiceError | null,
-      response: AuthResponse,
-    ) => void,
+    callback: (error: grpc.ServiceError | null, response: AuthResponse) => void,
   ): void;
 
   LogoutUser(
     request: LogoutUserRequest,
-    callback: (
-      error: grpc.ServiceError | null,
-      response: AuthResponse,
-    ) => void,
+    callback: (error: grpc.ServiceError | null, response: AuthResponse) => void,
   ): void;
 
   GetUserDashboard(
@@ -495,19 +483,19 @@ export interface UserServiceClient {
     ) => void,
   ): void;
 
-  GetRisks(
-    request: GetRisksRequest,
+  GetIntegrations(
+    request: GetIntegrationsRequest,
     callback: (
       error: grpc.ServiceError | null,
-      response: GetRisksResponse,
+      response: GetIntegrationsResponse,
     ) => void,
   ): void;
 
-  GetRisk(
-    request: GetRiskRequest,
+  GetIntegration(
+    request: GetIntegrationRequest,
     callback: (
       error: grpc.ServiceError | null,
-      response: GetRiskResponse,
+      response: GetIntegrationResponse,
     ) => void,
   ): void;
 

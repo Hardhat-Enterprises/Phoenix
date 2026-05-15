@@ -8,3 +8,10 @@ __pycache__/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Environment variables and API keys
+.env
+.env.local
+*.key
+api_keys/
+secrets/

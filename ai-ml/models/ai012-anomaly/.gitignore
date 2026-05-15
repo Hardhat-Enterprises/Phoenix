@@ -18,6 +18,7 @@ autoencoder/reports/
 !autoencoder/outputs/
 !autoencoder/outputs/checkpoints/
 !autoencoder/outputs/checkpoints/autoencoder_best.pt
+!autoencoder/outputs/checkpoints/autoencoder_preprocessing.pkl
 
 # Historical model archive: keep source, configs, notebooks, JSON reports, and images.
 !other_models/

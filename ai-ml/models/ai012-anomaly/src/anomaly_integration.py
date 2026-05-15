@@ -50,7 +50,7 @@ HOW IT CONNECTS TO AI012 PREVIOUS WORK
   Role A (Sunain)  → raw dataset columns map to input fields above
   Role B (Sneha)   → FeatureSelector logic re-applied here on incoming fields
   Role C (Preetham)→ 7 anomaly rules reused to flag records and build main_drivers
-  Role E / AI012     → Isolation Forest checkpoint loaded and used for anomaly_score
+  Role E / AI012     → selected autoencoder checkpoint loaded and used for anomaly_score
   AI007            → risk_level bands: Low/Medium/High/Critical
 
 USAGE FROM BACKEND
@@ -67,7 +67,6 @@ USAGE FROM BACKEND
 from __future__ import annotations
 
 import json
-import pickle
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -91,19 +90,121 @@ def _score_to_risk_level(score: float) -> str:
     return "Low"
 
 
+AI012_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_AUTOENCODER_CHECKPOINT_PATH = (
+    AI012_ROOT / "autoencoder" / "outputs" / "checkpoints" / "autoencoder_best.pt"
+)
+DEFAULT_AUTOENCODER_PREPROCESSING_PATH = (
+    AI012_ROOT / "autoencoder" / "outputs" / "checkpoints" / "autoencoder_preprocessing.pkl"
+)
+
+
+def _resolve_checkpoint_path(checkpoint_path: str | Path) -> Path:
+    path = Path(checkpoint_path)
+    if path.exists():
+        return path
+
+    ai012_relative = AI012_ROOT / path
+    if ai012_relative.exists():
+        return ai012_relative
+
+    return path
+
+
+class AutoencoderModel:
+    """Minimal runtime copy of the trained PyTorch autoencoder architecture."""
+
+    def __init__(self, input_dim, encoder_layers, latent_dim, decoder_layers, dropout=0.0):
+        import torch.nn as nn
+
+        self.nn = nn
+        self.input_dim = input_dim
+
+        encoder = []
+        previous = input_dim
+        for layer_size in encoder_layers:
+            encoder.append(nn.Linear(previous, layer_size))
+            encoder.append(nn.ReLU())
+            if dropout:
+                encoder.append(nn.Dropout(dropout))
+            previous = layer_size
+        encoder.append(nn.Linear(previous, latent_dim))
+
+        decoder = []
+        previous = latent_dim
+        for layer_size in decoder_layers:
+            decoder.append(nn.Linear(previous, layer_size))
+            decoder.append(nn.ReLU())
+            if dropout:
+                decoder.append(nn.Dropout(dropout))
+            previous = layer_size
+        decoder.append(nn.Linear(previous, input_dim))
+
+        class _Module(nn.Module):
+            def __init__(self, encoder_layers, decoder_layers):
+                super().__init__()
+                self.encoder = nn.Sequential(*encoder_layers)
+                self.decoder = nn.Sequential(*decoder_layers)
+
+            def forward(self, x):
+                return self.decoder(self.encoder(x))
+
+        self.module = _Module(encoder, decoder)
+
+
 # ---------------------------------------------------------------------------
 # Checkpoint loader
 # ---------------------------------------------------------------------------
-def _load_checkpoint(checkpoint_path: str) -> dict:
-    """Load Isolation Forest checkpoint."""
-    path = Path(checkpoint_path)
+def _load_checkpoint(checkpoint_path: str | Path) -> dict:
+    """Load the selected autoencoder checkpoint, with legacy joblib fallback."""
+    path = _resolve_checkpoint_path(checkpoint_path)
     if not path.exists():
         raise FileNotFoundError(
             f"Model checkpoint not found: {path}\n"
-            "Place the trained Isolation Forest checkpoint at checkpoints/isolation_forest.pkl"
+            f"Expected selected AI012 autoencoder checkpoint at {DEFAULT_AUTOENCODER_CHECKPOINT_PATH}"
         )
+
+    if path.suffix.lower() in {".pt", ".pth"}:
+        import joblib
+        import torch
+
+        checkpoint = torch.load(path, map_location="cpu")
+        preprocessing_path = path.with_name("autoencoder_preprocessing.pkl")
+        if not preprocessing_path.exists():
+            preprocessing_path = DEFAULT_AUTOENCODER_PREPROCESSING_PATH
+        if not preprocessing_path.exists():
+            raise FileNotFoundError(
+                f"Autoencoder preprocessing file not found: {preprocessing_path}"
+            )
+
+        preprocessing = joblib.load(preprocessing_path)
+        config = checkpoint.get("config", {})
+        hyperparameters = config.get("model", {}).get("hyperparameters", {})
+
+        model_wrapper = AutoencoderModel(
+            input_dim=checkpoint.get("input_dim", len(checkpoint.get("feature_columns", []))),
+            encoder_layers=hyperparameters.get("encoder_layers", [128, 64, 32]),
+            latent_dim=hyperparameters.get("latent_dim", 16),
+            decoder_layers=hyperparameters.get("decoder_layers", [32, 64, 128]),
+            dropout=hyperparameters.get("dropout", 0.1),
+        )
+        model = model_wrapper.module
+        model.load_state_dict(checkpoint["model_state_dict"])
+        model.eval()
+
+        return {
+            "model_type": "autoencoder",
+            "model": model,
+            "preprocessor": preprocessing["preprocessor"],
+            "feature_columns": preprocessing.get(
+                "feature_columns",
+                checkpoint.get("feature_columns", []),
+            ),
+            "threshold": preprocessing.get("threshold", checkpoint.get("threshold")),
+        }
+
     import joblib
-    return joblib.load(checkpoint_path)
+    return joblib.load(path)
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +265,7 @@ def fill_missing(data: dict) -> dict:
 # ---------------------------------------------------------------------------
 def engineer_features(data: dict) -> dict:
     """
-    Convert Sunain's input fields into the features the Isolation Forest model expects.
+    Convert Sunain's input fields into the features the selected model expects.
 
     Sunain's fields → Sneha's FeatureSelector equivalents:
       firms_event_count          → firms_event_count (direct)
@@ -185,7 +286,8 @@ def engineer_features(data: dict) -> dict:
     """
     ec   = float(data.get("firms_event_count", 0))
     br   = float(data.get("firms_avg_brightness", 0))
-    conf = float(data.get("fire_confidence_high_count", 0))
+    avg_confidence = data.get("firms_avg_confidence")
+    conf = np.nan if avg_confidence in (None, "") else float(avg_confidence)
     uc   = float(data.get("urlhaus_event_count", 0))
     mu   = float(data.get("malicious_url_count", 0))
     pt   = float(data.get("phishing_tag_count", 0))
@@ -194,22 +296,31 @@ def engineer_features(data: dict) -> dict:
     dow  = float(data.get("day_of_week", 0))
 
     firms_risk_index         = ec * (br / 100.0)
-    firms_intensity_score    = br * conf
-    firms_geo_density        = ec / 1.0          # single-record: no area available
+    firms_intensity_score    = br * conf if not np.isnan(conf) else np.nan
+    geo_area_proxy           = data.get("geo_area_proxy")
+    geo_area_proxy           = np.nan if geo_area_proxy in (None, "") else float(geo_area_proxy)
+    firms_geo_density        = ec / geo_area_proxy if geo_area_proxy and not np.isnan(geo_area_proxy) else np.nan
     cyber_risk_index         = uc * mu
     cyber_activity_score     = uc - (uc * 0.3)   # approximate: online minus offline
     hazard_cyber_interaction = ec * uc
     risk_amplification_index = firms_risk_index * cyber_risk_index
 
-    return {
+    features = {
         # Direct mappings
         "hour"              : hr,
         "day"               : dow,
-        "geo_area_proxy"    : 1.0,   # not available in stream input
+        "geo_area_proxy"    : geo_area_proxy,
+        "firms_event_count" : ec,
+        "firms_avg_brightness": br,
+        "firms_avg_confidence": conf,
+        "urlhaus_event_count": uc,
+        "urlhaus_unique_url_count": mu,
+        "urlhaus_tags_encoded": pt,
         # FIRMS engineered
         "firms_risk_index"        : firms_risk_index,
         "firms_intensity_score"   : firms_intensity_score,
         "firms_geo_density"       : firms_geo_density,
+        "firms_sensor_activity"   : ec,
         "firms_zscore"            : 0.0,   # z-score vs training mean not available per-record
         # Cyber engineered
         "cyber_risk_index"        : cyber_risk_index,
@@ -220,6 +331,34 @@ def engineer_features(data: dict) -> dict:
         "hazard_cyber_interaction"  : hazard_cyber_interaction,
         "risk_amplification_index"  : risk_amplification_index,
     }
+
+    # Fill the selected autoencoder training columns when live/backend input does
+    # not provide their raw equivalents. The fitted imputer/scaler then receives
+    # a stable 50-column frame that matches the saved checkpoint.
+    def optional_numeric(column: str) -> float:
+        value = data.get(column, np.nan)
+        if value in (None, ""):
+            return np.nan
+        return float(value)
+
+    for column in (
+        "region_lat_bin", "region_lon_bin",
+        "region_min_latitude", "region_max_latitude",
+        "region_min_longitude", "region_max_longitude",
+        "firms_avg_latitude", "firms_avg_longitude",
+        "firms_min_latitude", "firms_max_latitude",
+        "firms_min_longitude", "firms_max_longitude",
+        "firms_avg_frp", "firms_avg_bright_t31", "firms_avg_bright_ti4",
+        "firms_avg_scan", "firms_avg_track", "firms_versions",
+        "urlhaus_dateadded_hour_count", "urlhaus_last_online_hour_count",
+        "urlhaus_online_count", "urlhaus_offline_count",
+        "geo_width", "geo_height", "geo_center_lat", "geo_center_lon",
+        "firms_instruments_encoded", "firms_satellites_encoded",
+        "firms_types_encoded", "urlhaus_threats_encoded",
+    ):
+        features[column] = optional_numeric(column)
+
+    return features
 
 
 # ---------------------------------------------------------------------------
@@ -262,7 +401,7 @@ def _apply_rules(data: dict) -> tuple[list[str], float]:
 
 
 # ---------------------------------------------------------------------------
-# Isolation Forest model scoring
+# Model scoring
 # ---------------------------------------------------------------------------
 ISOLATION_FOREST_FEATURE_ORDER = [
     "hour", "day", "geo_area_proxy",
@@ -315,6 +454,43 @@ def _isolation_forest_score(features: dict, ck: dict) -> float:
     except Exception:
         return 0.0
 
+
+def _autoencoder_score(features: dict, ck: dict) -> float:
+    """
+    Run the selected PyTorch autoencoder and return a normalized anomaly score.
+
+    The raw reconstruction error is compared with the saved training threshold.
+    A score of about 0.5 means the reconstruction error is at the selected
+    anomaly threshold; higher values are increasingly anomalous.
+    """
+    import torch
+
+    feature_columns = ck["feature_columns"]
+    row = pd.DataFrame(
+        [{column: float(features.get(column, np.nan)) for column in feature_columns}],
+        columns=feature_columns,
+    )
+    X = ck["preprocessor"].transform(row)
+    X_tensor = torch.tensor(X, dtype=torch.float32)
+
+    with torch.no_grad():
+        reconstructed = ck["model"](X_tensor)
+        raw_score = torch.mean((reconstructed - X_tensor) ** 2, dim=1).item()
+
+    threshold = float(ck.get("threshold") or 0.0)
+    if threshold <= 0:
+        return round(float(min(1.0, max(0.0, raw_score))), 4)
+
+    normalized = raw_score / (threshold * 2.0)
+    return round(float(min(1.0, max(0.0, normalized))), 4)
+
+
+def _model_score(features: dict, ck: dict) -> float:
+    """Score features with the selected model, preserving legacy checkpoint support."""
+    if isinstance(ck, dict) and ck.get("model_type") == "autoencoder":
+        return _autoencoder_score(features, ck)
+    return _isolation_forest_score(features, ck)
+
 # ---------------------------------------------------------------------------
 # Core predict function
 # ---------------------------------------------------------------------------
@@ -329,7 +505,7 @@ def _get_checkpoint(checkpoint_path: str) -> dict:
 
 def predict(
     input_data: dict,
-    checkpoint_path: str = "checkpoints/isolation_forest.pkl",
+    checkpoint_path: str | Path = DEFAULT_AUTOENCODER_CHECKPOINT_PATH,
 ) -> dict:
     """
     Main integration function. Takes backend input, returns backend output.
@@ -338,7 +514,7 @@ def predict(
 
     Args:
         input_data      : dict matching Sunain's anomaly detection input schema
-        checkpoint_path : path to Isolation Forest checkpoint
+        checkpoint_path : path to selected autoencoder checkpoint
 
     Returns:
         dict matching Sunain's anomaly detection output schema exactly:
@@ -370,24 +546,24 @@ def predict(
     # Step 4: Apply Role C rules → get main_drivers and rule_score
     main_drivers, rule_score = _apply_rules(data)
 
-    # Step 5: Isolation Forest model score
+    # Step 5: Selected model score
     try:
         ck        = _get_checkpoint(checkpoint_path)
-        if_score = _isolation_forest_score(features, ck)
+        model_score = _model_score(features, ck)
     except FileNotFoundError:
         # If checkpoint not found, fall back to rule-based score only
-        if_score = rule_score
+        model_score = rule_score
 
     # Step 6: Combine scores
-    # Weight: 60% Isolation Forest (statistical), 40% rules (domain knowledge)
-    anomaly_score = round((if_score * 0.6) + (rule_score * 0.4), 4)
+    # Weight: 60% selected autoencoder (statistical), 40% rules (domain knowledge)
+    anomaly_score = round((model_score * 0.6) + (rule_score * 0.4), 4)
 
     # Step 7: Build output in Sunain's exact format
     is_anomaly  = anomaly_score >= 0.25    # threshold: anything above Low is anomaly
     risk_level  = _score_to_risk_level(anomaly_score)
 
-    # Confidence: higher when both Isolation Forest and rules agree
-    if_agrees  = if_score >= 0.25
+    # Confidence: higher when both selected model and rules agree
+    if_agrees  = model_score >= 0.25
     rule_agrees = rule_score >= 0.25
     if if_agrees and rule_agrees:
         confidence = round(min(0.95, anomaly_score + 0.15), 2)
@@ -409,14 +585,14 @@ def predict(
 
 def predict_batch(
     records: list[dict],
-    checkpoint_path: str = "checkpoints/isolation_forest.pkl",
+    checkpoint_path: str | Path = DEFAULT_AUTOENCODER_CHECKPOINT_PATH,
 ) -> dict:
     """
     Batch prediction. Process multiple records and return all results.
 
     Args:
         records         : list of input dicts, each matching Sunain's input schema
-        checkpoint_path : path to Isolation Forest checkpoint
+        checkpoint_path : path to selected autoencoder checkpoint
 
     Returns:
         {
@@ -477,14 +653,7 @@ if __name__ == "__main__":
     print("\n--- Input ---")
     print(json.dumps(test_input, indent=2))
 
-    # Try to find checkpoint
-    script_dir = Path(__file__).resolve().parent
-    candidates = [
-        script_dir / "checkpoints" / "isolation_forest.pkl",
-        script_dir.parent / "checkpoints" / "isolation_forest.pkl",
-        Path("checkpoints/isolation_forest.pkl"),
-    ]
-    ck_path = next((str(p) for p in candidates if p.exists()), "checkpoints/isolation_forest.pkl")
+    ck_path = DEFAULT_AUTOENCODER_CHECKPOINT_PATH
 
     result = predict(test_input, checkpoint_path=ck_path)
 

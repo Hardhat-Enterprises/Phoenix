@@ -29,6 +29,7 @@ import pandas as pd
 
 try:
     from anomaly_integration import (
+        DEFAULT_AUTOENCODER_CHECKPOINT_PATH,
         validate_input,
         fill_missing,
         engineer_features,
@@ -37,6 +38,7 @@ try:
     )
 except ImportError:
     from .anomaly_integration import (
+        DEFAULT_AUTOENCODER_CHECKPOINT_PATH,
         validate_input,
         fill_missing,
         engineer_features,
@@ -45,7 +47,7 @@ except ImportError:
     )
 
 
-DEFAULT_CHECKPOINT_PATH = "checkpoints/isolation_forest.pkl"
+DEFAULT_CHECKPOINT_PATH = DEFAULT_AUTOENCODER_CHECKPOINT_PATH
 
 
 class RealTimeAnomalyInferencePipeline:

@@ -1,5 +1,5 @@
 ## Team Members  
-**Count:** 11/17  
+**Count:** 12/17  
 
 - **Sunain Mushtaq**  
   *13/04/2026*
@@ -32,4 +32,7 @@
   *15/05/2026*
 
 - **Tarun Kumar Atla**
+  *16/05/2026*
+
+- **Sammed Bharat Vaigud**
   *16/05/2026*

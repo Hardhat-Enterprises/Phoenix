@@ -1,165 +1,111 @@
+import React from "react";
+import "./ThreatDetails.css";
+
+const threatLevels = [
+  { label: "No Threat", className: "no-threat" },
+  { label: "Low", className: "low" },
+  { label: "Medium", className: "medium" },
+  { label: "High", className: "high" },
+  { label: "Critical", className: "critical" },
+];
+
 function ThreatDetails({ selectedThreat }) {
-  if (!selectedThreat) {
-    return (
-      <div style={{ padding: "40px" }}>
-        <h2>No Threat Selected</h2>
-      </div>
-    );
-  }
-
   const getRiskColor = () => {
-    if (selectedThreat.vulnerability === "Critical") {
-      return "#d93636";
-    }
+    const level = selectedThreat?.vulnerability?.toLowerCase();
 
-    if (selectedThreat.vulnerability === "High") {
-      return "#e85d04";
-    }
-
-    if (selectedThreat.vulnerability === "Medium") {
-      return "#d4a017";
-    }
+    if (level?.includes("critical")) return "#d93636";
+    if (level?.includes("high")) return "#e85d04";
+    if (level?.includes("medium")) return "#d4a017";
+    if (level?.includes("low")) return "#84cc16";
 
     return "#2b9348";
   };
 
+  const rawThreat = selectedThreat?.raw || {};
+  const confidenceScore =
+    rawThreat.confidence_score || selectedThreat?.confidence_score || "Not supplied";
+
+  const detectedAt =
+    selectedThreat?.detectedAt ||
+    rawThreat.detected_at ||
+    rawThreat.created_at ||
+    "Not supplied";
+
   return (
-    <main
-      style={{
-        flex: 1,
-        padding: "40px",
-        backgroundColor: "#eef3f8",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "#ffffff",
-          borderRadius: "20px",
-          padding: "40px",
-          maxWidth: "950px",
-          margin: "0 auto",
-          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)",
-          border: "1px solid #dbe4f0",
-        }}
-      >
-        <div style={{ marginBottom: "30px" }}>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "56px",
-              color: "#1f3a5f",
-              fontWeight: "700",
-            }}
-          >
-            Threat Details
-          </h1>
+    <div className="threat-details-page">
+      <div className="threat-legend-card">
+        <h3 className="threat-legend-title">HUB LEGEND</h3>
 
-          <p
-            style={{
-              marginTop: "10px",
-              color: "#6b7f96",
-              fontSize: "16px",
-            }}
-          >
-            Detailed cybersecurity threat intelligence and incident overview
-          </p>
-        </div>
+        {threatLevels.map((level) => (
+          <div className="threat-legend-row" key={level.label}>
+            <span className={`legend-dot ${level.className}`}></span>
+            <span>{level.label}</span>
+          </div>
+        ))}
+      </div>
 
-        <div
-          style={{
-            backgroundColor: "#f8fbff",
-            borderRadius: "16px",
-            padding: "28px",
-            border: "1px solid #e4edf7",
-          }}
-        >
-          <h2
-            style={{
-              marginTop: 0,
-              marginBottom: "22px",
-              color: "#1f3a5f",
-              fontSize: "34px",
-            }}
-          >
-            {selectedThreat.name}
-          </h2>
+      <main className="threat-details-main">
+        <div className="threat-details-card">
+          <div className="threat-details-header">
+            <h1>Threat Details</h1>
+            <p>Detailed cybersecurity threat intelligence and incident overview</p>
+          </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "18px",
-            }}
-          >
-            <div>
-              <strong style={{ color: "#52667a" }}>
-                Threat Level
-              </strong>
+          {!selectedThreat ? (
+            <div className="no-threat-selected-box">
+              <h2>No Threat Selected</h2>
+              <p>Please select a threat from the dashboard item list.</p>
+            </div>
+          ) : (
+            <div className="selected-threat-box">
+              <h2>{selectedThreat.name}</h2>
 
-              <div
-                style={{
-                  marginTop: "8px",
-                  display: "inline-block",
-                  padding: "8px 16px",
-                  borderRadius: "999px",
-                  backgroundColor: "#f1f5f9",
-                  color: getRiskColor(),
-                  fontWeight: "700",
-                }}
-              >
-                {selectedThreat.vulnerability}
+              <div className="threat-info-grid">
+                <div>
+                  <strong>Threat Level</strong>
+                  <div
+                    className="threat-risk-badge"
+                    style={{ color: getRiskColor() }}
+                  >
+                    {selectedThreat.vulnerability}
+                  </div>
+                </div>
+
+                <div>
+                  <strong>Status</strong>
+                  <p>{selectedThreat.status}</p>
+                </div>
+
+                <div>
+                  <strong>Category</strong>
+                  <p>{rawThreat.category || selectedThreat.source}</p>
+                </div>
+
+                <div>
+                  <strong>Confidence Score</strong>
+                  <p>{confidenceScore}</p>
+                </div>
+
+                <div>
+                  <strong>Detected At</strong>
+                  <p>{detectedAt}</p>
+                </div>
+
+                <div>
+                  <strong>Source</strong>
+                  <p>{selectedThreat.source}</p>
+                </div>
+              </div>
+
+              <div className="threat-description-section">
+                <strong>Threat Description</strong>
+                <p>{selectedThreat.description}</p>
               </div>
             </div>
-
-            <div>
-              <strong style={{ color: "#52667a" }}>
-                Status
-              </strong>
-
-              <p style={{ marginTop: "8px", color: "#243b53" }}>
-                {selectedThreat.status}
-              </p>
-            </div>
-
-            <div>
-              <strong style={{ color: "#52667a" }}>
-                Source
-              </strong>
-
-              <p style={{ marginTop: "8px", color: "#243b53" }}>
-                {selectedThreat.source}
-              </p>
-            </div>
-
-            <div>
-              <strong style={{ color: "#52667a" }}>
-                Region
-              </strong>
-
-              <p style={{ marginTop: "8px", color: "#243b53" }}>
-                {selectedThreat.region}
-              </p>
-            </div>
-          </div>
-
-          <div style={{ marginTop: "30px" }}>
-            <strong style={{ color: "#52667a" }}>
-              Threat Description
-            </strong>
-
-            <p
-              style={{
-                marginTop: "12px",
-                lineHeight: "1.7",
-                color: "#243b53",
-              }}
-            >
-              {selectedThreat.description}
-            </p>
-          </div>
+          )}
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
 

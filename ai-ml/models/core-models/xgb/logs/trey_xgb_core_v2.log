@@ -1,0 +1,24 @@
+2026-05-12 00:13:48,503 | INFO | training_pipeline | CONFIG SNAPSHOT
+2026-05-12 00:13:48,504 | INFO | training_pipeline | CONFIG | section=dataset | value={"path": "ai-ml/datasets/phoenix_combined_dataset_large.csv", "target_column": "hazard_severity", "train_split": 0.7, "val_split": 0.15, "test_split": 0.15, "random_seed": 42, "stratify": true, "abnormal_path": ""}
+2026-05-12 00:13:48,504 | INFO | training_pipeline | CONFIG | section=preprocessing | value={"missing_value_strategy": "mean", "normalization": "none", "encoding": "onehot", "feature_selection": false, "selected_features": []}
+2026-05-12 00:13:48,505 | INFO | training_pipeline | CONFIG | section=model | value={"type": "sklearn", "name": "xgboost", "task_type": "classification", "hyperparameters": {"n_estimators": 120, "learning_rate": 0.1, "max_depth": 3, "random_state": 42, "eval_metric": "mlogloss"}}
+2026-05-12 00:13:48,506 | INFO | training_pipeline | CONFIG | section=training | value={"batch_size": 32, "epochs": 100, "checkpoint_interval": 10, "learning_rate": 0.001, "verbose": true, "tensorboard_enabled": true, "tensorboard_log_dir": "ai-ml/models/core-models/xgb/logs/tensorboard"}
+2026-05-12 00:13:48,507 | INFO | training_pipeline | CONFIG | section=output | value={"path": "ai-ml/models/core-models/xgb/checkpoints/", "log_path": "ai-ml/models/core-models/xgb/logs/", "reports_path": "ai-ml/models/core-models/xgb/reports/", "save_best_only": true, "organize_checkpoints_by_run": true, "previous_checkpoints_to_keep": 4, "checkpoint_prefix": "core_xgb"}
+2026-05-12 00:13:48,519 | INFO | training_pipeline | Dataset loaded | main_rows=2000 | abnormal_rows=0 | combined_rows=2000
+2026-05-12 00:13:48,536 | INFO | training_pipeline | Preprocessing complete | processed_rows=2000 | processed_columns=3572 | preprocessing_events=11
+2026-05-12 00:13:48,550 | INFO | training_pipeline | Label encoding applied | classes=["critical", "high", "low", "medium"]
+2026-05-12 00:13:48,737 | INFO | training_pipeline | Training started | model_name=xgboost | model_type=sklearn | epochs=100 | batch_size=32 | train_rows=1400
+2026-05-12 00:18:09,214 | INFO | training_pipeline | Training complete | model_name=xgboost | model_type=sklearn | task_type=classification
+2026-05-12 00:18:10,786 | INFO | training_pipeline | METRIC | metric=val_accuracy | value=0.73
+2026-05-12 00:18:10,786 | INFO | training_pipeline | METRIC | metric=val_precision | value=0.7249205184641722
+2026-05-12 00:18:10,788 | INFO | training_pipeline | METRIC | metric=val_recall | value=0.73
+2026-05-12 00:18:10,788 | INFO | training_pipeline | METRIC | metric=val_f1 | value=0.717340895522388
+2026-05-12 00:18:10,788 | INFO | training_pipeline | METRIC | metric=val_confusion_matrix | value=[[91, 0, 0, 0], [0, 60, 0, 25], [0, 0, 46, 0], [0, 56, 0, 22]]
+2026-05-12 00:18:10,788 | INFO | training_pipeline | METRIC | metric=val_auc | value=0.903438962218032
+2026-05-12 00:18:10,790 | INFO | training_pipeline | METRIC | metric=test_accuracy | value=0.7333333333333333
+2026-05-12 00:18:10,790 | INFO | training_pipeline | METRIC | metric=test_precision | value=0.73130641068079
+2026-05-12 00:18:10,790 | INFO | training_pipeline | METRIC | metric=test_recall | value=0.7333333333333333
+2026-05-12 00:18:10,792 | INFO | training_pipeline | METRIC | metric=test_f1 | value=0.7272033023735811
+2026-05-12 00:18:10,792 | INFO | training_pipeline | METRIC | metric=test_confusion_matrix | value=[[90, 0, 0, 0], [0, 55, 0, 29], [0, 0, 47, 0], [0, 51, 0, 28]]
+2026-05-12 00:18:10,792 | INFO | training_pipeline | METRIC | metric=test_auc | value=0.8972714164013184
+2026-05-12 00:18:10,815 | INFO | training_pipeline | Checkpoint saved | checkpoint_path=ai-ml/models/core-models/xgb/checkpoints/trey_xgb_core_v2/core_xgb_xgboost_trey_xgb_core_v2_final.joblib

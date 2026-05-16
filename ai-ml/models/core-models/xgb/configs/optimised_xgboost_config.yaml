@@ -1,0 +1,68 @@
+dataset:
+  path: "../../../../datasets/phoenix_combined_dataset_large.csv"
+  target_column: "hazard_severity"
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  random_seed: 42
+  stratify: true
+
+# All possible input features for the unified core model.
+# text and url are optional — missing values are passed as NaN
+# and handled natively by XGBoost (no imputation needed).
+features:
+  text_features:
+    - text
+    - url
+  context_features:
+    - timestamp
+    - hazard_type
+    - hazard_timestamp
+    - hazard_location
+    - hazard_status
+    - alert_level
+    - source
+  # Columns that will be one-hot encoded before training
+  categorical_cols:
+    - hazard_type
+    - hazard_location
+    - hazard_status
+    - alert_level
+    - source
+  # Columns that need datetime parsing -> unix timestamp
+  datetime_cols:
+    - timestamp
+    - hazard_timestamp
+
+preprocessing:
+  missing_value_strategy: "none"
+  normalization: "none"
+  encoding: "onehot"
+  feature_selection: false
+  selected_features: []
+
+model:
+  type: "sklearn"
+  name: "xgboost"
+  task_type: "classification"
+  hyperparameters:
+    n_estimators: 120
+    learning_rate: 0.1
+    max_depth: 3
+    random_state: 42
+    eval_metric: "mlogloss"
+    tree_method: "hist"
+
+training:
+  verbose: true
+  tensorboard_enabled: true
+  tensorboard_log_dir: "ai-ml/models/core-models/xgb/logs/tensorboard"
+
+output:
+  path: "../checkpoints/"
+  log_path: "../logs/"
+  reports_path: "../reports/"
+  save_best_only: true
+  organize_checkpoints_by_run: true
+  previous_checkpoints_to_keep: 4
+  checkpoint_prefix: "optimised_core_xgb"

@@ -1,0 +1,11 @@
+{
+  "run_id": "trey_xgb_core_v2",
+  "model": {
+    "model_type": "sklearn",
+    "model_name": "xgboost",
+    "task_type": "classification"
+  },
+  "best_f1": 0.7237184466019418,
+  "best_epoch": 58,
+  "dataset_used": "ai-ml/datasets/phoenix_combined_dataset_large.csv"
+}

@@ -6,9 +6,11 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler, StandardScaler
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 def find_project_root(start: Path) -> Path:
@@ -58,6 +60,92 @@ def load_preprocessing_config(config_path: Path) -> dict[str, Any]:
     with open(config_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
+def apply_datetime_features(
+    df: pd.DataFrame,
+    config: dict[str, Any],
+    events: list[dict[str, str]],
+) -> pd.DataFrame:
+    if not config.get("enabled", False):
+        _log(events, "datetime_features", "skipped_disabled")
+        return df
+
+    columns = _get_existing_columns(df, config.get("columns", []))
+    if not columns:
+        _log(events, "datetime_features", "skipped_no_columns")
+        return df
+
+    df = df.copy()
+    for col in columns:
+        df[col] = pd.to_datetime(df[col], errors="coerce")
+        df[f"{col}_year"] = df[col].dt.year
+        df[f"{col}_month"] = df[col].dt.month
+        df[f"{col}_day"] = df[col].dt.day
+        if config.get("drop_original", True):
+            df = df.drop(columns=[col])
+
+    _log(events, "datetime_features", f"columns={columns}")
+    return df
+
+def apply_url_features(
+    df: pd.DataFrame,
+    config: dict[str, Any],
+    events: list[dict[str, str]],
+) -> pd.DataFrame:
+    if not config.get("enabled", False):
+        _log(events, "url_features", "skipped_disabled")
+        return df
+
+    columns = _get_existing_columns(df, config.get("columns", []))
+    if not columns:
+        _log(events, "url_features", "skipped_no_columns")
+        return df
+
+    df = df.copy()
+    for col in columns:
+        df[f"{col}_domain"] = df[col].apply(
+            lambda x: urlparse(str(x)).netloc if pd.notnull(x) else "unknown"
+        )
+        if config.get("drop_original", True):
+            df = df.drop(columns=[col])
+
+    _log(events, "url_features", f"columns={columns}")
+    return df
+
+def apply_text_vectorization(
+    df: pd.DataFrame,
+    config: dict[str, Any],
+    events: list[dict[str, str]],
+) -> pd.DataFrame:
+    if not config.get("enabled", False):
+        _log(events, "text_vectorization", "skipped_disabled")
+        return df
+
+    text_column = config.get("column", "text")
+    if text_column not in df.columns:
+        _log(events, "text_vectorization", "skipped_missing_column")
+        return df
+
+    max_features = int(config.get("max_features", 5000))
+    ngram_range = tuple(config.get("ngram_range", [1, 2]))
+
+    vectorizer = TfidfVectorizer(
+        max_features=max_features,
+        stop_words="english",
+        ngram_range=ngram_range,
+    )
+    tfidf_matrix = vectorizer.fit_transform(df[text_column].fillna("").astype(str))
+    tfidf_df = pd.DataFrame.sparse.from_spmatrix(
+        tfidf_matrix,
+        columns=[f"{text_column}_tfidf_{f}" for f in vectorizer.get_feature_names_out()],
+    )
+
+    df = df.drop(columns=[text_column]).reset_index(drop=True)
+    tfidf_df = tfidf_df.reset_index(drop=True)
+    df = pd.concat([df, tfidf_df], axis=1)
+
+    _log(events, "text_vectorization", f"column={text_column}; features={tfidf_df.shape[1]}")
+    return df
+
 
 def apply_normalization(
     df: pd.DataFrame,
@@ -98,6 +186,31 @@ def apply_normalization(
     df[columns] = scaler.fit_transform(df[columns])
 
     _log(events, "normalization", f"method={method}; columns={columns}")
+    return df
+
+def apply_label_encoding(
+    df: pd.DataFrame,
+    config: dict[str, Any],
+    events: list[dict[str, str]],
+    exclude_columns: set[str] | None = None,
+) -> pd.DataFrame:
+    if not config.get("enabled", False):
+        _log(events, "label_encoding", "skipped_disabled")
+        return df
+
+    protected = (exclude_columns or set()) | set(config.get("exclude_columns", []))
+    columns = _get_existing_columns(df, config.get("columns", []))
+    columns = [c for c in columns if c not in protected]
+
+    if not columns:
+        _log(events, "label_encoding", "skipped_no_columns")
+        return df
+
+    df = df.copy()
+    for col in columns:
+        df[col] = LabelEncoder().fit_transform(df[col].astype(str))
+
+    _log(events, "label_encoding", f"columns={columns}")
     return df
 
 
@@ -204,7 +317,9 @@ def preprocess_features(
     encoding_config = dict(preprocessing_config.get("encoding", {}))
     normalization_config = dict(preprocessing_config.get("normalization", {}))
 
+    protected: set[str] = set()
     if target_column and target_column in processed.columns:
+        protected.add(target_column)
         encoding_exclude = set(encoding_config.get("exclude_columns", []))
         normalization_exclude = set(normalization_config.get("exclude_columns", []))
         encoding_exclude.add(target_column)
@@ -212,6 +327,22 @@ def preprocess_features(
         encoding_config["exclude_columns"] = sorted(encoding_exclude)
         normalization_config["exclude_columns"] = sorted(normalization_exclude)
         _log(events, "target_protection", f"excluded_from_transform={target_column}")
+
+    processed = apply_datetime_features(
+        processed, dict(preprocessing_config.get("datetime_features", {})), events
+    )
+    processed = apply_url_features(
+        processed, dict(preprocessing_config.get("url_features", {})), events
+    )
+    processed = apply_text_vectorization(
+        processed, dict(preprocessing_config.get("text_vectorization", {})), events
+    )
+    processed = apply_label_encoding(
+        processed,
+        dict(preprocessing_config.get("label_encoding", {})),
+        events,
+        exclude_columns=protected,
+    )
 
     processed = apply_encoding(
         processed,

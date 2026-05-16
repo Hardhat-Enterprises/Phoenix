@@ -62,6 +62,7 @@ class TrainingConfig:
     tensorboard_enabled: bool = False
     tensorboard_log_dir: Optional[str] = None
     run_id: Optional[str] = None
+    checkpoint_interval: int = 1
 
     def __post_init__(self) -> None:
         """
@@ -139,6 +140,7 @@ class TrainingConfig:
             verbose=verbose,
             tensorboard_enabled=bool(training_cfg.get("tensorboard_enabled", False)),
             tensorboard_log_dir=training_cfg.get("tensorboard_log_dir"),
+            checkpoint_interval=int(training_cfg.get("checkpoint_interval", 1)),
         )
 
     @classmethod
@@ -164,6 +166,7 @@ class TrainingConfig:
             verbose=verbose,
             tensorboard_enabled=bool(training_cfg.get("tensorboard_enabled", False)),
             tensorboard_log_dir=training_cfg.get("tensorboard_log_dir"),
+            checkpoint_interval=int(training_cfg.get("checkpoint_interval", 1)),
         )
 
 
@@ -244,7 +247,15 @@ class GenericTrainingEngine:
         save_best_only: bool = True,
     ):
         if self.config.model_type == "sklearn":
-            return self._fit_sklearn(X_train, y_train)
+            return self._fit_sklearn(
+                X_train,
+                y_train,
+                X_val,
+                y_val,
+                checkpoint_manager=checkpoint_manager,
+                checkpoint_prefix=checkpoint_prefix,
+                checkpoint_subdir=checkpoint_subdir,
+            )
         elif self.config.model_type == "pytorch":
             if y_train is None:
                 raise ValueError("y_train is required for PyTorch training.")
@@ -287,7 +298,16 @@ class GenericTrainingEngine:
         raise ValueError("Unsupported model type")
 
     # Training Implementation Sklearn
-    def _fit_sklearn(self, X_train, y_train):
+    def _fit_sklearn(
+        self,
+        X_train,
+        y_train,
+        X_val=None,
+        y_val=None,
+        checkpoint_manager=None,
+        checkpoint_prefix: str | None = None,
+        checkpoint_subdir: str | None = None,
+    ):
         estimator_kind = getattr(self.model, "_estimator_type", None)
 
         if estimator_kind == "classifier" and y_train is None:
@@ -314,6 +334,16 @@ class GenericTrainingEngine:
                             "Set a discrete target column (e.g. 0/1 classes) and ensure "
                             "the target is excluded from normalization/encoding."
                         )
+            if self.config.model_name == "xgboost" and self.config.epochs > 1:
+                return self._fit_xgboost_staged(
+                    X_train,
+                    y_train,
+                    X_val,
+                    y_val,
+                    checkpoint_manager=checkpoint_manager,
+                    checkpoint_prefix=checkpoint_prefix,
+                    checkpoint_subdir=checkpoint_subdir,
+                )
             self.model.fit(X_train, y_train)
 
         if self.config.verbose:
@@ -326,6 +356,125 @@ class GenericTrainingEngine:
             "model_type": "sklearn",
             "status": "trained"
         }
+
+    def _fit_xgboost_staged(
+        self,
+        X_train,
+        y_train,
+        X_val=None,
+        y_val=None,
+        checkpoint_manager=None,
+        checkpoint_prefix: str | None = None,
+        checkpoint_subdir: str | None = None,
+    ):
+        total_estimators = int(self.config.model_params.get("n_estimators", self.config.epochs))
+        total_epochs = max(1, int(self.config.epochs))
+        checkpoint_interval = max(1, int(self.config.checkpoint_interval))
+
+        writer = None
+        tensorboard_log_dir = None
+        tensorboard_status = "disabled"
+        if self.config.tensorboard_enabled:
+            if SummaryWriter is None:
+                tensorboard_status = "unavailable"
+            else:
+                base_dir = Path(self.config.tensorboard_log_dir or "logs/tensorboard")
+                run_suffix = self.config.run_id or "run"
+                tensorboard_log_dir = str((base_dir / run_suffix).resolve())
+                writer = SummaryWriter(log_dir=tensorboard_log_dir)
+                tensorboard_status = "enabled"
+
+        best_f1 = None
+        best_epoch = None
+        best_checkpoint_path = None
+        intermediate_checkpoints: list[str] = []
+        validation_metrics_by_epoch: list[dict[str, float]] = []
+
+        if self.config.verbose:
+            print(
+                "[train] "
+                f"model={self.config.model_name} type=sklearn "
+                f"epochs={total_epochs} estimators={total_estimators}"
+            )
+
+        for epoch in range(1, total_epochs + 1):
+            stage_estimators = max(1, int(round(total_estimators * epoch / total_epochs)))
+            self.model.set_params(n_estimators=stage_estimators)
+            self.model.fit(X_train, y_train)
+
+            val_metrics = self._evaluate_sklearn_validation_metrics(X_val, y_val)
+            validation_metrics_by_epoch.append(val_metrics)
+            val_f1 = val_metrics.get("f1")
+
+            if writer is not None:
+                writer.add_scalar("train/n_estimators", stage_estimators, epoch)
+                for metric_name, metric_value in val_metrics.items():
+                    if isinstance(metric_value, (int, float)) and metric_value is not None:
+                        writer.add_scalar(f"validation/{metric_name}", float(metric_value), epoch)
+
+            is_best = val_f1 is not None and (
+                best_f1 is None or float(val_f1) > float(best_f1)
+            )
+            if is_best:
+                best_f1 = float(val_f1)  # type: ignore[arg-type]
+                best_epoch = epoch
+
+            if checkpoint_manager is not None and checkpoint_prefix and (
+                epoch % checkpoint_interval == 0 or epoch == total_epochs or is_best
+            ):
+                suffix = "best" if is_best else f"epoch_{epoch:03d}"
+                checkpoint_path = checkpoint_manager.save(
+                    self.model,
+                    f"{checkpoint_prefix}_{suffix}",
+                    subdir=checkpoint_subdir,
+                )
+                intermediate_checkpoints.append(str(checkpoint_path))
+                if is_best:
+                    best_checkpoint_path = checkpoint_path
+
+            if self.config.verbose:
+                metrics_text = " | ".join(
+                    f"{name}={float(value):.4f}"
+                    for name, value in val_metrics.items()
+                    if isinstance(value, (int, float)) and value is not None
+                )
+                print(
+                    f"[train] epoch={epoch:03d}/{total_epochs:03d} "
+                    f"estimators={stage_estimators}"
+                    + (f" | {metrics_text}" if metrics_text else "")
+                    + (" | best=updated" if is_best else "")
+                )
+
+        if writer is not None:
+            writer.flush()
+            writer.close()
+
+        return {
+            "model_type": "sklearn",
+            "status": "trained",
+            "epochs": total_epochs,
+            "best_f1": best_f1,
+            "best_epoch": best_epoch,
+            "best_checkpoint_path": str(best_checkpoint_path) if best_checkpoint_path else None,
+            "intermediate_checkpoints": intermediate_checkpoints,
+            "validation_metrics_by_epoch": validation_metrics_by_epoch,
+            "tensorboard_log_dir": tensorboard_log_dir,
+            "tensorboard_status": tensorboard_status,
+        }
+
+    def _evaluate_sklearn_validation_metrics(self, X_val, y_val) -> dict[str, float]:
+        if X_val is None or y_val is None:
+            return {}
+        predictions = self.model.predict(X_val)
+        probabilities = None
+        if hasattr(self.model, "predict_proba"):
+            probabilities = self.predict_proba(X_val)
+        return validate_predictions(
+            y_val,
+            predictions,
+            y_prob=probabilities,
+            task_type=self.config.task_type or "classification",
+        )
 
     # Training Implementation PyTorch
     def _fit_pytorch(

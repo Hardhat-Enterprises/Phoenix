@@ -11,19 +11,23 @@ import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
 import ThreatDetails from "./ThreatDetails";
 import { logoutUser } from "./services/authApi";
+import RiskCorrelation from "./components/RiskCorrelation";
+
+
 
 function App() {
   const [page, setPage] = useState("dashboard");
   const [authSession, setAuthSession] = useState(null);
   const [selectedThreat, setSelectedThreat] = useState(null);
   const mainPages = [
-    "about",
-    "dashboard",
-    "reports",
-    "alerts",
-    "threats",
-    "settings",
-  ];
+  "about",
+  "dashboard",
+  "reports",
+  "alerts",
+  "threats",
+  "settings",
+  "risk",
+];
   const isLoggedIn = Boolean(authSession?.accessToken);
 
   const handleLogin = (session) => {
@@ -143,6 +147,15 @@ function App() {
             <SettingsPage setPage={setPage} />
           </div>
         )}
+        {page === "risk" && (
+  <div style={{ display: "flex", width: "100%" }}>
+    <Sidebar setPage={setPage} page={page} />
+
+    <div style={{ flex: 1, width: "100%" }}>
+      <RiskCorrelation />
+    </div>
+  </div>
+)}
       </div>
 
       <Footer />

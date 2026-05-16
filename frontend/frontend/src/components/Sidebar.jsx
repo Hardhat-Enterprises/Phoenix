@@ -2,13 +2,15 @@ import "./Sidebar.css";
 
 function Sidebar({ setPage, page }) {
   const menuItems = [
-    { label: "Dashboard", target: "dashboard" },
-    { label: "Alerts", target: "alerts" },
-    { label: "Reports", target: "reports" },
-    { label: "About Us", target: "about" },
-    { label: "Settings", target: "settings" },
-    { label: "Threats", target: "threats" },
-  ];
+  { label: "Dashboard", target: "dashboard" },
+  { label: "Alerts", target: "alerts" },
+  { label: "Reports", target: "reports" },
+  { label: "Risk Correlation", target: "risk" },
+  { label: "About Us", target: "about" },
+  { label: "Settings", target: "settings" },
+  { label: "Threats", target: "threats" },
+  
+];
 
   return (
     <aside className="sidebar">

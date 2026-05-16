@@ -1,0 +1,109 @@
+.risk-page {
+  flex: 1;
+  width: 100%;
+  padding: 30px;
+  box-sizing: border-box;
+}
+
+.risk-title {
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 24px;
+  color: #0b1f4d;
+}
+
+.risk-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.risk-filters select {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.risk-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.risk-table-container {
+  flex: 2;
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.risk-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.risk-table th,
+.risk-table td {
+  padding: 14px;
+  border-bottom: 1px solid #e5e5e5;
+  text-align: left;
+}
+
+.risk-table tr:hover {
+  background: #f5f8ff;
+  cursor: pointer;
+}
+
+.risk-detail {
+  flex: 1;
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  min-width: 260px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.risk-message {
+  background: white;
+  padding: 18px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+.risk-page {
+  margin-left: 0;
+}
+
+.page-content {
+  width: 100%;
+}
+
+.risk-layout {
+  justify-content: space-between;
+}
+
+.risk-table-container {
+  overflow-x: auto;
+}
+.risk-page {
+  flex: 1;
+  width: 100%;
+  max-width: 100%;
+}
+.selected-row {
+  background: #e8f0ff;
+}
+.status.completed {
+  color: green;
+  font-weight: 600;
+}
+
+.status.error {
+  color: red;
+  font-weight: 600;
+}
+
+.error {
+  color: red;
+}

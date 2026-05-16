@@ -96,13 +96,19 @@ export const getHazards = async (params = {}) => {
   return withListMeta(payload, ["hazards"]);
 };
 
-export const getRisks = async (params = {}) => {
+export const getRiskById = async (riskId) => {
   const payload = await apiRequest(
-    `/api/users/integration${toQueryString(params)}`,
+    `/api/users/integration/${riskId}`,
     {
       requiresAuth: false,
     }
   );
+
+  return payload?.data || payload;
+};
+
+  return withListMeta(payload, ["integrations"]);
+};
 
   return {
     items: payload?.integrations || [],

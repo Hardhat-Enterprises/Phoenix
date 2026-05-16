@@ -1,0 +1,37 @@
+# AI013 Forecasting - configuration
+
+dataset:
+  path: "data/wildfire_multi_region_dataset.csv"
+  region_filter: "Australia"
+  date_col: "acq_date"
+  target_col: "frp_mw"
+  feature_cols:
+    - temp_max_c
+    - wind_max_kmh
+    - precip_mm
+    - humidity_pct
+    - brightness_k
+    - event_count
+
+sequence:
+  window_size: 10
+  train_split: 0.80
+
+model:
+  hidden_size: 64
+  dropout: 0.2
+  num_layers: 1
+
+training:
+  epochs: 200
+  lr: 0.001
+  batch_size: 32
+  weight_decay: 1.0e-4
+  lr_patience: 20
+  lr_factor: 0.5
+  grad_clip: 1.0
+  random_seed: 42
+
+output:
+  checkpoint_path: "checkpoints/forecasting.pkl"
+  predictions_path: "outputs/test_predictions.csv"

@@ -97,9 +97,40 @@ export const getHazards = async (params = {}) => {
 };
 
 export const getRisks = async (params = {}) => {
-  const payload = await apiRequest(`/api/users/risks${toQueryString(params)}`, {
+  const payload = await apiRequest(
+    `/api/users/integration${toQueryString(params)}`,
+    {
+      requiresAuth: false,
+    }
+  );
+
+  return {
+    items: payload?.integrations || [],
+    total: payload?.total || 0,
+    page: payload?.page || 1,
+    limit: payload?.limit || 10,
+  };
+};
+export const getRiskById = async (riskId) => {
+  const payload = await apiRequest(`/api/users/risks/${riskId}`, {
     requiresAuth: false,
   });
 
-  return withListMeta(payload, ["risks", "riskAssessments"]);
+  return payload?.data || payload;
+};
+
+export const getLinkedEventTypes = async () => {
+  const payload = await apiRequest("/api/users/meta/linked-event-types", {
+    requiresAuth: false,
+  });
+
+  return readList(payload, ["linkedEventTypes", "items"]);
+};
+
+export const getEventStatuses = async () => {
+  const payload = await apiRequest("/api/users/meta/event-statuses", {
+    requiresAuth: false,
+  });
+
+  return readList(payload, ["eventStatuses", "items"]);
 };

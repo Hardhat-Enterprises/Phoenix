@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import LoginForm from "./components/LoginForm";
 import "./App.css";
 import AboutUs from "./AboutUs";
@@ -9,6 +9,8 @@ import ForgotPassword from "./ForgotPassword";
 import SettingsPage from "./SettingsPage";
 import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
+import ThreatDetails from "./ThreatDetails";
+import { getAuthSession, logoutUser, clearAuthSession } from "./services/authApi";
 
 function highlightPageText(query) {
   const mainContent = document.querySelector(".page-content");
@@ -27,26 +29,22 @@ function highlightPageText(query) {
   const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const regex = new RegExp(`(${escapedQuery})`, "gi");
 
-  const walker = document.createTreeWalker(
-    mainContent,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode(node) {
-        if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-        if (node.parentElement.closest("mark")) return NodeFilter.FILTER_REJECT;
+  const walker = document.createTreeWalker(mainContent, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      if (node.parentElement.closest("mark")) return NodeFilter.FILTER_REJECT;
 
-        if (
-          ["SCRIPT", "STYLE", "INPUT", "BUTTON"].includes(
-            node.parentElement.tagName
-          )
-        ) {
-          return NodeFilter.FILTER_REJECT;
-        }
+      if (
+        ["SCRIPT", "STYLE", "INPUT", "BUTTON"].includes(
+          node.parentElement.tagName
+        )
+      ) {
+        return NodeFilter.FILTER_REJECT;
+      }
 
-        return NodeFilter.FILTER_ACCEPT;
-      },
-    }
-  );
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
 
   const textNodes = [];
 
@@ -71,7 +69,27 @@ function highlightPageText(query) {
 }
 
 function App() {
-  const [page, setPage] = useState("login");
+  const [page, setPage] = useState("dashboard");
+  const [authSession, setAuthSession] = useState(null);
+  const [selectedThreat, setSelectedThreat] = useState(null);
+
+  const isLoggedIn = Boolean(authSession?.accessToken);
+
+  useEffect(() => {
+    setAuthSession(getAuthSession());
+  }, []);
+
+  const handleLogin = (session) => {
+    setAuthSession(session);
+    setPage("dashboard");
+  };
+
+  const handleLogout = async () => {
+    await logoutUser();
+    clearAuthSession();
+    setAuthSession(null);
+    setPage("dashboard");
+  };
 
   return (
     <div className="login-page">
@@ -97,30 +115,57 @@ function App() {
             />
 
             <button className="temp-bell" aria-label="Notifications">
-              🔔
+              !
             </button>
+
+            {isLoggedIn ? (
+              <div className="header-auth-summary">
+                <span className="header-role">
+                  {authSession?.user?.role || "user"}
+                </span>
+
+                <button
+                  type="button"
+                  className="header-auth-button"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="header-auth-button"
+                onClick={() => setPage("login")}
+              >
+                Login
+              </button>
+            )}
           </div>
         )}
       </div>
 
       <div className="page-content">
-        {page === "login" && <LoginForm setPage={setPage} />}
-
-        {page === "forgotPassword" && (
-          <ForgotPassword setPage={setPage} />
+        {page === "login" && (
+          <LoginForm setPage={setPage} onLogin={handleLogin} />
         )}
+
+        {page === "forgotPassword" && <ForgotPassword setPage={setPage} />}
 
         {page === "dashboard" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
-            <Dashboard setPage={setPage} />
+            <Dashboard
+              setPage={setPage}
+              setSelectedThreat={setSelectedThreat}
+            />
           </div>
         )}
 
         {page === "alerts" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
-            <Alerts />
+            <Alerts setPage={setPage} setSelectedThreat={setSelectedThreat} />
           </div>
         )}
 
@@ -135,6 +180,13 @@ function App() {
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
             <ReportsPage />
+          </div>
+        )}
+
+        {page === "threats" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={setPage} page={page} />
+            <ThreatDetails selectedThreat={selectedThreat} />
           </div>
         )}
 

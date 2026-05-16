@@ -9,6 +9,18 @@ body {
   box-sizing: border-box;
 }
 
+input,
+textarea,
+select {
+  color: #111;
+  caret-color: #111;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280;
+}
+
 .login-page {
   min-height: 100vh;
   background: #f3f3f3;

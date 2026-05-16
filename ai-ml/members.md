@@ -1,5 +1,5 @@
 ## Team Members  
-**Count:** 10/17  
+**Count:** 11/17  
 
 - **Sunain Mushtaq**  
   *13/04/2026*
@@ -30,3 +30,6 @@
 
 - **Trey Martin**
   *15/05/2026*
+
+- **Tarun Kumar Atla**
+  *16/05/2026*

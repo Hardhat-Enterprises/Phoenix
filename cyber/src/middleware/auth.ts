@@ -41,7 +41,7 @@ export function authenticateToken(
   const token = authHeader.split(" ")[1];
 
   // Get JWT secret
-  const secret = process.env.JWT_SECRET;
+  const secret = process.env.AUTH_JWT_SECRET;
 
   if (!secret) {
     res.status(500).json({

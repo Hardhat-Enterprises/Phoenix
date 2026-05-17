@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package threat;
+
+service ThreatService {
+  rpc GetThreatHealth (Empty) returns (HealthResponse);
+  rpc GetThreats (Empty) returns (ThreatListResponse);
+  rpc IngestThreat (ThreatIngestRequest) returns (ThreatResponse);
+  rpc GetThreatStats (Empty) returns (ThreatStatsResponse);
+}
+
+message Empty {}
+
+message HealthResponse {
+  int32 status = 1;
+  string message = 2;
+}
+
+message Threat {
+  string event_id = 1;
+  string timestamp = 2;
+  string event_type = 3;
+  string source = 4;
+  string threat_type = 5;
+  string severity = 6;
+  double confidence_score = 7;
+  string response_action = 8;
+  string processed_at = 9;
+}
+
+message ThreatListResponse {
+  int32 status = 1;
+  string message = 2;
+  repeated Threat threats = 3;
+}
+
+message ThreatIngestRequest {
+  string event_id = 1;
+  string timestamp = 2;
+  string event_type = 3;
+  string source = 4;
+  string threat_type = 5;
+  string severity = 6;
+  double confidence_score = 7;
+}
+
+message ThreatResponse {
+  int32 status = 1;
+  string message = 2;
+}
+
+message ThreatStatsResponse {
+  int32 status = 1;
+  string message = 2;
+  int32 total_threats = 3;
+  int32 critical = 4;
+  int32 high = 5;
+  int32 medium = 6;
+  int32 low = 7;
+}

@@ -3,6 +3,10 @@
 ## Overview
 The PHOENIX system must validate and sanitise all user and system inputs to prevent injection attacks. Injection prevention is important to ensure that alert data, API inputs, and external data feeds are treated only as data and not executed as commands, queries, or scripts.
 
+## Validation Enforcement
+
+- Validation is enforced at the API layer before request processing
+- Invalid requests are rejected early to reduce system load and attack surface
 
 ## Injection Risks
 Potential injection risks in the PHOENIX system include:
@@ -20,6 +24,7 @@ All input fields must be checked before processing.
 - Reject malformed input
 - Ensure required fields are present
 - Enforce correct data types
+- Repeated invalid inputs are tracked and flagged
 
 ### 2. Use Allowed Input Formats
 Each field should only accept expected formats.

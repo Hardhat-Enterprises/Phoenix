@@ -1,13 +1,17 @@
 export interface HazardItem {
   hazard_event_id: string;
+  url: string;
+  text: string;
+  timestamp: Date;
   hazard_type: string;
-  severity_level: string;
-  event_status: string;
-  start_time: string;
-  end_time: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
+  hazard_severity: number;
+  hazard_timestamp: Date;
+  hazard_location: string;
+  hazard_status: string;
+  alert_level: string;
+  source: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export class GetHazardsEntity {
@@ -21,14 +25,20 @@ export class GetHazardsEntity {
   static toEntity(items: any[]): HazardItem[] {
     return items.map((h) => ({
       hazard_event_id: h.hazard_event_id ?? "",
+      url: h.url ?? "",
+      text: h.text ?? "",
+      timestamp: h.timestamp ? new Date(h.timestamp) : new Date(),
       hazard_type: h.hazard_type ?? "",
-      severity_level: h.severity_level ?? "",
-      event_status: h.event_status ?? "",
-      start_time: h.start_time ? new Date(h.start_time).toISOString() : "",
-      end_time: h.end_time ? new Date(h.end_time).toISOString() : "",
-      description: h.description ?? "",
-      created_at: h.created_at ? new Date(h.created_at).toISOString() : "",
-      updated_at: h.updated_at ? new Date(h.updated_at).toISOString() : "",
+      hazard_severity: h.hazard_severity ?? 0,
+      hazard_timestamp: h.hazard_timestamp
+        ? new Date(h.hazard_timestamp)
+        : new Date(),
+      hazard_location: h.hazard_location ?? "",
+      source: h.source ?? "",
+      hazard_status: h.hazard_status ?? "",
+      alert_level: h.alert_level ?? "",
+      created_at: h.created_at ? new Date(h.created_at) : new Date(),
+      updated_at: h.updated_at ? new Date(h.updated_at) : new Date(),
     }));
   }
 }

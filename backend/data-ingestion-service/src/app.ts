@@ -5,6 +5,7 @@ import * as dotenv from "dotenv";
 import { ingestionHandler } from "./grpc/ingestion.handler";
 import { connectRabbitMQ, logger, RabbitMQQueueType } from "@phoenix/common";
 import {
+  consumeCoreModelIntegrationData,
   consumeCyberData,
   consumeHazardData,
 } from "./rabitmq/rabbitmq-consumer";
@@ -30,7 +31,11 @@ const startGrpcServer = async () => {
     logger.info(`Connecting to RabbitMQ at ${process.env.RABBITMQ_URL}`);
     await connectRabbitMQ(process.env.RABBITMQ_URL!);
     await consumeHazardData(RabbitMQQueueType.HAZARD_CREATION_QUEUE);
-    await consumeCyberData(RabbitMQQueueType.CYBER_CREATION_QUEUE);
+    // await consumeCyberData(RabbitMQQueueType.CYBER_CREATION_QUEUE);
+    await consumeCoreModelIntegrationData(
+      RabbitMQQueueType.CORE_MODEL_INTEGRATION_QUEUE,
+    );
+    // await consumeCyberData(RabbitMQQueueType.CYBER_CREATION_QUEUE);
     const server = new grpc.Server();
 
     server.addService(

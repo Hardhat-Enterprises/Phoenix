@@ -3,29 +3,23 @@ import { sequelize } from "../sequelize-connection-handler";
 
 interface HazardEventAttributes {
   hazard_event_id: string;
+  url: string;
+  text: string;
+  timestamp: Date;
   hazard_type: string;
-  severity_level: "low" | "medium" | "high" | "critical";
-  event_status: string;
-  start_time: Date;
-  end_time?: Date | null;
-  geo_location_id?: string | null;
-  source_id?: string | null;
-  source_ref_event?: string | null;
-  description?: string | null;
+  hazard_severity: number;
+  hazard_timestamp: Date;
+  hazard_location: string;
+  hazard_status: string;
+  alert_level: string;
+  source: string;
   created_at?: Date;
   updated_at?: Date;
 }
 
 type HazardEventCreationAttributes = Optional<
   HazardEventAttributes,
-  | "hazard_event_id"
-  | "end_time"
-  | "geo_location_id"
-  | "source_id"
-  | "source_ref_event"
-  | "description"
-  | "created_at"
-  | "updated_at"
+  "hazard_event_id" | "created_at" | "updated_at"
 >;
 
 export class HazardEvent
@@ -33,15 +27,16 @@ export class HazardEvent
   implements HazardEventAttributes
 {
   declare hazard_event_id: string;
+  declare url: string;
+  declare text: string;
+  declare timestamp: Date;
   declare hazard_type: string;
-  declare severity_level: "low" | "medium" | "high" | "critical";
-  declare event_status: string;
-  declare start_time: Date;
-  declare end_time: Date | null;
-  declare geo_location_id: string | null;
-  declare source_id: string | null;
-  declare source_ref_event: string | null;
-  declare description: string | null;
+  declare hazard_severity: number;
+  declare hazard_timestamp: Date;
+  declare hazard_location: string;
+  declare hazard_status: string;
+  declare alert_level: string;
+  declare source: string;
   declare created_at: Date;
   declare updated_at: Date;
 }
@@ -53,59 +48,61 @@ HazardEvent.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
+    url: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    text: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    timestamp: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
     hazard_type: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING(100),
       allowNull: false,
     },
-    severity_level: {
-      type: DataTypes.TEXT,
-      allowNull: false,
-      validate: {
-        isIn: [["low", "medium", "high", "critical"]],
-      },
-    },
-    event_status: {
-      type: DataTypes.TEXT,
+    hazard_severity: {
+      type: DataTypes.DECIMAL(3, 2),
       allowNull: false,
     },
-    start_time: {
+    hazard_timestamp: {
       type: DataTypes.DATE,
       allowNull: false,
     },
-    end_time: {
-      type: DataTypes.DATE,
-      allowNull: true,
+    hazard_location: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
     },
-    geo_location_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
+    hazard_status: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
     },
-    source_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
+    alert_level: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
     },
-    source_ref_event: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    description: {
-      type: DataTypes.TEXT,
-      allowNull: true,
+    source: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
     },
     created_at: {
       type: DataTypes.DATE,
-      allowNull: false,
       defaultValue: DataTypes.NOW,
     },
     updated_at: {
       type: DataTypes.DATE,
-      allowNull: false,
       defaultValue: DataTypes.NOW,
     },
   },
   {
     sequelize,
     tableName: "hazard_event",
-    timestamps: false,
-  }
+    freezeTableName: true,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  },
 );

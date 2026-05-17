@@ -1,29 +1,33 @@
 import { DataStreamEventType } from "@phoenix/common";
 
-export interface LocationPayload {
-  state_region: string;
-  local_government_area: string;
-  suburb: string;
-}
+// export interface LocationPayload {
+//   state_region: string;
+//   local_government_area: string;
+//   suburb: string;
+// }
 
-export interface DataStreamPayload {
-  event_type: DataStreamEventType;
-  risk_score: number;
-  severity: string;
-  confidence: number;
-  hazard_type: string;
-  cyber_threat: string;
-  recommended_action: string;
-  top_risk_factors: string[];
-  timestamp: string;
-  model_version: string;
-}
+// export interface DataStreamPayload {
+//   event_type: DataStreamEventType;
+//   risk_score: number;
+//   severity: string;
+//   confidence: number;
+//   hazard_type: string;
+//   cyber_threat: string;
+//   recommended_action: string;
+//   top_risk_factors: string[];
+//   timestamp: string;
+//   model_version: string;
+// }
 
 export interface DataStreamRequest {
-  event_id: string;
+  url: string;
+  text: string;
   timestamp: string;
-  event_type: DataStreamEventType;
+  hazard_type: string;
+  hazard_severity: number;
+  hazard_timestamp: string;
+  hazard_location: string;
+  hazard_status: string;
+  alert_level: string;
   source: string;
-  location: LocationPayload;
-  payload: DataStreamPayload;
 }

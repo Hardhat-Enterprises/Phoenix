@@ -11,10 +11,13 @@ import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
 import ThreatDetails from "./ThreatDetails";
 import { logoutUser } from "./services/authApi";
+import NotificationPanel from "./components/notifier";
+
 
 function App() {
   const [page, setPage] = useState("dashboard");
   const [authSession, setAuthSession] = useState(null);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [selectedThreat, setSelectedThreat] = useState(null);
   const mainPages = [
     "about",
@@ -60,7 +63,7 @@ function App() {
                 className="temp-search"
               />
 
-              <button className="temp-bell" aria-label="Notifications">
+              <button className="temp-bell" aria-label="Notifications" onClick={() => setShowNotifPanel(!showNotifPanel)}>
                 !
               </button>
             </>
@@ -88,6 +91,22 @@ function App() {
           )}
         </div>
       </div>
+      {showNotifPanel && (
+        <NotificationPanel
+          onAlert={(item) => {
+        //Alter for future backend
+            fetch("http://192.168.50.251:3000/alert", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(item)
+            });
+
+            setShowNotifPanel(false);
+          }}
+        />
+      )}
+
+
 
       <div className="page-content">
         {page === "login" && (

@@ -1,4 +1,0 @@
-row_id,anomaly_label,anomaly_reason
-0,0,normal
-1,0,normal
-2,1,high_risk_value_geo_risk_zone_score;high_risk_value_combined_risk_index;high_risk_value_adaptive_risk_index

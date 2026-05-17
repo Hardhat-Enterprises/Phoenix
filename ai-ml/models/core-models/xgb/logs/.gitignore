@@ -1,7 +1,0 @@
-*
-!.gitignore
-!trey_xgb_core_v2.log
-!tensorboard/
-tensorboard/*
-!tensorboard/trey_xgb_core_v2/
-!tensorboard/trey_xgb_core_v2/**

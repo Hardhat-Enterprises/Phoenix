@@ -1,6 +1,0 @@
-*
-!.gitignore
-!trey_xgb_core_v2/
-trey_xgb_core_v2/*
-!trey_xgb_core_v2/core_xgb_xgboost_trey_xgb_core_v2_final.joblib
-!trey_xgb_core_v2/core_xgb_xgboost_trey_xgb_core_v2_final.joblib.metadata.json

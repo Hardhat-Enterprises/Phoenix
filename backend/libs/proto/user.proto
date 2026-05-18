@@ -229,10 +229,9 @@ message GetUserDashboardActivityResponse {
 
 message GetThreatsRequest {
     string threat_type = 1;
-    string risk_level = 2;
-    string status = 3;
-    int32 page = 4;
-    int32 limit = 5;
+    string severity = 2;
+    int32 page = 3;
+    int32 limit = 4;
 }
 
 message GetThreatsResponse {
@@ -256,14 +255,14 @@ message GetThreatResponse {
 
 message Threat {
     string threat_id = 1;
-    string threat_type = 2;
-    string title = 3;
-    string description = 4;
-    string risk_level = 5;
-    string status = 6;
-    string category = 7;
-    string confidence_score = 8;
-    string detected_at = 9;
+    string event_id = 2;
+    string timestamp = 3;
+    string event_type = 4;
+    string source = 5;
+    string threat_type = 6;
+    string severity = 7;
+    int32  confidence_score = 8;
+    string details = 9;
     string created_at = 10;
     string updated_at = 11;
 }

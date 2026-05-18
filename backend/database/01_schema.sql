@@ -112,27 +112,21 @@ CREATE TABLE hazard_event (
 /*CYBER_THREAT TABLE
   Entity table */
 CREATE TABLE cyber_threat (
-    threat_id                       UUID
-        PRIMARY KEY
-        DEFAULT gen_random_uuid()
-    ,threat_type                    VARCHAR(100)
-        NOT NULL
-    ,source_id                      UUID
-    ,title                          VARCHAR(255)
-    ,description                    TEXT
-    ,risk_level                     VARCHAR(20)
-        CHECK (risk_level IN ('Low', 'Medium', 'High', 'Critical'))
-    ,status                         VARCHAR(20)
-        CHECK (status IN ('Active', 'Monitoring', 'Resolved', 'Archived'))
-    ,category                       VARCHAR(50)
-    ,confidence_score               DECIMAL(5,2)
-    ,detected_at                    TIMESTAMPTZ
-    ,updated_at                     TIMESTAMPTZ
-        DEFAULT CURRENT_TIMESTAMP
-    ,created_at                     TIMESTAMPTZ
-        DEFAULT CURRENT_TIMESTAMP
-    ,FOREIGN KEY (source_id) REFERENCES data_source(source_id)
+    threat_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    event_id TEXT NOT NULL,
+    "timestamp" TIMESTAMPTZ NOT NULL,
+    event_type VARCHAR(50) NOT NULL,
+    source TEXT NOT NULL,
+    threat_type TEXT NOT NULL,
+    severity VARCHAR(20) NOT NULL,
+    confidence_score DECIMAL(5, 2) NOT NULL,
+    details TEXT NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
 
 
 /*RISK_ASSESSMENT OR INTEGRATION TABLE
@@ -228,14 +222,8 @@ CREATE INDEX idx_hazard_start_time
 CREATE INDEX idx_hazard_geo_time
     ON hazard_event(geo_location_id, start_time);
 
-CREATE INDEX idx_threat_type
-    ON cyber_threat(threat_type);
-
-CREATE INDEX idx_threat_risk_level
-    ON cyber_threat(risk_level);
-
-CREATE INDEX idx_threat_detected_at
-    ON cyber_threat(detected_at);
+CREATE INDEX idx_cyber_threat_severity
+    ON cyber_threat (severity);
 
 CREATE INDEX idx_threat_status_detected_at
     ON cyber_threat(status, detected_at);

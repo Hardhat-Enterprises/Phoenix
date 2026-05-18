@@ -1,15 +1,15 @@
 export interface ThreatItem {
   threat_id: string;
+  event_id: string;
+  timestamp: string;
+  event_type: string;
+  source: string;
   threat_type: string;
-  title: string;
-  description: string;
-  risk_level: string;
-  status: string;
-  category: string;
-  confidence_score: string;
-  detected_at: string;
-  created_at: string;
-  updated_at: string;
+  severity: string;
+  confidence_score: number;
+  details: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export class GetThreatsEntity {
@@ -23,16 +23,16 @@ export class GetThreatsEntity {
   static toEntity(items: any[]): ThreatItem[] {
     return items.map((t) => ({
       threat_id: String(t.threat_id ?? ""),
+      event_id: t.event_id ?? "",
+      timestamp: t.timestamp ?? "",
+      event_type: t.event_type ?? "",
+      source: t.source ?? "",
       threat_type: t.threat_type ?? "",
-      title: t.title ?? "",
-      description: t.description ?? "",
-      risk_level: t.risk_level ?? "",
-      status: t.status ?? "",
-      category: t.category ?? "",
-      confidence_score: t.confidence_score != null ? String(t.confidence_score) : "",
-      detected_at: t.detected_at ? new Date(t.detected_at).toISOString() : "",
-      created_at: t.created_at ? new Date(t.created_at).toISOString() : "",
-      updated_at: t.updated_at ? new Date(t.updated_at).toISOString() : "",
+      severity: t.severity ?? "",
+      confidence_score: t.confidence_score != null ? t.confidence_score : 0,
+      details: t.details ? t.details : "",
+      created_at: t.created_at ? new Date(t.created_at) : new Date(),
+      updated_at: t.updated_at ? new Date(t.updated_at) : new Date(),
     }));
   }
 }

@@ -34,25 +34,21 @@ import {
 const router = Router();
 
 router.get("/health", getHealth);
-router.get("/user", getUser);
-router.get("/meta/locations", getLocations);
-router.get("/meta/event-statuses", getEventStatuses);
-router.get("/meta/linked-event-types", getLinkedEventTypes);
-router.get("/meta/seasons", getSeasons);
-router.get("/meta/reference-days", getReferenceDays);
-router.get("/meta/reference-times", getReferenceTimes);
+router.get("/meta/locations", authenticate, getLocations);
+router.get("/meta/event-statuses", authenticate, getEventStatuses);
+router.get("/meta/linked-event-types", authenticate, getLinkedEventTypes);
+router.get("/meta/seasons", authenticate, getSeasons);
+router.get("/meta/reference-days", authenticate, getReferenceDays);
+router.get("/meta/reference-times", authenticate, getReferenceTimes);
 
-router.get("/threats", getThreats);
-router.get("/threats/:threatId", getThreat);
+router.get("/hazards", authenticate, getHazards);
+router.get("/hazards/:hazardId", authenticate, getHazard);
 
-router.get("/hazards", getHazards);
-router.get("/hazards/:hazardId", getHazard);
+router.get("/integration", authenticate, getIntegrations);
+router.get("/integration/:integrationId", authenticate, getIntegration);
 
-router.get("/integration", getIntegrations);
-router.get("/integration/:integrationId", getIntegration);
-
-router.get("/training-models", getTrainingModels);
-router.get("/training-models/:file_id", getOneTrainingModel);
+router.get("/training-models", authenticate, getTrainingModels);
+router.get("/training-models/:file_id", authenticate, getOneTrainingModel);
 /**
  * Authentication Routes
  */
@@ -90,13 +86,6 @@ router.get("/dashboard/overview", authenticate, getUserDashboard);
 router.get("/dashboard/charts", authenticate, getUserDashboardCharts);
 
 router.get("/dashboard/activity", authenticate, getUserDashboardActivity);
-
-/**
- * Threat Routes
- */
-router.get("/threats", authenticate, getThreats);
-
-router.get("/threats/:threatId", authenticate, getThreat);
 
 /**
  * Hazard Routes

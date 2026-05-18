@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { getThreats, getThreat } from "../controllers/threat.controller";
+import { authenticate } from "../middleware/auth.middleware";
 
 const router = Router();
 
@@ -151,7 +152,7 @@ const router = Router();
  *                   type: string
  *                   example: "Error fetching threats"
  */
-router.get("/", getThreats);
+router.get("/", authenticate, getThreats);
 
 /**
  * @swagger
@@ -260,6 +261,6 @@ router.get("/", getThreats);
  *                   type: string
  *                   example: "Error fetching threat"
  */
-router.get("/:threatId", getThreat);
+router.get("/:threatId", authenticate, getThreat);
 
 export default router;

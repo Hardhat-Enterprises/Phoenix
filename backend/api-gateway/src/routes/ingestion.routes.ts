@@ -5,6 +5,7 @@ import {
   ingestHazardData,
   ingestCyberData,
 } from "../controllers/ingestion.controller";
+import { authenticate, authorize } from "../middleware/auth.middleware";
 
 const router = Router();
 
@@ -170,9 +171,20 @@ router.get("/health", getHealth);
  *       500:
  *         description: Internal server error
  */
-router.post("/hazard", ingestHazardData);
-router.post("/cyber", ingestCyberData);
+router.post(
+  "/hazard",
+  authenticate,
+  authorize(["ingestion service"]),
+  ingestHazardData,
+);
 
-router.post("/core", coreModelIntegration);
+router.post(
+  "/cyber",
+  authenticate,
+  authorize(["ingestion service"]),
+  ingestCyberData,
+);
+
+router.post("/core", authenticate, coreModelIntegration);
 
 export default router;

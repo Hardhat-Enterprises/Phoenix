@@ -14,7 +14,9 @@
     "build": "tsc -b",
     "start:gateway": "node -r tsconfig-paths/register dist/api-gateway/src/app.js",
     "start:user-service": "node -r tsconfig-paths/register dist/user-service/src/app.js",
-    "start:ingestion": "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
+    "start:ingestion": "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js",
+    "dev:threat": "nodemon --watch threat-service/src --watch libs/proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P threat-service/tsconfig.json threat-service/src/app.ts\""
+
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.3",

@@ -1,0 +1,80 @@
+{
+  "hazard_event_id": "a1f3c2d4-1111-4a2b-b111-000000000001",
+  "hazard_type": "heatwave",
+  "description": "Extreme heatwave conditions affecting metropolitan communities.",
+  "severity_level": "high",
+  "event_status": "active",
+  "start_time": "2026-01-10T09:00:00Z",
+  "end_time": null,
+  "source_id": "33333333-cccc-4ccc-dddd-000000000001",
+  "source_ref_event": "BOM-HEAT-001",
+  "geo_location_id": "22222222-bbbb-4bbb-cccc-000000000001",
+  "created_at": "2026-01-10T09:15:00Z",
+  "updated_at": "2026-01-10T09:15:00Z"
+}
+
+{
+  "hazard_event_id": "a1f3c2d4-2222-4a2b-b222-000000000002",
+  "hazard_type": "storm",
+  "description": "Severe thunderstorm with heavy rainfall and strong winds.",
+  "severity_level": "medium",
+  "event_status": "active",
+  "start_time": "2026-02-05T14:30:00Z",
+  "end_time": null,
+  "source_id": "33333333-cccc-4ccc-dddd-000000000002",
+  "source_ref_event": "BOM-STORM-002",
+  "geo_location_id": "22222222-bbbb-4bbb-cccc-000000000002",
+  "created_at": "2026-02-05T14:45:00Z",
+  "updated_at": "2026-02-05T14:45:00Z"
+}
+
+{
+  "hazard_event_id": "a1f3c2d4-3333-4a2b-b333-000000000003",
+  "hazard_type": "bushfire",
+  "description": "Rapidly spreading bushfire threatening rural communities.",
+  "severity_level": "critical",
+  "event_status": "active",
+  "start_time": "2026-03-21T10:30:00Z",
+  "end_time": null,
+  "source_id": "33333333-cccc-4ccc-dddd-000000000003",
+  "source_ref_event": "BOM-FIRE-003",
+  "geo_location_id": "22222222-bbbb-4bbb-cccc-000000000003",
+  "created_at": "2026-03-21T11:05:00Z",
+  "updated_at": "2026-03-21T11:05:00Z"
+}
+
+{
+  "hazard_event_id": "a1f3c2d4-4444-4a2b-b444-000000000004",
+  "hazard_type": "flood",
+  "description": "River flooding caused by prolonged rainfall across low-lying areas.",
+  "severity_level": "high",
+  "event_status": "monitoring",
+  "start_time": "2026-04-01T06:00:00Z",
+  "end_time": null,
+  "source_id": "33333333-cccc-4ccc-dddd-000000000004",
+  "source_ref_event": "BOM-FLOOD-004",
+  "geo_location_id": "22222222-bbbb-4bbb-cccc-000000000004",
+  "created_at": "2026-04-01T06:15:00Z",
+  "updated_at": "2026-04-01T06:15:00Z"
+}
+
+{
+  "hazard_event_id": "a1f3c2d4-5555-4a2b-b555-000000000005",
+  "hazard_type": "cyclone",
+  "description": "Category 4 cyclone approaching coastal regions with destructive winds.",
+  "severity_level": "critical",
+  "event_status": "active",
+  "start_time": "2026-02-20T03:00:00Z",
+  "end_time": null,
+  "source_id": "33333333-cccc-4ccc-dddd-000000000005",
+  "source_ref_event": "BOM-CYC-005",
+  "geo_location_id": "22222222-bbbb-4bbb-cccc-000000000005",
+  "created_at": "2026-02-20T03:10:00Z",
+  "updated_at": "2026-02-20T03:10:00Z"
+}
+
+
+
+
+
+

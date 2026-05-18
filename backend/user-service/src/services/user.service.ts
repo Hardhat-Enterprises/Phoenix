@@ -186,7 +186,7 @@ export const getUserDashboard = async (
       HazardEvent.count(),
       HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.8 } } }),
       CyberThreat.count(),
-      CyberThreat.count({ where: { status: "active" } }),
+      CyberThreat.count({ where: { severity: { [Op.gte]: 0.8 } } }),
       IntegrationLog.count(),
     ]);
 
@@ -226,10 +226,10 @@ export const getUserDashboardCharts = async (
       HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.4 } } }),
       HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.6 } } }),
       HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.8 } } }),
-      CyberThreat.count({ where: { risk_level: "low" } }),
-      CyberThreat.count({ where: { risk_level: "medium" } }),
-      CyberThreat.count({ where: { risk_level: "high" } }),
-      CyberThreat.count({ where: { risk_level: "critical" } }),
+      CyberThreat.count({ where: { severity: "low" } }),
+      CyberThreat.count({ where: { severity: "medium" } }),
+      CyberThreat.count({ where: { severity: "high" } }),
+      CyberThreat.count({ where: { severity: "critical" } }),
     ]);
 
     return {

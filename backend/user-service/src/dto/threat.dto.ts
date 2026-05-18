@@ -1,7 +1,6 @@
 export class GetThreatsDto {
   threat_type?: string;
-  risk_level?: string;
-  status?: string;
+  severity?: string;
   page?: number;
   limit?: number;
 }

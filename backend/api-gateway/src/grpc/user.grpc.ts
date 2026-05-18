@@ -112,22 +112,21 @@ export interface GetUserDashboardActivityResponse {
 
 export interface ThreatItem {
   threat_id: string;
+  event_id: string;
+  timestamp: string;
+  event_type: string;
+  source: string;
   threat_type: string;
-  title: string;
-  description: string;
-  risk_level: string;
-  status: string;
-  category: string;
-  confidence_score: string;
-  detected_at: string;
-  created_at: string;
-  updated_at: string;
+  severity: string;
+  confidence_score: number;
+  details: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface GetThreatsRequest {
   threat_type?: string;
-  risk_level?: string;
-  status?: string;
+  severity?: string;
   page?: number;
   limit?: number;
 }

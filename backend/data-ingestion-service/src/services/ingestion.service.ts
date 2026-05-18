@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import {
-  DataStreamRequest,
+  HazardDataStreamRequest,
+  CyberDataStreamRequest,
   HttpStatusCode,
   IngestionTypeEnum,
   logger,
@@ -9,6 +10,7 @@ import {
   runInference,
   IntegrationType,
   IntegrationStatus,
+  CyberThreat,
 } from "@phoenix/common";
 import {
   HazardEvent,
@@ -37,7 +39,7 @@ export const createHazardData = async (content: any) => {
   try {
     const parsedContent =
       typeof content === "string"
-        ? (JSON.parse(content) as DataStreamRequest)
+        ? (JSON.parse(content) as HazardDataStreamRequest)
         : content;
 
     if (!parsedContent || Object.keys(parsedContent).length === 0) {
@@ -49,21 +51,6 @@ export const createHazardData = async (content: any) => {
       });
       return;
     }
-
-    // const [location] = await GeoLocation.findOrCreate({
-    //     where: {
-    //         state_region: parsedContent.location.state_region,
-    //         local_government_area: parsedContent.location.local_government_area,
-    //         suburb: parsedContent.location.suburb,
-    //     },
-    //     defaults: {
-    //         country: "Australia",
-    //         state_region: parsedContent.location.state_region,
-    //         local_government_area: parsedContent.location.local_government_area,
-    //         suburb: parsedContent.location.suburb,
-    //         geo_precision: "suburb",
-    //     },
-    // });
 
     const [source] = await DataSource.findOrCreate({
       where: {
@@ -98,7 +85,62 @@ export const createHazardData = async (content: any) => {
   }
 };
 
-export const createCyberData = (content: any) => {};
+export const createCyberData = async (content: any) => {
+  const ingestionLog = await DataIngestionStreamingLog.create({
+    ingestion_type: IngestionTypeEnum.CYBER_THREAT,
+    payload: content,
+    processing_status: ProcessingStatus.RECEIVED,
+    processed_at: new Date(),
+  });
+  try {
+    const parsedContent =
+      typeof content === "string" ? JSON.parse(content) : content;
+
+    if (!parsedContent || Object.keys(parsedContent).length === 0) {
+      logger.error("Cyber data validation failed: Empty payload");
+
+      await ingestionLog.update({
+        processing_status: ProcessingStatus.FAILED,
+        fail_reason: "Empty payload",
+      });
+      return;
+    }
+
+    const [source] = await DataSource.findOrCreate({
+      where: {
+        source_name: parsedContent.source,
+      },
+      defaults: {
+        source_name: parsedContent.source,
+        source_type: "ai_model",
+        access_method: "rabbitmq",
+      },
+    });
+
+    await CyberThreat.create({
+      ...parsedContent,
+      details: JSON.stringify(parsedContent.details),
+    });
+
+    await ingestionLog.update({
+      processing_status: ProcessingStatus.PROCESSED,
+      source_id: source.source_id,
+    });
+
+    console.log(
+      `Cyber data processed successfully with payload: ${parsedContent}`,
+    );
+    return;
+  } catch (error: any) {
+    logger.error(`Cyber data creation failed: ${error.message}`);
+
+    await ingestionLog.update({
+      processing_status: ProcessingStatus.FAILED,
+      fail_reason: error.message,
+    });
+    return;
+  }
+};
 
 export const coreModelIntegration = async (payload: any) => {
   const integrationLog = await IntegrationLog.create({

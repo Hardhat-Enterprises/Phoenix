@@ -1,0 +1,19 @@
+from __future__ import annotations
+
+DEFAULT_HAZARD_COUNT = 100
+DEFAULT_THREAT_COUNT = 100
+DEFAULT_INTEGRATION_COUNT = 100
+DEFAULT_SEED = 42
+
+HAZARD_TYPES = ['flood', 'storm', 'bushfire', 'cyclone', 'heatwave']
+SEVERITY_LEVELS = ['moderate', 'high', 'critical']
+ALERT_LEVELS = ['advice', 'warning', 'emergency_warning']
+THREAT_TYPES = ['misinformation', 'fake_alert_phishing', 'false_notice', 'social_media_spike']
+EVENT_STATUSES = ['monitoring', 'active', 'contained']
+
+SOURCE_IDS = {
+    "hazard": ['SRC_H_001', 'SRC_H_002', 'SRC_H_003', 'SRC_H_004', 'SRC_H_005'],
+    "threat": ['SRC_T_001', 'SRC_T_002', 'SRC_T_003', 'SRC_T_004', 'SRC_T_005'],
+}
+
+LOCATIONS = [{'geo_location_id': 'GEO_0001', 'country': 'Australia', 'state_region': 'Victoria', 'local_government_area': 'Maribyrnong', 'suburb': 'Footscray', 'latitude': -37.8008, 'longitude': 144.9005, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0002', 'country': 'Australia', 'state_region': 'Victoria', 'local_government_area': 'Wellington', 'suburb': 'Sale', 'latitude': -38.109, 'longitude': 147.068, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0003', 'country': 'Australia', 'state_region': 'Victoria', 'local_government_area': 'Buloke', 'suburb': 'Wycheproof', 'latitude': -36.079, 'longitude': 143.232, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0004', 'country': 'Australia', 'state_region': 'Victoria', 'local_government_area': 'East Gippsland', 'suburb': 'Bairnsdale', 'latitude': -37.822, 'longitude': 147.61, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0005', 'country': 'Australia', 'state_region': 'New South Wales', 'local_government_area': 'Hawkesbury', 'suburb': 'Windsor', 'latitude': -33.6131, 'longitude': 150.8142, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0006', 'country': 'Australia', 'state_region': 'Queensland', 'local_government_area': 'Brisbane', 'suburb': 'Rocklea', 'latitude': -27.5396, 'longitude': 153.0044, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0007', 'country': 'Australia', 'state_region': 'Queensland', 'local_government_area': 'Cairns', 'suburb': 'Cairns', 'latitude': -16.9186, 'longitude': 145.7781, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0008', 'country': 'Australia', 'state_region': 'Queensland', 'local_government_area': 'Townsville', 'suburb': 'Townsville', 'latitude': -19.2589, 'longitude': 146.8169, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0009', 'country': 'Australia', 'state_region': 'Western Australia', 'local_government_area': 'Broome', 'suburb': 'Broome', 'latitude': -17.9614, 'longitude': 122.2359, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0010', 'country': 'Australia', 'state_region': 'Western Australia', 'local_government_area': 'Perth', 'suburb': 'Perth', 'latitude': -31.9523, 'longitude': 115.8613, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0011', 'country': 'Australia', 'state_region': 'South Australia', 'local_government_area': 'Adelaide', 'suburb': 'Adelaide', 'latitude': -34.9285, 'longitude': 138.6007, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0012', 'country': 'Australia', 'state_region': 'Tasmania', 'local_government_area': 'Hobart', 'suburb': 'Hobart', 'latitude': -42.8821, 'longitude': 147.3272, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0013', 'country': 'Australia', 'state_region': 'Northern Territory', 'local_government_area': 'Darwin', 'suburb': 'Darwin', 'latitude': -12.4634, 'longitude': 130.8456, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0014', 'country': 'Australia', 'state_region': 'Australian Capital Territory', 'local_government_area': 'Canberra', 'suburb': 'Canberra', 'latitude': -35.2809, 'longitude': 149.13, 'geo_precision': 'suburb'}, {'geo_location_id': 'GEO_0015', 'country': 'Australia', 'state_region': 'Victoria', 'local_government_area': 'Greater Geelong', 'suburb': 'Geelong', 'latitude': -38.1499, 'longitude': 144.3617, 'geo_precision': 'suburb'}]

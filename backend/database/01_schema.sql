@@ -213,6 +213,7 @@ CREATE TABLE data_ingestion_streaming_log (
 CREATE INDEX idx_hazard_type
     ON hazard_event(hazard_type);
 
+/* these fields have been removed in this revision (why?!)
 CREATE INDEX idx_hazard_severity_level
     ON hazard_event(severity_level);
 
@@ -221,6 +222,7 @@ CREATE INDEX idx_hazard_start_time
 
 CREATE INDEX idx_hazard_geo_time
     ON hazard_event(geo_location_id, start_time);
+*/
 
 CREATE INDEX idx_cyber_threat_severity
     ON cyber_threat (severity);

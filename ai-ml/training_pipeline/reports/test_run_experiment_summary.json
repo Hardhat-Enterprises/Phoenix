@@ -1,0 +1,61 @@
+{
+  "generated_at_utc": "2026-05-11T14:05:19Z",
+  "run_id": "test_run",
+  "model": {
+    "model_type": "sklearn",
+    "model_name": "random_forest",
+    "task_type": "classification"
+  },
+  "best_f1": 1.0,
+  "best_epoch": 1,
+  "checkpoint_path": null,
+  "dataset_used": "C:\\Users\\koolg\\AppData\\Local\\Temp\\pytest-of-koolg\\pytest-6\\test_pipeline_runs_end_to_end0\\dataset.csv",
+  "metrics": {
+    "validation": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "confusion_matrix": [
+        [
+          2,
+          0
+        ],
+        [
+          0,
+          2
+        ]
+      ],
+      "auc": 1.0
+    },
+    "test": {
+      "accuracy": 0.5,
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6666666666666666,
+      "confusion_matrix": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ],
+      "auc": 1.0
+    }
+  },
+  "rows": {
+    "input": 20,
+    "processed": 20,
+    "train": 12,
+    "val": 4,
+    "test": 4
+  },
+  "tensorboard": {
+    "enabled": false,
+    "log_dir": null,
+    "status": "disabled"
+  }
+}

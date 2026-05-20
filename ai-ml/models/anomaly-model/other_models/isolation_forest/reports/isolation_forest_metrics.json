@@ -1,0 +1,22 @@
+{
+  "model": "isolation_forest",
+  "evaluation_mode": "unsupervised",
+  "n_rows": 169539,
+  "n_features": 50,
+  "training_epochs": 1,
+  "best_epoch": 1,
+  "threshold": -2.995151596493151e-05,
+  "threshold_quantile": 0.9299999999999999,
+  "anomaly_rate": 0.07022924776847154,
+  "score_mean": -0.05729613618159723,
+  "score_std": 0.040246127122075516,
+  "score_iqr": 0.04220623433216511,
+  "stability_score": 1.0,
+  "precision": null,
+  "recall": null,
+  "f1": null,
+  "roc_auc": null,
+  "pr_auc": null,
+  "false_positive_rate": null,
+  "false_negative_rate": null
+}

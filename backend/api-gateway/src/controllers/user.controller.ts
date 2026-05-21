@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { userGrpcClient } from "../grpc/user.grpc";
-import { HttpStatusCode, logger } from "@phoenix/common";
+import { HttpStatusCode, logger, redisClient } from "@phoenix/common";
 
 const handleGrpcError = (res: Response, message: string, error: unknown) => {
   logger.error(`${message}: ${error}`);
@@ -38,46 +38,151 @@ export const getUser = (req: Request, res: Response) => {
   });
 };
 
-export const getLocations = (req: Request, res: Response) => {
-  userGrpcClient.GetLocations({}, (error: any, response: any) => {
-    if (error) {
-      return handleGrpcError(res, "Error fetching locations", error);
+export const getLocations = async (req: Request, res: Response) => {
+  const cacheKey = "meta:locations";
+
+  try {
+    const cachedLocations = await redisClient.get(cacheKey);
+
+    if (cachedLocations) {
+      return res.status(HttpStatusCode.HTTP_STATUS_OK).json({
+        ...JSON.parse(cachedLocations),
+        cached: true,
+      });
     }
 
-    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
-      status: response?.status,
-      message: response?.message,
-      locations: response?.locations,
+    userGrpcClient.GetLocations({}, async (error: any, response: any) => {
+      if (error) {
+        return handleGrpcError(res, "Error fetching locations", error);
+      }
+
+      const result = {
+        status: response?.status,
+        message: response?.message,
+        locations: response?.locations,
+      };
+
+      await redisClient.set(cacheKey, JSON.stringify(result), "EX", 120);
+
+      return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
+        ...result,
+        cached: false,
+      });
     });
-  });
+  } catch (error) {
+    return handleGrpcError(res, "Error fetching locations", error);
+  }
 };
 
-export const getEventStatuses = (req: Request, res: Response) => {
-  userGrpcClient.GetEventStatuses({}, (error: any, response: any) => {
-    if (error) {
-      return handleGrpcError(res, "Error fetching event statuses", error);
+export const getEventStatuses = async (req: Request, res: Response) => {
+  const cacheKey = "meta:event-statuses";
+
+  try {
+    const cachedData = await redisClient.get(cacheKey);
+
+    if (cachedData) {
+      return res.status(HttpStatusCode.HTTP_STATUS_OK).json({
+        ...JSON.parse(cachedData),
+        cached: true,
+      });
     }
 
-    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
-      status: response?.status,
-      message: response?.message,
-      eventStatuses: response?.eventStatuses,
-    });
-  });
+    userGrpcClient.GetEventStatuses(
+      {},
+      async (error: any, response: any) => {
+        if (error) {
+          return handleGrpcError(
+            res,
+            "Error fetching event statuses",
+            error
+          );
+        }
+
+        const result = {
+          status: response?.status,
+          message: response?.message,
+          eventStatuses: response?.eventStatuses,
+        };
+
+        await redisClient.set(
+          cacheKey,
+          JSON.stringify(result),
+          "EX",
+          120
+        );
+
+        return res
+          .status(response?.status || HttpStatusCode.HTTP_STATUS_OK)
+          .json({
+            ...result,
+            cached: false,
+          });
+      }
+    );
+  } catch (error) {
+    return handleGrpcError(
+      res,
+      "Error fetching event statuses",
+      error
+    );
+  }
 };
 
-export const getLinkedEventTypes = (req: Request, res: Response) => {
-  userGrpcClient.GetLinkedEventTypes({}, (error: any, response: any) => {
-    if (error) {
-      return handleGrpcError(res, "Error fetching linked event types", error);
+export const getLinkedEventTypes = async (
+  req: Request,
+  res: Response
+) => {
+  const cacheKey = "meta:linked-event-types";
+
+  try {
+    const cachedData = await redisClient.get(cacheKey);
+
+    if (cachedData) {
+      return res.status(HttpStatusCode.HTTP_STATUS_OK).json({
+        ...JSON.parse(cachedData),
+        cached: true,
+      });
     }
 
-    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
-      status: response?.status,
-      message: response?.message,
-      linkedEventTypes: response?.linkedEventTypes,
-    });
-  });
+    userGrpcClient.GetLinkedEventTypes(
+      {},
+      async (error: any, response: any) => {
+        if (error) {
+          return handleGrpcError(
+            res,
+            "Error fetching linked event types",
+            error
+          );
+        }
+
+        const result = {
+          status: response?.status,
+          message: response?.message,
+          linkedEventTypes: response?.linkedEventTypes,
+        };
+
+        await redisClient.set(
+          cacheKey,
+          JSON.stringify(result),
+          "EX",
+          120
+        );
+
+        return res
+          .status(response?.status || HttpStatusCode.HTTP_STATUS_OK)
+          .json({
+            ...result,
+            cached: false,
+          });
+      }
+    );
+  } catch (error) {
+    return handleGrpcError(
+      res,
+      "Error fetching linked event types",
+      error
+    );
+  }
 };
 
 export const getSeasons = (req: Request, res: Response) => {

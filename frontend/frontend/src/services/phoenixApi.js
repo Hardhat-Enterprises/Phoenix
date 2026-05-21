@@ -103,3 +103,15 @@ export const getRisks = async (params = {}) => {
 
   return withListMeta(payload, ["risks", "riskAssessments"]);
 };
+
+export const getIngestionHealth = async () => {
+  const payload = await apiRequest("/api/ingestion/health");
+
+  return payload;
+};
+
+export const getStorageHealth = async () => {
+  const payload = await apiRequest("/api/storage/health");
+
+  return payload;
+};

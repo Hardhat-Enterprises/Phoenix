@@ -1,0 +1,43 @@
+{
+  "cleaning": {
+    "type_conversion": {
+      "datetime": ["timestamp"]
+    },
+    "missing_values": {
+      "drop": [],
+      "fill": {}
+    },
+    "duplicates": {
+      "subset": []
+    },
+    "string_standardisation": {
+      "columns": ["location"],
+      "case": "upper"
+    }
+  },
+  "preprocessing": {
+    "encoding": {
+      "enabled": true,
+      "method": "one_hot",
+      "exclude_columns": ["timestamp"],
+      "drop_first": false
+    },
+    "normalization": {
+      "enabled": true,
+      "method": "standard",
+      "exclude_columns": [
+        "location_encoded",
+        "multi_event_overlap_flag",
+        "incident_peak_flag",
+        "outlier_flag",
+        "z_score",
+        "time_decay_factor",
+        "hazard_normalized",
+        "cyber_intensity_score",
+        "geo_risk_zone_score",
+        "cyber_attack_frequency",
+        "regional_event_count"
+      ]
+    }
+  }
+}

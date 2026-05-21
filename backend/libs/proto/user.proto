@@ -11,13 +11,26 @@ service UserService {
     rpc GetSeasons(GetSeasonsRequest) returns (GetSeasonsResponse);
     rpc GetReferenceDays(GetReferenceDaysRequest) returns (GetReferenceDaysResponse);
     rpc GetReferenceTimes(GetReferenceTimesRequest) returns (GetReferenceTimesResponse);
+
+    rpc RegisterUser(RegisterUserRequest) returns (AuthResponse);
+    rpc LoginUser(LoginUserRequest) returns (AuthResponse);
+    rpc RefreshToken(RefreshTokenRequest) returns (AuthResponse);
+    rpc LogoutUser(LogoutUserRequest) returns (AuthResponse);
+
     rpc GetUserDashboard(GetUserDashboardRequest) returns (GetUserDashboardResponse);
     rpc GetUserDashboardCharts(GetUserDashboardChartsRequest) returns (GetUserDashboardChartsResponse);
     rpc GetUserDashboardActivity(GetUserDashboardActivityRequest) returns (GetUserDashboardActivityResponse);
+
     rpc GetThreats(GetThreatsRequest) returns (GetThreatsResponse);
     rpc GetThreat(GetThreatRequest) returns (GetThreatResponse);
+
     rpc GetHazards(GetHazardsRequest) returns (GetHazardsResponse);
     rpc GetHazard(GetHazardRequest) returns (GetHazardResponse);
+    rpc GetTrainingModels(GetTrainingModelsRequest) returns (GetTrainingModelsResponse);
+    rpc GetOneTrainingModel(GetOneTrainingModelRequest) returns (GetOneTrainingModelResponse);
+    rpc GetIntegrations(GetIntegrationsRequest) returns (GetIntegrationsResponse);
+    rpc GetIntegration(GetIntegrationRequest) returns (GetIntegrationResponse);
+
 }
 
 message GetUserHealthRequest {
@@ -43,6 +56,139 @@ message User {
     string role = 3;
 }
 
+message GetLocationsRequest {
+
+}
+
+message GetLocationsResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated Location locations = 3;
+}
+
+message Location {
+    string geo_location_id = 1;
+    string country = 2;
+    string state_region = 3;
+    string local_government_area = 4;
+    string suburb = 5;
+    float latitude = 6;
+    float longitude = 7;
+    string geo_precision = 8;
+}
+
+message GetEventStatusesRequest{
+
+}
+
+message GetEventStatusesResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated EventStatus event_statuses = 3;
+}
+
+message EventStatus {
+    string event_status_id = 1;
+    string event_status_description = 2;
+}
+
+message GetLinkedEventTypesRequest {
+
+}
+
+message GetLinkedEventTypesResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated LinkedEventType linked_event_types = 3;
+}
+
+message LinkedEventType {
+    string linked_event_type_id = 1;
+    string linked_event_type_description = 2;
+}
+
+message GetSeasonsRequest {
+
+}
+
+message GetSeasonsResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated Season seasons = 3;
+}
+
+message Season {
+    string season_id = 1;
+    string season_description = 2;
+}
+
+message GetReferenceDaysRequest {
+
+}
+
+message GetReferenceDaysResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated ReferenceDay reference_days = 3;
+}
+
+message ReferenceDay {
+    string ref_date = 1;
+    string locale_id = 2;
+    string dow = 3;
+    bool is_weekend = 4;
+    string season = 5;
+    bool is_holiday = 6;
+}
+
+message GetReferenceTimesRequest {
+
+}
+
+message GetReferenceTimesResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated ReferenceTime reference_times = 3;
+}
+
+message ReferenceTime {
+    string ref_time = 1;
+    bool is_nighttime = 2;
+    bool is_business_hours = 3;
+}
+// ─── Authentication ────────────────────────────────────────────────────────
+
+message RegisterUserRequest {
+    string username = 1;
+    string password = 2;
+    string role = 3;
+}
+
+message LoginUserRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message RefreshTokenRequest {
+    string refresh_token = 1;
+}
+
+message LogoutUserRequest {
+    string user_id = 1;
+}
+
+message AuthResponse {
+    int32 status = 1;
+    string message = 2;
+    string user_id = 3;
+    string username = 4;
+    string role = 5;
+    string access_token = 6;
+    string refresh_token = 7;
+}
+
+// ─── Dashboard ─────────────────────────────────────────────────────────────
+
 message GetUserDashboardRequest {
 }
 
@@ -53,9 +199,8 @@ message GetUserDashboardResponse {
     int32 active_hazards = 4;
     int32 total_threats = 5;
     int32 active_threats = 6;
-    int32 total_risk_assessments = 7;
-    int32 critical_risks = 8;
-    string last_updated = 9;
+    int32 total_ingestions = 7;
+    string last_updated = 8;
 }
 
 message GetUserDashboardChartsRequest {
@@ -66,8 +211,7 @@ message GetUserDashboardChartsResponse {
     string message = 2;
     string hazards_by_severity = 3;
     string threats_by_risk_level = 4;
-    string risks_by_level = 5;
-    string last_updated = 6;
+    string last_updated = 5;
 }
 
 message GetUserDashboardActivityRequest {
@@ -85,10 +229,9 @@ message GetUserDashboardActivityResponse {
 
 message GetThreatsRequest {
     string threat_type = 1;
-    string risk_level = 2;
-    string status = 3;
-    int32 page = 4;
-    int32 limit = 5;
+    string severity = 2;
+    int32 page = 3;
+    int32 limit = 4;
 }
 
 message GetThreatsResponse {
@@ -112,14 +255,14 @@ message GetThreatResponse {
 
 message Threat {
     string threat_id = 1;
-    string threat_type = 2;
-    string title = 3;
-    string description = 4;
-    string risk_level = 5;
-    string status = 6;
-    string category = 7;
-    string confidence_score = 8;
-    string detected_at = 9;
+    string event_id = 2;
+    string timestamp = 3;
+    string event_type = 4;
+    string source = 5;
+    string threat_type = 6;
+    string severity = 7;
+    int32  confidence_score = 8;
+    string details = 9;
     string created_at = 10;
     string updated_at = 11;
 }
@@ -128,8 +271,8 @@ message Threat {
 
 message GetHazardsRequest {
     string hazard_type = 1;
-    string severity_level = 2;
-    string event_status = 3;
+    string hazard_severity = 2;
+    string hazard_status = 3;
     int32 page = 4;
     int32 limit = 5;
 }
@@ -155,101 +298,83 @@ message GetHazardResponse {
 
 message Hazard {
     string hazard_event_id = 1;
-    string hazard_type = 2;
-    string severity_level = 3;
-    string event_status = 4;
-    string start_time = 5;
-    string end_time = 6;
-    string description = 7;
-    string created_at = 8;
-    string updated_at = 9;
+    string url = 2;
+    string text = 3;
+    string timestamp = 4;
+    string hazard_type = 5;
+    int32  hazard_severity = 6;
+    string hazard_timestamp = 7;
+    string hazard_location = 8;
+    string hazard_status = 9;
+    string alert_level = 10;
+    string source = 11;
+    string created_at = 12;
+    string updated_at = 13;
 }
 
-message GetLocationsRequest {}
+// ─── Integrations ───────────────────────────────────────────────────────────────
 
-message GetLocationsResponse {
+message GetIntegrationsRequest {
+    string hazard_id = 1;
+    string threat_id = 2;
+    string event_status = 3;
+    string linked_event_type = 4;
+    int32 page = 5;
+    int32 limit = 6;
+}
+
+message GetIntegrationsResponse {
     int32 status = 1;
     string message = 2;
-    repeated Location locations = 3;
+    repeated Integration integrations = 3;
+    int32 total = 4;
+    int32 page = 5;
+    int32 limit = 6;
 }
 
-message Location {
-    string geo_location_id = 1;
-    string country = 2;
-    string state_region = 3;
-    string local_government_area = 4;
-    string suburb = 5;
-    double latitude = 6;
-    double longitude = 7;
-    string geo_precision = 8;
+message GetIntegrationRequest {
+    string integration_event_id = 1;
 }
 
-message GetEventStatusesRequest {}
-
-message GetEventStatusesResponse {
+message GetIntegrationResponse {
     int32 status = 1;
     string message = 2;
-    repeated EventStatus eventStatuses = 3;
+    Integration integration = 3;
 }
 
-message EventStatus {
-    string event_status_id = 1;
-    string event_status_description = 2;
+message Integration {
+    string integration_event_id = 1;
+    string integration_type = 2;
+    string input = 3;
+    string output = 4;
+    string status = 5;
+    string note = 6;
+    string created_at = 7;
+    string updated_at = 8;
 }
 
-message GetLinkedEventTypesRequest {}
+// ─── Training Models ───────────────────────────────────────────────────────────────
+message GetTrainingModelsRequest {
+}
 
-message GetLinkedEventTypesResponse {
+message GetTrainingModelsResponse {
     int32 status = 1;
     string message = 2;
-    repeated LinkedEventType linkedEventTypes = 3;
+    repeated TrainingModel models = 3;
 }
 
-message LinkedEventType {
-    string linked_event_type_id = 1;
-    string linked_event_type_description = 2;
+message TrainingModel {
+  string file_id = 1;
+  string original_name = 2;
+  string mime_type = 3;
 }
 
-message GetSeasonsRequest {}
-
-message GetSeasonsResponse {
-    int32 status = 1;
-    string message = 2;
-    repeated Season seasons = 3;
+message GetOneTrainingModelRequest {
+  string file_id = 1;
 }
 
-message Season {
-    int32 season_id = 1;
-    string season_description = 2;
-}
-
-message GetReferenceDaysRequest {}
-
-message GetReferenceDaysResponse {
-    int32 status = 1;
-    string message = 2;
-    repeated ReferenceDay referenceDays = 3;
-}
-
-message ReferenceDay {
-    string ref_date = 1;
-    int32 locale_id = 2;
-    string dow = 3;
-    bool is_weekend = 4;
-    int32 season = 5;
-    bool is_holiday = 6;
-}
-
-message GetReferenceTimesRequest {}
-
-message GetReferenceTimesResponse {
-    int32 status = 1;
-    string message = 2;
-    repeated ReferenceTime referenceTimes = 3;
-}
-
-message ReferenceTime {
-    string ref_time = 1;
-    bool is_nighttime = 2;
-    bool is_business_hours = 3;
+message GetOneTrainingModelResponse {
+  int32 status = 1;
+  string message = 2;
+  TrainingModel model = 3;
 }

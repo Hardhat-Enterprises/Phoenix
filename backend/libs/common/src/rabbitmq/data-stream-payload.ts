@@ -1,29 +1,23 @@
-import { DataStreamEventType } from "@phoenix/common";
-
-export interface LocationPayload {
-  state_region: string;
-  local_government_area: string;
-  suburb: string;
-}
-
-export interface DataStreamPayload {
-  event_type: DataStreamEventType;
-  risk_score: number;
-  severity: string;
-  confidence: number;
-  hazard_type: string;
-  cyber_threat: string;
-  recommended_action: string;
-  top_risk_factors: string[];
+export interface HazardDataStreamRequest {
+  url: string;
+  text: string;
   timestamp: string;
-  model_version: string;
+  hazard_type: string;
+  hazard_severity: number;
+  hazard_timestamp: string;
+  hazard_location: string;
+  hazard_status: string;
+  alert_level: string;
+  source: string;
 }
 
-export interface DataStreamRequest {
+export interface CyberDataStreamRequest {
   event_id: string;
   timestamp: string;
-  event_type: DataStreamEventType;
+  event_type: string;
   source: string;
-  location: LocationPayload;
-  payload: DataStreamPayload;
+  threat_type: string;
+  severity: string;
+  confidence_score: number;
+  details: string;
 }

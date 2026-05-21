@@ -1,21 +1,4 @@
 services:
-  postgres:
-    image: postgres:16
-    container_name: phoenix-postgres
-    environment:
-      POSTGRES_DB: phoenix_db
-      POSTGRES_USER: phoenix_user
-      POSTGRES_PASSWORD: phoenix_pass
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U phoenix_user -d phoenix_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    ports:
-      - "5434:5432"
-    volumes:
-      - ./database:/docker-entrypoint-initdb.d
-
   rabbitmq:
     image: rabbitmq:4-management
     container_name: phoenix-rabbitmq
@@ -51,18 +34,22 @@ services:
       - "3001:3000"
     environment:
       - SERVICE=api-gateway
+      - USER_PROTO_PATH=/app/dist/libs/proto/user.proto
       - USER_SERVICE_URL=user-service:50051
       - INGESTION_SERVICE_URL=data-ingestion-service:50053
+      - STORAGE_SERVICE_URL=storage-service:50054
+      - STORAGE_PROTO_PATH=dist/libs/proto/storage.proto
       - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
       - SWAGGER_SERVER_URL=http://localhost:3001
+      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
+      - AUTH_JWT_SECRET=${AUTH_JWT_SECRET}
+      - AUTH_JWT_REFRESH_SECRET=${AUTH_JWT_REFRESH_SECRET}
     depends_on:
       rabbitmq:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      postgres:
         condition: service_healthy
     command: sh -c "node -r tsconfig-paths/register dist/api-gateway/src/app.js"
 
@@ -75,20 +62,16 @@ services:
       - "50051:50051"
     environment:
       - SERVICE=user-service
-      - POSTGRES_HOST=phoenix-postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=phoenix_user
-      - POSTGRES_PASSWORD=phoenix_pass
-      - POSTGRES_DB=phoenix_db
+      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
       - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
       - REDIS_URL=redis://redis:6379
       - PORT=3000
+      - AUTH_JWT_SECRET=${AUTH_JWT_SECRET}
+      - AUTH_JWT_REFRESH_SECRET=${AUTH_JWT_REFRESH_SECRET}
     depends_on:
       rabbitmq:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      postgres:
         condition: service_healthy
     command: sh -c "node -r tsconfig-paths/register dist/user-service/src/app.js"
 
@@ -103,11 +86,30 @@ services:
       - SERVICE=data-ingestion-service
       - INGESTION_PROTO_PATH=dist/libs/proto/ingestion.proto
       - INGESTION_SERVICE_PORT=50053
-      - POSTGRES_HOST=phoenix-postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=phoenix_user
-      - POSTGRES_PASSWORD=phoenix_pass
-      - POSTGRES_DB=phoenix_db
+      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
+      - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+      - PYTHON_BIN = /app/.venv/bin/python
+      - CORE_MODEL_SCRIPT_PATH = /app/libs/common/src/helper/core_model_integration.py
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: sh -c "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
+  storage-service:
+    build:
+      context: ./
+      dockerfile: storage-service/Dockerfile
+    container_name: storage-service
+    ports:
+      - "50054:50054"
+    environment:
+      - SERVICE=storage-service
+      - STORAGE_PROTO_PATH=dist/libs/proto/storage.proto
+      - STORAGE_SERVICE_PORT=50054
+      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
       - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
       - REDIS_URL=redis://redis:6379
       - PORT=3000
@@ -116,7 +118,4 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      postgres:
-        condition: service_healthy
-    command: sh -c "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js"
-    
+    command: sh -c "node -r tsconfig-paths/register dist/storage-service/src/app.js"

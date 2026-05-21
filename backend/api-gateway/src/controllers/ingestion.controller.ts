@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import { ingestionGrpcClient } from "../grpc/ingestion.grpc";
 import {
-  DataStreamEventType,
-  DataStreamRequest,
+  CoreModelIntegrationPayload,
   getChannel,
   HttpStatusCode,
   logger,
@@ -33,66 +32,89 @@ export const getHealth = (_req: Request, res: Response): void => {
   });
 };
 
-export const ingestData = async (req: Request, res: Response) => {
+export const ingestHazardData = async (req: Request, res: Response) => {
   try {
     const channel = getChannel();
-    const body = req.body as DataStreamRequest;
+    const body = req.body as any;
 
-    await Promise.all([
-      channel.assertQueue(RabbitMQQueueType.HAZARD_CREATION_QUEUE, {
-        durable: true,
-      }),
-      channel.assertQueue(RabbitMQQueueType.CYBER_CREATION_QUEUE, {
-        durable: true,
-      }),
-    ]);
-    switch (body.event_type) {
-      case DataStreamEventType.HAZARD_ONLY:
-        channel.sendToQueue(
-          RabbitMQQueueType.HAZARD_CREATION_QUEUE,
-          Buffer.from(JSON.stringify(body)),
-          {
-            persistent: true,
-          },
-        );
-        break;
-      case DataStreamEventType.CYBER_ONLY:
-        channel.sendToQueue(
-          RabbitMQQueueType.CYBER_CREATION_QUEUE,
-          Buffer.from(JSON.stringify(body)),
-          {
-            persistent: true,
-          },
-        );
-        break;
-      case DataStreamEventType.COMBINED_CORRELATION:
-        channel.sendToQueue(
-          RabbitMQQueueType.HAZARD_CREATION_QUEUE,
-          Buffer.from(JSON.stringify(body)),
-          {
-            persistent: true,
-          },
-        );
-        channel.sendToQueue(
-          RabbitMQQueueType.CYBER_CREATION_QUEUE,
-          Buffer.from(JSON.stringify(body)),
-          {
-            persistent: true,
-          },
-        );
-        break;
-      default:
-        break;
-    }
+    await channel.assertQueue(RabbitMQQueueType.HAZARD_CREATION_QUEUE, {
+      durable: true,
+    });
+
+    channel.sendToQueue(
+      RabbitMQQueueType.HAZARD_CREATION_QUEUE,
+      Buffer.from(JSON.stringify(body)),
+      {
+        persistent: true,
+      },
+    );
     res.status(HttpStatusCode.HTTP_STATUS_ACCEPTED).json({
       status: HttpStatusCode.HTTP_STATUS_ACCEPTED,
-      message: "Data ingested successfully",
+      message: "Hazard data ingested successfully",
     });
   } catch (error) {
-    logger.error(`Error ingesting data: ${error}`);
+    logger.error(`Error ingesting hazard data: ${error}`);
     res.status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR).json({
       status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-      message: "Error ingesting data",
+      message: "Error ingesting hazard data",
+    });
+  }
+};
+
+export const ingestCyberData = async (req: Request, res: Response) => {
+  try {
+    const channel = getChannel();
+    const body = req.body as any;
+
+    (await channel.assertQueue(RabbitMQQueueType.CYBER_CREATION_QUEUE, {
+      durable: true,
+    }),
+      channel.sendToQueue(
+        RabbitMQQueueType.CYBER_CREATION_QUEUE,
+        Buffer.from(JSON.stringify(body)),
+        {
+          persistent: true,
+        },
+      ));
+    res.status(HttpStatusCode.HTTP_STATUS_ACCEPTED).json({
+      status: HttpStatusCode.HTTP_STATUS_ACCEPTED,
+      message: "Cyber data ingested successfully",
+    });
+  } catch (error) {
+    logger.error(`Error ingesting cyber data: ${error}`);
+    res.status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR).json({
+      status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+      message: "Error ingesting cyber data",
+    });
+  }
+};
+
+export const coreModelIntegration = async (req: Request, res: Response) => {
+  try {
+    const channel = getChannel();
+    const body = req.body as CoreModelIntegrationPayload;
+    logger.info(
+      "Received core model integration request:",
+      body || "No body provided",
+    );
+
+    await channel.assertQueue(RabbitMQQueueType.CORE_MODEL_INTEGRATION_QUEUE);
+    channel.sendToQueue(
+      RabbitMQQueueType.CORE_MODEL_INTEGRATION_QUEUE,
+      Buffer.from(JSON.stringify(body)),
+      {
+        persistent: true,
+      },
+    );
+    res.status(HttpStatusCode.HTTP_STATUS_ACCEPTED).json({
+      status: HttpStatusCode.HTTP_STATUS_ACCEPTED,
+      message: "Core model integration data sent successfully",
+    });
+  } catch (error) {
+    logger.error(`Error integrating core model: ${error}`);
+    res.status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR).json({
+      status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+      message: "Error integrating core model",
     });
   }
 };

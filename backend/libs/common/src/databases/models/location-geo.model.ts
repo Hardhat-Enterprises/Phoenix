@@ -70,6 +70,8 @@ GeoLocation.init(
   {
     sequelize,
     tableName: "geo_location",
-    timestamps: false,
-  }
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  },
 );

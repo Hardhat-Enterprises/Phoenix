@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@phoenix/common": ["dist/libs/common/src/index.js"],
+      "@phoenix/common/*": ["dist/libs/common/src/*"],
+      "@phoenix/database": ["dist/libs/database/src/index.js"],
+      "@phoenix/database/*": ["dist/libs/database/src/*"]
+    }
+  }
+}
+ 

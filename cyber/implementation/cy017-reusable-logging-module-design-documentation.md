@@ -1,6 +1,6 @@
 # CY017 – Security Logging and Monitoring Module
 
-## Reusable Backend Logging Module Design (Implementation Specification)  v0.5
+## Reusable Backend Logging Module Design (Implementation Specification)  
 
 **Project:** Project Phoenix – TEAVS / ADCRS  
 **Company:** Hardhat Enterprises  
@@ -28,14 +28,13 @@
 13. [Log Safety and Sanitisation](#13-log-safety-and-sanitisation)
 14. [Example Structured Logs](#14-example-structured-logs)
 15. [Severity and Outcome Vocabulary](#15-severity-and-outcome-vocabulary)
-16. [Module Dependencies](#16-module-dependencies)
-17. [Point of Operation in the Backend](#17-point-of-operation-in-the-backend)
-18. [Relationship with Backend Security Controls](#18-relationship-with-backend-security-controls)
-19. [Alignment with Project Architecture](#19-alignment-with-project-architecture)
-20. [Implementation Direction](#20-implementation-direction)
-21. [Future Integration and Scalability Notes](#21-future-integration-and-scalability-notes)
-22. [Assumptions and Open Items](#22-assumptions-and-open-items)
-23. [Document History](#23-document-history)
+16. [Point of Operation in the Backend](#16-point-of-operation-in-the-backend)
+17. [Relationship with Backend Security Controls](#17-relationship-with-backend-security-controls)
+18. [Alignment with Project Architecture](#18-alignment-with-project-architecture)
+19. [Implementation Direction](#19-implementation-direction)
+20. [Future Integration and Scalability Notes](#20-future-integration-and-scalability-notes)
+21. [Assumptions and Open Items](#21-assumptions-and-open-items)
+22. [Document History](#22-document-history)
 
 ---
 
@@ -63,7 +62,7 @@ Key design decisions:
 - Synchronous `access_restricted` has exactly four allowed reasons: `rate_limit_hit`, `throttling`, `duplicate_request`, `authentication_failure`.
 - Asynchronous `access_restricted` uses repeated-pattern reasons: `repeated_rate_limit_hit`, `repeated_duplicate_request`, `repeated_invalid_input`, `repeated_authentication_failure`, `repeated_rbac_denied`, `sustained_abuse_pattern`.
 - RBAC failures remain separate as `rbac_denied` to preserve the `401 Unauthorized` / `403 Forbidden` distinction.
-- The logger outputs structured records only; it does not require database or SIEM setup.
+- The logger outputs structured records only; it does not require database or SIEM setup now.
 
 ---
 
@@ -455,15 +454,8 @@ The caller chooses severity based on final context. The logger does not calculat
 
 ---
 
-## 16. Module Dependencies
 
-The TypeScript implementation depends only on: Node.js standard library, TypeScript type definitions and optional Express request types for the Express context helper.
-
-It must **not** depend on: a database, a SIEM client, a logging library (Winston, Pino), full Phoenix backend integration or any final user database schema.
-
----
-
-## 17. Point of Operation in the Backend
+## 16. Point of Operation in the Backend
 
 ```text
 Client request
@@ -521,7 +513,7 @@ Client request
 
 ---
 
-## 18. Relationship with Backend Security Controls
+## 17. Relationship with Backend Security Controls
 
 | Backend control | What it produces | What this logger records |
 |---|---|---|
@@ -539,7 +531,7 @@ Client request
 
 ---
 
-## 19. Alignment with Project Architecture
+## 18. Alignment with Project Architecture
 
 | Area | Logger alignment |
 |---|---|
@@ -553,7 +545,7 @@ Client request
 
 ---
 
-## 20. Implementation Direction
+## 19. Implementation Direction
 
 ```text
 src/
@@ -566,7 +558,7 @@ src/
       examples.ts
 ```
 
-### 20.1 Expected implementation pieces
+### Expected implementation pieces
 
 1. **Type definitions** for event types, severity, outcome, rules and reasons.
 2. **Core log record type** matching the structured log format.
@@ -577,13 +569,10 @@ src/
 7. **Express context helper** to safely extract IP address, endpoint, method, request ID, user ID and role.
 8. **Usage examples** for login, JWT middleware, RBAC middleware, validation middleware, rate limiter, throttling, duplicate detection and async persistent-violation monitor.
 
-### 20.2 Design constraints
-
-Simple, modular, reusable, strongly typed, database-independent, SIEM-independent, compatible with Express-style request objects, not dependent on the full Phoenix backend.
 
 ---
 
-## 21. Future Integration and Scalability Notes
+## 20. Future Integration and Scalability Notes
 
 ```text
 Express middleware / handlers
@@ -617,9 +606,9 @@ Replacing console output with database or SIEM storage should require only a tra
 
 ---
 
-## 22. Assumptions and Open Items
+## 21. Assumptions and Open Items
 
-### 22.1 Assumptions
+### 21.1 Assumptions
 
 1. Implemented in TypeScript for Node.js + Express; logger core will not require Express.
 2. User identity and role may not always be present (especially before JWT validation).
@@ -628,7 +617,7 @@ Replacing console output with database or SIEM storage should require only a tra
 5. The logger records decisions made by other components; it does not make those decisions.
 6. The async monitor consumes emitted logs but is not fully implemented unless a simple demonstration is added.
 
-### 22.2 Open items
+### 21.2 Open items
 
 1. Final backend may choose exact response semantics for duplicate detection: `202 Accepted / held for review` or `409 Conflict`.
 2. Final backend may choose whether throttling is delayed handling, early `429`, or both.
@@ -637,7 +626,7 @@ Replacing console output with database or SIEM storage should require only a tra
 
 ---
 
-## 23. Document History
+## 22. Document History
 
 | Version | Change |
 |---|---|
@@ -645,6 +634,6 @@ Replacing console output with database or SIEM storage should require only a tra
 | v0.2 | Added broader event catalogue, structured log format and relationship mapping |
 | v0.3 | Expanded `access_restricted` for duplicate pending review and async repeated-pattern escalation; identified need for validation reason sub-classifiers |
 | v0.4 | Expanded `validation_failure`; redesigned `access_restricted` with exactly four synchronous reasons plus separate async reasons; clarified sync/async split; updated event catalogue, log examples, request-flow diagram, relationship table, CY010 alignment and self-review |
-| v0.5 | Documentation-focused revision. Removed explanatory padding (§9.1, §20.8), merged field-reference tables, condensed architecture alignment into single table, trimmed redundant prose throughout. |
+| v0.5 | Documentation-focused revision, refactoring|
 
 ---

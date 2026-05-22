@@ -1,0 +1,64 @@
+
+{
+  "integration_event_id": "c3f5e6a7-1111-4d4e-d111-000000000001",
+  "related_hazard_event_id": "a1f3c2d4-3333-4a2b-b333-000000000003",
+  "related_threat_id": "b2e4d5f6-1111-4c3d-c111-000000000001",
+  "correlation_score": 0.88,
+  "linkage_reason": "Phishing campaign detected during active bushfire emergency targeting affected communities.",
+  "integration_confidence": 0.91,
+  "linked_event_type": 3,
+  "event_status": 1,
+  "event_time": "2026-03-21T12:00:00Z",
+  "detected_at": "2026-03-21T12:10:00Z",
+  "reported_at": "2026-03-21T12:20:00Z",
+  "created_at": "2026-03-21T12:25:00Z",
+  "updated_at": "2026-03-21T12:25:00Z"
+}
+
+{
+  "integration_event_id": "c3f5e6a7-2222-4d4e-d222-000000000002",
+  "related_hazard_event_id": "a1f3c2d4-2222-4a2b-b222-000000000002",
+  "related_threat_id": "b2e4d5f6-3333-4c3d-c333-000000000003",
+  "correlation_score": 0.72,
+  "linkage_reason": "False evacuation alerts spread during storm warnings causing public confusion.",
+  "integration_confidence": 0.80,
+  "linked_event_type": 3,
+  "event_status": 2,
+  "event_time": "2026-02-05T15:00:00Z",
+  "detected_at": "2026-02-05T15:10:00Z",
+  "reported_at": "2026-02-05T15:25:00Z",
+  "created_at": "2026-02-05T15:30:00Z",
+  "updated_at": "2026-02-05T15:30:00Z"
+}
+
+{
+  "integration_event_id": "c3f5e6a7-3333-4d4e-d333-000000000003",
+  "related_hazard_event_id": "a1f3c2d4-4444-4a2b-b444-000000000004",
+  "related_threat_id": null,
+  "correlation_score": 0.60,
+  "linkage_reason": "Flood event monitored without associated cyber threat.",
+  "integration_confidence": 0.70,
+  "linked_event_type": 1,
+  "event_status": 2,
+  "event_time": "2026-04-01T07:00:00Z",
+  "detected_at": "2026-04-01T07:10:00Z",
+  "reported_at": "2026-04-01T07:20:00Z",
+  "created_at": "2026-04-01T07:25:00Z",
+  "updated_at": "2026-04-01T07:25:00Z"
+}
+
+{
+  "integration_event_id": "c3f5e6a7-4444-4d4e-d444-000000000004",
+  "related_hazard_event_id": null,
+  "related_threat_id": "b2e4d5f6-2222-4c3d-c222-000000000002",
+  "correlation_score": 0.65,
+  "linkage_reason": "Malware campaign detected independently of hazard events.",
+  "integration_confidence": 0.75,
+  "linked_event_type": 2,
+  "event_status": 1,
+  "event_time": "2026-02-15T09:00:00Z",
+  "detected_at": "2026-02-15T09:10:00Z",
+  "reported_at": "2026-02-15T09:20:00Z",
+  "created_at": "2026-02-15T09:25:00Z",
+  "updated_at": "2026-02-15T09:25:00Z"
+}

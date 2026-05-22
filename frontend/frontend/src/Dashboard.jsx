@@ -147,6 +147,7 @@ function Dashboard({ setPage, setSelectedThreat }) {
   const overviewCards = useMemo(
     () => [
       { label: "API Status", value: apiStatus },
+      { label: "User Service", value: apiStatus === "Online" ? "Running" : "Unavailable" },
       { label: "Ingestion Service", value: ingestionStatus },
       { label: "Storage Service", value: storageStatus },
       { label: "Total Hazards", value: hazardTotal },

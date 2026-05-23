@@ -162,7 +162,8 @@ function App() {
             <SettingsPage setPage={setPage} />
           </div>
         )}
-      </div>
+
+       </div>
 
       <Footer />
     </div>

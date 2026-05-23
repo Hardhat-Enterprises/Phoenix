@@ -110,11 +110,19 @@ export const apiRequest = async (
       clearAuthSession();
     }
 
-    throw new Error(getApiErrorMessage(data, response));
+    const error = new Error(getApiErrorMessage(data, response));
+    error.status = response.status;
+    error.data = data;
+    error.path = path;
+    throw error;
   }
 
   if (data.status >= 400) {
-    throw new Error(getApiErrorMessage(data, response));
+    const error = new Error(getApiErrorMessage(data, response));
+    error.status = data.status;
+    error.data = data;
+    error.path = path;
+    throw error;
   }
 
   return data;

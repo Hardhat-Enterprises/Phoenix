@@ -120,9 +120,9 @@ function Dashboard({ setPage, setSelectedThreat }) {
   const [apiStatus, setApiStatus] = useState("Checking");
   const [threats, setThreats] = useState([]);
   const [hazards, setHazards] = useState([]);
-  const [riskTotal, setRiskTotal] = useState(0);
-  const [threatTotal, setThreatTotal] = useState(0);
-  const [hazardTotal, setHazardTotal] = useState(0);
+  const [riskTotal, setRiskTotal] = useState("Checking");
+  const [threatTotal, setThreatTotal] = useState("Checking");
+  const [hazardTotal, setHazardTotal] = useState("Checking");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
@@ -169,15 +169,23 @@ function Dashboard({ setPage, setSelectedThreat }) {
       if (threatsResult.status === "fulfilled") {
         setThreats(threatsResult.value.items);
         setThreatTotal(threatsResult.value.total);
+      } else {
+        setThreats([]);
+        setThreatTotal("API error");
       }
 
       if (hazardsResult.status === "fulfilled") {
         setHazards(hazardsResult.value.items);
         setHazardTotal(hazardsResult.value.total);
+      } else {
+        setHazards([]);
+        setHazardTotal("API error");
       }
 
       if (risksResult.status === "fulfilled") {
         setRiskTotal(risksResult.value.total);
+      } else {
+        setRiskTotal("API error");
       }
 
       const allDataRequestsFailed = [

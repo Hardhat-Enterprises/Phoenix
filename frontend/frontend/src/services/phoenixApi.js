@@ -43,12 +43,16 @@ const readList = (payload, keys) => {
   return [];
 };
 
-const withListMeta = (payload, keys) => ({
-  items: readList(payload, keys),
-  total: payload?.total || payload?.data?.total || 0,
-  page: payload?.page || payload?.data?.page || 1,
-  limit: payload?.limit || payload?.data?.limit || 10,
-});
+const withListMeta = (payload, keys) => {
+  const items = readList(payload, keys);
+
+  return {
+    items,
+    total: payload?.total ?? payload?.data?.total ?? items.length,
+    page: payload?.page ?? payload?.data?.page ?? 1,
+    limit: payload?.limit ?? payload?.data?.limit ?? 10,
+  };
+};
 
 export const getDashboardOverview = async () => {
   const payload = await apiRequest("/api/users/dashboard/overview", {
@@ -80,6 +84,12 @@ export const getApiHealth = async () => {
   return payload;
 };
 
+export const getIngestionHealth = async () => {
+  const payload = await apiRequest("/api/ingestion/health");
+
+  return payload;
+};
+
 export const getThreats = async (params = {}) => {
   const payload = await apiRequest(`/api/users/threats${toQueryString(params)}`, {
     requiresAuth: false,
@@ -97,9 +107,82 @@ export const getHazards = async (params = {}) => {
 };
 
 export const getRisks = async (params = {}) => {
-  const payload = await apiRequest(`/api/users/risks${toQueryString(params)}`, {
+  try {
+    const payload = await apiRequest(`/api/users/risks${toQueryString(params)}`, {
+      requiresAuth: false,
+    });
+
+    return withListMeta(payload, [
+      "risks",
+      "riskAssessments",
+      "risk_assessments",
+      "items",
+      "data",
+    ]);
+  } catch (error) {
+    if (error.status !== 404) {
+      throw error;
+    }
+
+    const payload = await apiRequest(
+      `/api/users/risk-assessments${toQueryString(params)}`,
+      {
+        requiresAuth: false,
+      },
+    );
+
+    return withListMeta(payload, [
+      "data",
+      "riskAssessments",
+      "risk_assessments",
+      "risks",
+      "items",
+    ]);
+  }
+};
+
+export const getIntegrations = async (params = {}) => {
+  const payload = await apiRequest(
+    `/api/users/integration${toQueryString(params)}`,
+    {
+      requiresAuth: false,
+    },
+  );
+
+  return withListMeta(payload, ["integrations", "items", "data"]);
+};
+
+
+export const getLinkedEventTypes = async () => {
+  const payload = await apiRequest("/api/users/meta/linked-event-types", {
     requiresAuth: false,
   });
 
-  return withListMeta(payload, ["risks", "riskAssessments"]);
+  return readList(payload, ["linked_event_types", "linkedEventTypes", "items"]);
+};
+
+export const getEventStatuses = async () => {
+  const payload = await apiRequest("/api/users/meta/event-statuses", {
+    requiresAuth: false,
+  });
+
+  return readList(payload, ["event_statuses", "eventStatuses", "items"]);
+};
+
+export const postIngestionStream = async (payload) => {
+  const response = await apiRequest("/api/ingestion/stream", {
+    method: "POST",
+    body: payload,
+  });
+
+  return response;
+};
+
+export const postIngestionCore = async (payload) => {
+  const response = await apiRequest("/api/ingestion/core", {
+    method: "POST",
+    body: payload,
+  });
+
+  return response;
 };

@@ -1,4 +1,3 @@
-
 # **Project Phoenix 🐦‍🔥**
 
 ## AI-Driven Disaster & Cyber Threat Intelligence Platform (Web Application)
@@ -34,13 +33,15 @@ Phoenix provides a unified system for:
 
 ### **AI/ML Objectives**
 
-* Design structured datasets for hazard + cyber data (AI001)
-* Build data pipelines for cleaning, validation, and feature engineering (AI003–AI004)
-* Develop correlation models linking disasters to cyber threats (AI007, AI010)
-* Implement anomaly detection and forecasting systems (AI012, AI017)
-* Create a scalable **risk scoring engine** (AI009, AI013)
-* Enable real-time detection and simulation (AI014, AI018)
-* Optimise models for accuracy and reduced false positives (AI020)
+* Build structured hazard + cyber datasets for PHOENIX risk modelling
+* Maintain the AI003 cleaning pipeline for validation, duplicate handling, missing value checks, and cleaned CSV/report generation
+* Maintain the AI004 feature engineering pipeline for hazard, cyber, temporal, geo, risk, and anomaly features
+* Generate synthetic hazard-cyber records for model testing and controlled scenario validation
+* Use the reusable AI008 training pipeline for sklearn and PyTorch experiments, checkpoints, reports, and TensorBoard logging
+* Develop and compare anomaly detection models including Autoencoder, Isolation Forest, LOF, and One-Class SVM
+* Maintain the core PHOENIX risk/correlation models, including Gradient Boosting and XGBoost experiments
+* Support AI013 time-series forecasting for wildfire/fire-risk prediction using daily aggregated fire and weather features
+* Prepare backend-ready inference outputs and sample JSON records for risk assessment integration
 
 ---
 
@@ -97,10 +98,10 @@ Phoenix provides a unified system for:
 
 ## **System Architecture (High-Level)**
 
-``` text
-Data Sources → Data Pipeline → AI/ML Models → Risk Engine → API → Web Dashboard
-                                          ↓
-                                   Alert System
+```text
+Data Sources → Data Cleaning → Feature Engineering → AI/ML Models → Risk Engine → API → Web Dashboard
+                                                     ↓
+                                             Verified Alert System
 ```
 
 ---
@@ -119,21 +120,27 @@ Data Sources → Data Pipeline → AI/ML Models → Risk Engine → API → Web 
 ## **Tech Stack**
 
 * **Languages:** Python, JavaScript
+* **AI/ML:** scikit-learn, PyTorch, XGBoost
+* **Data Processing:** Pandas, NumPy, YAML/JSON configs
+* **Model Types:** Random Forest, Gradient Boosting, XGBoost, Isolation Forest, LOF, One-Class SVM, Autoencoder, LSTM forecasting
+* **Experimentation:** Jupyter Notebook, TensorBoard, checkpointing, model reports
 * **Backend:** FastAPI / Flask
 * **Frontend:** Web (React / similar)
-* **Data:** Pandas, NumPy
 * **Database:** PostgreSQL / MongoDB
 * **Cloud:** AWS
 * **Messaging:** MQTT
+* **Version Control:** Git, GitHub, branch-based PR workflow
 
 ---
 
 ## **Current Status**
 
-🚧 Early Development Phase
+🚧 Active Development / Integration Phase
 
-* Sprint-based execution
-* Core systems under design
+* AI/ML cleaning, feature engineering, synthetic data, training pipeline, anomaly detection, core model, and forecasting workstreams are in progress
+* Reusable model training pipeline supports sklearn and PyTorch workflows
+* Backend-ready sample records and inference structures are being prepared for integration
+* Sprint-based execution continues across AI/ML, backend, cybersecurity, and frontend teams
 
 ---
 

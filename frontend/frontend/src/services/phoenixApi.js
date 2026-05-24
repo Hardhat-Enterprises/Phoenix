@@ -34,6 +34,10 @@ const readList = (payload, keys) => {
     if (Array.isArray(payload?.data?.[key])) {
       return payload.data[key];
     }
+
+    if (Array.isArray(payload?.data) && Array.isArray(payload.data[0]?.[key])) {
+      return payload.data[0][key];
+    }
   }
 
   if (Array.isArray(payload?.data)) {
@@ -43,11 +47,33 @@ const readList = (payload, keys) => {
   return [];
 };
 
-const withListMeta = (payload, keys) => ({
-  items: readList(payload, keys),
-  total: payload?.total || payload?.data?.total || readList(payload, keys).length || 0,
-  page: payload?.page || payload?.data?.page || 1,
-  limit: payload?.limit || payload?.data?.limit || 10,
+const withListMeta = (payload, keys) => {
+  const items = readList(payload, keys);
+
+  return {
+    items,
+    total: payload?.total ?? payload?.data?.total ?? items.length,
+    page: payload?.page ?? payload?.data?.page ?? 1,
+    limit: payload?.limit ?? payload?.data?.limit ?? 10,
+  };
+};
+
+const parseJsonField = (value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
+const normalizeIntegration = (integration) => ({
+  ...integration,
+  input: parseJsonField(integration.input),
+  output: parseJsonField(integration.output),
 });
 
 export const getDashboardOverview = async () => {
@@ -80,9 +106,15 @@ export const getApiHealth = async () => {
   });
 };
 
+export const getIngestionHealth = async () => {
+  const payload = await apiRequest("/api/ingestion/health");
+
+  return payload;
+};
+
 export const getThreats = async (params = {}) => {
   const payload = await apiRequest(`/api/users/threats${toQueryString(params)}`, {
-    requiresAuth: false,
+    requiresAuth: true,
   });
 
   return withListMeta(payload, ["threats"]);
@@ -90,16 +122,114 @@ export const getThreats = async (params = {}) => {
 
 export const getHazards = async (params = {}) => {
   const payload = await apiRequest(`/api/users/hazards${toQueryString(params)}`, {
-    requiresAuth: false,
+    requiresAuth: true,
   });
 
   return withListMeta(payload, ["hazards"]);
 };
 
-export const getRisks = async (params = {}) => {
-  const payload = await apiRequest(`/api/users/risks${toQueryString(params)}`, {
-    requiresAuth: false,
+export const getLocations = async () => {
+  const payload = await apiRequest("/api/users/meta/locations", {
+    requiresAuth: true,
   });
 
-  return withListMeta(payload, ["risks", "riskAssessments"]);
+  return readList(payload, ["locations", "items", "data"]);
+};
+
+export const getRisks = async (params = {}) => {
+  try {
+    const payload = await apiRequest(
+      `/api/users/risk-assessments${toQueryString(params)}`,
+      {
+        requiresAuth: true,
+      },
+    );
+
+    return withListMeta(payload, [
+      "riskAssessments",
+      "risk_assessments",
+      "risks",
+      "items",
+      "data",
+    ]);
+  } catch (error) {
+    if (error.status !== 404) {
+      throw error;
+    }
+
+    const payload = await apiRequest(
+      `/api/users/integration${toQueryString(params)}`,
+      {
+        requiresAuth: true,
+      },
+    );
+
+    return withListMeta(payload, [
+      "integrations",
+      "items",
+      "data",
+    ]);
+  }
+};
+
+export const getIntegrations = async (params = {}) => {
+  const payload = await apiRequest(
+    `/api/users/integration${toQueryString(params)}`,
+    {
+      requiresAuth: true,
+    },
+  );
+
+  const meta = withListMeta(payload, ["integrations", "items", "data"]);
+
+  return {
+    ...meta,
+    items: meta.items.map(normalizeIntegration),
+  };
+};
+
+
+export const getLinkedEventTypes = async () => {
+  const payload = await apiRequest("/api/users/meta/linked-event-types", {
+    requiresAuth: true,
+  });
+
+  return readList(payload, ["linked_event_types", "linkedEventTypes", "items"]);
+};
+
+export const getEventStatuses = async () => {
+  const payload = await apiRequest("/api/users/meta/event-statuses", {
+    requiresAuth: true,
+  });
+
+  return readList(payload, ["event_statuses", "eventStatuses", "items"]);
+};
+
+export const postIngestionCore = async (payload) => {
+  const response = await apiRequest("/api/ingestion/core", {
+    method: "POST",
+    body: payload,
+    requiresAuth: true,
+  });
+
+  return response;
+};
+
+export const postIngestionAnomaly = async (payload) => {
+  try {
+    return await apiRequest("/api/ingestion/anomaly", {
+      method: "POST",
+      body: payload,
+      requiresAuth: true,
+    });
+  } catch (error) {
+    if (
+      error.status === 404 ||
+      String(error.message || "").includes("Cannot POST /api/ingestion/anomaly")
+    ) {
+      error.code = "ANOMALY_ENDPOINT_UNAVAILABLE";
+    }
+
+    throw error;
+  }
 };

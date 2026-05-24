@@ -1,10 +1,8 @@
 import { useState } from "react";
 import "./App.css";
-
 import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer";
-
 import AboutUs from "./AboutUs";
 import Dashboard from "./Dashboard";
 import ForgotPassword from "./ForgotPassword";
@@ -12,12 +10,14 @@ import SettingsPage from "./SettingsPage";
 import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
 import ThreatDetails from "./ThreatDetails";
-
 import { logoutUser } from "./services/authApi";
+import { getAuthSession, logoutUser } from "./services/authApi";
+import NotificationPanel from "./components/notifier";
 
 function App() {
   const [page, setPage] = useState("dashboard");
-  const [authSession, setAuthSession] = useState(null);
+  const [authSession, setAuthSession] = useState(() => getAuthSession());
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [selectedThreat, setSelectedThreat] = useState(null);
 
   const mainPages = [
@@ -36,10 +36,10 @@ function App() {
     setPage("dashboard");
   };
 
-  const handleLogout = async () => {
+  const handleLogout = async (nextPage = "dashboard") => {
     await logoutUser();
     setAuthSession(null);
-    setPage("login");
+    setPage(nextPage);
   };
 
   return (
@@ -65,8 +65,8 @@ function App() {
                 className="temp-search"
               />
 
-              <button className="temp-bell" aria-label="Notifications">
-                🔔
+              <button className="temp-bell" aria-label="Notifications" onClick={() => setShowNotifPanel(!showNotifPanel)}>
+                !
               </button>
             </>
           )}
@@ -80,7 +80,7 @@ function App() {
               <button
                 type="button"
                 className="header-auth-button"
-                onClick={handleLogout}
+                onClick={() => handleLogout()}
               >
                 Logout
               </button>
@@ -96,6 +96,22 @@ function App() {
           )}
         </div>
       </div>
+      {showNotifPanel && (
+        <NotificationPanel
+          onAlert={(item) => {
+        //Alter for future backend
+            fetch("http://192.168.50.251:3000/alert", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(item)
+            });
+
+            setShowNotifPanel(false);
+          }}
+        />
+      )}
+
+
 
       <div className="page-content">
         {page === "login" && (
@@ -116,6 +132,7 @@ function App() {
             <Dashboard
               setPage={setPage}
               setSelectedThreat={setSelectedThreat}
+              isLoggedIn={isLoggedIn}
             />
           </div>
         )}
@@ -155,10 +172,15 @@ function App() {
         {page === "settings" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
-            <SettingsPage setPage={setPage} />
+            <SettingsPage
+              setPage={setPage}
+              authSession={authSession}
+              onLogout={handleLogout}
+            />
           </div>
         )}
-      </div>
+
+       </div>
 
       <Footer />
     </div>

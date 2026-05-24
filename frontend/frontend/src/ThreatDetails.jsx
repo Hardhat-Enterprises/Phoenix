@@ -1,4 +1,3 @@
-import React from "react";
 import "./ThreatDetails.css";
 
 const threatLevels = [
@@ -9,14 +8,96 @@ const threatLevels = [
   { label: "Critical", className: "critical" },
 ];
 
+const hasValue = (value) =>
+  value !== undefined && value !== null && String(value).trim() !== "";
+
+const formatLabel = (value) =>
+  String(value || "")
+    .replace(/[_-]/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const formatConfidence = (value) => {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return "";
+  }
+
+  return number <= 1 ? `${Math.round(number * 100)}%` : `${number}%`;
+};
+
+const readBackendThreat = (selectedThreat) =>
+  selectedThreat?.raw?.raw || selectedThreat?.raw || {};
+
+const buildThreatDescription = (selectedThreat) => {
+  const backendThreat = readBackendThreat(selectedThreat);
+
+  if (hasValue(selectedThreat?.description)) {
+    return selectedThreat.description;
+  }
+
+  const facts = [
+    hasValue(backendThreat.threat_type) &&
+      `Threat type is ${formatLabel(backendThreat.threat_type)}`,
+    hasValue(backendThreat.severity) &&
+      `severity is ${formatLabel(backendThreat.severity)}`,
+    hasValue(backendThreat.event_type) &&
+      `event type is ${formatLabel(backendThreat.event_type)}`,
+    hasValue(backendThreat.source) && `source is ${backendThreat.source}`,
+    hasValue(backendThreat.confidence_score) &&
+      `confidence is ${formatConfidence(backendThreat.confidence_score)}`,
+  ].filter(Boolean);
+
+  if (facts.length === 0) {
+    return "No threat description was provided by the backend for this record.";
+  }
+
+  return `Backend threat record summary: ${facts.join(", ")}.`;
+};
+
 function ThreatDetails({ selectedThreat }) {
+  const backendThreat = readBackendThreat(selectedThreat);
+  const threatName =
+    selectedThreat?.name ||
+    formatLabel(backendThreat.threat_type) ||
+    "Selected Threat";
+  const threatSeverity =
+    selectedThreat?.vulnerability ||
+    formatLabel(backendThreat.severity) ||
+    "Not provided";
+  const threatStatus =
+    selectedThreat?.status ||
+    formatLabel(backendThreat.severity) ||
+    "Not provided";
+  const threatSource =
+    selectedThreat?.source ||
+    backendThreat.source ||
+    "Not provided";
+  const eventType = hasValue(backendThreat.event_type)
+    ? formatLabel(backendThreat.event_type)
+    : "Not provided";
+  const confidence = hasValue(backendThreat.confidence_score)
+    ? formatConfidence(backendThreat.confidence_score)
+    : "Not provided";
+  const threatDescription = buildThreatDescription(selectedThreat);
+
   const getRiskColor = () => {
     const level = selectedThreat?.vulnerability?.toLowerCase();
+    if (threatSeverity === "Critical") {
+      return "#d93636";
+    }
 
-    if (level?.includes("critical")) return "#d93636";
-    if (level?.includes("high")) return "#e85d04";
-    if (level?.includes("medium")) return "#d4a017";
-    if (level?.includes("low")) return "#84cc16";
+    if (threatSeverity === "High") {
+      return "#e85d04";
+    }
+
+    if (threatSeverity === "Medium") {
+      return "#d4a017";
+    }
+
+    if (threatSeverity === "Low") {
+      return "#84cc16";
+    }
 
     return "#2b9348";
   };
@@ -58,48 +139,49 @@ function ThreatDetails({ selectedThreat }) {
             </div>
           ) : (
             <div className="selected-threat-box">
-              <h2>{selectedThreat.name}</h2>
+              <h2>{threatName}</h2>
 
               <div className="threat-info-grid">
                 <div>
-                  <strong>Threat Level</strong>
+                  <strong>Threat Type</strong>
+
+                  <p>{formatLabel(backendThreat.threat_type) || threatName}</p>
+                </div>
+
+                <div>
+                  <strong>Severity</strong>
                   <div
                     className="threat-risk-badge"
                     style={{ color: getRiskColor() }}
                   >
-                    {selectedThreat.vulnerability}
+                    {threatSeverity}
                   </div>
                 </div>
 
                 <div>
                   <strong>Status</strong>
-                  <p>{selectedThreat.status}</p>
-                </div>
-
-                <div>
-                  <strong>Category</strong>
-                  <p>{rawThreat.category || selectedThreat.source}</p>
-                </div>
-
-                <div>
-                  <strong>Confidence Score</strong>
-                  <p>{confidenceScore}</p>
-                </div>
-
-                <div>
-                  <strong>Detected At</strong>
-                  <p>{detectedAt}</p>
+                  <p>{threatStatus}</p>
                 </div>
 
                 <div>
                   <strong>Source</strong>
-                  <p>{selectedThreat.source}</p>
+                  <p>{threatSource}</p>
+                </div>
+
+                <div>
+                  <strong>Event Type</strong>
+                  <p>{eventType}</p>
+                </div>
+
+                <div>
+                  <strong>Confidence</strong>
+                  <p>{confidence}</p>
                 </div>
               </div>
 
               <div className="threat-description-section">
                 <strong>Threat Description</strong>
-                <p>{selectedThreat.description}</p>
+                <p>{threatDescription}</p>
               </div>
             </div>
           )}

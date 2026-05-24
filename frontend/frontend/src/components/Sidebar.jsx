@@ -7,7 +7,7 @@ function Sidebar({ setPage, page }) {
     { label: "Reports", target: "reports" },
     { label: "About Us", target: "about" },
     { label: "Settings", target: "settings" },
-    { label: "Threats", target: "threats" },
+    { label: "Threat Details", target: "threats" },
     
   ];
 

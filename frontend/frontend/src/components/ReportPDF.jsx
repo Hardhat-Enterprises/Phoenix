@@ -20,9 +20,34 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: "bold",
   },
+
+  value: {
+    marginTop: 3,
+    lineHeight: 1.4,
+  },
 });
 
+const asText = (value) => {
+  if (value === undefined || value === null || value === "") {
+    return "-";
+  }
+
+  return String(value);
+};
+
+function Field({ label, value }) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.label}>{label}:</Text>
+      <Text style={styles.value}>{asText(value)}</Text>
+    </View>
+  );
+}
+
 export default function ReportPDF({ report }) {
+  const input = report.input || {};
+  const output = report.output || {};
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -31,35 +56,29 @@ export default function ReportPDF({ report }) {
           Cybersecurity Verification Report
         </Text>
 
-        <View style={styles.section}>
-          <Text style={styles.label}>Title:</Text>
-          <Text>{report.title}</Text>
-        </View>
+        <Field label="Evidence" value={report.title} />
+        <Field label="Description" value={report.description} />
+        <Field label="Input Type" value={report.evidenceType} />
+        <Field label="Risk Level" value={report.risk} />
+        <Field label="Status" value={report.status} />
+        <Field label="Processed" value={report.date} />
 
-        <View style={styles.section}>
-          <Text style={styles.label}>Description:</Text>
-          <Text>{report.description}</Text>
-        </View>
+        <Text style={styles.title}>Core Model Output</Text>
 
-        <View style={styles.section}>
-          <Text style={styles.label}>Link Type:</Text>
-          <Text>{report.linkType}</Text>
-        </View>
+        <Field label="Risk Score" value={output.risk_score} />
+        <Field label="Confidence Score" value={output.confidence_score} />
+        <Field label="Predicted Class" value={output.predicted_class} />
 
-        <View style={styles.section}>
-          <Text style={styles.label}>Risk Level:</Text>
-          <Text>{report.risk}</Text>
-        </View>
+        <Text style={styles.title}>Backend Payload</Text>
 
-        <View style={styles.section}>
-          <Text style={styles.label}>Status:</Text>
-          <Text>{report.status}</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.label}>Date:</Text>
-          <Text>{report.date}</Text>
-        </View>
+        <Field label="URL" value={input.url} />
+        <Field label="Text" value={input.text} />
+        <Field label="Hazard Type" value={input.hazard_type} />
+        <Field label="Hazard Severity" value={input.hazard_severity} />
+        <Field label="Hazard Location" value={input.hazard_location} />
+        <Field label="Hazard Status" value={input.hazard_status} />
+        <Field label="Alert Level" value={input.alert_level} />
+        <Field label="Source" value={input.source} />
 
       </Page>
     </Document>

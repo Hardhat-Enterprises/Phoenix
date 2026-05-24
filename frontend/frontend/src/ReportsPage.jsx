@@ -6,7 +6,6 @@ import {
   getIngestionHealth,
   getIntegrations,
   postIngestionCore,
-  postIngestionStream,
 } from "./services/phoenixApi";
 
 const defaultForm = {
@@ -28,41 +27,6 @@ const getCurrentDateTimeLocal = () => {
   return localDate.toISOString().slice(0, 16);
 };
 
-const sampleReports = [
-  {
-    title: "Emergency Donation Scam Report",
-    description: "Fake disaster donation link verification summary",
-    linkType: "Donation URL",
-    risk: "High",
-    status: "Escalated",
-    date: "12 Apr 2026",
-  },
-  {
-    title: "SMS Evacuation Link Review",
-    description: "Phishy text message link linked to false emergency update",
-    linkType: "SMS Link",
-    risk: "Critical",
-    status: "Flagged",
-    date: "11 Apr 2026",
-  },
-  {
-    title: "Social Media Update Verification",
-    description: "Suspicious post linking to unverified bushfire update portal",
-    linkType: "Social Media",
-    risk: "Medium",
-    status: "Monitored",
-    date: "10 Apr 2026",
-  },
-  {
-    title: "Flood Relief Portal Check",
-    description: "Manual review of a flood-related support and login page",
-    linkType: "Web Form",
-    risk: "Low",
-    status: "Verified Safe",
-    date: "09 Apr 2026",
-  },
-];
-
 const pause = (delayMs) =>
   new Promise((resolve) => {
     window.setTimeout(resolve, delayMs);
@@ -80,6 +44,71 @@ const formatDateTime = (value) => {
 const formatScore = (value) => {
   const number = Number(value);
   return Number.isFinite(number) ? number.toFixed(4) : "-";
+};
+
+const getProcessedTime = (integration) =>
+  integration?.output?.processed_at ||
+  integration?.updated_at ||
+  integration?.created_at;
+
+const getEvidenceTitle = (input = {}) => {
+  if (input.url) {
+    return input.url;
+  }
+
+  if (input.text) {
+    return input.text.length > 70 ? `${input.text.slice(0, 70)}...` : input.text;
+  }
+
+  return "Core model output";
+};
+
+const getEvidenceType = (input = {}) => {
+  if (input.url && input.text) {
+    return "URL + Text";
+  }
+
+  if (input.url) {
+    return "URL";
+  }
+
+  if (input.text) {
+    return "Text";
+  }
+
+  return "-";
+};
+
+const sanitizeFileName = (value) => {
+  const cleaned = String(value || "core_model_report")
+    .replace(/[^a-z0-9_-]+/gi, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 80);
+
+  return cleaned || "core_model_report";
+};
+
+const buildIntegrationReport = (integration) => {
+  const input = integration.input || {};
+  const output = integration.output || {};
+  const status = integration.status || "-";
+  const risk =
+    output.risk_level || (status === "error" ? "Error" : "Pending");
+  const title = getEvidenceTitle(input);
+
+  return {
+    id: integration.integration_event_id || title,
+    title,
+    description: input.text || input.url || "No evidence text returned.",
+    evidenceType: getEvidenceType(input),
+    risk,
+    riskClass: getRiskClass(output.risk_level, status),
+    status,
+    date: formatDateTime(getProcessedTime(integration)),
+    fileName: `${sanitizeFileName(title)}_verification_report.pdf`,
+    input,
+    output,
+  };
 };
 
 const toIsoTimestamp = (value) => {
@@ -176,7 +205,7 @@ const getInputSignature = (integration) => {
   });
 };
 
-const uniqueRecentIntegrations = (items) => {
+const latestCoreIntegration = (items) => {
   const seenInputs = new Set();
 
   return sortNewestFirst(items)
@@ -191,7 +220,7 @@ const uniqueRecentIntegrations = (items) => {
       seenInputs.add(signature);
       return true;
     })
-    .slice(0, 5);
+    .slice(0, 1);
 };
 
 const getRiskClass = (riskLevel, status) => {
@@ -218,8 +247,13 @@ function ReportsPage() {
   const [selectedResult, setSelectedResult] = useState(null);
 
   const displayedIntegrations = useMemo(
-    () => uniqueRecentIntegrations(integrations),
+    () => latestCoreIntegration(integrations),
     [integrations],
+  );
+
+  const generatedReports = useMemo(
+    () => displayedIntegrations.map(buildIntegrationReport),
+    [displayedIntegrations],
   );
 
   const latestResult = useMemo(
@@ -317,7 +351,6 @@ function ReportsPage() {
     setIsRunningModel(true);
 
     try {
-      await postIngestionStream(payload);
       await postIngestionCore(payload);
       setModelMessage("Core model request submitted. Waiting for output...");
 
@@ -546,8 +579,8 @@ function ReportsPage() {
       <section className="core-results-card">
         <div className="generated-reports-header">
           <div>
-            <h2>Recent Core Model Results</h2>
-            <p>Latest unique backend integration records.</p>
+            <h2>Last Core Model Test</h2>
+            <p>Newest backend core model integration record.</p>
           </div>
         </div>
 
@@ -590,7 +623,7 @@ function ReportsPage() {
             <div className="core-results-empty">
               {isLoadingIntegrations
                 ? "Loading core model results..."
-                : "No core model integration records returned yet."}
+                : "No core model test returned yet."}
             </div>
           )}
         </div>
@@ -601,47 +634,54 @@ function ReportsPage() {
           <div>
             <h2>Generated Verification Reports</h2>
             <p>
-              Previously reviewed suspicious links with downloadable verification
-              report outputs
+              Downloadable report generated from the latest backend core model record.
             </p>
           </div>
         </div>
 
         <div className="reports-table">
           <div className="reports-table-head">
-            <span>Report</span>
-            <span>Link Type</span>
-            <span>Risk</span>
+            <span>Evidence</span>
+            <span>Input Type</span>
+            <span>Risk Level</span>
             <span>Status</span>
-            <span>Date</span>
+            <span>Processed</span>
             <span>Action</span>
           </div>
 
-          {sampleReports.map((report) => (
-            <div className="reports-row" key={report.title}>
-              <div className="report-title-cell">
-                <strong>{report.title}</strong>
-                <small>{report.description}</small>
+          {generatedReports.length > 0 ? (
+            generatedReports.map((report) => (
+              <div className="reports-row" key={report.id}>
+                <div className="report-title-cell">
+                  <strong>{report.title}</strong>
+                  <small>{report.description}</small>
+                </div>
+
+                <span>{report.evidenceType}</span>
+
+                <span className={`risk-badge ${report.riskClass}`}>
+                  {report.risk}
+                </span>
+
+                <span>{report.status}</span>
+                <span>{report.date}</span>
+
+                <PDFDownloadLink
+                  document={<ReportPDF report={report} />}
+                  fileName={report.fileName}
+                  className="download-button"
+                >
+                  {({ loading }) => (loading ? "Generating PDF" : "Download")}
+                </PDFDownloadLink>
               </div>
-
-              <span>{report.linkType}</span>
-
-              <span className={`risk-badge ${report.risk.toLowerCase()}`}>
-                {report.risk}
-              </span>
-
-              <span>{report.status}</span>
-              <span>{report.date}</span>
-
-              <PDFDownloadLink
-                document={<ReportPDF report={report} />}
-                fileName={`${report.title.replace(/\s+/g, "_")}.pdf`}
-                className="download-button"
-              >
-                {({ loading }) => (loading ? "Generating PDF" : "Download")}
-              </PDFDownloadLink>
+            ))
+          ) : (
+            <div className="reports-empty">
+              {isLoadingIntegrations
+                ? "Loading backend core model records..."
+                : "No core model records returned yet."}
             </div>
-          ))}
+          )}
         </div>
       </section>
     </main>

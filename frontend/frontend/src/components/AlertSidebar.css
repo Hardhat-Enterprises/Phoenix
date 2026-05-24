@@ -1,23 +1,26 @@
 /* Container */
 .sidebar-container {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 /* Card */
 .card {
-  background: #f8fafc;
-  padding: 20px;
-  border-radius: 24px;
-  margin-bottom: 20px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid #dfe7f2;
+  box-shadow: 0 6px 18px rgba(16, 42, 67, 0.05);
+  text-align: left;
 }
 
 /* Title */
 .card-title {
-  margin-bottom: 16px;
+  margin: 0 0 14px;
   font-size: 15px;
-  font-weight: 600;
-  color: #1e293b;
+  font-weight: 800;
+  color: #1f3a5f;
 }
 
 /* Item row */
@@ -25,7 +28,11 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 11px;
+}
+
+.item:last-child {
+  margin-bottom: 0;
 }
 
 /* Colored dot */
@@ -39,7 +46,7 @@
 /* Text */
 .item-text {
   margin: 0;
-  font-size: 13.5px;
+  font-size: 13px;
   color: #475569;
   line-height: 1.5;
 }
@@ -47,19 +54,23 @@
 /* Buttons */
 .action-btn {
   width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 10px;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  background: #f1f5f9;
+  padding: 10px 12px;
+  margin-bottom: 9px;
+  border-radius: 8px;
+  border: 1px solid #d8e2ef;
+  background: #f8fbff;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 14px;
-  font-weight: 500;
-  color: #1e293b;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1f3a5f;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.action-btn:last-child {
+  margin-bottom: 0;
 }
 
 /* Hover effect */

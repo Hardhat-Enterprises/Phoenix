@@ -10,13 +10,13 @@ import SettingsPage from "./SettingsPage";
 import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
 import ThreatDetails from "./ThreatDetails";
-import { logoutUser } from "./services/authApi";
+import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
 
 
 function App() {
   const [page, setPage] = useState("dashboard");
-  const [authSession, setAuthSession] = useState(null);
+  const [authSession, setAuthSession] = useState(() => getAuthSession());
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [selectedThreat, setSelectedThreat] = useState(null);
   const mainPages = [
@@ -34,10 +34,10 @@ function App() {
     setPage("dashboard");
   };
 
-  const handleLogout = async () => {
+  const handleLogout = async (nextPage = "dashboard") => {
     await logoutUser();
     setAuthSession(null);
-    setPage("dashboard");
+    setPage(nextPage);
   };
 
   return (
@@ -75,7 +75,7 @@ function App() {
               <button
                 type="button"
                 className="header-auth-button"
-                onClick={handleLogout}
+                onClick={() => handleLogout()}
               >
                 Logout
               </button>
@@ -121,6 +121,7 @@ function App() {
             <Dashboard
               setPage={setPage}
               setSelectedThreat={setSelectedThreat}
+              isLoggedIn={isLoggedIn}
             />
           </div>
         )}
@@ -159,7 +160,11 @@ function App() {
         {page === "settings" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
-            <SettingsPage setPage={setPage} />
+            <SettingsPage
+              setPage={setPage}
+              authSession={authSession}
+              onLogout={handleLogout}
+            />
           </div>
         )}
 

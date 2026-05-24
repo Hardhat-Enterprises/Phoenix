@@ -52,8 +52,8 @@ const styles = {
   },
 
   purposeIcon: {
-    width: "120px",
-    height: "90px",
+    width: "140px",
+    height: "120px",
     borderRadius: "14px",
     objectFit: "cover",
     backgroundColor: "#eef3fb",
@@ -82,8 +82,8 @@ export default function AboutUs() {
           <h2 style={styles.cardTitle}>What is PHOENIX?</h2>
 
           <img
-            src="https://placehold.co/1200x320/0b2d5c/ffffff?text=PHOENIX+Banner+Placeholder"
-            alt="Phoenix placeholder banner"
+            src="/about-banner.png"
+            alt="About Us banner"
             style={styles.phoenixBanner}
           />
 
@@ -97,12 +97,12 @@ export default function AboutUs() {
         </div>
 
         <div style={styles.card}>
-          <h2 style={styles.cardTitle}>System Purpose</h2>
+          <h2 style={styles.cardTitle}>Purpose</h2>
 
           <div style={styles.purposeRow}>
             <img
-              src="https://placehold.co/240x180/f1f5fb/10254d?text=Purpose"
-              alt="System purpose placeholder"
+              src="/system-purpose.png"
+              alt="Purpose"
               style={styles.purposeIcon}
             />
 

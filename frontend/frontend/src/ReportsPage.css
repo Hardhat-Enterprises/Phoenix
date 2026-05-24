@@ -418,6 +418,13 @@
   background-color: #f8fbff;
 }
 
+.reports-empty {
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 22px 28px;
+}
+
 .report-title-cell {
   display: flex;
   flex-direction: column;

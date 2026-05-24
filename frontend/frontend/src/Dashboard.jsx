@@ -957,9 +957,6 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
           ? sortNewestFirst(integrationsResult.value.items || [])
           : [];
 
-      const allDataRequestsFailed = [threatsResult, hazardsResult].every(
-        (result) => result.status === "rejected"
-      );
       const listedThreats =
         threatsResult.status === "fulfilled"
           ? threatsResult.value.items || []

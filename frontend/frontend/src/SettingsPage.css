@@ -1,0 +1,258 @@
+.settings-page {
+  flex: 1;
+  min-height: 100vh;
+  background: #f5f7fb;
+  padding: 28px 32px;
+}
+
+.settings-shell {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.settings-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.settings-header h1 {
+  margin: 0 0 8px;
+  font-size: 34px;
+  font-weight: 800;
+  color: #0b1b3a;
+  line-height: 1.1;
+}
+
+.settings-header p {
+  margin: 0;
+  font-size: 17px;
+  color: #667085;
+}
+
+.settings-save-status {
+  background: #e8f7ee;
+  border: 1px solid #bde8cc;
+  border-radius: 999px;
+  color: #166534;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.settings-card {
+  background: #ffffff;
+  border: 1px solid #d9e2ef;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.settings-card-heading,
+.settings-section-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.settings-card h2 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  color: #0b1b3a;
+}
+
+.settings-subtext {
+  margin: 0 0 24px;
+  font-size: 15px;
+  color: #667085;
+  line-height: 1.6;
+}
+
+.settings-section {
+  padding: 18px 0;
+  border-top: 1px solid #edf1f7;
+}
+
+.settings-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.settings-section h3 {
+  margin: 0 0 14px;
+  font-size: 17px;
+  color: #102a56;
+}
+
+.settings-section-heading h3 {
+  margin-bottom: 0;
+}
+
+.settings-section-heading span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.settings-options-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: #243b63;
+}
+
+.settings-option input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: #2563eb;
+  flex-shrink: 0;
+}
+
+.settings-dropdown-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  max-width: 360px;
+}
+
+.settings-dropdown-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #243b63;
+}
+
+.settings-dropdown-group select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d0d8e5;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+  color: #243b63;
+}
+
+.settings-reset-btn {
+  background: #f8fafc;
+  border: 1px solid #cbd8e8;
+  border-radius: 8px;
+  color: #1f3a5f;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 9px 12px;
+}
+
+.settings-inline-status {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 10px 0 0 27px;
+}
+
+.account-card {
+  position: sticky;
+  top: 24px;
+}
+
+.account-summary {
+  background: #f8fbff;
+  border: 1px solid #e4edf7;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 16px;
+  padding: 14px;
+}
+
+.account-summary span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.account-summary strong {
+  color: #102a56;
+  font-size: 17px;
+}
+
+.account-summary small {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.account-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.settings-action-btn {
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary-btn {
+  background: #edf2fb;
+  color: #1d4c9e;
+}
+
+.danger-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.secondary-btn:hover,
+.danger-btn:hover {
+  opacity: 0.95;
+}
+
+@media (max-width: 900px) {
+  .settings-page {
+    padding: 20px;
+  }
+
+  .settings-header {
+    flex-direction: column;
+  }
+
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-card {
+    position: static;
+  }
+
+  .settings-header h1 {
+    font-size: 30px;
+  }
+}

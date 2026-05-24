@@ -1,0 +1,83 @@
+/*
+  Final sidebar styling for my assigned toolbar task.
+  I refined the spacing, colours, button size, and active state
+  so the component looks closer to the high-fidelity design.
+*/
+
+.sidebar {
+  width: 280px;
+  min-height: 100vh;
+  background-color: #eef3f9;
+  border-right: 1px solid #d7e1ee;
+  padding: 18px 16px;
+}
+
+.sidebar-panel {
+  width: 100%;
+  max-width: 220px;
+  margin: 0 auto;
+  padding-top: 8px;
+}
+
+.sidebar-heading {
+  margin: 0 0 18px 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #7d8ca3;
+  letter-spacing: 0.3px;
+}
+
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sidebar-item {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 16px;
+  border: 1px solid #dde6f2;
+  border-radius: 16px;
+  background-color: #e6edf7;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.sidebar-item:hover {
+  background-color: #dde7f5;
+  border-color: #c9d8ec;
+  transform: translateY(-1px);
+}
+
+.sidebar-item.active {
+  background-color: #aec7f2;
+  border-color: #97b7eb;
+}
+
+.sidebar-icon {
+  width: 15px;
+  height: 15px;
+  border-radius: 5px;
+  background-color: #9daec3;
+  flex-shrink: 0;
+}
+
+.sidebar-item.active .sidebar-icon {
+  background-color: #3f7df0;
+}
+
+.sidebar-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #40556f;
+}
+
+.sidebar-item.active .sidebar-text {
+  color: #245fd6;
+}

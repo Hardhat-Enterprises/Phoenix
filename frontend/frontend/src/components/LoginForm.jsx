@@ -1,53 +1,95 @@
+import { useState } from "react";
+import { loginUser, saveAuthSession } from "../services/authApi";
+
+export default function LoginForm({ setPage, onLogin }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setStatusMessage("");
+    setErrorMessage("");
+
+    if (!username.trim() || !password) {
+      setErrorMessage("Enter both username and password to sign in.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const session = await loginUser({
+        username: username.trim(),
+        password,
+      });
+
+      const savedSession = saveAuthSession(session);
+      onLogin?.(savedSession);
+      setStatusMessage("Signed in successfully. Opening dashboard...");
+      setPage("dashboard");
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
 import React from "react";
 
-export default function LoginForm() {
+
   return (
-    <div style={styles.container}>
-      <h1 style={styles.heading}>Alert Information</h1>
+    <form className="login-form" onSubmit={handleSubmit}>
+      <label>Username or Email</label>
+      <input
+        type="text"
+        placeholder="Enter your username or email"
+        value={username}
+        onChange={(event) => setUsername(event.target.value)}
+        autoComplete="username"
+      />
 
-      <div style={styles.card}>
-        <p><strong>Alert Type:</strong> Phishing Attempt</p>
-        <p><strong>Severity:</strong> High</p>
-        <p><strong>Status:</strong> Active</p>
-        <p><strong>Detected:</strong> 12 May 2026 - 10:30 AM</p>
-        <p><strong>Source:</strong> Suspicious Email Link</p>
+      <label>Password</label>
+      <input
+        type="password"
+        placeholder="Enter your password"
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        autoComplete="current-password"
+      />
 
-        <h2 style={styles.descriptionTitle}>Description</h2>
+      {errorMessage && <p className="login-message login-error">{errorMessage}</p>}
+      {statusMessage && <p className="login-message login-success">{statusMessage}</p>}
 
-        <p style={styles.description}>
-          This alert provides detailed information about a detected cyber threat.
-          Placeholder data is being used for now until backend integration is added.
-        </p>
+      <button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Signing In..." : "Sign In"}
+      </button>
+
+      <div className="login-extra">
+        <span
+          className="forgot"
+          onClick={() => setPage("forgotPassword")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              setPage("forgotPassword");
+            }
+          }}
+        >
+          Forgotten Password?
+        </span>
+
+        <label className="remember">
+          <input type="checkbox" />
+          Remember Me
+        </label>
       </div>
-    </div>
+      <button type="button" onClick={() => setPage("about")}>
+        About Us
+      </button>
+    </form>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: "100vh",
-    backgroundColor: "#f4f4f4",
-    padding: "20px",
-  },
-  heading: {
-    fontSize: "28px",
-    fontWeight: "bold",
-    marginBottom: "20px",
-    color: "#000",
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: "12px",
-    padding: "20px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-  },
-  descriptionTitle: {
-    fontSize: "20px",
-    marginTop: "20px",
-  },
-  description: {
-    fontSize: "16px",
-    lineHeight: "24px",
-    color: "#555",
-  },
-};

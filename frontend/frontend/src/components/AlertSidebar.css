@@ -1,8 +1,7 @@
 /* Container */
 .sidebar-container {
-  width: 360px;
+  width: 100%;
 }
-
 /* Card */
 .card {
   background: #f8fafc;

@@ -4,9 +4,11 @@ function Sidebar({ setPage, page }) {
   const menuItems = [
     { label: "Dashboard", target: "dashboard" },
     { label: "Alerts", target: "alerts" },
-    { label: "Threat Reports", target: "reports" },
+    { label: "Reports", target: "reports" },
     { label: "About Us", target: "about" },
     { label: "Settings", target: "settings" },
+    { label: "Threats", target: "threats" },
+    
   ];
 
   return (

@@ -1,0 +1,305 @@
+/*
+  Final styling for my assigned dashboard task.
+  The focus here is only on the Item List section, keeping it clean,
+  wide, and visually close to the dashboard mock-up.
+*/
+
+.dashboard-page {
+  display: flex;
+  min-height: calc(100vh - 88px);
+  background-color: #eef3f8;
+}
+
+.dashboard-content {
+  flex: 1;
+  padding: 34px 38px;
+}
+
+.dashboard-main-area {
+  width: 100%;
+  max-width: 900px;
+}
+
+/* Main card */
+.item-list-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #dfe7f2;
+  border-radius: 18px;
+  padding: 26px 30px 30px;
+  box-shadow: 0 6px 18px rgba(16, 42, 67, 0.05);
+}
+
+/* Header */
+.item-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.item-list-header h2 {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 700;
+  color: #1f3a5f;
+}
+
+.view-all-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #3b5f8b;
+  cursor: pointer;
+}
+
+.view-all-button:hover {
+  text-decoration: underline;
+}
+
+/* Table */
+.item-list-table {
+  width: 100%;
+  border: 1px solid #dfe7f2;
+  border-radius: 14px;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+.item-list-table-head {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr 1fr;
+  padding: 16px 22px;
+  background-color: #f4f7fb;
+  font-size: 15px;
+  font-weight: 700;
+  color: #5c6f86;
+}
+
+.item-list-row {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr 1fr;
+  align-items: center;
+  padding: 20px 22px;
+  border-top: 1px solid #edf2f8;
+  background-color: #ffffff;
+  transition: background-color 0.2s ease;
+}
+
+.item-list-row:hover {
+  background-color: #f7fbff;
+}
+
+/* Left cell */
+.item-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2f3f55;
+}
+
+.item-check-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background-color: #2f6fe8;
+  color: #ffffff;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Pills */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 130px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.safe {
+  background-color: #e2f3eb;
+  color: #17774f;
+}
+
+.unverified {
+  background-color: #fff1d8;
+  color: #cf8b00;
+}
+
+.unsafe {
+  background-color: #fbe4e4;
+  color: #df3939;
+}
+
+/* Right cell */
+.status-right-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.row-arrow {
+  font-size: 24px;
+  color: #9fb0c4;
+  line-height: 1;
+}
+
+.threat-chart-section {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #dfe7f2;
+  border-radius: 18px;
+  padding: 26px 30px 30px;
+  box-shadow: 0 6px 18px rgba(16, 42, 67, 0.05);
+  margin-bottom: 26px;
+}
+
+/*ThreatHeader*/
+.threat-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.threat-chart-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f3a5f;
+}
+
+.threat-chart-header p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #5c6f86;
+}
+
+.backend-ready-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+
+/* Body */
+.threat-chart-body {
+  background: #f9fafb;
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+  min-height: 220px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Empty chart placeholder */
+.empty-chart-placeholder {
+  width: 100%;
+}
+
+.chart-area {
+  height: 145px;
+  position: relative;
+  border-left: 2px solid #cbd5e1;
+  border-bottom: 2px solid #cbd5e1;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.chart-grid-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.line-1 { top: 25%; }
+.line-2 { top: 50%; }
+.line-3 { top: 75%; }
+
+.chart-bar {
+  position: absolute;
+  bottom: 0;
+  width: 54px;
+  border-radius: 10px 10px 0 0;
+  opacity: 0.85;
+}
+
+.high-bar {
+  left: 22%;
+  height: 110px;
+  background: #ef4444;
+}
+
+.medium-bar {
+  left: 46%;
+  height: 78px;
+  background: #f59e0b;
+}
+
+.low-bar {
+  left: 70%;
+  height: 48px;
+  background: #10b981;
+}
+
+.empty-chart-text {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.empty-chart-text strong {
+  font-size: 15px;
+  color: #1f3a5f;
+}
+
+.empty-chart-text span {
+  font-size: 13px;
+  color: #5c6f86;
+}
+
+/* Footer */
+.threat-chart-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #5c6f86;
+}
+
+.severity-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot.high { background: #ef4444; }
+.legend-dot.medium { background: #f59e0b; }
+.legend-dot.low { background: #10b981; }

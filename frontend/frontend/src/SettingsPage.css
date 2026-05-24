@@ -1,0 +1,173 @@
+.settings-page {
+  flex: 1;
+  min-height: 100vh;
+  background: #f5f7fb;
+  padding: 28px;
+}
+
+.settings-shell {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.settings-header {
+  margin-bottom: 24px;
+}
+
+.settings-header h1 {
+  margin: 0 0 8px;
+  font-size: 42px;
+  font-weight: 800;
+  color: #0b1b3a;
+  line-height: 1.1;
+}
+
+.settings-header p {
+  margin: 0;
+  font-size: 17px;
+  color: #667085;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.settings-card {
+  background: #ffffff;
+  border: 1px solid #d9e2ef;
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.settings-card h2 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  color: #0b1b3a;
+}
+
+.settings-subtext {
+  margin: 0 0 24px;
+  font-size: 15px;
+  color: #667085;
+  line-height: 1.6;
+}
+
+.settings-section {
+  padding: 18px 0;
+  border-top: 1px solid #edf1f7;
+}
+
+.settings-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.settings-section h3 {
+  margin: 0 0 14px;
+  font-size: 20px;
+  color: #102a56;
+}
+
+.settings-options-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  color: #243b63;
+}
+
+.settings-option input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: #2563eb;
+  flex-shrink: 0;
+}
+
+.settings-dropdown-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  max-width: 360px;
+}
+
+.settings-dropdown-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #243b63;
+}
+
+.settings-dropdown-group select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d0d8e5;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+  color: #243b63;
+}
+
+.account-card {
+  position: sticky;
+  top: 24px;
+}
+
+.account-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.settings-action-btn {
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary-btn {
+  background: #edf2fb;
+  color: #1d4c9e;
+}
+
+.danger-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.secondary-btn:hover,
+.danger-btn:hover {
+  opacity: 0.95;
+}
+
+@media (max-width: 900px) {
+  .settings-page {
+    padding: 20px;
+  }
+
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-card {
+    position: static;
+  }
+
+  .settings-header h1 {
+    font-size: 34px;
+  }
+}

@@ -82,10 +82,7 @@ function ThreatDetails({ selectedThreat }) {
   const threatDescription = buildThreatDescription(selectedThreat);
 
   const getRiskColor = () => {
-    if (!selectedThreat) {
-      return "#2b9348";
-    }
-
+    const level = selectedThreat?.vulnerability?.toLowerCase();
     if (threatSeverity === "Critical") {
       return "#d93636";
     }
@@ -105,9 +102,18 @@ function ThreatDetails({ selectedThreat }) {
     return "#2b9348";
   };
 
+  const rawThreat = selectedThreat?.raw || {};
+  const confidenceScore =
+    rawThreat.confidence_score || selectedThreat?.confidence_score || "Not supplied";
+
+  const detectedAt =
+    selectedThreat?.detectedAt ||
+    rawThreat.detected_at ||
+    rawThreat.created_at ||
+    "Not supplied";
+
   return (
     <div className="threat-details-page">
-      {/* Left Side: Hub Legend */}
       <div className="threat-legend-card">
         <h3 className="threat-legend-title">HUB LEGEND</h3>
 
@@ -119,7 +125,6 @@ function ThreatDetails({ selectedThreat }) {
         ))}
       </div>
 
-      {/* Right Side: Threat Details */}
       <main className="threat-details-main">
         <div className="threat-details-card">
           <div className="threat-details-header">
@@ -130,9 +135,7 @@ function ThreatDetails({ selectedThreat }) {
           {!selectedThreat ? (
             <div className="no-threat-selected-box">
               <h2>No Threat Selected</h2>
-              <p>
-                Please select a threat from the alerts page to view its details.
-              </p>
+              <p>Please select a threat from the dashboard item list.</p>
             </div>
           ) : (
             <div className="selected-threat-box">

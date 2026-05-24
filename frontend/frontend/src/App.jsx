@@ -1,24 +1,25 @@
 import { useState } from "react";
-import LoginForm from "./components/LoginForm";
 import "./App.css";
-import AboutUs from "./AboutUs";
-import Dashboard from "./Dashboard";
+import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer";
+import AboutUs from "./AboutUs";
+import Dashboard from "./Dashboard";
 import ForgotPassword from "./ForgotPassword";
 import SettingsPage from "./SettingsPage";
 import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
 import ThreatDetails from "./ThreatDetails";
+import { logoutUser } from "./services/authApi";
 import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
-
 
 function App() {
   const [page, setPage] = useState("dashboard");
   const [authSession, setAuthSession] = useState(() => getAuthSession());
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [selectedThreat, setSelectedThreat] = useState(null);
+
   const mainPages = [
     "about",
     "dashboard",
@@ -27,6 +28,7 @@ function App() {
     "threats",
     "settings",
   ];
+
   const isLoggedIn = Boolean(authSession?.accessToken);
 
   const handleLogin = (session) => {
@@ -71,7 +73,10 @@ function App() {
 
           {isLoggedIn ? (
             <div className="header-auth-summary">
-              <span className="header-role">{authSession.user?.role || "user"}</span>
+              <span className="header-role">
+                {authSession?.user?.role || "user"}
+              </span>
+
               <button
                 type="button"
                 className="header-auth-button"
@@ -110,14 +115,20 @@ function App() {
 
       <div className="page-content">
         {page === "login" && (
-          <LoginForm setPage={setPage} onLogin={handleLogin} />
+          <LoginForm
+            setPage={setPage}
+            onLogin={handleLogin}
+          />
         )}
 
-        {page === "forgotPassword" && <ForgotPassword setPage={setPage} />}
+        {page === "forgotPassword" && (
+          <ForgotPassword setPage={setPage} />
+        )}
 
         {page === "dashboard" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
+
             <Dashboard
               setPage={setPage}
               setSelectedThreat={setSelectedThreat}
@@ -129,6 +140,7 @@ function App() {
         {page === "alerts" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
+
             <Alerts
               setPage={setPage}
               setSelectedThreat={setSelectedThreat}

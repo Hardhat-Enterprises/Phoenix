@@ -101,9 +101,9 @@ export const getDashboardActivity = async () => {
 };
 
 export const getApiHealth = async () => {
-  const payload = await apiRequest("/api/users/health");
-
-  return payload;
+  return apiRequest("/api/users/health", {
+    requiresAuth: false,
+  });
 };
 
 export const getIngestionHealth = async () => {

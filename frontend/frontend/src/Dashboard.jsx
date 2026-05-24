@@ -21,14 +21,8 @@ const formatLabel = (value) =>
 const severityClassFor = (value) => {
   const normalized = String(value || "").toLowerCase();
 
-  if (normalized.includes("critical") || normalized.includes("high")) {
-    return "unsafe";
-  }
-
-  if (normalized.includes("medium") || normalized.includes("investigating")) {
-    return "unverified";
-  }
-
+  if (normalized.includes("critical") || normalized.includes("high")) return "unsafe";
+  if (normalized.includes("medium") || normalized.includes("investigating")) return "unverified";
   return "safe";
 };
 
@@ -424,18 +418,9 @@ const groupRiskMapPoints = (points) => {
 const barClassFor = (value) => {
   const normalized = String(value || "").toLowerCase();
 
-  if (normalized.includes("critical")) {
-    return "critical";
-  }
-
-  if (normalized.includes("high")) {
-    return "high";
-  }
-
-  if (normalized.includes("medium")) {
-    return "medium";
-  }
-
+  if (normalized.includes("critical")) return "critical";
+  if (normalized.includes("high")) return "high";
+  if (normalized.includes("medium")) return "medium";
   return "low";
 };
 
@@ -455,22 +440,10 @@ const riskValueFor = (riskLevel, confidenceScore) => {
 
   const normalized = String(riskLevel || "").toLowerCase();
 
-  if (normalized.includes("critical")) {
-    return 100;
-  }
-
-  if (normalized.includes("high")) {
-    return 80;
-  }
-
-  if (normalized.includes("medium")) {
-    return 55;
-  }
-
-  if (normalized.includes("low")) {
-    return 30;
-  }
-
+  if (normalized.includes("critical")) return 100;
+  if (normalized.includes("high")) return 80;
+  if (normalized.includes("medium")) return 55;
+  if (normalized.includes("low")) return 30;
   return 15;
 };
 
@@ -932,9 +905,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
         getIntegrations({ page: 1, limit: 25 }),
       ]);
 
-      if (!isActive) {
-        return;
-      }
+      if (!isActive) return;
 
       const [
         overviewResult,
@@ -986,6 +957,9 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
           ? sortNewestFirst(integrationsResult.value.items || [])
           : [];
 
+      const allDataRequestsFailed = [threatsResult, hazardsResult].every(
+        (result) => result.status === "rejected"
+      );
       const listedThreats =
         threatsResult.status === "fulfilled"
           ? threatsResult.value.items || []
@@ -1070,6 +1044,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
       { label: "Total Threats", value: threatTotal },
       { label: "Total Risks", value: riskTotal },
     ],
+    
     [
       apiStatus,
       hazardTotal,
@@ -1479,9 +1454,9 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
           <section className="map-card">
             <div className="map-header">
               <h2>Risk Map</h2>
-
               <p>
-                Hazard locations plotted on the map.
+                Hazard data is now loaded from the Phoenix backend. The map
+                component can use these hazard records when it is ready.
               </p>
             </div>
 
@@ -1638,7 +1613,6 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                     <div className="chart-grid-line line-1"></div>
                     <div className="chart-grid-line line-2"></div>
                     <div className="chart-grid-line line-3"></div>
-
                     <div className="chart-bar high-bar"></div>
                     <div className="chart-bar medium-bar"></div>
                     <div className="chart-bar low-bar"></div>
@@ -1650,7 +1624,6 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                         ? "Loading threat data"
                         : "No threat data returned yet"}
                     </strong>
-
                     <span>
                       The frontend is connected to
                       the backend endpoint and will
@@ -1661,7 +1634,6 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                 </div>
               )}
             </div>
-
             <div className="threat-chart-footer">
               <div>
                 <strong>
@@ -1728,7 +1700,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                     key={item.id}
                     onClick={() => {
                       setSelectedThreat(item);
-                      setPage("threats");
+                      setPage("threatdetails");
                     }}
                     role="button"
                     tabIndex={0}
@@ -1738,7 +1710,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                         event.key === " "
                       ) {
                         setSelectedThreat(item);
-                        setPage("threats");
+                        setPage("threatdetails");
                       }
                     }}
                   >

@@ -1,0 +1,14 @@
+{
+  "before": {
+    "rows": 27,
+    "columns": 8,
+    "missing_values": 15,
+    "duplicate_rows": 1
+  },
+  "after": {
+    "rows": 18,
+    "columns": 8,
+    "missing_values": 0,
+    "duplicate_rows": 0
+  }
+}

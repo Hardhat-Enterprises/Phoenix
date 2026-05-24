@@ -57,8 +57,13 @@ export default function LoginForm({ setPage, onLogin }) {
         autoComplete="current-password"
       />
 
-      {errorMessage && <p className="login-message login-error">{errorMessage}</p>}
-      {statusMessage && <p className="login-message login-success">{statusMessage}</p>}
+      {errorMessage && (
+        <p className="login-message login-error">{errorMessage}</p>
+      )}
+
+      {statusMessage && (
+        <p className="login-message login-success">{statusMessage}</p>
+      )}
 
       <button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Signing In..." : "Sign In"}
@@ -70,8 +75,8 @@ export default function LoginForm({ setPage, onLogin }) {
           onClick={() => setPage("forgotPassword")}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
               setPage("forgotPassword");
             }
           }}
@@ -84,6 +89,7 @@ export default function LoginForm({ setPage, onLogin }) {
           Remember Me
         </label>
       </div>
+
       <button type="button" onClick={() => setPage("about")}>
         About Us
       </button>

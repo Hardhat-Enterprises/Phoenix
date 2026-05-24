@@ -186,3 +186,18 @@ export const postIngestionCore = async (payload) => {
 
   return response;
 };
+export const getLocations = async () => {
+  const payload = await apiRequest("/api/users/meta/locations", {
+    requiresAuth: false,
+  });
+
+  return readList(payload, ["locations", "items", "data"]);
+};
+
+export const getSeasons = async () => {
+  const payload = await apiRequest("/api/users/meta/seasons", {
+    requiresAuth: false,
+  });
+
+  return readList(payload, ["seasons", "items", "data"]);
+};

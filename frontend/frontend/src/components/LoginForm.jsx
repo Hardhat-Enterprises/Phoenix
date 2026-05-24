@@ -37,9 +37,6 @@ export default function LoginForm({ setPage, onLogin }) {
     }
   };
 
-import React from "react";
-
-
   return (
     <form className="login-form" onSubmit={handleSubmit}>
       <label>Username or Email</label>
@@ -60,8 +57,13 @@ import React from "react";
         autoComplete="current-password"
       />
 
-      {errorMessage && <p className="login-message login-error">{errorMessage}</p>}
-      {statusMessage && <p className="login-message login-success">{statusMessage}</p>}
+      {errorMessage && (
+        <p className="login-message login-error">{errorMessage}</p>
+      )}
+
+      {statusMessage && (
+        <p className="login-message login-success">{statusMessage}</p>
+      )}
 
       <button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Signing In..." : "Sign In"}
@@ -73,8 +75,8 @@ import React from "react";
           onClick={() => setPage("forgotPassword")}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
               setPage("forgotPassword");
             }
           }}
@@ -87,6 +89,7 @@ import React from "react";
           Remember Me
         </label>
       </div>
+
       <button type="button" onClick={() => setPage("about")}>
         About Us
       </button>

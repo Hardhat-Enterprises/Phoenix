@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   getApiHealth,
   getHazards,
+  getLocations,
   getRisks,
+  getSeasons,
   getThreats,
 } from "./services/phoenixApi";
 import "./Dashboard.css";
@@ -29,17 +31,9 @@ const severityClassFor = (value) => {
 const barClassFor = (value) => {
   const normalized = String(value || "").toLowerCase();
 
-  if (normalized.includes("critical")) {
-    return "critical";
-  }
-
-  if (normalized.includes("high")) {
-    return "high";
-  }
-
-  if (normalized.includes("medium")) {
-    return "medium";
-  }
+  if (normalized.includes("critical")) return "critical";
+  if (normalized.includes("high")) return "high";
+  if (normalized.includes("medium")) return "medium";
 
   return "low";
 };
@@ -50,31 +44,16 @@ const riskValueFor = (riskLevel, confidenceScore) => {
   if (Number.isFinite(numericConfidence) && numericConfidence > 0) {
     return Math.min(
       100,
-      Math.round(
-        numericConfidence <= 1
-          ? numericConfidence * 100
-          : numericConfidence
-      )
+      Math.round(numericConfidence <= 1 ? numericConfidence * 100 : numericConfidence)
     );
   }
 
   const normalized = String(riskLevel || "").toLowerCase();
 
-  if (normalized.includes("critical")) {
-    return 100;
-  }
-
-  if (normalized.includes("high")) {
-    return 80;
-  }
-
-  if (normalized.includes("medium")) {
-    return 55;
-  }
-
-  if (normalized.includes("low")) {
-    return 30;
-  }
+  if (normalized.includes("critical")) return 100;
+  if (normalized.includes("high")) return 80;
+  if (normalized.includes("medium")) return 55;
+  if (normalized.includes("low")) return 30;
 
   return 15;
 };
@@ -90,15 +69,10 @@ const normalizeThreatRow = (threat, index) => {
     vulnerability,
     status: formatLabel(threat.status || "Unknown"),
     className: severityClassFor(vulnerability),
-    description:
-      threat.description ||
-      "No description was provided by the backend.",
+    description: threat.description || "No description was provided by the backend.",
     source: threat.category || threat.threat_type || "Phoenix API",
     region: threat.region || threat.location || "Not supplied",
-    riskValue: riskValueFor(
-      vulnerability,
-      threat.confidence_score
-    ),
+    riskValue: riskValueFor(vulnerability, threat.confidence_score),
     detectedAt: threat.detected_at || threat.created_at,
     raw: threat,
   };
@@ -107,32 +81,31 @@ const normalizeThreatRow = (threat, index) => {
 const normalizeHazardRow = (hazard, index) => ({
   id:
     hazard.hazard_event_id ||
+    hazard.hazard_id ||
     hazard.id ||
-    hazard.hazard_type ||
     `hazard-${index}`,
   type: formatLabel(hazard.hazard_type || "Hazard"),
   severity: formatLabel(hazard.severity_level || "Unknown"),
   status: formatLabel(hazard.event_status || "Unknown"),
+  startTime: hazard.start_time || "N/A",
+  endTime: hazard.end_time || "N/A",
+  description: hazard.description || "No description available.",
 });
 
 function Dashboard({ setPage, setSelectedThreat }) {
-
   const [apiStatus, setApiStatus] = useState("Checking");
   const [threats, setThreats] = useState([]);
   const [hazards, setHazards] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [seasons, setSeasons] = useState([]);
   const [riskTotal, setRiskTotal] = useState("Checking");
   const [threatTotal, setThreatTotal] = useState("Checking");
   const [hazardTotal, setHazardTotal] = useState("Checking");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  //Anomaly detection state
-  const [selectedLocation, setSelectedLocation] =
-    useState("Sydney");
-
-  const [loadingDetection, setLoadingDetection] =
-    useState(false);
-
+  const [selectedLocation, setSelectedLocation] = useState("Sydney");
+  const [loadingDetection, setLoadingDetection] = useState(false);
   const [apiResult, setApiResult] = useState(null);
 
   useEffect(() => {
@@ -145,26 +118,24 @@ function Dashboard({ setPage, setSelectedThreat }) {
       const results = await Promise.allSettled([
         getApiHealth(),
         getThreats({ page: 1, limit: 5 }),
-        getHazards({ page: 1, limit: 4 }),
+        getHazards({ page: 1, limit: 6 }),
         getRisks({ page: 1, limit: 1 }),
+        getLocations(),
+        getSeasons(),
       ]);
 
-      if (!isActive) {
-        return;
-      }
+      if (!isActive) return;
 
       const [
         healthResult,
         threatsResult,
         hazardsResult,
         risksResult,
+        locationsResult,
+        seasonsResult,
       ] = results;
 
-      setApiStatus(
-        healthResult.status === "fulfilled"
-          ? "Online"
-          : "Unavailable"
-      );
+      setApiStatus(healthResult.status === "fulfilled" ? "Online" : "Unavailable");
 
       if (threatsResult.status === "fulfilled") {
         setThreats(threatsResult.value.items);
@@ -188,17 +159,23 @@ function Dashboard({ setPage, setSelectedThreat }) {
         setRiskTotal("API error");
       }
 
-      const allDataRequestsFailed = [
-        threatsResult,
-        hazardsResult,
-      ].every(
+      if (locationsResult.status === "fulfilled") {
+        setLocations(locationsResult.value);
+      } else {
+        setLocations([]);
+      }
+
+      if (seasonsResult.status === "fulfilled") {
+        setSeasons(seasonsResult.value);
+      } else {
+        setSeasons([]);
+      }
+
+      const allDataRequestsFailed = [threatsResult, hazardsResult].every(
         (result) => result.status === "rejected"
       );
 
-      if (
-        healthResult.status === "rejected" &&
-        allDataRequestsFailed
-      ) {
+      if (healthResult.status === "rejected" && allDataRequestsFailed) {
         setLoadError(
           "Could not reach the Phoenix API gateway. Check that Docker is running and the gateway is available on localhost:3001."
         );
@@ -221,36 +198,25 @@ function Dashboard({ setPage, setSelectedThreat }) {
       { label: "Total Threats", value: threatTotal },
       { label: "Total Risks", value: riskTotal },
     ],
-    [
-      apiStatus,
-      hazardTotal,
-      riskTotal,
-      threatTotal,
-    ]
+    [apiStatus, hazardTotal, riskTotal, threatTotal]
   );
 
-  const itemRows = useMemo(
-    () => threats.map(normalizeThreatRow),
-    [threats]
-  );
+  const itemRows = useMemo(() => threats.map(normalizeThreatRow), [threats]);
+  const hazardRows = useMemo(() => hazards.map(normalizeHazardRow), [hazards]);
 
-  const hazardRows = useMemo(
-    () => hazards.map(normalizeHazardRow),
-    [hazards]
+  const chartRows = useMemo(
+    () =>
+      itemRows.map((threat) => ({
+        id: threat.id,
+        name: threat.name,
+        severity: threat.vulnerability,
+        riskValue: threat.riskValue,
+      })),
+    [itemRows]
   );
-
-  const chartRows = useMemo(() => {
-    return itemRows.map((threat) => ({
-      id: threat.id,
-      name: threat.name,
-      severity: threat.vulnerability,
-      riskValue: threat.riskValue,
-    }));
-  }, [itemRows]);
 
   const hasThreatData = chartRows.length > 0;
 
-  //Score mapping
   const getThreatLevel = (score) => {
     if (score <= 0.2) return "Minimal";
     if (score <= 0.4) return "Low";
@@ -260,35 +226,29 @@ function Dashboard({ setPage, setSelectedThreat }) {
     return "Critical";
   };
 
-  //Detection API call
   const runDetection = async () => {
     try {
       setLoadingDetection(true);
 
       const timestamp = new Date().toISOString();
 
-      const response = await fetch(
-        "http://localhost:5000/analyze",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            location: selectedLocation,
-            timestamp,
-          }),
-        }
-      );
+      const response = await fetch("http://localhost:5000/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          location: selectedLocation,
+          timestamp,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Detection API failed");
       }
 
       const data = await response.json();
-
       setApiResult(data);
-
     } catch (error) {
       console.error("Detection error:", error);
     } finally {
@@ -300,32 +260,19 @@ function Dashboard({ setPage, setSelectedThreat }) {
     <div className="dashboard-page">
       <main className="dashboard-content">
         <div className="dashboard-main-area">
-
           {loadError && (
-            <div
-              className="backend-status-message"
-              role="alert"
-            >
+            <div className="backend-status-message" role="alert">
               {loadError}
             </div>
           )}
 
-          <section
-            className="overview-grid"
-            aria-label="Dashboard overview"
-          >
+          <section className="overview-grid" aria-label="Dashboard overview">
             {overviewCards.map((card) => (
-              <div
-                className="overview-card"
-                key={card.label}
-              >
-                <span className="overview-label">
-                  {card.label}
-                </span>
+              <div className="overview-card" key={card.label}>
+                <span className="overview-label">{card.label}</span>
 
                 <strong className="overview-value">
-                  {isLoading &&
-                  card.value === undefined
+                  {isLoading && card.value === undefined
                     ? "..."
                     : card.value ?? "-"}
                 </strong>
@@ -333,7 +280,6 @@ function Dashboard({ setPage, setSelectedThreat }) {
             ))}
           </section>
 
-          {/* Regional Anomaly Detection Section (Jack)*/}
           <section
             className="ai-detection-card"
             style={{
@@ -346,27 +292,19 @@ function Dashboard({ setPage, setSelectedThreat }) {
               marginBottom: "20px",
             }}
           >
-
-            {/* Left Side Input */}
             <div style={{ flex: 1 }}>
               <h2>Regional Anomaly Detection</h2>
 
               <p>
-                Run the AI anomaly detection model
-                against a selected Australian region.
+                Run the AI anomaly detection model against a selected Australian
+                region.
               </p>
 
-              <label>
-                Select Australian Location
-              </label>
+              <label>Select Australian Location</label>
 
               <select
                 value={selectedLocation}
-                onChange={(event) =>
-                  setSelectedLocation(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => setSelectedLocation(event.target.value)}
                 style={{
                   padding: "10px",
                   borderRadius: "8px",
@@ -374,25 +312,11 @@ function Dashboard({ setPage, setSelectedThreat }) {
                   marginTop: "8px",
                 }}
               >
-                <option value="Sydney">
-                  Sydney
-                </option>
-
-                <option value="Melbourne">
-                  Melbourne
-                </option>
-
-                <option value="Perth">
-                  Perth
-                </option>
-
-                <option value="Brisbane">
-                  Brisbane
-                </option>
-
-                <option value="Adelaide">
-                  Adelaide
-                </option>
+                <option value="Sydney">Sydney</option>
+                <option value="Melbourne">Melbourne</option>
+                <option value="Perth">Perth</option>
+                <option value="Brisbane">Brisbane</option>
+                <option value="Adelaide">Adelaide</option>
               </select>
 
               <br />
@@ -404,13 +328,10 @@ function Dashboard({ setPage, setSelectedThreat }) {
                 onClick={runDetection}
                 disabled={loadingDetection}
               >
-                {loadingDetection
-                  ? "Running Detection..."
-                  : "Run Detection"}
+                {loadingDetection ? "Running Detection..." : "Run Detection"}
               </button>
             </div>
 
-            {/* Right side output */}
             <div
               style={{
                 flex: 1,
@@ -421,53 +342,39 @@ function Dashboard({ setPage, setSelectedThreat }) {
               <h3>Detection Output</h3>
 
               {!apiResult ? (
-                <p>
-                  No detection has been run yet.
-                </p>
+                <p>No detection has been run yet.</p>
               ) : (
                 <>
                   <p>
-                    <strong>Location:</strong>{" "}
-                    {apiResult.location}
+                    <strong>Location:</strong> {apiResult.location}
                   </p>
 
                   <p>
-                    <strong>
-                      Anomaly Score:
-                    </strong>{" "}
-                    {Number(
-                      apiResult.score
-                    ).toFixed(2)}
+                    <strong>Anomaly Score:</strong>{" "}
+                    {Number(apiResult.score).toFixed(2)}
                   </p>
 
                   <p>
-                    <strong>
-                      Threat Level:
-                    </strong>{" "}
-                    {getThreatLevel(
-                      apiResult.score
-                    )}
+                    <strong>Threat Level:</strong>{" "}
+                    {getThreatLevel(apiResult.score)}
                   </p>
 
                   <p>
-                    <strong>Timestamp:</strong>{" "}
-                    {apiResult.timestamp}
+                    <strong>Timestamp:</strong> {apiResult.timestamp}
                   </p>
                 </>
               )}
             </div>
           </section>
 
-          {/* Risk Map Section (Jack) */}
+          {/* Hazard / Map Data Section (Takunda) */}
           <section className="map-card">
             <div className="map-header">
-              <h2>Risk Map</h2>
+              <h2>Hazard / Map Data</h2>
 
               <p>
-                Hazard data is now loaded from the
-                Phoenix backend. The map component
-                can use these same hazard records
-                when it is ready.
+                Map-ready hazard data loaded from the Phoenix backend. This
+                section can later be connected to an interactive map component.
               </p>
             </div>
 
@@ -475,21 +382,16 @@ function Dashboard({ setPage, setSelectedThreat }) {
               {hazardRows.length > 0 ? (
                 <div className="map-hazard-list">
                   {hazardRows.map((hazard) => (
-                    <div
-                      className="map-hazard-row"
-                      key={hazard.id}
-                    >
-                      <strong>
-                        {hazard.type}
-                      </strong>
+                    <div className="map-hazard-row" key={hazard.id}>
+                      <div>
+                        <strong>{hazard.type}</strong>
+                        <p>{hazard.description}</p>
+                      </div>
 
-                      <span>
-                        {hazard.severity}
-                      </span>
-
-                      <span>
-                        {hazard.status}
-                      </span>
+                      <span>Severity: {hazard.severity}</span>
+                      <span>Status: {hazard.status}</span>
+                      <span>Start: {hazard.startTime}</span>
+                      <span>End: {hazard.endTime}</span>
                     </div>
                   ))}
                 </div>
@@ -503,23 +405,32 @@ function Dashboard({ setPage, setSelectedThreat }) {
                 </div>
               )}
             </div>
+
+            <div className="hazard-meta-panel">
+              <div>
+                <strong>Available Locations:</strong>{" "}
+                {locations.length > 0
+                  ? locations.length
+                  : "No location metadata yet"}
+              </div>
+
+              <div>
+                <strong>Available Seasons:</strong>{" "}
+                {seasons.length > 0 ? seasons.length : "No season metadata yet"}
+              </div>
+            </div>
           </section>
-          {/* Threat Chart Section (Sathvik) */}
+
           <section className="threat-chart-section">
             <div className="threat-chart-header">
               <div>
                 <h2>Threat Chart</h2>
 
-                <p>
-                  Loaded from the public Phoenix
-                  threats endpoint.
-                </p>
+                <p>Loaded from the public Phoenix threats endpoint.</p>
               </div>
 
               <span className="backend-ready-badge">
-                {isLoading
-                  ? "Loading"
-                  : apiStatus}
+                {isLoading ? "Loading" : apiStatus}
               </span>
             </div>
 
@@ -527,29 +438,20 @@ function Dashboard({ setPage, setSelectedThreat }) {
               {hasThreatData ? (
                 <div className="threat-chart-list">
                   {chartRows.map((threat) => (
-                    <div
-                      className="threat-row"
-                      key={threat.id}
-                    >
-                      <span className="threat-name">
-                        {threat.name}
-                      </span>
+                    <div className="threat-row" key={threat.id}>
+                      <span className="threat-name">{threat.name}</span>
 
                       <div className="threat-bar-track">
                         <div
                           className={`threat-bar ${barClassFor(
                             threat.severity
                           )}`}
-                          style={{
-                            width: `${threat.riskValue}%`,
-                          }}
+                          style={{ width: `${threat.riskValue}%` }}
                         />
                       </div>
 
                       <span className="threat-value">
-                        {threat.count
-                          ? `${threat.count}`
-                          : `${threat.riskValue}%`}
+                        {threat.count ? `${threat.count}` : `${threat.riskValue}%`}
                       </span>
                     </div>
                   ))}
@@ -574,10 +476,8 @@ function Dashboard({ setPage, setSelectedThreat }) {
                     </strong>
 
                     <span>
-                      The frontend is connected to
-                      the backend endpoint and will
-                      display records as soon as the
-                      API returns them.
+                      The frontend is connected to the backend endpoint and will
+                      display records as soon as the API returns them.
                     </span>
                   </div>
                 </div>
@@ -586,14 +486,8 @@ function Dashboard({ setPage, setSelectedThreat }) {
 
             <div className="threat-chart-footer">
               <div>
-                <strong>
-                  Backend source:
-                </strong>
-
-                <span>
-                  {" "}
-                  /api/users/threats
-                </span>
+                <strong>Backend source:</strong>
+                <span> /api/users/threats</span>
               </div>
 
               <div className="severity-legend">
@@ -608,7 +502,7 @@ function Dashboard({ setPage, setSelectedThreat }) {
               </div>
             </div>
           </section>
-          {/*Item List Section (Manaal)*/}
+
           <section className="item-list-card">
             <div className="item-list-header">
               <h2>Item List</h2>
@@ -616,9 +510,7 @@ function Dashboard({ setPage, setSelectedThreat }) {
               <button
                 type="button"
                 className="view-all-button"
-                onClick={() =>
-                  setPage("alerts")
-                }
+                onClick={() => setPage("alerts")}
               >
                 View All
               </button>
@@ -643,39 +535,27 @@ function Dashboard({ setPage, setSelectedThreat }) {
                     role="button"
                     tabIndex={0}
                     onKeyDown={(event) => {
-                      if (
-                        event.key === "Enter" ||
-                        event.key === " "
-                      ) {
+                      if (event.key === "Enter" || event.key === " ") {
                         setSelectedThreat(item);
                         setPage("threats");
                       }
                     }}
                   >
                     <div className="item-name-cell">
-                      <span className="item-check-box">
-                        OK
-                      </span>
-
+                      <span className="item-check-box">OK</span>
                       <span>{item.name}</span>
                     </div>
 
-                    <div
-                      className={`status-pill ${item.className}`}
-                    >
+                    <div className={`status-pill ${item.className}`}>
                       {item.vulnerability}
                     </div>
 
                     <div className="status-right-cell">
-                      <div
-                        className={`status-pill ${item.className}`}
-                      >
+                      <div className={`status-pill ${item.className}`}>
                         {item.status}
                       </div>
 
-                      <span className="row-arrow">
-                        &gt;
-                      </span>
+                      <span className="row-arrow">&gt;</span>
                     </div>
                   </div>
                 ))
@@ -688,7 +568,6 @@ function Dashboard({ setPage, setSelectedThreat }) {
               )}
             </div>
           </section>
-
         </div>
       </main>
     </div>

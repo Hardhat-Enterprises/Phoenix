@@ -12,6 +12,7 @@ Thumbs.db
 # Environment variables and API keys
 .env
 .env.local
+.env.docker
 *.key
 api_keys/
 secrets/

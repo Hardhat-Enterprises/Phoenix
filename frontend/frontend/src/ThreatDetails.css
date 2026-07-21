@@ -1,0 +1,196 @@
+.threat-details-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 32px;
+  background: #eef3f8;
+  display: flex;
+  gap: 32px;
+  box-sizing: border-box;
+}
+
+/* Left Legend Card */
+.threat-legend-card {
+  width: 220px;
+  height: fit-content;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+  border: 1px solid #dbe4f0;
+}
+
+.threat-legend-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f3a5f;
+  margin: 0 0 20px 0;
+  letter-spacing: 0.5px;
+}
+
+.threat-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  font-size: 15px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.threat-legend-row:last-child {
+  margin-bottom: 0;
+}
+
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot.no-threat {
+  background-color: #22c55e;
+}
+
+.legend-dot.low {
+  background-color: #84cc16;
+}
+
+.legend-dot.medium {
+  background-color: #facc15;
+}
+
+.legend-dot.high {
+  background-color: #f97316;
+}
+
+.legend-dot.critical {
+  background-color: #dc2626;
+}
+
+/* Main Content */
+.threat-details-main {
+  flex: 1;
+}
+
+.threat-details-card {
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 950px;
+  margin: 0 auto;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  border: 1px solid #dbe4f0;
+}
+
+.threat-details-header {
+  margin-bottom: 30px;
+}
+
+.threat-details-header h1 {
+  margin: 0;
+  font-size: 56px;
+  color: #1f3a5f;
+  font-weight: 700;
+}
+
+.threat-details-header p {
+  margin-top: 10px;
+  color: #6b7f96;
+  font-size: 16px;
+}
+
+/* Empty State */
+.no-threat-selected-box {
+  background-color: #f8fbff;
+  border-radius: 16px;
+  padding: 28px;
+  border: 1px solid #e4edf7;
+}
+
+.no-threat-selected-box h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #1f3a5f;
+  font-size: 32px;
+}
+
+.no-threat-selected-box p {
+  margin: 0;
+  color: #6b7f96;
+  font-size: 16px;
+}
+
+/* Selected Threat */
+.selected-threat-box {
+  background-color: #f8fbff;
+  border-radius: 16px;
+  padding: 28px;
+  border: 1px solid #e4edf7;
+}
+
+.selected-threat-box h2 {
+  margin-top: 0;
+  margin-bottom: 22px;
+  color: #1f3a5f;
+  font-size: 34px;
+}
+
+.threat-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.threat-info-grid strong,
+.threat-description-section strong {
+  color: #52667a;
+}
+
+.threat-info-grid p {
+  margin-top: 8px;
+  color: #243b53;
+}
+
+.threat-risk-badge {
+  margin-top: 8px;
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background-color: #f1f5f9;
+  font-weight: 700;
+}
+
+.threat-description-section {
+  margin-top: 30px;
+}
+
+.threat-description-section p {
+  margin-top: 12px;
+  line-height: 1.7;
+  color: #243b53;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .threat-details-page {
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  .threat-legend-card {
+    width: 100%;
+  }
+
+  .threat-details-card {
+    padding: 24px;
+  }
+
+  .threat-details-header h1 {
+    font-size: 36px;
+  }
+
+  .threat-info-grid {
+    grid-template-columns: 1fr;
+  }
+}

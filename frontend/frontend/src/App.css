@@ -1,0 +1,688 @@
+body {
+  height: 100%;
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #edf2f8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.login-page {
+  min-height: 100vh;
+  background: #f3f3f3;
+}
+
+.temp-header {
+  background: #071633;
+  color: white;
+  padding: 18px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.temp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.temp-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #1b2b5a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* Ensures the image doesn't bleed outside the circle */
+}
+
+.temp-logo img {
+  width: 100%; /* Makes image width match the 44px container */
+  height: 100%; /* Makes image height match the 44px container */
+  width: 100%;      /* Makes image width match the 44px container */
+  height: 100%;     /* Makes image height match the 44px container */
+  object-fit: cover; /* Crops the image to fill the circle without stretching */
+}
+.temp-header h2 {
+  margin: 0;
+  color: white;
+  font-size: 20px;
+}
+
+.temp-header p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #d8def0;
+}
+
+.temp-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.temp-search {
+  width: 280px;
+  max-width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  padding: 0 14px;
+  font-size: 14px;
+  background: white;
+  color: #333;
+}
+
+.temp-bell {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: #10265d;
+  color: #ffd34d;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.header-auth-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-role {
+  background: #dbeafe;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  color: #1e3a8a;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 7px 10px;
+  text-transform: capitalize;
+}
+
+.header-auth-button {
+  min-width: 76px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 10px;
+  background: #ffffff;
+  color: #071633;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 0 14px;
+}
+
+.header-auth-button:hover {
+  background: #eaf1ff;
+}
+
+.page-content {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 36px;
+}
+
+.login-form {
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-form label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+.login-form input {
+  padding: 12px 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+}
+
+.login-form button {
+  margin-top: 6px;
+  padding: 12px;
+  background: black;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.login-message {
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 2px 0;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.login-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.login-success {
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.login-extra {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Priyanka - Forgot password task styling */
+
+.forgot {
+  font-size: 13px;
+  color: #000;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.forgot:hover {
+  color: #1d4ed8;
+}
+
+.remember {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.remember input {
+  margin: 0;
+}
+
+.forgot-page-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding-top: 30px;
+}
+
+.forgot-password-card {
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.forgot-password-card h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #071633;
+}
+
+.forgot-subtext {
+  font-size: 14px;
+  color: #5f6b7a;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.forgot-password-card label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+.forgot-password-card input {
+  padding: 12px 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+}
+
+.forgot-btn,
+.back-login-btn {
+  margin-top: 8px;
+  padding: 12px;
+  background: black;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.back-login-btn {
+  background: #4b5563;
+}
+
+.about-box {
+  position: absolute;
+  left: 40px;
+  bottom: 40px;
+  width: 280px;
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.about-page {
+  display: flex;
+  min-height: 100vh;
+}
+
+.about-content {
+  flex: 1;
+  padding: 28px 40px;
+  background-color: #ffffff;
+}
+
+.about-content h1 {
+  margin-top: 0;
+  font-size: 32px;
+  color: #17345f;
+  text-align: center;
+}
+
+.about-content p {
+  max-width: 900px;
+  margin: 24px auto 0;
+  font-size: 16px;
+  color: #4d6480;
+  line-height: 1.7;
+  text-align: center;
+}
+.report-page {
+  padding: 24px;
+  background: #f3f6fb;
+  min-height: 100vh;
+}
+
+.report-title-section {
+  margin-bottom: 18px;
+}
+
+.report-title-section h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 28px;
+}
+
+.report-title-section p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.report-evidence-card {
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  max-width: 900px;
+}
+
+.report-evidence-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 20px;
+}
+
+.report-evidence-header p {
+  margin: 6px 0 18px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.report-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.report-form-group label,
+.report-upload-box label {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 13px;
+}
+
+.report-form-group input,
+.report-form-group select {
+  border: 1px solid #d8e2ef;
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-size: 14px;
+  outline: none;
+  background: #ffffff;
+}
+
+.report-form-group input:focus,
+.report-form-group select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.url-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.url-input-row input {
+  flex: 1;
+}
+
+.url-input-row button {
+  border: none;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.add-url-btn {
+  width: fit-content;
+  border: none;
+  background: #eaf1ff;
+  color: #1d4ed8;
+  border-radius: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.report-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.report-upload-box {
+  border: 1px dashed #94a3b8;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.report-upload-box p {
+  margin: 6px 0 10px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.report-upload-box input {
+  width: 100%;
+  font-size: 13px;
+}
+
+.report-evidence-list {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 14px 0;
+}
+
+.report-evidence-list h4 {
+  margin: 0 0 8px;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.evidence-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.evidence-item button {
+  border: none;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.report-action-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+
+.primary-btn,
+.secondary-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary-btn {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.secondary-btn {
+  background: #eaf1ff;
+  color: #1d4ed8;
+}
+
+.report-verification-result {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 14px;
+}
+
+.report-verification-result h3 {
+  margin: 0 0 12px;
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.result-row {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 13px;
+  color: #475569;
+}
+
+.result-row strong {
+  color: #0f172a;
+}
+
+.empty-result {
+  color: #64748b;
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .report-upload-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .url-input-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .result-row {
+    grid-template-columns: 1fr;
+  }
+}
+/* Tai Nguyen - Alerts filtering UI */
+
+.alerts-page-layout {
+  width: 100%;
+  padding: 32px 40px;
+}
+
+.alerts-main-content {
+  width: 100%;
+}
+
+.alerts-main-content h2 {
+  margin: 0 0 18px;
+  color: #071633;
+  font-size: 28px;
+}
+
+.alert-filter-panel {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px;
+  margin: 18px 0;
+  background: #ffffff;
+  border: 1px solid #e3eaf5;
+  border-radius: 14px;
+}
+
+.alert-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.alert-filter-field select {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #d7e1ef;
+  border-radius: 10px;
+  background: #f9fbfe;
+  color: #1f2f46;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 6px;
+}
+
+.alert-filter-button {
+  height: 38px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  background: #3b82f6;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.alerts-placeholder-content {
+  min-height: 500px;
+  color: #53657d;
+}
+/* Tai Nguyen - Threat Level Legend */
+
+.threat-details-page {
+  width: 100%;
+  padding: 40px;
+}
+
+.threat-legend-card {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  width: 300px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.threat-legend-title {
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: #7c8aa5;
+  margin-bottom: 24px;
+  font-weight: 700;
+}
+
+.threat-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  font-size: 18px;
+  color: #1f2a44;
+  font-weight: 500;
+}
+
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.no-threat {
+  background-color: #9ca3af;
+}
+
+.low {
+  background-color: #22c55e;
+}
+
+.medium {
+  background-color: #eab308;
+}
+
+.high {
+  background-color: #f97316;
+}
+
+.critical {
+  background-color: #ef4444;
+}
+.content-wrap {
+  flex: 1;
+}

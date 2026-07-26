@@ -5,8 +5,8 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-    env_file: 
-      - .env.docker 
+    env_file:
+      - .env.docker
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 5s
@@ -29,8 +29,8 @@ services:
       context: ./
       dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
-    env_file: 
-      - .env.docker 
+    env_file:
+      - .env.docker
     ports:
       - "3001:3000"
     depends_on:
@@ -45,8 +45,8 @@ services:
       context: ./
       dockerfile: user-service/Dockerfile
     container_name: user-service
-    env_file: 
-      - .env.docker 
+    env_file:
+      - .env.docker
     ports:
       - "50051:50051"
     depends_on:
@@ -61,8 +61,8 @@ services:
       context: ./
       dockerfile: data-ingestion-service/Dockerfile
     container_name: ingestion-service
-    env_file: 
-      - .env.docker 
+    env_file:
+      - .env.docker
     ports:
       - "50053:50053"
     depends_on:
@@ -76,8 +76,8 @@ services:
       context: ./
       dockerfile: storage-service/Dockerfile
     container_name: storage-service
-    env_file: 
-      - .env.docker 
+    env_file:
+      - .env.docker
     ports:
       - "50054:50054"
     depends_on:
@@ -86,3 +86,18 @@ services:
       redis:
         condition: service_healthy
     command: sh -c "node -r tsconfig-paths/register dist/storage-service/src/app.js"
+  notification-service:
+    build:
+      context: ./
+      dockerfile: notification-service/Dockerfile
+    container_name: notification-service
+    ports:
+      - "50052:50052"
+    env_file:
+      - .env.docker
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: sh -c "node -r tsconfig-paths/register dist/notification-service/src/app.js"

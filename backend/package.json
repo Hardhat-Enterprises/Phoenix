@@ -11,13 +11,15 @@
     "build:proto": "copyfiles -u 2 libs/proto/**/*.proto dist/libs/proto",
     "build:gateway": "tsc -b api-gateway/tsconfig.json && tsc-alias -p api-gateway/tsconfig.json",
     "build:user-service": "tsc -b user-service/tsconfig.json && tsc-alias -p user-service/tsconfig.json",
-    "build:ingestion": "tsc -b data-ingestion-service/tsconfig.json && tsc-alias -p data-ingestion-service/tsconfig.json && cpy \"libs/proto/**/*.proto\" dist/libs/proto",
+    "build:ingestion-service": "tsc -b data-ingestion-service/tsconfig.json && tsc-alias -p data-ingestion-service/tsconfig.json && cpy \"libs/proto/**/*.proto\" dist/libs/proto",
     "build:storage-service": "tsc -b storage-service/tsconfig.json && tsc-alias -p storage-service/tsconfig.json && cpy \"libs/proto/**/*.proto\" dist/libs/proto",
+    "build:notification-service": "tsc -b notification-service/tsconfig.json && tsc-alias -p notification-service/tsconfig.json && cpy \"libs/proto/**/*.proto\" dist/libs/proto",
     "build": "tsc -b",
     "start:gateway": "node -r tsconfig-paths/register dist/api-gateway/src/app.js",
     "start:user-service": "node -r tsconfig-paths/register dist/user-service/src/app.js",
     "start:ingestion": "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js",
-    "start:storage-service": "node -r tsconfig-paths/register dist/storage-service/src/app.js"
+    "start:storage-service": "node -r tsconfig-paths/register dist/storage-service/src/app.js",
+    "start:notification-service": "node -r tsconfig-paths/register dist/notification-service/src/app.js"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.3",

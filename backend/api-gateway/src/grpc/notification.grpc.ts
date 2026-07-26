@@ -4,7 +4,10 @@ import { logger } from "@phoenix/common";
 import path from "path";
 import fs from "fs";
 
-const distPath = path.resolve(process.cwd(), "dist/libs/proto/notification.proto");
+const distPath = path.resolve(
+  process.cwd(),
+  "dist/libs/proto/notification.proto",
+);
 const devPath = path.resolve(process.cwd(), "libs/proto/notification.proto");
 const PROTO_PATH = fs.existsSync(distPath) ? distPath : devPath;
 logger.info(`Loading gRPC proto file from: ${PROTO_PATH}`);
@@ -62,9 +65,13 @@ export interface NotificationServiceClient {
   ): void;
 }
 
-const notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL || "localhost:50052";
-
-export const notificationGrpcClient = new grpcObject.notification.NotificationService(
-  notificationServiceUrl,
-  grpc.credentials.createInsecure(),
+const notificationServiceUrl =
+  process.env.NOTIFICATION_SERVICE_URL || "localhost:50052";
+logger.info(
+  `Connecting to Notification gRPC service at: ${notificationServiceUrl}`,
 );
+export const notificationGrpcClient =
+  new grpcObject.notification.NotificationService(
+    notificationServiceUrl,
+    grpc.credentials.createInsecure(),
+  );

@@ -10,6 +10,7 @@ import SettingsPage from "./SettingsPage";
 import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
 import ThreatDetails from "./ThreatDetails";
+import RiskAssessmentPage from "./RiskAssessmentPage";
 import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
 
@@ -26,6 +27,7 @@ function App() {
     "alerts",
     "threats",
     "settings",
+    "riskAssessment",
   ];
 
   const isLoggedIn = Boolean(authSession?.accessToken);
@@ -165,6 +167,13 @@ function App() {
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
             <ThreatDetails selectedThreat={selectedThreat} />
+          </div>
+        )}
+
+        {page === "riskAssessment" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={setPage} page={page} />
+            <RiskAssessmentPage />
           </div>
         )}
 

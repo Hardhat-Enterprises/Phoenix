@@ -15,3 +15,5 @@ Thumbs.db
 *.key
 api_keys/
 secrets/
+
+backend.code-workspace

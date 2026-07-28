@@ -18,6 +18,7 @@ function App() {
   const [authSession, setAuthSession] = useState(() => getAuthSession());
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [selectedThreat, setSelectedThreat] = useState(null);
+  const [previousPage, setPreviousPage] = useState("dashboard");
 
   const mainPages = [
     "about",
@@ -45,9 +46,15 @@ function App() {
     <div className="login-page">
       <div className="temp-header">
         <div className="temp-header-left">
-          <div className="temp-logo">
+          <button
+            type="button"
+            className="temp-logo logo-home-button"
+            onClick={() => setPage("dashboard")}
+            aria-label="Phoenix home, go to Dashboard"
+            title="Go to Dashboard"
+          >
             <img src="/logo.png" alt="Phoenix logo" />
-          </div>
+          </button>
 
           <div>
             <h2>Phoenix</h2>
@@ -129,7 +136,10 @@ function App() {
             <Sidebar setPage={setPage} page={page} />
 
             <Dashboard
-              setPage={setPage}
+              setPage={(nextPage) => {
+                setPreviousPage("dashboard");
+                setPage(nextPage);
+              }}
               setSelectedThreat={setSelectedThreat}
               isLoggedIn={isLoggedIn}
             />
@@ -141,7 +151,10 @@ function App() {
             <Sidebar setPage={setPage} page={page} />
 
             <Alerts
-              setPage={setPage}
+              setPage={(nextPage) => {
+                setPreviousPage("alerts");
+                setPage(nextPage);
+              }}
               setSelectedThreat={setSelectedThreat}
             />
           </div>
@@ -164,7 +177,10 @@ function App() {
         {page === "threats" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
-            <ThreatDetails selectedThreat={selectedThreat} />
+            <ThreatDetails
+              selectedThreat={selectedThreat}
+              onBack={() => setPage(previousPage)}
+            />
           </div>
         )}
 

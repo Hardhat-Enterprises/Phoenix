@@ -194,3 +194,22 @@
     grid-template-columns: 1fr;
   }
 }
+.threat-back-button {
+  background: none;
+  border: 1px solid #c9ced6;
+  border-radius: 6px;
+  padding: 6px 14px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #333;
+}
+
+.threat-back-button:hover {
+  background-color: #f1f3f6;
+}
+
+.threat-back-button:focus-visible {
+  outline: 3px solid #4c9aff;
+  outline-offset: 2px;
+}

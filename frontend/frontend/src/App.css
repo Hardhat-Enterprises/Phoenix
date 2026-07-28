@@ -686,3 +686,25 @@ body {
 .content-wrap {
   flex: 1;
 }
+/* PHOENIX logo acts as a link back to the Dashboard */
+.logo-home-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: transform 0.15s ease;
+}
+
+.logo-home-button:hover {
+  transform: scale(1.05);
+}
+
+.logo-home-button:focus-visible {
+  outline: 3px solid #4c9aff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgba(76, 154, 255, 0.25);
+}

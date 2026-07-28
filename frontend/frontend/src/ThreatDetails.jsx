@@ -55,7 +55,7 @@ const buildThreatDescription = (selectedThreat) => {
   return `Backend threat record summary: ${facts.join(", ")}.`;
 };
 
-function ThreatDetails({ selectedThreat }) {
+function ThreatDetails({ selectedThreat, onBack }) {
   const backendThreat = readBackendThreat(selectedThreat);
   const threatName =
     selectedThreat?.name ||
@@ -82,7 +82,6 @@ function ThreatDetails({ selectedThreat }) {
   const threatDescription = buildThreatDescription(selectedThreat);
 
   const getRiskColor = () => {
-    const level = selectedThreat?.vulnerability?.toLowerCase();
     if (threatSeverity === "Critical") {
       return "#d93636";
     }
@@ -102,16 +101,6 @@ function ThreatDetails({ selectedThreat }) {
     return "#2b9348";
   };
 
-  const rawThreat = selectedThreat?.raw || {};
-  const confidenceScore =
-    rawThreat.confidence_score || selectedThreat?.confidence_score || "Not supplied";
-
-  const detectedAt =
-    selectedThreat?.detectedAt ||
-    rawThreat.detected_at ||
-    rawThreat.created_at ||
-    "Not supplied";
-
   return (
     <div className="threat-details-page">
       <div className="threat-legend-card">
@@ -128,6 +117,16 @@ function ThreatDetails({ selectedThreat }) {
       <main className="threat-details-main">
         <div className="threat-details-card">
           <div className="threat-details-header">
+            {onBack && (
+              <button
+                type="button"
+                className="threat-back-button"
+                onClick={onBack}
+              >
+                &larr; Back
+              </button>
+            )}
+
             <h1>Threat Details</h1>
             <p>Detailed cybersecurity threat intelligence and incident overview</p>
           </div>

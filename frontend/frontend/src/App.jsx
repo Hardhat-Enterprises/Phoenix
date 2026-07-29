@@ -13,6 +13,9 @@ import ThreatDetails from "./ThreatDetails";
 import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
 
+// Pages the Back action should never return the user to.
+const NON_RETURNABLE_PAGES = ["login", "forgotPassword", "threats"];
+
 function App() {
   const [page, setPage] = useState("dashboard");
   const [authSession, setAuthSession] = useState(() => getAuthSession());
@@ -31,15 +34,32 @@ function App() {
 
   const isLoggedIn = Boolean(authSession?.accessToken);
 
+  // Single navigation entry point. Records the page being left so that the
+  // Threat Details page can offer a Back action that returns there.
+  const goToPage = (nextPage) => {
+    if (!nextPage || nextPage === page) {
+      return;
+    }
+
+    setPreviousPage(page);
+    setPage(nextPage);
+  };
+
+  const handleBackFromThreatDetails = () => {
+    goToPage(
+      NON_RETURNABLE_PAGES.includes(previousPage) ? "dashboard" : previousPage
+    );
+  };
+
   const handleLogin = (session) => {
     setAuthSession(session);
-    setPage("dashboard");
+    goToPage("dashboard");
   };
 
   const handleLogout = async (nextPage = "dashboard") => {
     await logoutUser();
     setAuthSession(null);
-    setPage(nextPage);
+    goToPage(nextPage);
   };
 
   return (
@@ -49,7 +69,7 @@ function App() {
           <button
             type="button"
             className="temp-logo logo-home-button"
-            onClick={() => setPage("dashboard")}
+            onClick={() => goToPage("dashboard")}
             aria-label="Phoenix home, go to Dashboard"
             title="Go to Dashboard"
           >
@@ -95,7 +115,7 @@ function App() {
             <button
               type="button"
               className="header-auth-button"
-              onClick={() => setPage("login")}
+              onClick={() => goToPage("login")}
             >
               Login
             </button>
@@ -122,24 +142,21 @@ function App() {
       <div className="page-content">
         {page === "login" && (
           <LoginForm
-            setPage={setPage}
+            setPage={goToPage}
             onLogin={handleLogin}
           />
         )}
 
         {page === "forgotPassword" && (
-          <ForgotPassword setPage={setPage} />
+          <ForgotPassword setPage={goToPage} />
         )}
 
         {page === "dashboard" && (
           <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
+            <Sidebar setPage={goToPage} page={page} />
 
             <Dashboard
-              setPage={(nextPage) => {
-                setPreviousPage("dashboard");
-                setPage(nextPage);
-              }}
+              setPage={goToPage}
               setSelectedThreat={setSelectedThreat}
               isLoggedIn={isLoggedIn}
             />
@@ -148,13 +165,10 @@ function App() {
 
         {page === "alerts" && (
           <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
+            <Sidebar setPage={goToPage} page={page} />
 
             <Alerts
-              setPage={(nextPage) => {
-                setPreviousPage("alerts");
-                setPage(nextPage);
-              }}
+              setPage={goToPage}
               setSelectedThreat={setSelectedThreat}
             />
           </div>
@@ -162,33 +176,33 @@ function App() {
 
         {page === "about" && (
           <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
+            <Sidebar setPage={goToPage} page={page} />
             <AboutUs />
           </div>
         )}
 
         {page === "reports" && (
           <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
+            <Sidebar setPage={goToPage} page={page} />
             <ReportsPage />
           </div>
         )}
 
         {page === "threats" && (
           <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
+            <Sidebar setPage={goToPage} page={page} />
             <ThreatDetails
               selectedThreat={selectedThreat}
-              onBack={() => setPage(previousPage)}
+              onBack={handleBackFromThreatDetails}
             />
           </div>
         )}
 
         {page === "settings" && (
           <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
+            <Sidebar setPage={goToPage} page={page} />
             <SettingsPage
-              setPage={setPage}
+              setPage={goToPage}
               authSession={authSession}
               onLogout={handleLogout}
             />

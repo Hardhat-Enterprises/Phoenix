@@ -33,21 +33,240 @@ import {
 
 const router = Router();
 
+/**
+ * @swagger
+ * /api/users/health:
+ *   get:
+ *     summary: Check user service health
+ *     description: Returns the health status of the user service.
+ *     tags:
+ *       - Health
+ *     responses:
+ *       200:
+ *         description: Service is healthy
+ */
 router.get("/health", getHealth);
+
+/**
+ * @swagger
+ * /api/users/meta/locations:
+ *   get:
+ *     summary: Get locations
+ *     description: Retrieves a list of available locations for the authenticated user.
+ *     tags:
+ *       - Metadata
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Locations retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/meta/locations", authenticate, getLocations);
+
+/**
+ * @swagger
+ * /api/users/meta/event-statuses:
+ *   get:
+ *     summary: Get event statuses
+ *     description: Retrieves all available event statuses for the authenticated user.
+ *     tags:
+ *       - Metadata
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Event statuses retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/meta/event-statuses", authenticate, getEventStatuses);
+
+/**
+ * @swagger
+ * /api/users/meta/linked-event-types:
+ *   get:
+ *     summary: Get linked event types
+ *     description: Retrieves all linked event types for the authenticated user.
+ *     tags:
+ *       - Metadata
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Linked event types retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/meta/linked-event-types", authenticate, getLinkedEventTypes);
+
+/**
+ * @swagger
+ * /api/users/meta/seasons:
+ *   get:
+ *     summary: Get seasons
+ *     description: Retrieves all available seasons for the authenticated user.
+ *     tags:
+ *       - Metadata
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Seasons retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/meta/seasons", authenticate, getSeasons);
+
+/**
+ * @swagger
+ * /api/users/meta/reference-days:
+ *   get:
+ *     summary: Get reference days
+ *     description: Retrieves all available reference days for the authenticated user.
+ *     tags:
+ *       - Metadata
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Reference days retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/meta/reference-days", authenticate, getReferenceDays);
+
+/**
+ * @swagger
+ * /api/users/meta/reference-times:
+ *   get:
+ *     summary: Get reference times
+ *     description: Retrieves all available reference times for the authenticated user.
+ *     tags:
+ *       - Metadata
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Reference times retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/meta/reference-times", authenticate, getReferenceTimes);
+
 
 router.get("/hazards", authenticate, getHazards);
 router.get("/hazards/:hazardId", authenticate, getHazard);
 
+/**
+ * @swagger
+ * /api/users/integration:
+ *   get:
+ *     summary: Get integrations
+ *     description: Retrieves a list of integrations for the authenticated user.
+ *     tags:
+ *       - Integration
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Integrations retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/integration", authenticate, getIntegrations);
+
+/**
+ * @swagger
+ * /api/users/integration/{integrationId}:
+ *   get:
+ *     summary: Get integration by ID
+ *     description: Retrieves a specific integration using its ID.
+ *     tags:
+ *       - Integration
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: integrationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the integration.
+ *     responses:
+ *       200:
+ *         description: Integration retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Integration not found
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/integration/:integrationId", authenticate, getIntegration);
 
+/**
+ * @swagger
+ * /api/users/training-models:
+ *   get:
+ *     summary: Get training models
+ *     description: Retrieves a list of training models for the authenticated user.
+ *     tags:
+ *       - Training Models
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Training models retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/training-models", authenticate, getTrainingModels);
+
+/**
+ * @swagger
+ * /api/users/training-models/{file_id}:
+ *   get:
+ *     summary: Get training model by file ID
+ *     description: Retrieves a specific training model using its file ID.
+ *     tags:
+ *       - Training Models
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: file_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The file ID of the training model.
+ *     responses:
+ *       200:
+ *         description: Training model retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Training model not found
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/training-models/:file_id", authenticate, getOneTrainingModel);
 /**
  * Authentication Routes
@@ -69,29 +288,144 @@ router.post(
  * @swagger
  * /api/users/user:
  *   get:
- *     summary: Get users information
+ *     summary: Get user information
+ *     description: Retrieves user information. This endpoint is only accessible to authenticated administrators.
  *     tags:
  *       - Users
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: User retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Users retrieved successfully
+ *                 user:
+ *                   type: array
+ *       401:
+ *         description: Unauthorized - No valid token provided
+ *       403:
+ *         description: Forbidden - Admin access required
+ *       500:
+ *         description: Internal server error
  */
 router.get("/user", authenticate, authorize(["admin"]), getUser);
 
 /**
- * Dashboard Routes
+ * @swagger
+ * /api/users/dashboard/overview:
+ *   get:
+ *     summary: Get dashboard overview
+ *     description: Retrieves the dashboard overview for the authenticated user.
+ *     tags:
+ *       - Dashboard
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard overview retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
  */
 router.get("/dashboard/overview", authenticate, getUserDashboard);
 
+/**
+ * @swagger
+ * /api/users/dashboard/charts:
+ *   get:
+ *     summary: Get dashboard charts
+ *     description: Retrieves dashboard chart data for the authenticated user.
+ *     tags:
+ *       - Dashboard
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard charts retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/dashboard/charts", authenticate, getUserDashboardCharts);
 
+/**
+ * @swagger
+ * /api/users/dashboard/activity:
+ *   get:
+ *     summary: Get dashboard activity
+ *     description: Retrieves dashboard activity for the authenticated user.
+ *     tags:
+ *       - Dashboard
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard activity retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/dashboard/activity", authenticate, getUserDashboardActivity);
 
 /**
- * Hazard Routes
+ * @swagger
+ * /api/users/hazards:
+ *   get:
+ *     summary: Get hazards
+ *     description: Retrieves a list of hazards for the authenticated user.
+ *     tags:
+ *       - Hazards
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Hazards retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
  */
 router.get("/hazards", authenticate, getHazards);
 
+/**
+ * @swagger
+ * /api/users/hazards/{hazardId}:
+ *   get:
+ *     summary: Get hazard by ID
+ *     description: Retrieves a specific hazard using its ID.
+ *     tags:
+ *       - Hazards
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: hazardId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the hazard.
+ *     responses:
+ *       200:
+ *         description: Hazard retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Hazard not found
+ *       500:
+ *         description: Internal server error
+ */
 router.get("/hazards/:hazardId", authenticate, getHazard);
 
 export default router;

@@ -37,7 +37,6 @@ INSERT INTO hazard_event (
     severity_level,
     event_status,
     start_time,
-    geo_location_id,
     source_id,
     description
 )
@@ -46,13 +45,10 @@ SELECT
     'high',
     'active',
     NOW(),
-    g.geo_location_id,
     s.source_id,
     'Severe flooding due to heavy rainfall'
-FROM geo_location g
-CROSS JOIN data_source s
-WHERE g.state_region = 'Victoria'
-  AND s.source_name = 'Bureau of Meteorology'
+FROM data_source s
+WHERE s.source_name = 'Bureau of Meteorology'
 LIMIT 1;
 
 

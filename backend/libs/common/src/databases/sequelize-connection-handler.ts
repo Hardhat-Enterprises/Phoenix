@@ -4,12 +4,14 @@ import { logger } from "../config";
 export const sequelize = new Sequelize(config.SUPABASE_CONNECTION_STRING, {
   dialect: "postgres",
   logging: false,
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
-    },
-  },
+  dialectOptions: process.env.SUPABASE_CONNECTION_STRING?.includes("sslmode=require")
+    ? {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
+      }
+    : {},
 });
 
 export async function connectDatabase(): Promise<void> {

@@ -99,12 +99,12 @@ CREATE TABLE threat_location (
    Dimensional table */
 CREATE TABLE event_status(
 	event_status_id				SERIAL UNIQUE
-	,event_status_dscription	VARCHAR
+	,event_status_description	VARCHAR
 );
 
 /*RISK_ASSESSMENT OR INTEGRATION TABLE 
   Fact table*/
- CREATE TABLE tisk_assessment (
+ CREATE TABLE risk_assessment (
 	integration_event_id 		UUID PRIMARY KEY DEFAULT gen_random_uuid()
 	,related_hazard_event_id 	UUID
 	,related_threat_id 			UUID
@@ -161,4 +161,4 @@ CREATE TABLE "user"(
 	,password_hashed			BYTEA
 	,role						VARCHAR
 			--add check constraint once values are established
-	);
+);

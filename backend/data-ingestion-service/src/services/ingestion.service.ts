@@ -22,6 +22,17 @@ import { GetHealthDto } from "../dto/ingestion.dto";
 import { GetHealthEntity } from "../entity/ingestion.entity";
 import { DataIngestionStreamingLog } from "@phoenix/common";
 
+type IngestionPayload = string | Record<string, unknown>;
+
+/**
+ * Returns the health status for the ingestion service.
+ *
+ * This is typically used by the /health endpoint and should be reflected in the
+ * Swagger documentation as a simple success response.
+ *
+ * @param _getHealthDto Health check request payload (unused by the service).
+ * @returns A simple health response object with HTTP status and message.
+ */
 export const getHealth = (_getHealthDto: GetHealthDto): GetHealthEntity => {
   return {
     status: HttpStatusCode.HTTP_STATUS_OK,
@@ -29,7 +40,18 @@ export const getHealth = (_getHealthDto: GetHealthDto): GetHealthEntity => {
   };
 };
 
-export const createHazardData = async (content: any) => {
+/**
+ * Processes hazard event payloads received from an AI/ML ingestion source.
+ *
+ * The service creates an ingestion log entry, validates the incoming payload,
+ * creates or reuses a data source record, persists the hazard event, and updates
+ * the processing status so it can be surfaced in monitoring and Swagger docs.
+ *
+ * @param content Hazard payload as a JSON string or parsed object.
+ * @returns A promise that resolves after the record is persisted or after a
+ *          validation/error state has been recorded.
+ */
+export const createHazardData = async (content: IngestionPayload) => {
   const ingestionLog = await DataIngestionStreamingLog.create({
     ingestion_type: IngestionTypeEnum.HAZARD,
     payload: content,
@@ -85,7 +107,18 @@ export const createHazardData = async (content: any) => {
   }
 };
 
-export const createCyberData = async (content: any) => {
+/**
+ * Processes cyber threat payloads received from an AI/ML ingestion source.
+ *
+ * The service records the ingestion attempt, validates the request payload,
+ * creates or reuses a data source entry, persists the cyber threat record, and
+ * updates the processing status for downstream visibility.
+ *
+ * @param content Cyber threat payload as a JSON string or parsed object.
+ * @returns A promise that resolves after the record is persisted or after a
+ *          validation/error state has been recorded.
+ */
+export const createCyberData = async (content: IngestionPayload) => {
   const ingestionLog = await DataIngestionStreamingLog.create({
     ingestion_type: IngestionTypeEnum.CYBER_THREAT,
     payload: content,
@@ -142,7 +175,17 @@ export const createCyberData = async (content: any) => {
   }
 };
 
-export const coreModelIntegration = async (payload: any) => {
+/**
+ * Runs the core model integration workflow for a supplied inference payload.
+ *
+ * The service records the integration attempt, locates the required model asset,
+ * validates the input payload, performs inference, and stores the result in the
+ * integration log for traceability.
+ *
+ * @param payload The model input payload or object containing inference input data.
+ * @returns A promise that resolves with the inference result or an error state.
+ */
+export const coreModelIntegration = async (payload: IngestionPayload) => {
   const integrationLog = await IntegrationLog.create({
     integration_type: IntegrationType.CORE,
     input: JSON.stringify(payload),

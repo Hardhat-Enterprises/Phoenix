@@ -119,7 +119,7 @@ const latitudeToTileY = (latitude, zoom) => {
       Math.log(
         Math.tan(latitudeRadians) + 1 / Math.cos(latitudeRadians),
       ) /
-        Math.PI) /
+      Math.PI) /
       2) *
     2 ** zoom
   );
@@ -288,9 +288,9 @@ const locationMatchesHazard = (location, hazardLocation, hazard) => {
 
   return Boolean(
     stateCode &&
-      candidates.some((candidate) =>
-        STATE_ALIASES[stateCode].includes(candidate),
-      ),
+    candidates.some((candidate) =>
+      STATE_ALIASES[stateCode].includes(candidate),
+    ),
   );
 };
 
@@ -365,9 +365,9 @@ const buildRiskMapPoints = (hazards, locations) =>
         severity: formatLabel(severity),
         status: formatLabel(
           hazard.event_status ||
-            hazard.hazard_status ||
-            hazard.status ||
-            "Unknown",
+          hazard.hazard_status ||
+          hazard.status ||
+          "Unknown",
         ),
         location: coordinates.label,
         source: coordinates.source,
@@ -783,15 +783,15 @@ const normalizeHazardRow = (hazard, index) => ({
   type: formatLabel(hazard.hazard_type || "Hazard"),
   severity: formatLabel(
     hazard.severity_level ||
-      hazard.hazard_severity ||
-      hazard.alert_level ||
-      "Unknown",
+    hazard.hazard_severity ||
+    hazard.alert_level ||
+    "Unknown",
   ),
   status: formatLabel(
     hazard.event_status ||
-      hazard.hazard_status ||
-      hazard.status ||
-      "Unknown",
+    hazard.hazard_status ||
+    hazard.status ||
+    "Unknown",
   ),
 });
 
@@ -837,9 +837,9 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
     setHazards(snapshot?.hazards || []);
     setLocations(snapshot?.locations || []);
     setIntegrations(snapshot?.integrations || []);
-    setThreatTotal(totals.threats ?? 0);
-    setHazardTotal(totals.hazards ?? 0);
-    setRiskTotal(totals.risks ?? 0);
+    setThreatTotal(totals.threats);
+    setHazardTotal(totals.hazards);
+    setRiskTotal(totals.risks);
   };
 
   const selectedRegion = useMemo(
@@ -917,6 +917,11 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
         risksResult,
         integrationsResult,
       ] = results;
+      if (overviewResult.status === "rejected") {
+        setLoadError(
+          "Could not load the dashboard overview totals. Showing available fallback data.",
+        );
+      }
       const allDataRequestsFailed = [
         overviewResult,
         chartsResult,
@@ -1041,7 +1046,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
       { label: "Total Threats", value: threatTotal },
       { label: "Total Risks", value: riskTotal },
     ],
-    
+
     [
       apiStatus,
       hazardTotal,
@@ -1241,7 +1246,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
 
       setDetectionError(
         error.message ||
-          "Could not submit the anomaly detection request."
+        "Could not submit the anomaly detection request."
       );
     } finally {
       setLoadingDetection(false);
@@ -1272,7 +1277,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
               const cardValue =
                 isLoading && card.value === undefined
                   ? "..."
-                  : card.value ?? "-";
+                  : card.value ?? "Unavailable";
               const isLongValue = String(cardValue).length > 8;
 
               return (
@@ -1285,9 +1290,8 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                   </span>
 
                   <strong
-                    className={`overview-value ${
-                      isLongValue ? "long-value" : ""
-                    }`}
+                    className={`overview-value ${isLongValue ? "long-value" : ""
+                      }`}
                   >
                     {cardValue}
                   </strong>
@@ -1425,8 +1429,8 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                       <strong>
                         {displayedDetection.processedAt
                           ? new Date(
-                              displayedDetection.processedAt
-                            ).toLocaleString()
+                            displayedDetection.processedAt
+                          ).toLocaleString()
                           : "-"}
                       </strong>
                     </div>

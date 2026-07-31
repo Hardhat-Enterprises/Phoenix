@@ -1,5 +1,0 @@
-.env
-.env.keys
-/node_modules
-/dist
-/.venv

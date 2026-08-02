@@ -330,7 +330,12 @@
 
 .item-list-table-head {
   display: grid;
-  grid-template-columns: minmax(260px, 1.8fr) minmax(130px, 0.8fr) minmax(160px, 0.9fr);
+  grid-template-columns:
+  minmax(220px, 2fr)
+  minmax(160px, 1.2fr)
+  minmax(150px, 1fr)
+  minmax(120px, 0.8fr)
+  minmax(120px, 0.8fr);
   padding: 16px 22px;
   background-color: #f6f8fc;
   font-size: 12px;
@@ -342,7 +347,12 @@
 
 .item-list-row {
   display: grid;
-  grid-template-columns: minmax(260px, 1.8fr) minmax(130px, 0.8fr) minmax(160px, 0.9fr);
+  grid-template-columns:
+  minmax(220px, 2fr)
+  minmax(160px, 1.2fr)
+  minmax(150px, 1fr)
+  minmax(120px, 0.8fr)
+  minmax(120px, 0.8fr);
   align-items: center;
   gap: 14px;
   padding: 18px 22px;
@@ -354,6 +364,11 @@
 
 .item-list-row:hover {
   background-color: #f7fbff;
+}
+
+.item-list-row:focus {
+  outline: 2px solid #1f5fbf;
+  outline-offset: -2px;
 }
 
 /* Left cell */
@@ -416,6 +431,17 @@
   font-weight: 600;
   padding: 24px 22px;
   text-align: center;
+}
+
+.item-list-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px;
+  text-align: center;
+  font-weight: 600;
 }
 
 /* Pills */

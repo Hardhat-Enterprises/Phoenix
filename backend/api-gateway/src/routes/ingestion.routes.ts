@@ -266,7 +266,7 @@ router.post(
  * /api/ingestion/core:
  *   post:
  *     summary: Send core model integration payload
- *     description: Sends model integration data to the ingestion service for core inference processing.
+ *     description: Sends a core model integration request for AI/ML inference.
  *     tags:
  *       - Data Ingestion
  *     security:
@@ -277,19 +277,60 @@ router.post(
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - url
+ *               - text
+ *               - timestamp
+ *               - hazard_type
+ *               - hazard_severity
+ *               - hazard_timestamp
+ *               - hazard_location
+ *               - hazard_status
+ *               - alert_level
+ *               - source
  *             properties:
- *               input_data:
- *                 type: object
- *                 description: Raw feature payload to be passed to the core model
- *                 example:
- *                   feature_1: 0.42
- *                   feature_2: 0.77
- *               metadata:
- *                 type: object
- *                 description: Optional metadata for the integration request
- *                 example:
- *                   source: "training-pipeline"
- *                   request_id: "req-001"
+ *               url:
+ *                 type: string
+ *                 example: "https://example.com/password-reset-relief"
+ *                 description: The URL associated with the threat.
+ *               text:
+ *                 type: string
+ *                 example: "Reset your disaster relief account password to keep access to support funds."
+ *                 description: Description or content of the alert.
+ *               timestamp:
+ *                 type: string
+ *                 format: date-time
+ *                 example: "2026-05-17T12:35:59.765Z"
+ *                 description: Timestamp of the event.
+ *               hazard_type:
+ *                 type: string
+ *                 example: "cyber"
+ *                 description: Type of hazard (e.g., cyber, flood, fire).
+ *               hazard_severity:
+ *                 type: number
+ *                 example: 1
+ *                 description: Severity level (1 = low, 5 = critical).
+ *               hazard_timestamp:
+ *                 type: string
+ *                 format: date-time
+ *                 example: "2026-05-02T08:00:00Z"
+ *                 description: Timestamp when the hazard was detected.
+ *               hazard_location:
+ *                 type: string
+ *                 example: "VIC"
+ *                 description: Location code (e.g., state or region).
+ *               hazard_status:
+ *                 type: string
+ *                 example: "active"
+ *                 description: Status of the hazard (active, resolved, etc.).
+ *               alert_level:
+ *                 type: string
+ *                 example: "critical"
+ *                 description: Alert level (info, warning, critical).
+ *               source:
+ *                 type: string
+ *                 example: "OpenPhish"
+ *                 description: Source of the intelligence.
  *     responses:
  *       202:
  *         description: Core model integration request accepted

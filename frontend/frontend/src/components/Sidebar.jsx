@@ -8,6 +8,7 @@ function Sidebar({ setPage, page }) {
     { label: "About Us", target: "about" },
     { label: "Settings", target: "settings" },
     { label: "Threat Details", target: "threats" },
+    { label: "Risk Assessment", target: "riskAssessment" },
     
   ];
 

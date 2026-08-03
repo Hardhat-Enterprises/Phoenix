@@ -213,3 +213,8 @@
   outline: 3px solid #4c9aff;
   outline-offset: 2px;
 }
+.threat-back-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}

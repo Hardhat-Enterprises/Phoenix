@@ -117,16 +117,6 @@ function ThreatDetails({ selectedThreat, onBack }) {
       <main className="threat-details-main">
         <div className="threat-details-card">
           <div className="threat-details-header">
-            {onBack && (
-              <button
-                type="button"
-                className="threat-back-button"
-                onClick={onBack}
-              >
-                &larr; Back
-              </button>
-            )}
-
             <h1>Threat Details</h1>
             <p>Detailed cybersecurity threat intelligence and incident overview</p>
           </div>
@@ -182,6 +172,13 @@ function ThreatDetails({ selectedThreat, onBack }) {
                 <strong>Threat Description</strong>
                 <p>{threatDescription}</p>
               </div>
+            </div>
+          )}
+          {onBack && (
+            <div className="threat-back-row">
+              <button type="button" className="threat-back-button" onClick={onBack}>
+                &larr; Back
+              </button>
             </div>
           )}
         </div>

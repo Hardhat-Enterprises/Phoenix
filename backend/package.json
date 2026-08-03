@@ -2,6 +2,9 @@
   "name": "microservices-backend",
   "private": true,
   "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "dev:gateway": "nodemon --watch api-gateway/src --watch libs/common/src --watch libs/proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P api-gateway/tsconfig.json api-gateway/src/app.ts\"",
     "dev:user": "nodemon --watch user-service/src --watch proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P user-service/tsconfig.json user-service/src/app.ts\"",
     "dev:ingestion": "nodemon --watch data-ingestion-service/src --watch libs/proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P data-ingestion-service/tsconfig.json data-ingestion-service/src/app.ts\"",
@@ -19,8 +22,7 @@
     "start:user-service": "node -r tsconfig-paths/register dist/user-service/src/app.js",
     "start:ingestion": "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js",
     "start:storage-service": "node -r tsconfig-paths/register dist/storage-service/src/app.js",
-    "start:notification-service": "node -r tsconfig-paths/register dist/notification-service/src/app.js",
-    "test": "jest"
+    "start:notification-service": "node -r tsconfig-paths/register dist/notification-service/src/app.js"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.3",
@@ -60,9 +62,8 @@
     "autocannon": "^8.0.0",
     "copyfiles": "^2.4.1",
     "cpy-cli": "^7.0.0",
-    "jest": "^29.7.0",
+    "jest": "^30.4.2",
     "nodemon": "^3.1.10",
-    "supertest": "^7.2.2",
     "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.16",

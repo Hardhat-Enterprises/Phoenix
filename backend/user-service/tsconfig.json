@@ -34,15 +34,7 @@
     "noEmit": false,
     "incremental": true
   },
-
-  "include": [
-    "src",
-    "test"
-  ],
-
-  "references": [
-    {
-      "path": "../libs/common"
-    }
-  ]
+  "include": ["src"],
+  "exclude": ["**/*.test.ts", "**/*spec.ts"],
+  "references": [{ "path": "../libs/common" }]
 }

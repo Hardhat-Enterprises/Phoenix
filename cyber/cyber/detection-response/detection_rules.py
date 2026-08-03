@@ -247,8 +247,59 @@ def detect_fraudulent_claim(
     }
 
 
+
+def detect_security_monitoring(
+    failed_auth_attempts: int,
+    authorization_failures: int,
+    privileged_action: bool,
+    sensitive_resource_access: bool,
+    abnormal_behavior: bool
+) -> Dict[str, Any]:
+    if failed_auth_attempts > 5:
+        return {
+            "threat": "Security Monitoring",
+            "severity": "High",
+            "action": "generate_audit_log"
+        }
+
+    if authorization_failures > 5:
+        return {
+            "threat": "Security Monitoring",
+            "severity": "High",
+            "action": "notify_security_team"
+        }
+
+    if privileged_action: 
+        return {
+            "threat": "Security Monitoring",
+            "severity": "Medium",
+            "action": "audit_admin_action"
+        }
+
+    if sensitive_resource_access and abnormal_behavior:
+        return {
+            "threat": "Security Monitoring",
+            "severity": "Critical",
+            "action": "trigger_incident_response"
+        }
+
+    return {
+        "threat": "Security Monitoring",
+        "severity": "Normal",
+        "action": None
+    }
+
+
 if __name__ == "__main__":
     print(detect_login_attack(12, False, False))
     print(detect_api_abuse(120, False))
     print(detect_iot_attack(98.0, 10.0, 60.0, False))
     print(detect_alert_system_compromise(False, True, True))
+
+
+    print(detect_security_monitoring(
+        failed_auth_attempts=6,
+        authorization_failures=0,
+        privileged_action=False,
+        sensitive_resource_access=False,
+        abnormal_behavior=False))

@@ -1701,7 +1701,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                     key={item.id}
                     onClick={() => {
                       setSelectedThreat(item);
-                      setPage("threatdetails");
+                      setPage("threats");
                     }}
                     role="button"
                     tabIndex={0}
@@ -1711,7 +1711,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                         event.key === " "
                       ) {
                         setSelectedThreat(item);
-                        setPage("threatdetails");
+                        setPage("threats");
                       }
                     }}
                   >

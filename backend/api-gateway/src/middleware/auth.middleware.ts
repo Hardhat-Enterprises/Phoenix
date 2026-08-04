@@ -1,4 +1,9 @@
-import { HttpStatusCode, UserAccount } from "@phoenix/common";
+import {
+  HttpStatusCode,
+  UserAccount,
+  fromRequest,
+  logRbacDenied,
+} from "@phoenix/common";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
@@ -49,6 +54,13 @@ export const authorize = (roles: string[]) => {
     const user = (req as any).user;
 
     if (!user || !roles.includes(user.role)) {
+      // CY017: record the RBAC decision. The 403 response below is unchanged --
+      // logging observes the decision, it does not make it.
+      logRbacDenied({
+        ...fromRequest(req),
+        details: { required_roles: roles, actual_role: user?.role ?? null },
+      });
+
       return res.status(HttpStatusCode.HTTP_STATUS_FORBIDDEN).json({
         status: HttpStatusCode.HTTP_STATUS_FORBIDDEN,
         message: "Access denied",

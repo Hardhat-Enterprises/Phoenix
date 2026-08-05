@@ -628,6 +628,25 @@ const formatShortDate = (value) => {
   });
 };
 
+// Formats the Threat Chart's "last updated" date using only the value
+// returned by the API. Never falls back to the browser's current date.
+const formatChartDate = (value) => {
+  if (!value) {
+    return "Date unavailable";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Date unavailable";
+  }
+
+  return date.toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+};
+
 const buildAnomalyPayload = (region, timestamp) => ({
   time_window: toModelTimeWindow(timestamp),
   timestamp: toIsoTimestamp(timestamp),
@@ -748,6 +767,8 @@ const normalizeThreatRow = (threat, index) => {
   };
 };
 
+// Always returns all four severity rows (critical, high, medium, low),
+// even when a level has zero threats, so the chart never hides a level.
 const normalizeThreatChartRows = (threatsByRiskLevel = {}) => {
   const riskLevels = ["critical", "high", "medium", "low"];
   const counts = riskLevels.map((riskLevel) =>
@@ -755,23 +776,19 @@ const normalizeThreatChartRows = (threatsByRiskLevel = {}) => {
   );
   const maxCount = Math.max(...counts, 0);
 
-  return riskLevels
-    .map((riskLevel, index) => {
-      const count = counts[index];
-      const severity = formatLabel(riskLevel);
+  return riskLevels.map((riskLevel, index) => {
+    const count = counts[index];
+    const severity = formatLabel(riskLevel);
 
-      return {
-        id: `threat-chart-${riskLevel}`,
-        name: severity,
-        severity,
-        count,
-        riskValue:
-          maxCount > 0
-            ? Math.max(8, Math.round((count / maxCount) * 100))
-            : 0,
-      };
-    })
-    .filter((row) => row.count > 0);
+    return {
+      id: `threat-chart-${riskLevel}`,
+      name: severity,
+      severity,
+      count,
+      riskValue:
+        maxCount > 0 ? Math.max(8, Math.round((count / maxCount) * 100)) : 0,
+    };
+  });
 };
 
 const normalizeHazardRow = (hazard, index) => ({
@@ -808,6 +825,11 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
   const [hazardTotal, setHazardTotal] = useState("Checking");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+
+  // Threat Chart specific state: tracks the chart's own loading/error/empty/
+  // success state and the "last updated" timestamp as returned by the API.
+  const [chartsStatus, setChartsStatus] = useState("loading");
+  const [chartsLastUpdated, setChartsLastUpdated] = useState(null);
 
   //Anomaly detection state
   const [selectedRegionId, setSelectedRegionId] =
@@ -872,6 +894,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
     const loadDashboardData = async () => {
       setIsLoading(true);
       setLoadError("");
+      setChartsStatus("loading");
 
       const healthResult = await Promise.resolve(getApiHealth()).then(
         (value) => ({ status: "fulfilled", value }),
@@ -937,6 +960,8 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
 
       if (allDataRequestsFailed) {
         applyDashboardSnapshot(readDashboardSnapshot());
+        setChartsStatus("error");
+        setChartsLastUpdated(null);
 
         if (healthResult.status === "rejected") {
           setLoadError(
@@ -1006,6 +1031,22 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
       setLocations(locationItems);
       setHazardTotal(hazardTotalValue);
       setRiskTotal(riskTotalValue);
+
+      // Threat Chart status: distinguish a genuinely failed charts call from
+      // a successful call that simply returned zero threats at every level.
+      // The date is taken only from the API response and is never replaced
+      // with the browser's current date when it is missing.
+      if (chartsResult.status === "fulfilled") {
+        const counts = charts.threats_by_risk_level || {};
+        const anyCounts = Object.values(counts).some(
+          (count) => Number(count) > 0
+        );
+        setChartsStatus(anyCounts ? "success" : "empty");
+        setChartsLastUpdated(charts.last_updated ?? null);
+      } else {
+        setChartsStatus("error");
+        setChartsLastUpdated(null);
+      }
 
       saveDashboardSnapshot({
         totals: {
@@ -1124,22 +1165,12 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
     [anomalyRows]
   );
 
-  const chartRows = useMemo(() => {
-    const rows = normalizeThreatChartRows(threatsByRiskLevel);
-
-    if (rows.length > 0) {
-      return rows;
-    }
-
-    return itemRows.map((threat) => ({
-      id: threat.id,
-      name: threat.name,
-      severity: threat.vulnerability,
-      riskValue: threat.riskValue,
-    }));
-  }, [itemRows, threatsByRiskLevel]);
-
-  const hasThreatData = chartRows.length > 0;
+  // Always the four severity rows (critical/high/medium/low), each with a
+  // count (possibly zero) and a bar width proportional to that count.
+  const chartRows = useMemo(
+    () => normalizeThreatChartRows(threatsByRiskLevel),
+    [threatsByRiskLevel]
+  );
 
   //Detection API call
   const pollForAnomalyResult = async (regionId, submittedAt) => {
@@ -1570,15 +1601,55 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                 </p>
               </div>
 
-              <span className="backend-ready-badge">
-                {isLoading
-                  ? "Loading"
-                  : apiStatus}
-              </span>
+              <div className="threat-chart-header-meta">
+                <span className="backend-ready-badge">
+                  {isLoading
+                    ? "Loading"
+                    : apiStatus}
+                </span>
+
+                <span className="threat-chart-updated">
+                  Last updated: {formatChartDate(chartsLastUpdated)}
+                </span>
+              </div>
             </div>
 
             <div className="threat-chart-body">
-              {hasThreatData ? (
+              {chartsStatus === "loading" && (
+                <div className="empty-chart-placeholder">
+                  <div className="empty-chart-text">
+                    <strong>Loading threat data</strong>
+                    <span>
+                      Fetching the latest severity counts from the backend.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {chartsStatus === "error" && (
+                <div className="empty-chart-placeholder" role="alert">
+                  <div className="empty-chart-text">
+                    <strong>Couldn't load threat chart data</strong>
+                    <span>
+                      The dashboard could not reach the charts endpoint.
+                      Check that the backend is running and try again.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {chartsStatus === "empty" && (
+                <div className="empty-chart-placeholder">
+                  <div className="empty-chart-text">
+                    <strong>No threats recorded</strong>
+                    <span>
+                      All severity levels are currently at zero.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {chartsStatus === "success" && (
                 <div className="threat-chart-list">
                   {chartRows.map((threat) => (
                     <div
@@ -1601,37 +1672,10 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                       </div>
 
                       <span className="threat-value">
-                        {threat.count
-                          ? `${threat.count}`
-                          : `${threat.riskValue}%`}
+                        {threat.count}
                       </span>
                     </div>
                   ))}
-                </div>
-              ) : (
-                <div className="empty-chart-placeholder">
-                  <div className="chart-area">
-                    <div className="chart-grid-line line-1"></div>
-                    <div className="chart-grid-line line-2"></div>
-                    <div className="chart-grid-line line-3"></div>
-                    <div className="chart-bar high-bar"></div>
-                    <div className="chart-bar medium-bar"></div>
-                    <div className="chart-bar low-bar"></div>
-                  </div>
-
-                  <div className="empty-chart-text">
-                    <strong>
-                      {isLoading
-                        ? "Loading threat data"
-                        : "No threat data returned yet"}
-                    </strong>
-                    <span>
-                      The frontend is connected to
-                      the backend endpoint and will
-                      display records as soon as the
-                      API returns them.
-                    </span>
-                  </div>
                 </div>
               )}
             </div>
@@ -1648,6 +1692,9 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
               </div>
 
               <div className="severity-legend">
+                <span className="legend-dot critical"></span>
+                <span>Critical</span>
+
                 <span className="legend-dot high"></span>
                 <span>High</span>
 

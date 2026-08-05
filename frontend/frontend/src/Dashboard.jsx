@@ -1662,7 +1662,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                 <span className="item-list-kicker">Backend activity</span>
                 <h2>Recent Threat Signals</h2>
                 <p>
-                  Latest cyber and anomaly indicators linked to hazard monitoring.
+                  Latest cyber-threat indicators.
                 </p>
               </div>
 

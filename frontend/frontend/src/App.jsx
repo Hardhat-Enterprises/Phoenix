@@ -20,6 +20,7 @@ import {
   EmptyState,
 } from "./components/States";
 import CreateUser from "./CreateUser";
+import HelpSupportPage from "./HelpSupportPage";
 
 
 // Pages the Back action should never return the user to.
@@ -32,6 +33,8 @@ function App() {
   const [selectedThreat, setSelectedThreat] = useState(null);
   const [previousPage, setPreviousPage] = useState("dashboard");
   const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [siteSearch, setSiteSearch] = useState("");
+  const [helpSearchQuery, setHelpSearchQuery] = useState("");
   const adminMenuRef = useRef(null);
 
   const mainPages = [
@@ -42,7 +45,27 @@ function App() {
     "threats",
     "settings",
     "riskAssessment",
+    "help",
   ];
+
+  // Page names the header search recognises for direct navigation. Any other
+  // query opens Help & Support with the query applied to the help search.
+  const searchablePages = {
+    dashboard: "dashboard",
+    home: "dashboard",
+    alerts: "alerts",
+    reports: "reports",
+    about: "about",
+    "about us": "about",
+    settings: "settings",
+    threats: "threats",
+    "threat details": "threats",
+    "risk assessment": "riskAssessment",
+    help: "help",
+    support: "help",
+    "help & support": "help",
+    faq: "help",
+  };
 
   const isLoggedIn = Boolean(authSession?.accessToken);
 
@@ -75,6 +98,27 @@ function App() {
 
     setPreviousPage(page);
     setPage(nextPage);
+  };
+
+  // Header site search: exact page names navigate directly; anything else
+  // opens Help & Support with the query applied to the help topic search.
+  const submitSiteSearch = () => {
+    const query = siteSearch.trim();
+
+    if (!query) {
+      return;
+    }
+
+    const pageTarget = searchablePages[query.toLowerCase()];
+
+    if (pageTarget) {
+      goToPage(pageTarget);
+    } else {
+      setHelpSearchQuery(query);
+      goToPage("help");
+    }
+
+    setSiteSearch("");
   };
 
   const handleBackFromThreatDetails = () => {
@@ -123,6 +167,14 @@ function App() {
                 type="text"
                 placeholder="Search in site"
                 className="temp-search"
+                aria-label="Search in site"
+                value={siteSearch}
+                onChange={(event) => setSiteSearch(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    submitSiteSearch();
+                  }
+                }}
               />
 
               <button
@@ -242,6 +294,18 @@ function App() {
           <div style={{ display: "flex" }}>
             <Sidebar setPage={goToPage} page={page} />
             <RiskAssessmentPage />
+          </div>
+        )}
+
+        {page === "help" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={goToPage} page={page} />
+            {/* Keyed by the query so a new header search re-applies it. */}
+            <HelpSupportPage
+              key={helpSearchQuery}
+              setPage={goToPage}
+              searchQuery={helpSearchQuery}
+            />
           </div>
         )}
 

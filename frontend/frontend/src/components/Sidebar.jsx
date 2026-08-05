@@ -9,7 +9,7 @@ function Sidebar({ setPage, page }) {
     { label: "Settings", target: "settings" },
     { label: "Threat Details", target: "threats" },
     { label: "Risk Assessment", target: "riskAssessment" },
-    
+    { label: "Help & Support", target: "help" },
   ];
 
   return (

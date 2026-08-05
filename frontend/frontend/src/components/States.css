@@ -1,0 +1,135 @@
+.interface-state {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  max-width: 720px;
+  margin: 20px auto;
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.interface-state--loading {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.interface-state--empty {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+
+.interface-state--error {
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
+.interface-state--auth {
+  border-color: #a4d0ed;
+  background: #ecfdf5;
+}
+
+.interface-state--offline {
+  border-color: #ddd6fe;
+  background: #faf5ff;
+}
+
+.interface-state__content {
+  flex: 1;
+}
+
+.interface-state__content h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.interface-state__content p {
+  margin: 0;
+  line-height: 1.55;
+  color: #475569;
+}
+
+.interface-state__spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #cbd5e1;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: interface-spin 0.8s linear infinite;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.interface-state__skeletons {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.interface-state__skeletons span {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f8fafc 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: interface-shimmer 1.2s linear infinite;
+}
+
+.interface-state__skeletons span:nth-child(1) {
+  width: 85%;
+}
+
+.interface-state__skeletons span:nth-child(2) {
+  width: 70%;
+}
+
+.interface-state__skeletons span:nth-child(3) {
+  width: 60%;
+}
+
+.interface-state__button {
+  margin-top: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #0f172a;
+  color: white;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.interface-state__button:hover {
+  opacity: 0.95;
+}
+
+.demo-data-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #ecfeff;
+  color: #0f766e;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@keyframes interface-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes interface-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

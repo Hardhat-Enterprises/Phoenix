@@ -13,6 +13,12 @@ import ThreatDetails from "./ThreatDetails";
 import RiskAssessmentPage from "./RiskAssessmentPage";
 import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
+import {
+  AuthenticationState,
+  LoadingState,
+  ErrorState,
+  EmptyState,
+} from "./components/States";
 import CreateUser from "./CreateUser";
 
 
@@ -74,7 +80,7 @@ function App() {
   const handleBackFromThreatDetails = () => {
     setSelectedThreat(null);
     goToPage(
-      NON_RETURNABLE_PAGES.includes(previousPage) ? "dashboard" : previousPage
+      NON_RETURNABLE_PAGES.includes(previousPage) ? "dashboard" : previousPage,
     );
   };
 
@@ -119,7 +125,11 @@ function App() {
                 className="temp-search"
               />
 
-              <button className="temp-bell" aria-label="Notifications" onClick={() => setShowNotifPanel(!showNotifPanel)}>
+              <button
+                className="temp-bell"
+                aria-label="Notifications"
+                onClick={() => setShowNotifPanel(!showNotifPanel)}
+              >
                 !
               </button>
             </>
@@ -173,19 +183,12 @@ function App() {
         <NotificationPanel onClose={() => setShowNotifPanel(false)} />
       )}
 
-
-
       <div className="page-content">
         {page === "login" && (
-          <LoginForm
-            setPage={goToPage}
-            onLogin={handleLogin}
-          />
+          <LoginForm setPage={goToPage} onLogin={handleLogin} />
         )}
 
-        {page === "forgotPassword" && (
-          <ForgotPassword setPage={goToPage} />
-        )}
+        {page === "forgotPassword" && <ForgotPassword setPage={goToPage} />}
 
         {page === "createUser" && isAdmin && (
           <CreateUser setPage={goToPage} />
@@ -207,10 +210,7 @@ function App() {
           <div style={{ display: "flex" }}>
             <Sidebar setPage={goToPage} page={page} />
 
-            <Alerts
-              setPage={goToPage}
-              setSelectedThreat={setSelectedThreat}
-            />
+            <Alerts setPage={goToPage} setSelectedThreat={setSelectedThreat} />
           </div>
         )}
 
@@ -255,8 +255,7 @@ function App() {
             />
           </div>
         )}
-
-       </div>
+      </div>
 
       <Footer />
     </div>

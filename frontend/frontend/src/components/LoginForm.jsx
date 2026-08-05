@@ -28,8 +28,6 @@ export default function LoginForm({ setPage, onLogin }) {
 
       const savedSession = saveAuthSession(session);
       onLogin?.(savedSession);
-      setStatusMessage("Signed in successfully. Opening dashboard...");
-      setPage("dashboard");
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
@@ -42,6 +40,7 @@ export default function LoginForm({ setPage, onLogin }) {
       <label>Username or Email</label>
       <input
         type="text"
+        name="username"
         placeholder="Enter your username or email"
         value={username}
         onChange={(event) => setUsername(event.target.value)}
@@ -51,6 +50,7 @@ export default function LoginForm({ setPage, onLogin }) {
       <label>Password</label>
       <input
         type="password"
+        name="password"
         placeholder="Enter your password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}

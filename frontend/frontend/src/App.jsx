@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
@@ -19,6 +19,8 @@ import {
   ErrorState,
   EmptyState,
 } from "./components/States";
+import CreateUser from "./CreateUser";
+
 
 // Pages the Back action should never return the user to.
 const NON_RETURNABLE_PAGES = ["login", "forgotPassword", "threats"];
@@ -29,6 +31,8 @@ function App() {
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [selectedThreat, setSelectedThreat] = useState(null);
   const [previousPage, setPreviousPage] = useState("dashboard");
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const adminMenuRef = useRef(null);
 
   const mainPages = [
     "about",
@@ -42,6 +46,26 @@ function App() {
 
   const isLoggedIn = Boolean(authSession?.accessToken);
 
+  const isAdmin = authSession?.user?.role?.toLowerCase() === "admin";
+
+  useEffect(() => {
+    if (!showAdminMenu) return undefined;
+
+    const closeMenu = (event) => {
+      if (!adminMenuRef.current?.contains(event.target)) setShowAdminMenu(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setShowAdminMenu(false);
+    };
+
+    document.addEventListener("mousedown", closeMenu);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeMenu);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [showAdminMenu]);
+
   // Single navigation entry point. Records the page being left so that the
   // Threat Details page can offer a Back action that returns there.
   const goToPage = (nextPage) => {
@@ -54,6 +78,7 @@ function App() {
   };
 
   const handleBackFromThreatDetails = () => {
+    setSelectedThreat(null);
     goToPage(
       NON_RETURNABLE_PAGES.includes(previousPage) ? "dashboard" : previousPage,
     );
@@ -65,6 +90,7 @@ function App() {
   };
 
   const handleLogout = async (nextPage = "dashboard") => {
+    setShowAdminMenu(false);
     await logoutUser();
     setAuthSession(null);
     goToPage(nextPage);
@@ -111,17 +137,36 @@ function App() {
 
           {isLoggedIn ? (
             <div className="header-auth-summary">
-              <span className="header-role">
-                {authSession?.user?.role || "user"}
-              </span>
-
-              <button
-                type="button"
-                className="header-auth-button"
-                onClick={() => handleLogout()}
-              >
-                Logout
-              </button>
+              {isAdmin ? (
+                <div className="admin-menu-container" ref={adminMenuRef}>
+                  <button
+                    type="button"
+                    className="header-role header-role-button"
+                    aria-haspopup="menu"
+                    aria-expanded={showAdminMenu}
+                    onClick={() => setShowAdminMenu((visible) => !visible)}
+                  >
+                    Admin <span aria-hidden="true">⌄</span>
+                  </button>
+                  {showAdminMenu && (
+                    <div className="admin-menu" role="menu">
+                      <button type="button" role="menuitem" onClick={() => { setShowAdminMenu(false); goToPage("createUser"); }}>
+                        <span className="admin-menu-icon" aria-hidden="true">＋</span>
+                        <span><strong>Create user</strong><small>Add a dashboard or app account</small></span>
+                      </button>
+                      <button type="button" role="menuitem" className="admin-menu-logout" onClick={() => handleLogout()}>
+                        <span className="admin-menu-icon" aria-hidden="true">↪</span>
+                        <span><strong>Logout</strong><small>End your current session</small></span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <span className="header-role">{authSession?.user?.role || "user"}</span>
+                  <button type="button" className="header-auth-button" onClick={() => handleLogout()}>Logout</button>
+                </>
+              )}
             </div>
           ) : (
             <button
@@ -135,18 +180,7 @@ function App() {
         </div>
       </div>
       {showNotifPanel && (
-        <NotificationPanel
-          onAlert={(item) => {
-            //Alter for future backend
-            fetch("http://192.168.50.251:3000/alert", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(item),
-            });
-
-            setShowNotifPanel(false);
-          }}
-        />
+        <NotificationPanel onClose={() => setShowNotifPanel(false)} />
       )}
 
       <div className="page-content">
@@ -155,6 +189,10 @@ function App() {
         )}
 
         {page === "forgotPassword" && <ForgotPassword setPage={goToPage} />}
+
+        {page === "createUser" && isAdmin && (
+          <CreateUser setPage={goToPage} />
+        )}
 
         {page === "dashboard" && (
           <div style={{ display: "flex" }}>
@@ -202,8 +240,8 @@ function App() {
 
         {page === "riskAssessment" && (
           <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
-            <RiskAssessmentPage />,
+            <Sidebar setPage={goToPage} page={page} />
+            <RiskAssessmentPage />
           </div>
         )}
 

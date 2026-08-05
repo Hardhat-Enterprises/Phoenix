@@ -129,37 +129,64 @@ export const apiRequest = async (
 };
 
 export const loginUser = async ({ username, password }) => {
+  const identifier = username.trim();
   const data = await apiRequest("/api/users/auth/login", {
     method: "POST",
-    body: { username, password },
+    body: identifier.includes("@")
+      ? { email: identifier, password }
+      : { username: identifier, password },
   });
 
   const authPayload = unwrapAuthPayload(data);
+  const accessToken =
+    authPayload.access_token || authPayload.accessToken || authPayload.token;
 
-  if (!authPayload.access_token) {
+  if (!accessToken) {
     throw new Error(
       authPayload.message ||
         "Login succeeded but no access token was returned by the backend.",
     );
   }
 
-  return authPayload;
+  return { ...authPayload, access_token: accessToken };
 };
 
 export const saveAuthSession = (session) => {
+  const user = session.user || {};
   const authSession = {
     accessToken: session.access_token || session.accessToken,
     refreshToken: session.refresh_token || session.refreshToken,
     user: {
-      id: session.user_id || session.userId,
-      username: session.username,
-      role: session.role,
+      id: session.user_id || session.userId || user.user_id || user.id,
+      username: session.username || user.username || user.email,
+      email: session.email || user.email,
+      role: session.role || user.role || "user",
     },
     authenticatedAt: new Date().toISOString(),
   };
 
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authSession));
   return authSession;
+};
+
+export const registerUser = async ({ username, email, password, role }) => {
+  const response = await apiRequest("/api/users/auth/register", {
+    method: "POST",
+    body: { username, email, password, role },
+    requiresAuth: true,
+  });
+  const payload = unwrapAuthPayload(response);
+
+  return {
+    message: response.message || "User registered successfully",
+    user: {
+      id: payload.user_id || payload.userId,
+      username: payload.username || username,
+      email: payload.email || email,
+      role: payload.role || role,
+      createdAt: payload.created_at || payload.createdAt,
+    },
+  };
 };
 
 export const logoutUser = async () => {

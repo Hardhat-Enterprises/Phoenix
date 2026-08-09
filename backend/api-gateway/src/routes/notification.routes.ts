@@ -13,7 +13,7 @@ const router = Router();
  *     summary: Check the health of the notification service
  *     description: Returns the current operational status of the notification service.
  *     tags:
- *       - Notifications
+ *       - System
  *     responses:
  *       200:
  *         description: Notification service is running successfully

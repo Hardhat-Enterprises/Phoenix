@@ -40,7 +40,7 @@ const router = Router();
  *     summary: Check user service health
  *     description: Returns the health status of the user service.
  *     tags:
- *       - Health
+ *       - System
  *     responses:
  *       200:
  *         description: Service is healthy

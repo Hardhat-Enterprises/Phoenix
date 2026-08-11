@@ -8,51 +8,51 @@ const router = Router();
 const upload = multer({ dest: "uploads/" });
 
 /**
-* @swagger
-* tags:
-*   name: Storage
-*   description: Storage service endpoints 
-*/
+ * @swagger
+ * tags:
+ *   name: Storage
+ *   description: Storage service endpoints
+ */
 
 /**
-* @swagger
-* /api/storage/health:
-*   get:
-*     summary: Check Storage Service 
-*     description: Returns the current health status of the storage service.
-*     tags:
-*       - Storage 
-*     responses:
-*       200:
-*          description: Storage service is healthy
-*          content:
-*            application/json:
-*              schema:
-*                type: object
-*                properties:
-*                  status:
-*                    type: integer
-*                    example: 200
-*                  message:
-*                    type: string
-*                    example: "Storage service is healthy "
-*       500:
-*          description: Error fetching storage health 
-*          content:
-*            application/json:
-*              schema:
-*                type: object
-*                properties:
-*                  status:
-*                    type: integer
-*                    example: 500
-*                  message:
-*                    type: string
-*                    example: "Error fetching storage health"
-*                  error:
-*                    type: string
-*                    example: "Internal server error"
-*/ 
+ * @swagger
+ * /api/storage/health:
+ *   get:
+ *     summary: Check Storage Service
+ *     description: Returns the current health status of the storage service.
+ *     tags:
+ *       - System
+ *     responses:
+ *       200:
+ *          description: Storage service is healthy
+ *          content:
+ *            application/json:
+ *              schema:
+ *                type: object
+ *                properties:
+ *                  status:
+ *                    type: integer
+ *                    example: 200
+ *                  message:
+ *                    type: string
+ *                    example: "Storage service is healthy "
+ *       500:
+ *          description: Error fetching storage health
+ *          content:
+ *            application/json:
+ *              schema:
+ *                type: object
+ *                properties:
+ *                  status:
+ *                    type: integer
+ *                    example: 500
+ *                  message:
+ *                    type: string
+ *                    example: "Error fetching storage health"
+ *                  error:
+ *                    type: string
+ *                    example: "Internal server error"
+ */
 router.get("/health", getHealth);
 
 /**
@@ -106,7 +106,7 @@ router.get("/health", getHealth);
  *                   type: string
  *                   example: "No file uploaded"
  *       401:
- *         description: Unauthorized or no authentication token was provided 
+ *         description: Unauthorized or no authentication token was provided
  *         content:
  *           application/json:
  *             schema:

@@ -14,6 +14,7 @@
     "build:ingestion-service": "tsc -b data-ingestion-service/tsconfig.json && tsc-alias -p data-ingestion-service/tsconfig.json && cpy \"libs/proto/**/*.proto\" dist/libs/proto",
     "build:storage-service": "tsc -b storage-service/tsconfig.json && tsc-alias -p storage-service/tsconfig.json && cpy \"libs/proto/**/*.proto\" dist/libs/proto",
     "build:notification-service": "tsc -b notification-service/tsconfig.json && tsc-alias -p notification-service/tsconfig.json && cpy \"libs/proto/**/*.proto\" dist/libs/proto",
+    "test:notification-service": "npm run build:notification-service && node --test dist/notification-service/tests/notification-consumer.test.js",
     "build": "tsc -b",
     "start:gateway": "node -r tsconfig-paths/register dist/api-gateway/src/app.js",
     "start:user-service": "node -r tsconfig-paths/register dist/user-service/src/app.js",

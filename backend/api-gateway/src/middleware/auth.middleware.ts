@@ -2,6 +2,22 @@ import { HttpStatusCode, UserAccount } from "@phoenix/common";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
+const logging = (() => {
+  try {
+    return require("@phoenix/logging");
+  } catch {
+    return {
+      fromRequest: (_req: Request) => ({
+        requestId: _req.headers["x-request-id"] ?? null,
+      }),
+      logTokenInvalid: () => undefined,
+      logRbacDenied: () => undefined,
+    };
+  }
+})();
+
+const { fromRequest, logTokenInvalid, logRbacDenied } = logging;
+
 const JWT_SECRET = process.env.AUTH_JWT_SECRET || process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
@@ -26,17 +42,35 @@ export const authenticate = async (
 
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
+
     const user = await UserAccount.findByPk(decoded.user_id);
+
     if (!user || user.access_token !== token) {
+      logTokenInvalid({
+        ...fromRequest(req),
+        reason: "tampered_claims",
+      });
+
       return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
         status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
         message: "Logged out",
       });
     }
+
     (req as any).user = decoded;
 
     next();
   } catch (error) {
+    const reason =
+      error instanceof jwt.TokenExpiredError
+        ? "expired"
+        : "malformed";
+
+    logTokenInvalid({
+      ...fromRequest(req),
+      reason,
+    });
+
     return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
       status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
       message: "Invalid token",
@@ -49,6 +83,10 @@ export const authorize = (roles: string[]) => {
     const user = (req as any).user;
 
     if (!user || !roles.includes(user.role)) {
+      logRbacDenied({
+        ...fromRequest(req),
+      });
+
       return res.status(HttpStatusCode.HTTP_STATUS_FORBIDDEN).json({
         status: HttpStatusCode.HTTP_STATUS_FORBIDDEN,
         message: "Access denied",
@@ -59,7 +97,10 @@ export const authorize = (roles: string[]) => {
   };
 };
 
-export const authorizeSelfOrRoles = (roles: string[], paramName = "userId") => {
+export const authorizeSelfOrRoles = (
+  roles: string[],
+  paramName = "userId",
+) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
 
@@ -75,6 +116,10 @@ export const authorizeSelfOrRoles = (roles: string[], paramName = "userId") => {
     if (roles.includes(user.role) || user.user_id === requestedUserId) {
       return next();
     }
+
+    logRbacDenied({
+      ...fromRequest(req),
+    });
 
     return res.status(HttpStatusCode.HTTP_STATUS_FORBIDDEN).json({
       status: HttpStatusCode.HTTP_STATUS_FORBIDDEN,

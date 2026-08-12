@@ -1,4 +1,9 @@
 import { Channel } from "amqplib";
+import {
+  NOTIFICATION_EXCHANGE,
+  NOTIFICATION_QUEUE,
+  NOTIFICATION_QUEUE_BINDING,
+} from "@phoenix/common/rabbitmq/notification-event";
 
 export interface NotificationTopology {
   exchange: string;
@@ -16,9 +21,9 @@ export interface NotificationTopology {
 }
 
 export const notificationTopology: NotificationTopology = {
-  exchange: process.env.NOTIFICATION_EXCHANGE || "phoenix.notifications",
-  queue: process.env.NOTIFICATION_QUEUE || "notification-service.events",
-  routingKey: process.env.NOTIFICATION_ROUTING_KEY || "notification.#",
+  exchange: process.env.NOTIFICATION_EXCHANGE || NOTIFICATION_EXCHANGE,
+  queue: process.env.NOTIFICATION_QUEUE || NOTIFICATION_QUEUE,
+  routingKey: process.env.NOTIFICATION_ROUTING_KEY || NOTIFICATION_QUEUE_BINDING,
   retryExchange:
     process.env.NOTIFICATION_RETRY_EXCHANGE || "phoenix.notifications.retry",
   retryQueue:

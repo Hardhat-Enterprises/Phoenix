@@ -1,13 +1,11 @@
 import { ConfirmChannel, ConsumeMessage } from "amqplib";
-import {
-  NotificationEvent,
-  parseNotificationEvent,
-} from "./notification-event";
+import { parseNotificationEvent } from "./notification-event";
 import {
   assertNotificationTopology,
   NotificationTopology,
   notificationTopology,
 } from "./notification-topology";
+import { NotificationEvent } from "@phoenix/common/rabbitmq/notification-event";
 
 export type NotificationEventProcessor = (
   event: NotificationEvent,
@@ -79,7 +77,12 @@ export const startNotificationConsumer = async (
     topology.queue,
     async (message) => {
       if (message) {
-        await handleNotificationMessage(channel, message, processEvent, topology);
+        await handleNotificationMessage(
+          channel,
+          message,
+          processEvent,
+          topology,
+        );
       }
     },
     { noAck: false },

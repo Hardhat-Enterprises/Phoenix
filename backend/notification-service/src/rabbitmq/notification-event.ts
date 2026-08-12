@@ -1,12 +1,6 @@
-export interface NotificationEvent {
-  eventId: string;
-  eventType: string;
-  recipientUserId: string;
-  title: string;
-  message: string;
-  occurredAt: string;
-  metadata?: Record<string, unknown>;
-}
+import { NotificationEvent } from "@phoenix/common/rabbitmq/notification-event";
+
+export { NotificationEvent } from "@phoenix/common/rabbitmq/notification-event";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);

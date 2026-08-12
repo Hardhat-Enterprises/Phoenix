@@ -15,6 +15,6 @@
     "noEmit": false,
     "incremental": true
   },
-  "include": ["src"],
+  "include": ["src", "tests"],
   "references": [{ "path": "../libs/common" }]
 }

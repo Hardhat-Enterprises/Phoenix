@@ -1,15 +1,37 @@
 import "./Sidebar.css";
+import { PAGE_KEYS } from "../config/appConfig";
+import { NAVIGATION_LABELS } from "../config/navigation";
 
 function Sidebar({ setPage, page }) {
   const menuItems = [
-    { label: "Dashboard", target: "dashboard" },
-    { label: "Alerts", target: "alerts" },
-    { label: "Reports", target: "reports" },
-    { label: "About Us", target: "about" },
-    { label: "Settings", target: "settings" },
-    { label: "Threat Details", target: "threats" },
-    { label: "Risk Assessment", target: "riskAssessment" },
-    
+    {
+      label: NAVIGATION_LABELS.DASHBOARD,
+      target: PAGE_KEYS.DASHBOARD,
+    },
+    {
+      label: NAVIGATION_LABELS.ALERTS,
+      target: PAGE_KEYS.ALERTS,
+    },
+    {
+      label: NAVIGATION_LABELS.REPORTS,
+      target: PAGE_KEYS.REPORTS,
+    },
+    {
+      label: NAVIGATION_LABELS.ABOUT,
+      target: PAGE_KEYS.ABOUT,
+    },
+    {
+      label: NAVIGATION_LABELS.SETTINGS,
+      target: PAGE_KEYS.SETTINGS,
+    },
+    {
+      label: NAVIGATION_LABELS.THREAT_DETAILS,
+      target: PAGE_KEYS.THREATS,
+    },
+    {
+      label: NAVIGATION_LABELS.RISK_ASSESSMENT,
+      target: PAGE_KEYS.RISK_ASSESSMENT,
+    },
   ];
 
   return (

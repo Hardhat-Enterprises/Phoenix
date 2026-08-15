@@ -20,6 +20,8 @@ import {
   EmptyState,
 } from "./components/States";
 import CreateUser from "./CreateUser";
+import HelpSupport from "./HelpSupport";
+import GlobalSearch from "./GlobalSearch";
 
 
 // Pages the Back action should never return the user to.
@@ -42,6 +44,7 @@ function App() {
     "threats",
     "settings",
     "riskAssessment",
+    "help"
   ];
 
   const isLoggedIn = Boolean(authSession?.accessToken);
@@ -119,11 +122,7 @@ function App() {
         <div className="temp-header-right">
           {mainPages.includes(page) && (
             <>
-              <input
-                type="text"
-                placeholder="Search in site"
-                className="temp-search"
-              />
+              <GlobalSearch goToPage={goToPage} isAdmin={isAdmin} />
 
               <button
                 className="temp-bell"
@@ -254,6 +253,12 @@ function App() {
               onLogout={handleLogout}
             />
           </div>
+        )}
+        {page === "help" && (
+          <div style={{ display: "flex" }}>
+           <Sidebar setPage={goToPage} page={page} />
+            <HelpSupport />
+             </div>
         )}
       </div>
 

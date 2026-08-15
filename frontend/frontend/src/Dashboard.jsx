@@ -1313,7 +1313,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
           </section>
 
           {/* Regional Anomaly Detection Section (Jack)*/}
-          <section className="ai-detection-card">
+          <section className="ai-detection-card" id="anomaly-detection-section">
             {/* Left Side Input */}
             <div className="ai-detection-input">
               <h2>Regional Anomaly Detection</h2>
@@ -1448,7 +1448,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
           </section>
 
           {/* Risk Map Section (Jack) */}
-          <section className="map-card">
+          <section className="map-card" id="risk-map-section">
             <div className="map-header">
               <h2>Risk Map</h2>
               <p>
@@ -1557,7 +1557,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
           </section>
 
           {/* Threat Chart Section (Sathvik) */}
-          <section className="threat-chart-section">
+          <section className="threat-chart-section" id="threat-chart-section">
             <div className="threat-chart-header">
               <div>
                 <h2>Threat Chart</h2>
@@ -1664,7 +1664,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
             </div>
           </section>
           {/*Item List Section (Manaal)*/}
-          <section className="item-list-card">
+          <section className="item-list-card" id="recent-signals-section">
             <div className="item-list-header">
               <div className="item-list-title-block">
                 <span className="item-list-kicker">Backend activity</span>

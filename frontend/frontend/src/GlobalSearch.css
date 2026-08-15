@@ -1,0 +1,150 @@
+.global-search {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+}
+
+.global-search-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f4f5f7;
+  border: 1px solid #e2e4e9;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.global-search-input-wrap:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.global-search-icon {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.global-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: #1f2430;
+}
+
+.global-search-input::placeholder {
+  color: #8a8f9c;
+}
+
+.global-search-clear {
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1;
+  color: #8a8f9c;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.global-search-clear:hover,
+.global-search-clear:focus-visible {
+  color: #1f2430;
+  background: #e5e7eb;
+}
+
+.global-search-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e2e4e9;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  max-height: 360px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.global-search-group {
+  padding: 6px 0;
+}
+
+.global-search-group + .global-search-group {
+  border-top: 1px solid #eef0f3;
+}
+
+.global-search-group-label {
+  padding: 6px 14px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9aa0ac;
+}
+
+.global-search-result {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: #1f2430;
+}
+
+.global-search-result mark {
+  background: #fde68a;
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.global-search-result:hover,
+.global-search-result.active {
+  background: #eef2ff;
+}
+
+.global-search-result:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+.global-search-result-type {
+  font-size: 11px;
+  color: #9aa0ac;
+  flex-shrink: 0;
+}
+
+.global-search-empty {
+  padding: 20px 14px;
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.global-search-footer {
+  padding: 8px 14px;
+  font-size: 11px;
+  color: #9aa0ac;
+  border-top: 1px solid #eef0f3;
+}
+
+@media (max-width: 640px) {
+  .global-search {
+    max-width: none;
+  }
+
+  .global-search-panel {
+    left: 0;
+    right: 0;
+    max-height: 60vh;
+  }
+}

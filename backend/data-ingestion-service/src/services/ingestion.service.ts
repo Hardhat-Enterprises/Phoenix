@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import { validateThreatPayload } from "./threat-validation.service";
 import {
   HazardDataStreamRequest,
   CyberDataStreamRequest,
@@ -105,6 +106,24 @@ export const createCyberData = async (content: any) => {
       });
       return;
     }
+    const validation = validateThreatPayload(parsedContent);
+    if(!validation.valid) {
+      logger.error(
+        'Cyber threat Payload validation failed: $(validation.errors.join(", ")}',
+        );
+      await ingestionLog.update({
+        processing_status: ProcessingStatus.FAILED,
+        fail_reason: validation.errors.join(", "),
+      });
+
+      return;
+    }
+    if (validation.warnings.length > 0) {
+      logger.warn(
+        'Cyber Threat payload validation warnings: ${validation.warnings.join(", ")}',
+        );
+    }
+    
 
     const [source] = await DataSource.findOrCreate({
       where: {

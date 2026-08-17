@@ -13,6 +13,7 @@ import ThreatDetails from "./ThreatDetails";
 import RiskAssessmentPage from "./RiskAssessmentPage";
 import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
+import HelpSupportPage from "./HelpSupportPage";
 import {
   AuthenticationState,
   LoadingState,
@@ -42,6 +43,7 @@ function App() {
     "threats",
     "settings",
     "riskAssessment",
+    "help",
   ];
 
   const isLoggedIn = Boolean(authSession?.accessToken);
@@ -253,6 +255,12 @@ function App() {
               authSession={authSession}
               onLogout={handleLogout}
             />
+          </div>
+        )}
+        {page === "help" && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={goToPage} page={page} />
+            <HelpSupportPage setPage={goToPage} />
           </div>
         )}
       </div>

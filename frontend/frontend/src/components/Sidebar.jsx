@@ -1,3 +1,5 @@
+import { NavLink } from "react-router-dom";
+import { sidebarRoutes } from "../config/routes";
 import "./Sidebar.css";
 import { PAGE_KEYS } from "../config/appConfig";
 import { NAVIGATION_LABELS } from "../config/navigation";
@@ -38,22 +40,21 @@ function Sidebar({ setPage, page }) {
     <aside className="sidebar">
       <div className="sidebar-panel">
         <h3 className="sidebar-heading">MAIN MENU</h3>
-
-        <div className="sidebar-menu">
+        <nav className="sidebar-menu" aria-label="Main menu">
           {menuItems.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              className={`sidebar-item ${
-                page === item.target ? "active" : ""
-              }`}
-              onClick={() => setPage(item.target)}
+            <NavLink
+              key={item.key}
+              to={item.path}
+              className={({ isActive }) =>
+                `sidebar-item ${isActive ? "active" : ""}`
+              }
+              onClick={onNavigate}
             >
-              <span className="sidebar-icon"></span>
+              <span className="sidebar-icon" aria-hidden="true"></span>
               <span className="sidebar-text">{item.label}</span>
-            </button>
+            </NavLink>
           ))}
-        </div>
+        </nav>
       </div>
     </aside>
   );

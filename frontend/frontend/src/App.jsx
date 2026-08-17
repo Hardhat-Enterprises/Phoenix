@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Routes, Route, Navigate, Link, useNavigate, useLocation } from "react-router-dom";
 import "./App.css";
 import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
@@ -11,6 +12,7 @@ import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
 import ThreatDetails from "./ThreatDetails";
 import RiskAssessmentPage from "./RiskAssessmentPage";
+import HelpSupportPage from "./HelpSupportPage";
 import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
 import CreateUser from "./CreateUser";
@@ -49,6 +51,7 @@ function App() {
   const [selectedThreat, setSelectedThreat] = useState(null);
   const [previousPage, setPreviousPage] = useState(APP_CONFIG.defaultPage);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const adminMenuRef = useRef(null);
 
   const mainPages = MAIN_PAGE_KEYS;
@@ -82,17 +85,8 @@ function App() {
     };
   }, [showAdminMenu]);
 
-  // Single navigation entry point. Records the page being left so that the
-  // Threat Details page can offer a Back action that returns there.
-  const goToPage = (nextPage) => {
-    if (!nextPage || nextPage === page) {
-      return;
-    }
-
-    setPreviousPage(page);
-    setPage(nextPage);
-  };
-
+  // Back from Threat Details uses real browser history, so it returns the
+  // user to wherever they actually came from.
   const handleBackFromThreatDetails = () => {
     setSelectedThreat(null);
 
@@ -115,19 +109,61 @@ function App() {
     goToPage(nextPage);
   };
 
+  // Closes the mobile drawer and returns focus to the button that opened it.
+  // Sidebar calls this after every link click, so the drawer closes on
+  // navigation without needing an effect that watches the route.
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+    menuButtonRef.current?.focus();
+  };
+
+  // The shared shell: header, Sidebar, page content, Footer.
+  // Replaces the seven repeated display:flex wrappers.
+  const withShell = (content) => (
+    <div className={`app-body${sidebarOpen ? " sidebar-open" : ""}`}>
+      <Sidebar isAdmin={isAdmin} onNavigate={closeSidebar} />
+      {sidebarOpen && (
+        <button
+          type="button"
+          className="sidebar-overlay"
+          aria-label="Close navigation menu"
+          onClick={closeSidebar}
+        />
+      )}
+      <main id="main-content" className="app-content" tabIndex={-1}>
+        {content}
+      </main>
+    </div>
+  );
+
   return (
     <div className="login-page">
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
+
       <div className="temp-header">
         <div className="temp-header-left">
           <button
             type="button"
+            ref={menuButtonRef}
+            className="menu-button"
+            aria-expanded={sidebarOpen}
+            aria-label={sidebarOpen ? "Close navigation menu" : "Open navigation menu"}
+            onClick={() => setSidebarOpen((open) => !open)}
+          >
+            <span aria-hidden="true">{sidebarOpen ? "\u2715" : "\u2630"}</span>
+          </button>
+
+          <Link
+            to={HOME_PATH}
             className="temp-logo logo-home-button"
             onClick={() => goToPage(PAGE_KEYS.DASHBOARD)}
             aria-label="Phoenix home, go to Dashboard"
             title="Go to Dashboard"
           >
             <img src="/logo.png" alt="Phoenix logo" />
-          </button>
+          </Link>
 
           <div>
             <h2>Phoenix</h2>
@@ -136,7 +172,7 @@ function App() {
         </div>
 
         <div className="temp-header-right">
-          {mainPages.includes(page) && (
+          {showChrome && (
             <>
               <input
                 type="text"
@@ -165,7 +201,7 @@ function App() {
                     aria-expanded={showAdminMenu}
                     onClick={() => setShowAdminMenu((visible) => !visible)}
                   >
-                    Admin <span aria-hidden="true">⌄</span>
+                    Admin <span aria-hidden="true">{"\u2304"}</span>
                   </button>
 
                   {showAdminMenu && (
@@ -229,7 +265,7 @@ function App() {
               onClick={() => goToPage(PAGE_KEYS.LOGIN)}
             >
               Login
-            </button>
+            </Link>
           )}
         </div>
       </div>

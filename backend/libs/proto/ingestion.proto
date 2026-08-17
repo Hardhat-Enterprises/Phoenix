@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package ingestion;
+
+service IngestionService {
+  rpc GetIngestionHealth (GetIngestionHealthRequest) returns (GetIngestionHealthResponse);
+  rpc IngestData (IngestDataRequest) returns (IngestDataResponse);
+}
+
+message GetIngestionHealthRequest {}
+
+message GetIngestionHealthResponse {
+  int32 status = 1;
+  string message = 2;
+}
+
+message IngestDataRequest {
+  string source = 1;
+  string payload = 2;
+  string contentType = 3;
+}
+
+message IngestDataResponse {
+  int32 status = 1;
+  string message = 2;
+  string ingestionId = 3;
+}

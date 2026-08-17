@@ -16,69 +16,71 @@ import HelpSupportPage from "./HelpSupportPage";
 import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
 import CreateUser from "./CreateUser";
-import NotFound from "./NotFound";
+import { HOME_PATH, pathForKey, routeForPath, APP_NAME } from "./config/routes";
 
-import { APP_CONFIG, PAGE_KEYS } from "./config/appConfig";
-import { MAIN_PAGE_KEYS } from "./config/navigation";
-import { DEFAULT_USER_ROLE, USER_ROLES } from "./config/roles";
-
-// Pages the Back action should never return the user to.
-const NON_RETURNABLE_PAGES = [
-  PAGE_KEYS.LOGIN,
-  PAGE_KEYS.FORGOT_PASSWORD,
-  PAGE_KEYS.THREATS,
-];
-
-// Pages currently recognised by the state-based frontend navigation.
-// The routing team can later connect NotFound to URL-based routing.
-const KNOWN_PAGES = [
-  PAGE_KEYS.LOGIN,
-  PAGE_KEYS.FORGOT_PASSWORD,
-  PAGE_KEYS.CREATE_USER,
-  PAGE_KEYS.DASHBOARD,
-  PAGE_KEYS.ALERTS,
-  PAGE_KEYS.ABOUT,
-  PAGE_KEYS.REPORTS,
-  PAGE_KEYS.THREATS,
-  PAGE_KEYS.RISK_ASSESSMENT,
-  PAGE_KEYS.SETTINGS,
+// Pages that show the header search and notification bell.
+const MAIN_PATHS = [
+  "/dashboard",
+  "/alerts",
+  "/reports",
+  "/about",
+  "/settings",
+  "/threats",
+  "/risk-assessment",
+  "/help",
 ];
 
 function App() {
-  const [page, setPage] = useState(APP_CONFIG.defaultPage);
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [authSession, setAuthSession] = useState(() => getAuthSession());
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [selectedThreat, setSelectedThreat] = useState(null);
-  const [previousPage, setPreviousPage] = useState(APP_CONFIG.defaultPage);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const adminMenuRef = useRef(null);
-
-  const mainPages = MAIN_PAGE_KEYS;
+  const menuButtonRef = useRef(null);
 
   const isLoggedIn = Boolean(authSession?.accessToken);
+  const isAdmin = authSession?.user?.role?.toLowerCase() === "admin";
+  const showChrome = MAIN_PATHS.includes(location.pathname);
 
-  const isAdmin =
-    authSession?.user?.role?.toLowerCase() === USER_ROLES.ADMIN;
+  // Compatibility shim: teammates' pages still call setPage("dashboard").
+  // Translate those keys into real navigation so their code keeps working.
+  const goToPage = (key) => navigate(pathForKey(key));
+
+  // Browser tab title follows the current route.
+  useEffect(() => {
+    const route = routeForPath(location.pathname);
+    document.title = `${route ? route.title : "Page not found"} | ${APP_NAME}`;
+  }, [location.pathname]);
+
+  // Escape closes the mobile menu and returns focus to the menu button.
+  useEffect(() => {
+    if (!sidebarOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setSidebarOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [sidebarOpen]);
 
   useEffect(() => {
     if (!showAdminMenu) return undefined;
 
     const closeMenu = (event) => {
-      if (!adminMenuRef.current?.contains(event.target)) {
-        setShowAdminMenu(false);
-      }
+      if (!adminMenuRef.current?.contains(event.target)) setShowAdminMenu(false);
     };
-
     const closeOnEscape = (event) => {
-      if (event.key === "Escape") {
-        setShowAdminMenu(false);
-      }
+      if (event.key === "Escape") setShowAdminMenu(false);
     };
 
     document.addEventListener("mousedown", closeMenu);
     document.addEventListener("keydown", closeOnEscape);
-
     return () => {
       document.removeEventListener("mousedown", closeMenu);
       document.removeEventListener("keydown", closeOnEscape);
@@ -89,20 +91,19 @@ function App() {
   // user to wherever they actually came from.
   const handleBackFromThreatDetails = () => {
     setSelectedThreat(null);
-
-    goToPage(
-      NON_RETURNABLE_PAGES.includes(previousPage)
-        ? APP_CONFIG.defaultPage
-        : previousPage,
-    );
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(HOME_PATH);
+    }
   };
 
   const handleLogin = (session) => {
     setAuthSession(session);
-    goToPage(PAGE_KEYS.DASHBOARD);
+    navigate(HOME_PATH);
   };
 
-  const handleLogout = async (nextPage = PAGE_KEYS.DASHBOARD) => {
+  const handleLogout = async (nextPage = "dashboard") => {
     setShowAdminMenu(false);
     await logoutUser();
     setAuthSession(null);
@@ -158,7 +159,6 @@ function App() {
           <Link
             to={HOME_PATH}
             className="temp-logo logo-home-button"
-            onClick={() => goToPage(PAGE_KEYS.DASHBOARD)}
             aria-label="Phoenix home, go to Dashboard"
             title="Go to Dashboard"
           >
@@ -203,7 +203,6 @@ function App() {
                   >
                     Admin <span aria-hidden="true">{"\u2304"}</span>
                   </button>
-
                   {showAdminMenu && (
                     <div className="admin-menu" role="menu">
                       <button
@@ -211,59 +210,33 @@ function App() {
                         role="menuitem"
                         onClick={() => {
                           setShowAdminMenu(false);
-                          goToPage(PAGE_KEYS.CREATE_USER);
+                          navigate(pathForKey("createUser"));
                         }}
                       >
-                        <span className="admin-menu-icon" aria-hidden="true">
-                          ＋
-                        </span>
-
-                        <span>
-                          <strong>Create user</strong>
-                          <small>Add a dashboard or app account</small>
-                        </span>
+                        <span className="admin-menu-icon" aria-hidden="true">{"\uFF0B"}</span>
+                        <span><strong>Create user</strong><small>Add a dashboard or app account</small></span>
                       </button>
-
                       <button
                         type="button"
                         role="menuitem"
                         className="admin-menu-logout"
                         onClick={() => handleLogout()}
                       >
-                        <span className="admin-menu-icon" aria-hidden="true">
-                          ↪
-                        </span>
-
-                        <span>
-                          <strong>Logout</strong>
-                          <small>End your current session</small>
-                        </span>
+                        <span className="admin-menu-icon" aria-hidden="true">{"\u21AA"}</span>
+                        <span><strong>Logout</strong><small>End your current session</small></span>
                       </button>
                     </div>
                   )}
                 </div>
               ) : (
                 <>
-                  <span className="header-role">
-                    {authSession?.user?.role || DEFAULT_USER_ROLE}
-                  </span>
-
-                  <button
-                    type="button"
-                    className="header-auth-button"
-                    onClick={() => handleLogout()}
-                  >
-                    Logout
-                  </button>
+                  <span className="header-role">{authSession?.user?.role || "user"}</span>
+                  <button type="button" className="header-auth-button" onClick={() => handleLogout()}>Logout</button>
                 </>
               )}
             </div>
           ) : (
-            <button
-              type="button"
-              className="header-auth-button"
-              onClick={() => goToPage(PAGE_KEYS.LOGIN)}
-            >
+            <Link to={pathForKey("login")} className="header-auth-button">
               Login
             </Link>
           )}
@@ -275,86 +248,78 @@ function App() {
       )}
 
       <div className="page-content">
-        {page === PAGE_KEYS.LOGIN && (
-          <LoginForm setPage={goToPage} onLogin={handleLogin} />
-        )}
+        <Routes>
+          <Route path="/" element={<Navigate to={HOME_PATH} replace />} />
 
-        {page === PAGE_KEYS.FORGOT_PASSWORD && (
-          <ForgotPassword setPage={goToPage} />
-        )}
+          <Route path="/login" element={<LoginForm setPage={goToPage} onLogin={handleLogin} />} />
+          <Route path="/forgot-password" element={<ForgotPassword setPage={goToPage} />} />
 
-        {page === PAGE_KEYS.CREATE_USER && isAdmin && (
-          <CreateUser setPage={goToPage} />
-        )}
+          <Route
+            path="/admin/create-user"
+            element={isAdmin ? <CreateUser setPage={goToPage} /> : <Navigate to={HOME_PATH} replace />}
+          />
 
-        {page === PAGE_KEYS.DASHBOARD && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
+          <Route
+            path="/dashboard"
+            element={withShell(
+              <Dashboard
+                setPage={goToPage}
+                setSelectedThreat={setSelectedThreat}
+                isLoggedIn={isLoggedIn}
+              />
+            )}
+          />
 
-            <Dashboard
-              setPage={goToPage}
-              setSelectedThreat={setSelectedThreat}
-              isLoggedIn={isLoggedIn}
-            />
-          </div>
-        )}
+          <Route
+            path="/alerts"
+            element={withShell(
+              <Alerts setPage={goToPage} setSelectedThreat={setSelectedThreat} />
+            )}
+          />
 
-        {page === PAGE_KEYS.ALERTS && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
+          <Route path="/about" element={withShell(<AboutUs />)} />
+          <Route path="/reports" element={withShell(<ReportsPage />)} />
+          <Route path="/risk-assessment" element={withShell(<RiskAssessmentPage />)} />
 
-            <Alerts
-              setPage={goToPage}
-              setSelectedThreat={setSelectedThreat}
-            />
-          </div>
-        )}
+          <Route
+            path="/threats"
+            element={withShell(
+              <ThreatDetails
+                selectedThreat={selectedThreat}
+                onBack={handleBackFromThreatDetails}
+              />
+            )}
+          />
 
-        {page === PAGE_KEYS.ABOUT && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <AboutUs />
-          </div>
-        )}
+          <Route
+            path="/settings"
+            element={withShell(
+              <SettingsPage
+                setPage={goToPage}
+                authSession={authSession}
+                onLogout={handleLogout}
+              />
+            )}
+          />
 
-        {page === PAGE_KEYS.REPORTS && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <ReportsPage />
-          </div>
-        )}
+          <Route
+            path="/help"
+            element={withShell(<HelpSupportPage setPage={goToPage} />)}
+          />
 
-        {page === PAGE_KEYS.THREATS && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-
-            <ThreatDetails
-              selectedThreat={selectedThreat}
-              onBack={handleBackFromThreatDetails}
-            />
-          </div>
-        )}
-
-        {page === PAGE_KEYS.RISK_ASSESSMENT && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <RiskAssessmentPage />
-          </div>
-        )}
-
-        {page === PAGE_KEYS.SETTINGS && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-
-            <SettingsPage
-              setPage={goToPage}
-              authSession={authSession}
-              onLogout={handleLogout}
-            />
-          </div>
-        )}
-
-        {!KNOWN_PAGES.includes(page) && <NotFound />}
+          <Route
+            path="*"
+            element={
+              <div className="not-found">
+                <h1>Page not found</h1>
+                <p>The address you entered does not match any Phoenix page.</p>
+                <Link to={HOME_PATH} className="header-auth-button">
+                  Return to Dashboard
+                </Link>
+              </div>
+            }
+          />
+        </Routes>
       </div>
 
       <Footer />

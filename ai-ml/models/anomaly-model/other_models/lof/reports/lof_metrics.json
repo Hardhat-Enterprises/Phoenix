@@ -1,0 +1,20 @@
+{
+  "model": "lof",
+  "evaluation_mode": "unsupervised",
+  "n_rows": 169539,
+  "n_features": 50,
+  "threshold": 0.006245648362731328,
+  "threshold_quantile": 0.9299999999999999,
+  "anomaly_rate": 0.07156619873382879,
+  "score_mean": -0.158393917299703,
+  "score_std": 0.12047393987729417,
+  "score_iqr": 0.09728117508723577,
+  "stability_score": 1.0,
+  "precision": null,
+  "recall": null,
+  "f1": null,
+  "roc_auc": null,
+  "pr_auc": null,
+  "false_positive_rate": null,
+  "false_negative_rate": null
+}

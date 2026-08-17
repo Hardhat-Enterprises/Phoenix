@@ -2,6 +2,8 @@ import * as path from "path";
 import * as dotenv from "dotenv";
 import fs from "fs";
 
+dotenv.config();
+
 interface Config {
   SERVICE_NAME: string;
   PORT: number;

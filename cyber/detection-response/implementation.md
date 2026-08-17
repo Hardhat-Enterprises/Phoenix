@@ -466,6 +466,73 @@ This document defines reusable implementation-level detection and response rules
 
 ---
 
+## Rule 11: Security Monitoring and Audit Logging
+
+### Covers
+
+- Authentication monitoring
+- Authorization failures
+- Privileged administrative actions
+- Sensitive resource access
+- Security configuration changes
+- Audit trail generation
+- Incident investigation support
+
+### Required Inputs
+
+- event_id
+- user_id
+- username
+- role
+- event_type
+- endpoint
+- http_method
+- source_ip
+- device_id
+- session_id
+- timestamp
+- status
+- event_details
+
+### Detection Logic
+
+- Detect repeated failed authentication attempts
+- Detect repeated authorization failures
+- Detect privileged administrative actions
+- Detect access to sensitive resources
+- Detect abnormal user behaviour patterns
+- Record all security-related events for future investigation
+
+### Rule Logic
+
+- If failed authentication attempts exceed 5 within 1 minute, trigger a High alert
+- If repeated authorization failures occur for the same user or IP address, trigger a High alert
+- If privileged users modify roles, permissions, or security settings, generate an audit log entry
+- If sensitive resources are accessed outside normal operating behaviour, trigger a Medium or High alert depending on severity
+- If suspicious security events continue after multiple alerts, escalate to Critical severity and notify administrators immediately
+
+### Alert Level
+
+- Low to Critical
+
+### Mitigation
+
+- Generate secure audit logs
+- Preserve audit records for forensic investigation
+- Notify security administrators
+- Trigger incident response procedures
+- Restrict user access when malicious activity is confirmed
+
+### Communication
+
+- Notify Security Team
+- Notify System Administrator
+- Notify Incident Response Team
+- Notify Compliance Team when required
+
+---
+
 ## Summary
 
-These implementation rules provide reusable detection and response patterns that can be integrated into backend services. Instead of duplicating logic for every threat in the dataset, the rules group similar threats into core categories that can be monitored, alerted, and mitigated systematically within Project PHOENIX.
+The Security Monitoring and Audit Logging implementation provides continuous monitoring of authentication, authorization, privileged operations, and sensitive system activities. These audit records support security monitoring, incident response, forensic investigations, and compliance by ensuring that all security-related events are securely recorded and available for future analysis.
+

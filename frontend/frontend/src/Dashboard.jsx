@@ -795,6 +795,69 @@ const normalizeHazardRow = (hazard, index) => ({
   ),
 });
 
+// --- Location and Risk Map Controls helpers --------------------------------
+
+const ALL_SUBURBS_VALUE = "__ALL__";
+
+const locationKeyFor = (location) =>
+  location.geo_location_id ||
+  `${location.state_region}|${location.local_government_area}|${location.suburb}`.toLowerCase();
+
+const buildLocationOptions = (locations) => {
+  const seen = new Map();
+  let duplicateCount = 0;
+  let missingCoordCount = 0;
+
+  locations.forEach((location) => {
+    const key = locationKeyFor(location);
+    if (seen.has(key)) {
+      duplicateCount += 1;
+      return;
+    }
+    seen.set(key, location);
+    if (readNumber(location.latitude) === null || readNumber(location.longitude) === null) {
+      missingCoordCount += 1;
+    }
+  });
+
+  const uniqueLocations = [...seen.values()];
+  const tree = {};
+
+  uniqueLocations.forEach((location) => {
+    const state = location.state_region || "Unknown State";
+    const lga = location.local_government_area || "Unknown LGA";
+    if (!tree[state]) tree[state] = {};
+    if (!tree[state][lga]) tree[state][lga] = [];
+    tree[state][lga].push(location);
+  });
+
+  return {
+    tree,
+    uniqueLocations,
+    stats: { total: uniqueLocations.length, duplicateCount, missingCoordCount },
+  };
+};
+
+const hazardMatchesSelection = (hazard, locations, selection) => {
+  if (!selection.state) return true;
+
+  const hazardLocationText =
+    hazard.hazard_location || hazard.location || hazard.region || hazard.state_region || hazard.suburb || "";
+  const matchedLocation = locations.find((location) =>
+    locationMatchesHazard(location, hazardLocationText, hazard),
+  );
+
+  const state = matchedLocation?.state_region || hazard.state_region;
+  const lga = matchedLocation?.local_government_area || hazard.local_government_area;
+  const suburb = matchedLocation?.suburb || hazard.suburb;
+
+  if (selection.state && normalizeLookupText(state) !== normalizeLookupText(selection.state)) return false;
+  if (selection.lga && normalizeLookupText(lga) !== normalizeLookupText(selection.lga)) return false;
+  if (selection.suburb && normalizeLookupText(suburb) !== normalizeLookupText(selection.suburb)) return false;
+
+  return true;
+};
+
 function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
 
   const [apiStatus, setApiStatus] = useState("Checking");
@@ -808,6 +871,11 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
   const [hazardTotal, setHazardTotal] = useState("Checking");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+
+  // Location and Risk Map Controls state
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedLga, setSelectedLga] = useState("");
+  const [selectedSuburb, setSelectedSuburb] = useState(ALL_SUBURBS_VALUE);
 
   //Anomaly detection state
   const [selectedRegionId, setSelectedRegionId] =
@@ -1055,14 +1123,64 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
     [threats]
   );
 
+  // Location and Risk Map Controls derived values
+  const locationOptions = useMemo(() => buildLocationOptions(locations), [locations]);
+
+  const stateOptions = useMemo(() => Object.keys(locationOptions.tree).sort(), [locationOptions]);
+
+  const lgaOptions = useMemo(
+    () => (selectedState ? Object.keys(locationOptions.tree[selectedState] || {}).sort() : []),
+    [locationOptions, selectedState],
+  );
+
+  const suburbOptions = useMemo(() => {
+    if (!selectedState || !selectedLga) return [];
+    return (locationOptions.tree[selectedState]?.[selectedLga] || [])
+      .slice()
+      .sort((a, b) => (a.suburb || "").localeCompare(b.suburb || ""));
+  }, [locationOptions, selectedState, selectedLga]);
+
+  const filteredHazards = useMemo(() => {
+    if (!selectedState) return hazards;
+    return hazards.filter((hazard) =>
+      hazardMatchesSelection(hazard, locations, {
+        state: selectedState,
+        lga: selectedLga,
+        suburb: selectedSuburb === ALL_SUBURBS_VALUE ? "" : selectedSuburb,
+      }),
+    );
+  }, [hazards, locations, selectedState, selectedLga, selectedSuburb]);
+
+  const unresolvedHazardCount = useMemo(
+    () => filteredHazards.filter((hazard) => !findHazardCoordinates(hazard, locations)).length,
+    [filteredHazards, locations],
+  );
+
+  const handleStateChange = (event) => {
+    setSelectedState(event.target.value);
+    setSelectedLga("");
+    setSelectedSuburb(ALL_SUBURBS_VALUE);
+  };
+
+  const handleLgaChange = (event) => {
+    setSelectedLga(event.target.value);
+    setSelectedSuburb(ALL_SUBURBS_VALUE);
+  };
+
+  const handleResetMapControls = () => {
+    setSelectedState("");
+    setSelectedLga("");
+    setSelectedSuburb(ALL_SUBURBS_VALUE);
+  };
+
   const hazardRows = useMemo(
-    () => hazards.map(normalizeHazardRow),
-    [hazards]
+    () => filteredHazards.map(normalizeHazardRow),
+    [filteredHazards]
   );
 
   const riskMapPoints = useMemo(
-    () => buildRiskMapPoints(hazards, locations),
-    [hazards, locations]
+    () => buildRiskMapPoints(filteredHazards, locations),
+    [filteredHazards, locations]
   );
 
   const riskMapGroups = useMemo(
@@ -1455,6 +1573,87 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                 Hazard data is now loaded from the Phoenix backend. The map
                 component can use these hazard records when it is ready.
               </p>
+            </div>
+
+            {/* Location and Risk Map Controls */}
+            <div
+              className="map-controls"
+              style={{
+                display: "flex",
+                gap: "0.75rem",
+                flexWrap: "wrap",
+                alignItems: "flex-end",
+                margin: "1rem 0",
+              }}
+            >
+              <label>
+                <div>State / Region</div>
+                <select value={selectedState} onChange={handleStateChange}>
+                  <option value="">All states</option>
+                  {stateOptions.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <div>Local Government Area</div>
+                <select
+                  value={selectedLga}
+                  onChange={handleLgaChange}
+                  disabled={!selectedState}
+                >
+                  <option value="">All LGAs</option>
+                  {lgaOptions.map((lga) => (
+                    <option key={lga} value={lga}>
+                      {lga}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <div>Suburb</div>
+                <select
+                  value={selectedSuburb}
+                  onChange={(event) => setSelectedSuburb(event.target.value)}
+                  disabled={!selectedLga}
+                >
+                  <option value={ALL_SUBURBS_VALUE}>All locations</option>
+                  {suburbOptions.map((location) => (
+                    <option key={locationKeyFor(location)} value={location.suburb}>
+                      {location.suburb}
+                      {readNumber(location.latitude) === null ? " (no coordinates)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <button type="button" onClick={handleResetMapControls}>
+                Reset map
+              </button>
+            </div>
+
+            <div className="map-selection-summary" style={{ marginBottom: "1rem" }}>
+              <strong>Selected location:</strong>{" "}
+              {selectedState || "All states"} → {selectedLga || "All LGAs"} →{" "}
+              {selectedSuburb === ALL_SUBURBS_VALUE ? "All locations" : selectedSuburb}
+              {" · "}
+              <strong>{filteredHazards.length}</strong> matching hazard
+              {filteredHazards.length === 1 ? "" : "s"}
+              {locationOptions.stats.duplicateCount > 0 &&
+                ` · ${locationOptions.stats.duplicateCount} duplicate locations removed`}
+              {locationOptions.stats.missingCoordCount > 0 &&
+                ` · ${locationOptions.stats.missingCoordCount} locations missing coordinates`}
+              {unresolvedHazardCount > 0 && (
+                <span style={{ color: "#c00" }}>
+                  {" · "}
+                  {unresolvedHazardCount} hazard{unresolvedHazardCount === 1 ? "" : "s"} shown as
+                  demonstration data (location not reliably linked)
+                </span>
+              )}
             </div>
 
             <div className="risk-map-layout">

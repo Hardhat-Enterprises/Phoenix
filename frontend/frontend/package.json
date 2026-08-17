@@ -13,6 +13,7 @@
     "@react-pdf/renderer": "^4.5.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-router-dom": "^7.18.2",
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {

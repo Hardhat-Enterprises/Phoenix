@@ -736,3 +736,110 @@ body {
 .create-user-submit { background: #071633; border: 0; border-radius: 9px; color: #fff; cursor: pointer; font-size: 15px; font-weight: 800; margin-top: 12px; min-height: 46px; }
 .create-user-submit:disabled { cursor: not-allowed; opacity: .65; }
 @media (max-width: 600px) { .create-user-heading { flex-direction: column; } .create-user-back { width: 100%; } }
+/* ===== Goutham — responsive application shell and routing ===== */
+
+.app-body {
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+}
+
+.app-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Skip link: off-screen until it receives keyboard focus. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
+  padding: 8px 14px;
+  background: #ffffff;
+  color: #071633;
+  border: 2px solid #071633;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  left: 12px;
+  top: 12px;
+}
+
+/* Mobile menu button: hidden on desktop, where the sidebar is docked. */
+.menu-button {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+  background: #10265d;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.menu-button:focus-visible {
+  outline: 3px solid #4c9aff;
+  outline-offset: 3px;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+.not-found {
+  padding: 60px 24px;
+  text-align: center;
+  width: 100%;
+}
+
+.not-found h1 {
+  color: #071633;
+  margin-bottom: 8px;
+}
+
+.not-found p {
+  color: #5f6b7a;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 1023px) {
+  .menu-button {
+    display: inline-flex;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    border: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+  }
+}
+.not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.not-found h1 {
+  font-size: 32px;
+  margin: 0;
+}
+a.header-auth-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}

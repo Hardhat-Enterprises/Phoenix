@@ -1,0 +1,420 @@
+/* AboutUs.css */
+
+.about-page {
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1;
+}
+
+.about-content {
+  padding: 24px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.about-card {
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 22px;
+  border: 1px solid #e8edf5;
+}
+
+.about-card-title {
+  margin: 0 0 14px 0;
+  text-align: left;
+  font-size: 18px;
+  font-weight: 800;
+  color: #11264d;
+}
+
+.about-page-title {
+  margin: 0 0 4px 0;
+  font-size: 28px;
+  font-weight: 900;
+  color: #11264d;
+}
+
+.about-page-subtitle {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  color: #4b5d7a;
+}
+
+.about-banner {
+  width: 100%;
+  height: 220px;
+  border-radius: 16px;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 14px;
+  background-color: #0d2e5c;
+}
+
+.about-body-text {
+  margin: 0;
+  color: #4b5d7a;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* Purpose section */
+
+.purpose-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.purpose-icon {
+  width: 140px;
+  height: 120px;
+  border-radius: 14px;
+  object-fit: cover;
+  background-color: #eef3fb;
+  border: 1px solid #dde6f3;
+  flex-shrink: 0;
+}
+
+.purpose-content {
+  flex: 1;
+  min-width: 250px;
+}
+
+.purpose-heading {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #11264d;
+}
+
+/* Who Uses This System cards */
+
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.role-card {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e8edf5;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.role-card-icon {
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+}
+
+.role-card-icon.emergency {
+  background: #1a1a2e;
+}
+
+.role-card-icon.stakeholders {
+  background: #0d1b2a;
+}
+
+.role-card-icon.analysts {
+  background: #16213e;
+}
+
+.role-card-body {
+  padding: 12px;
+}
+
+.role-kicker {
+  font-size: 0.7rem;
+  color: #888;
+  text-transform: uppercase;
+  margin: 0 0 4px 0;
+  letter-spacing: 0.04em;
+}
+
+.role-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #11264d;
+  margin: 0 0 6px 0;
+}
+
+.role-desc {
+  font-size: 0.8rem;
+  color: #4b5d7a;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Process section (How PHOENIX Works) */
+
+.process-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.process-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.process-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #e8eaf6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.process-title {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #11264d;
+  margin: 0;
+}
+
+.process-desc {
+  font-size: 0.78rem;
+  color: #4b5d7a;
+  margin: 0;
+}
+
+/* Simple bullet lists (Scope, Capabilities, Features in Development) */
+
+.about-list {
+  margin: 0;
+  padding-left: 20px;
+  color: #4b5d7a;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.about-list li {
+  margin-bottom: 6px;
+}
+
+.status-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.status-badge.done {
+  background: #e2efda;
+  color: #1e5b2f;
+}
+
+.status-badge.progress {
+  background: #fff3cd;
+  color: #7a5c00;
+}
+
+/* Project Team */
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.team-card {
+  text-align: center;
+  padding: 16px 10px;
+  border-radius: 14px;
+  border: 1px solid #e8edf5;
+  background: #f8fafc;
+}
+
+.team-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #11264d;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  margin: 0 auto 10px auto;
+}
+
+.team-name {
+  margin: 0 0 4px 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #11264d;
+}
+
+.team-role {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #4b5d7a;
+  line-height: 1.4;
+}
+
+/* Support / Contact */
+
+.about-support-card {
+  background: #f0f2f8;
+  border: 1px solid #d8dce8;
+}
+
+.support-link {
+  color: #3b5bdb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.support-link:hover,
+.support-link:focus-visible {
+  text-decoration: underline;
+}
+
+.quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.quick-link-button {
+  background: #ffffff;
+  border: 1px solid #c7d2e6;
+  color: #11264d;
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.quick-link-button:hover,
+.quick-link-button:focus-visible {
+  background: #11264d;
+  color: #ffffff;
+}
+
+/* Responsiveness */
+
+@media (max-width: 640px) {
+  .about-content {
+    padding: 14px;
+  }
+
+  .about-page-title {
+    font-size: 22px;
+  }
+
+  .about-banner {
+    height: 150px;
+  }
+
+  .purpose-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .purpose-icon {
+    width: 100%;
+    height: 140px;
+  }
+
+  .role-grid,
+  .team-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-links {
+    flex-direction: column;
+  }
+
+  .quick-link-button {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Scope subheadings */
+
+.scope-subheading {
+  margin: 14px 0 8px 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #11264d;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.scope-subheading:first-of-type {
+  margin-top: 0;
+}
+
+/* Project Team - stream columns */
+
+.team-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.team-column {
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.team-column-heading {
+  margin: 0 0 10px 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #11264d;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #dde6f3;
+}
+
+.team-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #4b5d7a;
+  font-size: 0.82rem;
+  line-height: 1.9;
+}
+
+@media (max-width: 640px) {
+  .team-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+a.quick-link-button {
+  text-decoration: none;
+  display: inline-block;
+}
+
+a.quick-link-button:hover,
+a.quick-link-button:focus-visible {
+  text-decoration: none;
+}

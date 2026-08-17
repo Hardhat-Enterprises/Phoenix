@@ -150,7 +150,7 @@ function App() {
         {page === "about" && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={setPage} page={page} />
-            <AboutUs />
+            <AboutUs setPage={setPage} />
           </div>
         )}
 

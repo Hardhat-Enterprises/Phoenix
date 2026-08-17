@@ -12,6 +12,7 @@ import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
 import ThreatDetails from "./ThreatDetails";
 import RiskAssessmentPage from "./RiskAssessmentPage";
+import HelpSupportPage from "./HelpSupportPage";
 import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
 import CreateUser from "./CreateUser";
@@ -26,6 +27,7 @@ const MAIN_PATHS = [
   "/settings",
   "/threats",
   "/risk-assessment",
+  "/help",
 ];
 
 function App() {
@@ -302,12 +304,7 @@ function App() {
 
           <Route
             path="/help"
-            element={withShell(
-              <div>
-                <h1>Help and Support</h1>
-                <p>This page is being built by another team member this sprint.</p>
-              </div>
-            )}
+            element={withShell(<HelpSupportPage setPage={goToPage} />)}
           />
 
           <Route

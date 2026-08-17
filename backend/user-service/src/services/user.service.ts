@@ -39,6 +39,12 @@ import {
   AuthEntity,
 } from "../entity/user.entity";
 
+import {
+    getCache,
+    setCache,
+    deleteCache
+} from "@phoenix/common/redis/cache";
+
 export const getHealth = (getHealthDto: GetHealthDto): GetHealthEntity => {
   return {
     status: HttpStatusCode.HTTP_STATUS_OK,
@@ -46,28 +52,68 @@ export const getHealth = (getHealthDto: GetHealthDto): GetHealthEntity => {
   };
 };
 
+let usersCacheRequest: Promise<GetUsersEntity> | null = null;
+
 export const getUsers = async (
   getUserDto: GetUsersDto,
 ): Promise<GetUsersEntity> => {
+  const CACHE_KEY = "users:all";
+
+  let cachedUsers: GetUsersEntity | null = null;
+
   try {
-    logger.info("Fetching users from database...");
+    cachedUsers = await getCache<GetUsersEntity>(CACHE_KEY);
 
-    const users = await UserAccount.findAll({});
-    logger.info(`Fetched ${users.length} users from database.`);
-
-    return {
-      status: HttpStatusCode.HTTP_STATUS_OK,
-      message: "Users fetched successfully",
-      users: users.map((user: any) => ({
-        user_id: user.user_id,
-        username: user.username,
-        role: user.role,
-      })),
-    };
+    if (cachedUsers) {
+      logger.info("Returning users from Redis cache");
+      return cachedUsers;
+    }
   } catch (error) {
-    logger.error(`Error fetching users: ${error}`);
-    throw new Error("Error fetching users");
+    logger.error(`Redis unavailable: ${error}`);
   }
+
+  if (usersCacheRequest) {
+    logger.info("Waiting for existing users cache request");
+    return usersCacheRequest;
+  }
+
+  usersCacheRequest = (async () => {
+    try {
+      logger.info("Fetching users from database...");
+
+      const users = await UserAccount.findAll({});
+      logger.info(`Fetched ${users.length} users from database.`);
+
+      const response: GetUsersEntity = {
+        status: HttpStatusCode.HTTP_STATUS_OK,
+        message: "Users fetched successfully",
+        users: users.map((user: any) => ({
+          user_id: user.user_id,
+          username: user.username,
+          role: user.role,
+        })),
+      };
+
+      try {
+        const cacheSet = await setCache(CACHE_KEY, response);
+
+        if (cacheSet) {
+          logger.info("Users cached successfully.");
+        }
+      } catch (error) {
+        logger.error(`Failed to cache users: ${error}`);
+      }
+
+      return response;
+    } catch (error) {
+      logger.error(`Error fetching users from database: ${error}`);
+      throw new Error("Error fetching users");
+    } finally {
+      usersCacheRequest = null;
+    }
+  })();
+
+  return usersCacheRequest;
 };
 
 export const getLocations = async () => {
@@ -329,11 +375,18 @@ export const registerUser = async (
     const password_hashed = await bcrypt.hash(dto.password, 10);
 
     const newUser = await UserAccount.create({
-      username: dto.username,
-      password_hashed,
-      role: dto.role || "user",
+    username: dto.username,
+    password_hashed,
+    role: dto.role || "user",
     });
 
+    try {
+      await deleteCache("users:all");
+      logger.info("Cache invalidated: users:all");
+    } catch (error) {
+      logger.error(`Failed to invalidate users cache: ${error}`);
+    }
+    
     return {
       status: HttpStatusCode.HTTP_STATUS_CREATED,
       message: "User registered successfully",

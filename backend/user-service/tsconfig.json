@@ -1,10 +1,29 @@
 {
   "extends": "../tsconfig.json",
+
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
+
+    "types": [
+      "node",
+      "jest"
+    ],
+
     "rootDir": ".",
     "outDir": "../dist/user-service",
+
+    "baseUrl": ".",
+
+    "paths": {
+      "@phoenix/common": [
+        "../libs/common/src/index.ts"
+      ],
+      "@phoenix/common/*": [
+        "../libs/common/src/*"
+      ]
+    },
+
     "composite": true,
     "strict": true,
     "esModuleInterop": true,
@@ -15,6 +34,15 @@
     "noEmit": false,
     "incremental": true
   },
-  "include": ["src"],
-  "references": [{ "path": "../libs/common" }]
+
+  "include": [
+    "src",
+    "test"
+  ],
+
+  "references": [
+    {
+      "path": "../libs/common"
+    }
+  ]
 }

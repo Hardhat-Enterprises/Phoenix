@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as dotenv from "dotenv";
-dotenv.config();
+import fs from "fs";
 
 interface Config {
   SERVICE_NAME: string;
@@ -14,15 +14,54 @@ interface Config {
   SUPABASE_CONNECTION_STRING: string;
 }
 
+function getServiceName(): string {
+  const packagePaths = [
+    path.resolve(process.cwd(), "package.json"),
+    path.resolve(process.cwd(), "../package.json"),
+  ];
+
+  for (const packagePath of packagePaths) {
+    if (fs.existsSync(packagePath)) {
+      try {
+        const packageJson = JSON.parse(
+          fs.readFileSync(packagePath, "utf-8")
+        );
+
+        if (packageJson.name) {
+          return packageJson.name;
+        }
+      } catch {
+        // Try the next path
+      }
+    }
+  }
+
+  return "phoenix-service";
+}
+
 export const config: Config = {
-  SERVICE_NAME: require(path.resolve(process.cwd(), "package.json")).name,
+  SERVICE_NAME: getServiceName(),
+
   PORT: Number(process.env.PORT) || 3000,
-  DEFAULT_TIMEOUT: Number(process.env.DEFAULT_TIMEOUT) || 30000,
-  AUTH_JWT_SECRET: process.env.AUTH_JWT_SECRET as string,
-  LOG_LEVEL: process.env.LOG_LEVEL || "info",
-  USER_SERVICE_PORT: Number(process.env.USER_SERVICE_PORT) || 50051,
-  STORAGE_SERVICE_PORT: Number(process.env.STORAGE_SERVICE_PORT) || 50054,
+
+  DEFAULT_TIMEOUT:
+    Number(process.env.DEFAULT_TIMEOUT) || 30000,
+
+  AUTH_JWT_SECRET:
+    process.env.AUTH_JWT_SECRET as string,
+
+  LOG_LEVEL:
+    process.env.LOG_LEVEL || "info",
+
+  USER_SERVICE_PORT:
+    Number(process.env.USER_SERVICE_PORT) || 50051,
+
+  STORAGE_SERVICE_PORT:
+    Number(process.env.STORAGE_SERVICE_PORT) || 50054,
+
   NOTIFICATION_SERVICE_PORT:
     Number(process.env.NOTIFICATION_SERVICE_PORT) || 50052,
-  SUPABASE_CONNECTION_STRING: process.env.SUPABASE_CONNECTION_STRING as string,
+
+  SUPABASE_CONNECTION_STRING:
+    process.env.SUPABASE_CONNECTION_STRING as string,
 };

@@ -3,7 +3,12 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { config, connectRabbitMQ, logger } from "@phoenix/common";
+import {
+  config,
+  connectRabbitMQ,
+  connectRedis,
+  logger,
+} from "@phoenix/common";
 
 import userRoutes from "./routes/user.routes";
 import ingestionRoutes from "./routes/ingestion.routes";
@@ -40,12 +45,24 @@ app.use("/api/storage", storageRoutes);
 
 const startServer = async () => {
   try {
-    // Connect to RabbitMQ first
+    // Required dependency
     await connectRabbitMQ(process.env.RABBITMQ_URL!);
 
-    // Start the Express server
+    // Optional dependency
+    const redisAvailable = await connectRedis();
+
+    if (redisAvailable) {
+      logger.info("Redis connected successfully.");
+    } else {
+      logger.warn(
+        "Redis unavailable. Continuing without cache.",
+      );
+    }
+
     app.listen(config.PORT, () => {
-      logger.info(`${config.SERVICE_NAME} running on port ${config.PORT}`);
+      logger.info(
+        `${config.SERVICE_NAME} running on port ${config.PORT}`,
+      );
     });
   } catch (error) {
     logger.error(`Error starting server: ${error}`);

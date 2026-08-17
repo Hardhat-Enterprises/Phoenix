@@ -1,0 +1,8 @@
+{
+  "columns": [
+    "temperature",
+    "humidity",
+    "label"
+  ],
+  "row_count": 17
+}

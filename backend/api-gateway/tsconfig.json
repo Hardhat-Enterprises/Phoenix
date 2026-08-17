@@ -1,14 +1,26 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "target": "ES2020",
     "module": "CommonJS",
-    "outDir": "../../dist/api-gateway",
+    "rootDir": ".",
+    "outDir": "../dist/api-gateway",
+    "composite": true,
     "strict": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "skipLibCheck": true,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "noEmit": false,
+    "incremental": true,
+    "baseUrl": "..",
+    "paths": {
+      "@phoenix/common": ["libs/common/src/index.ts"],
+      "@phoenix/common/*": ["libs/common/src/*"]
+    }
   },
-  "include": ["src/**/*"]
+  "include": ["src"],
+  "references": [{ "path": "../libs/common" }]
 }

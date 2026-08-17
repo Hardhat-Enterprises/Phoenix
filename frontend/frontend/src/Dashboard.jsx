@@ -959,7 +959,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
 
         if (healthResult.status === "rejected") {
           setLoadError(
-            "Could not reach the Phoenix API gateway. Check that Docker is running and the gateway is available on localhost:3001.",
+            "Could not reach the PHOENIX API gateway. Check the configured API gateway and try again.",
           );
         }
 
@@ -1057,7 +1057,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
 
       if (healthResult.status === "rejected" && allDataRequestsFailed) {
         setLoadError(
-          "Could not reach the Phoenix API gateway. Check that Docker is running and the gateway is available on localhost:3001.",
+          "Could not reach the PHOENIX API gateway. Check the configured API gateway and try again.",
         );
       }
 

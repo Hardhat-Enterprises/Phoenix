@@ -1,9 +1,13 @@
+import {
+  API_GATEWAY_URL,
+  buildApiUrl,
+} from "../config/environment";
+import { DEFAULT_USER_ROLE } from "../config/roles";
+
 export const AUTH_STORAGE_KEY = "phoenixAuth";
 
-export const API_GATEWAY_URL =
-  import.meta.env.VITE_API_GATEWAY_URL?.replace(/\/$/, "") || "";
-
-const buildApiUrl = (path) => `${API_GATEWAY_URL}${path}`;
+// Re-exported to avoid breaking any existing imports elsewhere in the frontend.
+export { API_GATEWAY_URL };
 
 const readJson = async (response) => {
   const text = await response.text();
@@ -42,7 +46,7 @@ export const getAccessToken = () => getAuthSession()?.accessToken || "";
 
 const getApiErrorMessage = (data, response) =>
   data.message ||
-  `Backend request failed (${response.status} ${response.statusText}). Confirm the Phoenix API gateway is running on localhost:3001.`;
+  `Backend request failed (${response.status} ${response.statusText}). Check the configured PHOENIX API gateway and try again.`;
 
 const unwrapAuthPayload = (payload) => {
   if (Array.isArray(payload?.data)) {
@@ -87,7 +91,7 @@ export const apiRequest = async (
   let response;
 
   try {
-    response = await fetch(buildApiUrl(path), {
+    response = await fetch(buildApiUrl(API_GATEWAY_URL, path), {
       method,
       headers: requestHeaders,
       credentials: "include",
@@ -96,7 +100,7 @@ export const apiRequest = async (
     });
   } catch {
     throw new Error(
-      "Could not reach the Phoenix API gateway. Check that Docker is running and the gateway is available on localhost:3001.",
+      "Could not reach the PHOENIX API gateway. Check the configured API gateway and try again.",
     );
   }
 
@@ -130,6 +134,7 @@ export const apiRequest = async (
 
 export const loginUser = async ({ username, password }) => {
   const identifier = username.trim();
+
   const data = await apiRequest("/api/users/auth/login", {
     method: "POST",
     body: identifier.includes("@")
@@ -148,11 +153,15 @@ export const loginUser = async ({ username, password }) => {
     );
   }
 
-  return { ...authPayload, access_token: accessToken };
+  return {
+    ...authPayload,
+    access_token: accessToken,
+  };
 };
 
 export const saveAuthSession = (session) => {
   const user = session.user || {};
+
   const authSession = {
     accessToken: session.access_token || session.accessToken,
     refreshToken: session.refresh_token || session.refreshToken,
@@ -160,21 +169,28 @@ export const saveAuthSession = (session) => {
       id: session.user_id || session.userId || user.user_id || user.id,
       username: session.username || user.username || user.email,
       email: session.email || user.email,
-      role: session.role || user.role || "user",
+      role: session.role || user.role || DEFAULT_USER_ROLE,
     },
     authenticatedAt: new Date().toISOString(),
   };
 
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authSession));
+
   return authSession;
 };
 
 export const registerUser = async ({ username, email, password, role }) => {
   const response = await apiRequest("/api/users/auth/register", {
     method: "POST",
-    body: { username, email, password, role },
+    body: {
+      username,
+      email,
+      password,
+      role,
+    },
     requiresAuth: true,
   });
+
   const payload = unwrapAuthPayload(response);
 
   return {

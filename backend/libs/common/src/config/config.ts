@@ -41,6 +41,31 @@ function getServiceName(): string {
   return "phoenix-service";
 }
 
+function getServiceName(): string {
+  const packagePaths = [
+    path.resolve(process.cwd(), "package.json"),
+    path.resolve(process.cwd(), "../package.json"),
+  ];
+
+  for (const packagePath of packagePaths) {
+    if (fs.existsSync(packagePath)) {
+      try {
+        const packageJson = JSON.parse(
+          fs.readFileSync(packagePath, "utf-8")
+        );
+
+        if (packageJson.name) {
+          return packageJson.name;
+        }
+      } catch {
+        // Try the next path
+      }
+    }
+  }
+
+  return "phoenix-service";
+}
+
 export const config: Config = {
   SERVICE_NAME: getServiceName(),
 

@@ -54,11 +54,7 @@ app.use("/api/storage", storageRoutes);
 const startServer = async () => {
   try {
     // Required dependency
-    const channel = await connectRabbitMQ(process.env.RABBITMQ_URL!);
-    await startNotificationRealtimeConsumer(
-      channel,
-      (notification) => notificationWebSocketGateway.broadcastCreated(notification),
-    );
+    await connectRabbitMQ(process.env.RABBITMQ_URL!);
 
     // Optional dependency
     const redisAvailable = await connectRedis();
@@ -71,7 +67,7 @@ const startServer = async () => {
       );
     }
 
-    server.listen(config.PORT, () => {
+    app.listen(config.PORT, () => {
       logger.info(
         `${config.SERVICE_NAME} running on port ${config.PORT}`,
       );

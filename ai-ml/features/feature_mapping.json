@@ -1,0 +1,42 @@
+{
+    "hazard_features": [
+        "severity",
+        "disaster_severity_score",
+        "hazard_normalized",
+        "severity_change_rate",
+        "hazard_trend_index",
+        "severity_volatility"
+    ],
+    "cyber_features": [
+        "cyber_incidents",
+        "cyber_incident_count",
+        "cyber_intensity_score",
+        "cyber_attack_frequency",
+        "cyber_growth_rate",
+        "cyber_volatility",
+        "incident_peak_flag",
+        "rolling_cyber_mean"
+    ],
+    "temporal_features": [
+        "rolling_cyber_mean",
+        "time_since_last_event",
+        "ema",
+        "lag_1",
+        "lag_2",
+        "time_decay_factor"
+    ],
+    "geo_features": [
+        "location",
+        "geo_risk_zone_score",
+        "location_encoded"
+    ],
+    "risk_features": [
+        "geo_risk_zone_score",
+        "combined_risk_index",
+        "adaptive_risk_index"
+    ],
+    "anomaly_features": [
+        "z_score",
+        "outlier_flag"
+    ]
+}

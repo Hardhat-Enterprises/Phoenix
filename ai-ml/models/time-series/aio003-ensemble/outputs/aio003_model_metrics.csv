@@ -1,0 +1,6 @@
+Model,MAE,RMSE,R2,MAPE
+Baseline (Rolling Mean),91.067,140.337,-0.1239,96.67
+LSTM,86.459,136.883,-0.0693,91.33000183105469
+Gradient Boosting,57.875,73.352,0.6929,58.22
+Random Forest,49.418,62.349,0.7782,51.67
+Ensemble (Weighted Avg),52.121,64.305,0.764,57.76

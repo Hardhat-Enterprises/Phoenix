@@ -71,7 +71,6 @@ export default function NotificationPanel({ onClose }) {
     showToast("Notification dismissed");
   }
 
-
   function handleClearAll() {
     setNotifications([]);
     showToast("All notifications cleared");
@@ -84,7 +83,6 @@ export default function NotificationPanel({ onClose }) {
   }
 
   return (
-
     <div className="notif-panel" role="dialog" aria-label="Notifications">
       <div className="notif-header">
         <h3 className="notif-heading">

@@ -1,5 +1,7 @@
+/* Notification panel ------------------------------------------------------ */
+
 .notif-panel {
-    position: absolute;
+  position: absolute;
   top: 70px;
   right: 24px;
   width: 360px;
@@ -72,6 +74,8 @@
   margin-left: 6px;
   font-size: 10px;
 }
+
+/* List -------------------------------------------------------------------- */
 
 .notif-list {
   margin: 0;
@@ -241,6 +245,21 @@
   border: none;
   background: #1e3a8a;
   color: #ffffff;
+}
+
+/* Toast ------------------------------------------------------------------- */
+
+.notif-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 13px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
+  z-index: 300;
 }
 
 /* Toast ------------------------------------------------------------------- */

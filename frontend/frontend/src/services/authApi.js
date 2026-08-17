@@ -189,6 +189,55 @@ export const registerUser = async ({ username, email, password, role }) => {
   };
 };
 
+// --- Password recovery ------------------------------------------------------
+//
+// Week 5 task (Varun): convert the Forgot Password page into a real, validated
+// workflow. Two safety requirements from the sprint brief drive this function:
+//   1. Never reveal whether an account exists for a given username/email —
+//      the success message is identical either way.
+//   2. If the backend doesn't expose this endpoint yet, say so plainly rather
+//      than pretending the reset succeeded.
+export const requestPasswordReset = async (identifier) => {
+  const trimmed = identifier.trim();
+
+  try {
+    await apiRequest("/api/users/auth/forgot-password", {
+      method: "POST",
+      body: trimmed.includes("@")
+        ? { email: trimmed }
+        : { username: trimmed },
+    });
+  } catch (error) {
+    // 404 (route doesn't exist) or a network failure both mean the backend
+    // doesn't support this yet — tell the user plainly instead of a generic error.
+    if (
+      error.status === 404 ||
+      error.message?.includes("Could not reach the Phoenix API gateway")
+    ) {
+      const unavailable = new Error(
+        "Password recovery isn't available from the backend yet. Please contact an administrator for help resetting your password.",
+      );
+      unavailable.code = "PASSWORD_RESET_UNAVAILABLE";
+      throw unavailable;
+    }
+
+    // Any other failure: never surface backend internals, and never let the
+    // error message hint at whether the account existed.
+    const generic = new Error(
+      "Something went wrong sending the reset link. Please try again shortly.",
+    );
+    generic.code = "PASSWORD_RESET_FAILED";
+    throw generic;
+  }
+
+  // Always return an identical message on success, regardless of whether an
+  // account actually matched — this is what prevents account enumeration.
+  return {
+    message:
+      "If an account exists for that username or email, a reset link has been sent.",
+  };
+};
+
 export const logoutUser = async () => {
   const userId = getAuthSession()?.user?.id;
 
@@ -205,4 +254,30 @@ export const logoutUser = async () => {
   } finally {
     clearAuthSession();
   }
+};
+
+// --- Error message safety ---------------------------------------------------
+//
+// "Error messages must not expose backend internals" (Week 5 auth requirement).
+// Expected auth failures (bad credentials, duplicate username, etc.) come back
+// as 4xx with a deliberately user-facing message — safe to show as-is. Anything
+// else (5xx, malformed responses, unexpected shapes) could leak stack traces or
+// internal details, so those get replaced with a generic message instead.
+const EXPECTED_AUTH_STATUS_CODES = [400, 401, 403, 404, 409, 422];
+
+export const getSafeAuthErrorMessage = (error, fallback) => {
+  if (!error) {
+    return fallback;
+  }
+
+  // Network/gateway failures already carry a friendly message from apiRequest.
+  if (error.message?.includes("Could not reach the Phoenix API gateway")) {
+    return error.message;
+  }
+
+  if (EXPECTED_AUTH_STATUS_CODES.includes(error.status)) {
+    return error.message || fallback;
+  }
+
+  return fallback;
 };

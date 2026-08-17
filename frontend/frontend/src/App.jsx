@@ -146,16 +146,16 @@ function App() {
                     aria-expanded={showAdminMenu}
                     onClick={() => setShowAdminMenu((visible) => !visible)}
                   >
-                    Admin <span aria-hidden="true">⌄</span>
+                    Admin <span aria-hidden="true">Γîä</span>
                   </button>
                   {showAdminMenu && (
                     <div className="admin-menu" role="menu">
                       <button type="button" role="menuitem" onClick={() => { setShowAdminMenu(false); goToPage("createUser"); }}>
-                        <span className="admin-menu-icon" aria-hidden="true">＋</span>
+                        <span className="admin-menu-icon" aria-hidden="true">∩╝ï</span>
                         <span><strong>Create user</strong><small>Add a dashboard or app account</small></span>
                       </button>
                       <button type="button" role="menuitem" className="admin-menu-logout" onClick={() => handleLogout()}>
-                        <span className="admin-menu-icon" aria-hidden="true">↪</span>
+                        <span className="admin-menu-icon" aria-hidden="true">Γå¬</span>
                         <span><strong>Logout</strong><small>End your current session</small></span>
                       </button>
                     </div>
@@ -191,7 +191,7 @@ function App() {
         {page === "forgotPassword" && <ForgotPassword setPage={goToPage} />}
 
         {page === "createUser" && isAdmin && (
-          <CreateUser setPage={goToPage} />
+          <CreateUser setPage={goToPage} currentUserRole={authSession?.user?.role} />
         )}
 
         {page === "dashboard" && (

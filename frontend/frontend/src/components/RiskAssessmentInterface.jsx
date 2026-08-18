@@ -199,7 +199,9 @@ export default function RiskAssessmentInterface() {
     }
   }, []);
 
+  // Load risk assessments when the component mounts.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadList();
   }, [loadList]);
 

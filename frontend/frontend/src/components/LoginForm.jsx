@@ -28,7 +28,7 @@ export default function LoginForm({ setPage, onLogin }) {
 
       const savedSession = saveAuthSession(session);
       onLogin?.(savedSession);
-      setStatusMessage("Signed in successfully. Opening dashboard...");
+      setStatusMessage("Signed in successfully. Opening dashboard..."); //
       setPage("dashboard");
     } catch (error) {
       setErrorMessage(error.message);
@@ -42,28 +42,30 @@ export default function LoginForm({ setPage, onLogin }) {
       <label>Username or Email</label>
       <input
         type="text"
+        name="username"
         placeholder="Enter your username or email"
         value={username}
         onChange={(event) => setUsername(event.target.value)}
         autoComplete="username"
       />
-
       <label>Password</label>
       <input
         type="password"
+        name="password"
         placeholder="Enter your password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         autoComplete="current-password"
       />
-
-      {errorMessage && <p className="login-message login-error">{errorMessage}</p>}
-      {statusMessage && <p className="login-message login-success">{statusMessage}</p>}
-
+      {errorMessage && (
+        <p className="login-message login-error">{errorMessage}</p>
+      )}
+      {statusMessage && (
+        <p className="login-message login-success">{statusMessage}</p>
+      )}
       <button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Signing In..." : "Sign In"}
       </button>
-
       <div className="login-extra">
         <span
           className="forgot"

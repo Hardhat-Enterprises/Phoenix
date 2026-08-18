@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Routes, Route, Navigate, Link, useNavigate, useLocation } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+  Link,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import "./App.css";
+import "./components/design.css";
 import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer";
@@ -16,6 +24,7 @@ import HelpSupportPage from "./HelpSupportPage";
 import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
 import CreateUser from "./CreateUser";
+import ComponentShowcase from "./components/ComponentShowcase";
 import { HOME_PATH, pathForKey, routeForPath, APP_NAME } from "./config/routes";
 
 // Pages that show the header search and notification bell.
@@ -46,9 +55,14 @@ function App() {
   const isAdmin = authSession?.user?.role?.toLowerCase() === "admin";
   const showChrome = MAIN_PATHS.includes(location.pathname);
 
+  const [page, setPage] = useState(null);
+
   // Compatibility shim: teammates' pages still call setPage("dashboard").
   // Translate those keys into real navigation so their code keeps working.
-  const goToPage = (key) => navigate(pathForKey(key));
+  const goToPage = (key) => {
+    setPage(key);
+    navigate(pathForKey(key));
+  };
 
   // Browser tab title follows the current route.
   useEffect(() => {
@@ -73,7 +87,8 @@ function App() {
     if (!showAdminMenu) return undefined;
 
     const closeMenu = (event) => {
-      if (!adminMenuRef.current?.contains(event.target)) setShowAdminMenu(false);
+      if (!adminMenuRef.current?.contains(event.target))
+        setShowAdminMenu(false);
     };
     const closeOnEscape = (event) => {
       if (event.key === "Escape") setShowAdminMenu(false);
@@ -150,7 +165,9 @@ function App() {
             ref={menuButtonRef}
             className="menu-button"
             aria-expanded={sidebarOpen}
-            aria-label={sidebarOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-label={
+              sidebarOpen ? "Close navigation menu" : "Open navigation menu"
+            }
             onClick={() => setSidebarOpen((open) => !open)}
           >
             <span aria-hidden="true">{sidebarOpen ? "\u2715" : "\u2630"}</span>
@@ -197,6 +214,7 @@ function App() {
                   <button
                     type="button"
                     className="header-role header-role-button"
+                    className="btn btn-primary"
                     aria-haspopup="menu"
                     aria-expanded={showAdminMenu}
                     onClick={() => setShowAdminMenu((visible) => !visible)}
@@ -210,35 +228,74 @@ function App() {
                         role="menuitem"
                         onClick={() => {
                           setShowAdminMenu(false);
-                          navigate(pathForKey("createUser"));
+                          goToPage("createUser");
                         }}
                       >
-                        <span className="admin-menu-icon" aria-hidden="true">{"\uFF0B"}</span>
-                        <span><strong>Create user</strong><small>Add a dashboard or app account</small></span>
+                        <span className="admin-menu-icon" aria-hidden="true">
+                          ＋
+                        </span>
+                        <span>
+                          <strong>Create user</strong>
+                          <small>Add a dashboard or app account</small>
+                        </span>
                       </button>
                       <button
                         type="button"
+                        className="btn btn-primary"
                         role="menuitem"
                         className="admin-menu-logout"
                         onClick={() => handleLogout()}
                       >
-                        <span className="admin-menu-icon" aria-hidden="true">{"\u21AA"}</span>
-                        <span><strong>Logout</strong><small>End your current session</small></span>
+                        <span className="admin-menu-icon" aria-hidden="true">
+                          ↪
+                        </span>
+                        <span>
+                          <strong>Logout</strong>
+                          <small>End your current session</small>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowAdminMenu(false);
+                          goToPage("component-showcase");
+                        }}
+                      >
+                        <span aria-hidden="true">component-showcase</span>
+                        <span>
+                          <strong>Component showcase</strong>
+                          <small>Internal design tokens & examples</small>
+                        </span>
                       </button>
                     </div>
                   )}
                 </div>
               ) : (
                 <>
-                  <span className="header-role">{authSession?.user?.role || "user"}</span>
-                  <button type="button" className="header-auth-button" onClick={() => handleLogout()}>Logout</button>
+                  <span className="header-role">
+                    {authSession?.user?.role || "user"}
+                  </span>
+                  <button
+                    type="button"
+                    className="header-auth-button"
+                    className="btn btn-primary"
+                    onClick={() => handleLogout()}
+                  >
+                    Logout
+                  </button>
                 </>
               )}
             </div>
           ) : (
-            <Link to={pathForKey("login")} className="header-auth-button">
+            <button
+              type="button"
+              className="header-auth-button"
+              className="btn btn-primary"
+              onClick={() => goToPage("login")}
+            >
               Login
-            </Link>
+            </button>
           )}
         </div>
       </div>
@@ -251,12 +308,24 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to={HOME_PATH} replace />} />
 
-          <Route path="/login" element={<LoginForm setPage={goToPage} onLogin={handleLogin} />} />
-          <Route path="/forgot-password" element={<ForgotPassword setPage={goToPage} />} />
+          <Route
+            path="/login"
+            element={<LoginForm setPage={goToPage} onLogin={handleLogin} />}
+          />
+          <Route
+            path="/forgot-password"
+            element={<ForgotPassword setPage={goToPage} />}
+          />
 
           <Route
             path="/admin/create-user"
-            element={isAdmin ? <CreateUser setPage={goToPage} /> : <Navigate to={HOME_PATH} replace />}
+            element={
+              isAdmin ? (
+                <CreateUser setPage={goToPage} />
+              ) : (
+                <Navigate to={HOME_PATH} replace />
+              )
+            }
           />
 
           <Route
@@ -266,20 +335,26 @@ function App() {
                 setPage={goToPage}
                 setSelectedThreat={setSelectedThreat}
                 isLoggedIn={isLoggedIn}
-              />
+              />,
             )}
           />
 
           <Route
             path="/alerts"
             element={withShell(
-              <Alerts setPage={goToPage} setSelectedThreat={setSelectedThreat} />
+              <Alerts
+                setPage={goToPage}
+                setSelectedThreat={setSelectedThreat}
+              />,
             )}
           />
 
           <Route path="/about" element={withShell(<AboutUs />)} />
           <Route path="/reports" element={withShell(<ReportsPage />)} />
-          <Route path="/risk-assessment" element={withShell(<RiskAssessmentPage />)} />
+          <Route
+            path="/risk-assessment"
+            element={withShell(<RiskAssessmentPage />)}
+          />
 
           <Route
             path="/threats"
@@ -287,7 +362,7 @@ function App() {
               <ThreatDetails
                 selectedThreat={selectedThreat}
                 onBack={handleBackFromThreatDetails}
-              />
+              />,
             )}
           />
 
@@ -298,7 +373,7 @@ function App() {
                 setPage={goToPage}
                 authSession={authSession}
                 onLogout={handleLogout}
-              />
+              />,
             )}
           />
 
@@ -320,6 +395,13 @@ function App() {
             }
           />
         </Routes>
+
+        {page === "component-showcase" && isAdmin && (
+          <div style={{ display: "flex" }}>
+            <Sidebar setPage={goToPage} page={page} />
+            <ComponentShowcase />
+          </div>
+        )}
       </div>
 
       <Footer />

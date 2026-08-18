@@ -1033,7 +1033,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
       if (chartsResult.status === "fulfilled") {
         const counts = charts.threats_by_risk_level || {};
         const anyCounts = Object.values(counts).some(
-          (count) => Number(count) > 0
+          (count) => Number(count) > 0,
         );
         setChartsStatus(anyCounts ? "success" : "empty");
         setChartsLastUpdated(charts.last_updated ?? null);
@@ -1145,7 +1145,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
   // count (possibly zero) and a bar width proportional to that count.
   const chartRows = useMemo(
     () => normalizeThreatChartRows(threatsByRiskLevel),
-    [threatsByRiskLevel]
+    [threatsByRiskLevel],
   );
 
   //Detection API call
@@ -1324,7 +1324,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
               </p>
 
               <div className="anomaly-form-grid">
-                <label className="anomaly-field">
+                <label className="anomaly-field label-required">
                   <span>Region</span>
 
                   <select
@@ -1332,6 +1332,8 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                     onChange={(event) =>
                       setSelectedRegionId(event.target.value)
                     }
+                    aria-required="true"
+                    aria-describedby={detectionError ? "detection-error" : undefined}
                   >
                     {anomalyRegions.map((region) => (
                       <option key={region.id} value={region.id}>
@@ -1341,7 +1343,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                   </select>
                 </label>
 
-                <label className="anomaly-field">
+                <label className="anomaly-field label-required">
                   <span>Timestamp</span>
 
                   <input
@@ -1350,13 +1352,15 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                     onChange={(event) =>
                       setSelectedTimestamp(event.target.value)
                     }
+                    aria-required="true"
+                    aria-describedby={detectionError ? "detection-error" : undefined}
                   />
                 </label>
               </div>
 
               <button
                 type="button"
-                className="anomaly-run-button"
+                className="btn btn-primary"
                 onClick={runDetection}
                 disabled={loadingDetection}
               >
@@ -1377,7 +1381,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
               )}
 
               {detectionError && (
-                <div className="detection-error-message" role="alert">
+                <div id="detection-error" className="detection-error-message" role="alert">
                   {detectionError}
                 </div>
               )}
@@ -1567,9 +1571,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
 
               <div className="threat-chart-header-meta">
                 <span className="backend-ready-badge">
-                  {isLoading
-                    ? "Loading"
-                    : apiStatus}
+                  {isLoading ? "Loading" : apiStatus}
                 </span>
 
                 <span className="threat-chart-updated">
@@ -1595,8 +1597,8 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                   <div className="empty-chart-text">
                     <strong>Couldn't load threat chart data</strong>
                     <span>
-                      The dashboard could not reach the charts endpoint.
-                      Check that the backend is running and try again.
+                      The dashboard could not reach the charts endpoint. Check
+                      that the backend is running and try again.
                     </span>
                   </div>
                 </div>
@@ -1606,9 +1608,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                 <div className="empty-chart-placeholder">
                   <div className="empty-chart-text">
                     <strong>No threats recorded</strong>
-                    <span>
-                      All severity levels are currently at zero.
-                    </span>
+                    <span>All severity levels are currently at zero.</span>
                   </div>
                 </div>
               )}
@@ -1633,9 +1633,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                         />
                       </div>
 
-                      <span className="threat-value">
-                        {threat.count}
-                      </span>
+                      <span className="threat-value">{threat.count}</span>
                     </div>
                   ))}
                 </div>
@@ -1680,7 +1678,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
 
                 <button
                   type="button"
-                  className="view-all-button"
+                  className="btn btn-primary"
                   onClick={() => setPage("alerts")}
                 >
                   View All

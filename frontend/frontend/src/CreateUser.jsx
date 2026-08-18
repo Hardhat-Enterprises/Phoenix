@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { registerUser } from "./services/authApi";
+import "./components/design.css";
 
 const initialForm = { username: "", email: "", password: "", role: "user" };
 
@@ -49,7 +50,7 @@ export default function CreateUser({ setPage }) {
           </div>
           <button
             type="button"
-            className="create-user-back"
+            className="btn btn-primary create-user-back"
             onClick={() => setPage("dashboard")}
           >
             Back to dashboard
@@ -57,7 +58,7 @@ export default function CreateUser({ setPage }) {
         </div>
 
         <form className="create-user-form" onSubmit={handleSubmit}>
-          <label htmlFor="new-username">Username</label>
+          <label htmlFor="new-username" className="label-required">Username</label>
           <input
             id="new-username"
             name="username"
@@ -65,9 +66,11 @@ export default function CreateUser({ setPage }) {
             onChange={updateField}
             autoComplete="off"
             required
+            aria-required="true"
+            aria-describedby={errorMessage ? "create-user-error" : undefined}
           />
 
-          <label htmlFor="new-email">Email</label>
+          <label htmlFor="new-email" className="label-required">Email</label>
           <input
             id="new-email"
             name="email"
@@ -76,9 +79,11 @@ export default function CreateUser({ setPage }) {
             onChange={updateField}
             autoComplete="off"
             required
+            aria-required="true"
+            aria-describedby={errorMessage ? "create-user-error" : undefined}
           />
 
-          <label htmlFor="new-password">Temporary password</label>
+          <label htmlFor="new-password" className="label-required">Temporary password</label>
           <input
             id="new-password"
             name="password"
@@ -88,17 +93,24 @@ export default function CreateUser({ setPage }) {
             autoComplete="new-password"
             minLength={8}
             required
+            aria-required="true"
+            aria-describedby={errorMessage ? "create-user-error" : undefined}
           />
 
           <label htmlFor="new-role">Role</label>
-          <select id="new-role" name="role" value={form.role} onChange={updateField}>
+          <select
+            id="new-role"
+            name="role"
+            value={form.role}
+            onChange={updateField}
+          >
             <option value="user">User</option>
             <option value="analyst">Analyst</option>
             <option value="admin">Admin</option>
           </select>
 
           {errorMessage && (
-            <p className="login-message login-error" role="alert">
+            <p id="create-user-error" className="login-message login-error" role="alert">
               {errorMessage}
             </p>
           )}
@@ -108,7 +120,11 @@ export default function CreateUser({ setPage }) {
             </p>
           )}
 
-          <button type="submit" className="create-user-submit" disabled={isSubmitting}>
+          <button
+            type="submit"
+            className="btn btn-primary create-user-submit"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Creating user..." : "Create user"}
           </button>
         </form>

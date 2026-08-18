@@ -48,9 +48,9 @@
   gap: 14px;
   cursor: pointer;
   text-align: left;
-  text-decoration: none;
-  box-sizing: border-box;
-  transition: background-color 0.2s ease, border-color 0.2s ease,
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
     transform 0.2s ease;
 }
 
@@ -66,26 +66,26 @@
 }
 
 .sidebar-item.active {
-  background-color: #aec7f2;
-  border-color: #97b7eb;
+  background-color: #9fc2ff;
+  border-color: #89a9df;
 }
 
 .sidebar-icon {
   width: 15px;
   height: 15px;
   border-radius: 5px;
-  background-color: #9daec3;
+  background-color: #7796bb;
   flex-shrink: 0;
 }
 
 .sidebar-item.active .sidebar-icon {
-  background-color: #3f7df0;
+  background-color: #3b6cc7;
 }
 
 .sidebar-text {
   font-size: 16px;
   font-weight: 600;
-  color: #40556f;
+  color: #0b3465;
 }
 
 .sidebar-item.active .sidebar-text {

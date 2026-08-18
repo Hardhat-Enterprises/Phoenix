@@ -770,19 +770,8 @@ const normalizeThreatRow = (threat, index) => {
       `${threatType} detected in the Phoenix backend activity feed.`,
     source: formatLabel(threat.category || threat.threat_type || "Phoenix API"),
     region,
-<<<<<<< HEAD
     meta: `${formatLabel(region)} | ${formatShortDate(detectedAt)}`,
     riskValue: riskValueFor(vulnerability, threat.confidence_score),
-=======
-    //meta: `${formatLabel(region)} | ${formatShortDate(detectedAt)}`,
-    location: formatLabel(region),
-detectionDate: detectedAt,
-meta: `${formatLabel(region)} • ${formatShortDate(detectedAt)}`,
-    riskValue: riskValueFor(
-      vulnerability,
-      threat.confidence_score
-    ),
->>>>>>> aad1d95 (Improved recent threat signals)
     detectedAt,
     raw: threat,
   };
@@ -1724,13 +1713,7 @@ if (
               </div>
 
               <div className="item-list-actions">
-<<<<<<< HEAD
                 <span className="item-count-pill">{itemRows.length} shown</span>
-=======
-                <span className="item-count-pill">
-                  {itemRows.length} Threats
-                </span>
->>>>>>> aad1d95 (Improved recent threat signals)
 
                 <button
                   type="button"
@@ -1764,7 +1747,6 @@ if (
                     className="item-list-row"
                     key={item.id}
                     onClick={() => {
-<<<<<<< HEAD
                       setSelectedThreat(item);
                       setPage("threats");
                     }}
@@ -1777,20 +1759,6 @@ if (
                       }
                     }}
                   >
-=======
-                    setSelectedThreat(item);
-                    setPage("threatdetails");
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      setSelectedThreat(item);
-      setPage("threatdetails");
-    }
-  }}
-                >
->>>>>>> aad1d95 (Improved recent threat signals)
                     <div className="item-name-cell">
   <span
     className={`item-signal-dot ${item.className}`}
@@ -1800,7 +1768,6 @@ if (
   <strong>{item.name}</strong>
 </div>
 
-<<<<<<< HEAD
                     <div className={`status-pill ${item.className}`}>
                       {item.vulnerability}
                     </div>
@@ -1813,25 +1780,6 @@ if (
                       <span className="row-arrow">&gt;</span>
                     </div>
                   </div>
-=======
-<span>{item.location}</span>
-
-<span>
-  {item.detectionDate
-    ? new Date(item.detectionDate).toLocaleDateString()
-    : "-"}
-</span>
-
-<div className={`status-pill ${item.className}`}>
-  {item.vulnerability}
-</div>
-
-<div className={`status-pill ${item.className}`}>
-  {item.status}
-</div>
-
-                  </div> 
->>>>>>> aad1d95 (Improved recent threat signals)
                 ))
               ) : (
                 <div className="item-list-empty">

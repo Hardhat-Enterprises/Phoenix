@@ -49,7 +49,7 @@ export type SecurityOutcome =
 
 export type SecurityRule =
   | 'CY010 Rule 1 - Authentication Required' 
-  | 'CY010 Rule 2 - Role-Based Alert Creation Restriction'
+  | 'CY010 Rule 2 - Role-Based Access Restriction'
   | 'CY010 Rule 3 - Alert Creation Rate Limit' 
   | 'CY010 Rule 4 - Alert Submission Throttling'
   | 'CY010 Rule 5 - Duplicate Alert Detection'

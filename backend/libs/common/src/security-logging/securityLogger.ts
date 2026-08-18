@@ -45,8 +45,7 @@ import {
   type LogTransport,
 } from './logTransport';
 
-const DEFAULT_COMPONENT: ComponentName = 'teavs-backend';
-
+const DEFAULT_COMPONENT: ComponentName = process.env.SERVICE ?? 'phoenix-backend';
 
 let activeTransport: LogTransport = new ConsoleJsonTransport();
 let defaultComponent: ComponentName = DEFAULT_COMPONENT;
@@ -315,7 +314,7 @@ export function logRbacDenied(input: RbacDeniedInput): void {
     severity: input.severity ?? 'medium',
     outcome: input.outcome ?? 'blocked',
     response_code: input.response_code ?? 403,
-    rule_triggered: input.rule_triggered ?? 'CY010 Rule 2 - Role-Based Alert Creation Restriction',
+    rule_triggered: input.rule_triggered ?? 'CY010 Rule 2 - Role-Based Access Restriction',  
   });
 }
 

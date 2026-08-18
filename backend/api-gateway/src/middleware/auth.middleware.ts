@@ -88,6 +88,18 @@ export const authorizeSelfOrRoles = (roles: string[], paramName = "userId") => {
       return next();
     }
 
+    // CY017: neither the role check nor the self-access check passed, so this
+    // is the same class of event as a plain RBAC denial.
+    logRbacDenied({
+      ...fromRequest(req),
+      details: {
+        required_roles: roles,
+        actual_role: user.role ?? null,
+        check: "self_or_roles",
+        requested_user_id: requestedUserId,
+      },
+    });
+
     return res.status(HttpStatusCode.HTTP_STATUS_FORBIDDEN).json({
       status: HttpStatusCode.HTTP_STATUS_FORBIDDEN,
       message: "You are not authorized to access this user account",

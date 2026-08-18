@@ -2,6 +2,7 @@ import {
   HttpStatusCode,
   UserAccount,
   fromRequest,
+  logAccessRestricted,
   logRbacDenied,
 } from "@phoenix/common";
 import { Request, Response, NextFunction } from "express";
@@ -20,12 +21,20 @@ export const authenticate = async (
 ) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader) {
-    return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
-      status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
-      message: "No token provided",
-    });
-  }
+if (!authHeader) {
+  logAccessRestricted({
+    ...fromRequest(req),
+    reason: "authentication_failure",
+    details: {
+      cause: "authorization_header_missing",
+    },
+  });
+
+  return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
+    status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
+    message: "No token provided",
+  });
+}
 
   const token = authHeader.split(" ")[1];
 
@@ -33,12 +42,23 @@ export const authenticate = async (
     const decoded: any = jwt.verify(token, JWT_SECRET);
     const user = await UserAccount.findByPk(decoded.user_id);
     if (!user || user.access_token !== token) {
-      return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
-        status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
-        message: "Logged out",
-      });
-    }
-    (req as any).user = decoded;
+  logAccessRestricted({
+    ...fromRequest(req),
+    user_id: decoded.user_id,
+    role: decoded.role,
+    reason: "authentication_failure",
+    details: {
+      cause: !user
+        ? "token_subject_not_found"
+        : "access_token_not_active",
+    },
+  });
+
+  return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
+    status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
+    message: "Logged out",
+  });
+}
 
     next();
   } catch (error) {

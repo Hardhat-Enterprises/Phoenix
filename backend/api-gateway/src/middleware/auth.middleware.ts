@@ -24,6 +24,23 @@ if (!JWT_SECRET) {
   throw new Error("JWT secret is not defined");
 }
 
+
+function toTokenInvalidReason(error: unknown) {
+  if (error instanceof jwt.TokenExpiredError) {
+    return "expired";
+  }
+
+  if (error instanceof jwt.JsonWebTokenError) {
+    if (error.message === "invalid signature") {
+      return "bad_signature";
+    }
+
+    return "malformed";
+  }
+
+  return "malformed";
+}
+
 export const authenticate = async (
   req: Request,
   res: Response,
@@ -61,10 +78,7 @@ export const authenticate = async (
 
     next();
   } catch (error) {
-    const reason =
-      error instanceof jwt.TokenExpiredError
-        ? "expired"
-        : "malformed";
+    const reason = toTokenInvalidReason(error);
 
     logTokenInvalid({
       ...fromRequest(req),
@@ -122,7 +136,7 @@ export const authorizeSelfOrRoles = (
     });
 
     return res.status(HttpStatusCode.HTTP_STATUS_FORBIDDEN).json({
-      status: HttpStatusCode.HTTP_STATUS_FORBIDDEN,
+      status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
       message: "You are not authorized to access this user account",
     });
   };

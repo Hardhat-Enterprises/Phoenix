@@ -5,7 +5,6 @@
  *   npm run demo
  */
 
-import type { Request } from 'express';
 import type { Role } from './securityLogTypes';
 import {
   fromRequest,

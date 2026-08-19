@@ -185,6 +185,11 @@ router.post(
   ingestCyberData,
 );
 
-router.post("/core", authenticate, coreModelIntegration);
+router.post(
+  "/core",
+  authenticate,
+  authorize(["ingestion service"]),
+  coreModelIntegration,
+);
 
 export default router;

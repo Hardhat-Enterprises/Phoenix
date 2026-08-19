@@ -1,0 +1,476 @@
+/* AuthForms.css
+   Shared styling for Login, Forgot Password, and Create User.
+   Kept in its own file (not App.css) deliberately — several teammates are
+   touching shared CSS and routing this sprint, so isolating this reduces
+   merge conflicts. Tokens match the existing App.css palette (report-page /
+   report-evidence-card conventions: #dbe4f0 borders, #2563eb accent, Arial
+   font stack inherited from body — nothing here overrides it).
+
+   NOTE: .login-form and .forgot-password-card already have base styles in
+   App.css — this file only adds to them. .create-user-page / .create-user-card
+   and related classes had NO existing styles anywhere, so the full card
+   structure for that page is defined here from scratch, matching the same
+   tokens .report-evidence-card already uses. */
+
+.create-user-page {
+  width: 100%;
+  padding: 24px;
+  background: #f3f6fb;
+  min-height: 100vh;
+}
+
+.create-user-card {
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.create-user-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.create-user-eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.create-user-heading h1 {
+  margin: 0 0 4px;
+  color: #0f172a;
+  font-size: 24px;
+}
+
+.create-user-heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.create-user-back {
+  border: none;
+  background: #eaf1ff;
+  color: #1d4ed8;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.create-user-back:hover {
+  background: #dbe9ff;
+}
+
+.create-user-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.create-user-form label {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+.create-user-form input,
+.create-user-form select {
+  border: 1px solid #d8e2ef;
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-size: 14px;
+  outline: none;
+  background: #ffffff;
+  color: #111827;
+  font-family: inherit;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.create-user-form input:focus,
+.create-user-form select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.create-user-submit {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #2563eb;
+  color: #ffffff;
+  margin-top: 14px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.create-user-submit:hover {
+  background: #1d4ed8;
+}
+
+.create-user-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* --- field groups (Login) --- */
+
+.auth-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+/* Explicit text colour on every auth-related input, regardless of which
+   file's rule loads last — this guarantees typed characters are always
+   visible instead of relying on inherited/default colour. */
+.login-form input,
+.forgot-password-card input,
+.create-user-form input,
+.auth-password-input {
+  color: #111827;
+}
+
+/* --- password show/hide field ---
+   Rebuilt to use fixed top/bottom insets instead of top:50% + translateY
+   centering. Centering math is sensitive to the row's computed height and
+   was letting the button render oversized / drift outside the input's
+   border in some cases. Fixed insets pin the button's edges directly to
+   the input's edges, so it can never grow past the field. */
+
+.auth-password-row {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.auth-password-input {
+  width: 100%;
+  box-sizing: border-box;
+  /* Extra room on the right so typed text never renders under the button. */
+  padding-right: 64px !important;
+}
+
+.auth-toggle-visibility {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  right: 4px;
+  width: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eaf1ff;
+  border: none;
+  border-radius: 6px;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.auth-toggle-visibility:hover {
+  background: #dbe9ff;
+}
+
+.auth-toggle-visibility:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* --- no self-service sign-up note (Login) ---
+   Account creation is admin-only per the sprint spec, so this replaces a
+   "Sign Up" link with a clear pointer to who can actually create one. */
+
+.auth-no-account-note {
+  font-size: 12.5px;
+  color: #64748b;
+  text-align: center;
+  margin: 10px 0 0;
+}
+
+.auth-capslock-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-top: 6px;
+}
+
+.auth-field-error {
+  font-size: 12px;
+  color: #b91c1c;
+  margin: 4px 0 0;
+}
+
+.auth-required-indicator {
+  color: #b91c1c;
+  margin-left: 2px;
+}
+
+.auth-submit-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  margin-right: 8px;
+  vertical-align: -2px;
+  animation: auth-spin 0.7s linear infinite;
+}
+
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- password strength --- */
+
+.auth-strength-meter {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0 2px;
+}
+
+.auth-strength-bar {
+  height: 5px;
+  flex: 1;
+  border-radius: 3px;
+  background: #e5e7eb;
+}
+
+.auth-strength-bar.filled.weak {
+  background: #ef4444;
+}
+
+.auth-strength-bar.filled.medium {
+  background: #eab308;
+}
+
+.auth-strength-bar.filled.strong {
+  background: #22c55e;
+}
+
+.auth-strength-label {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.auth-strength-label.weak {
+  color: #b91c1c;
+}
+
+.auth-strength-label.medium {
+  color: #a16207;
+}
+
+.auth-strength-label.strong {
+  color: #15803d;
+}
+
+.auth-strength-hint {
+  font-size: 11.5px;
+  color: #64748b;
+  margin: 0 0 10px;
+}
+
+.auth-match-hint {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 4px 0 0;
+}
+
+.auth-match-hint.match {
+  color: #15803d;
+}
+
+.auth-match-hint.mismatch {
+  color: #b91c1c;
+}
+
+/* --- role descriptions --- */
+
+.auth-role-description {
+  font-size: 12.5px;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 4px 0 10px;
+}
+
+/* --- review step --- */
+
+.auth-review-list {
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background: #f8fafc;
+}
+
+.auth-review-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.auth-review-row:last-child {
+  border-bottom: none;
+}
+
+.auth-review-row span:first-child {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.auth-review-row span:last-child {
+  color: #111827;
+}
+
+.auth-review-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.auth-btn-secondary {
+  background: #eaf1ff;
+  color: #1d4ed8;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.auth-btn-secondary:hover {
+  background: #dbe9ff;
+}
+
+.auth-btn-secondary:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* --- cancel / discard confirmation --- */
+
+.auth-discard-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.auth-discard-row p {
+  margin: 0;
+  font-size: 13px;
+  color: #991b1b;
+  flex: 1;
+}
+
+.auth-btn-danger {
+  background: #ef4444;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.auth-btn-danger:hover {
+  background: #dc2626;
+}
+
+.auth-btn-danger:focus-visible {
+  outline: 2px solid #991b1b;
+  outline-offset: 2px;
+}
+
+/* --- resend cooldown --- */
+
+.auth-resend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* --- admin-only guard --- */
+
+.auth-denied-page {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.auth-denied-card {
+  max-width: 420px;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  padding: 28px 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.auth-denied-card h2 {
+  margin: 0 0 8px;
+  color: #0f172a;
+}
+
+.auth-denied-card p {
+  color: #64748b;
+  margin: 0 0 18px;
+  font-size: 14px;
+}

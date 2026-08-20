@@ -754,7 +754,13 @@ const normalizeThreatRow = (threat, index) => {
   const region = threat.region || threat.location || "National feed";
 
   return {
-    id: threat.threat_id || threat.id || threat.title || `threat-${index}`,
+    //id: threat.threat_id || threat.id || threat.title || `threat-${index}`,
+    id:
+  threat.threat_id ??
+  threat.id ??
+  threat.event_id ??
+  threat.uuid ??
+  `threat-${index}`,
     name: threat.title || threatType,
     vulnerability,
     status: formatLabel(threat.status || "In Review"),
@@ -825,6 +831,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
   const [hazardTotal, setHazardTotal] = useState("Checking");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [threatError, setThreatError] = useState("");
 
   // Threat Chart specific state: tracks the chart's own loading/error/empty/
   // success state and the "last updated" timestamp as returned by the API.
@@ -985,8 +992,38 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
         threatsResult.status === "fulfilled"
           ? threatsResult.value.items || []
           : [];
-      const displayedThreats =
-        activityThreats.length > 0 ? activityThreats : listedThreats;
+      //const displayedThreats =
+        //activityThreats.length > 0 ? activityThreats : listedThreats;
+        const displayedThreats = (
+  activityThreats.length > 0
+    ? activityThreats
+    : listedThreats
+).sort((a, b) => {
+  const first = new Date(
+    b.detected_at ||
+    b.created_at ||
+    b.updated_at ||
+    0
+  ).getTime();
+
+  const second = new Date(
+    a.detected_at ||
+    a.created_at ||
+    a.updated_at ||
+    0
+  ).getTime();
+ 
+  return first - second;
+});
+
+if (
+  activityResult.status === "rejected" &&
+  threatsResult.status === "rejected"
+) {
+  setThreatError("Unable to load recent threat signals.");
+} else {
+  setThreatError("");
+}
 
       const hazardItems =
         hazardsResult.status === "fulfilled"
@@ -1689,15 +1726,24 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
             </div>
 
             <div className="item-list-table">
+
+               {threatError && (
+  <div className="item-list-error" role="alert">
+    {threatError}
+  </div>
+)}
+
               <div className="item-list-table-head">
-                <span>Signal</span>
-                <span>Risk</span>
-                <span>Status</span>
+              <span>Threat</span>
+              <span>Location / Source</span>
+              <span>Detected</span>
+              <span>Risk</span>
+              <span>Status</span>
               </div>
 
               {itemRows.length > 0 ? (
                 itemRows.map((item) => (
-                  <div
+                <div 
                     className="item-list-row"
                     key={item.id}
                     onClick={() => {
@@ -1714,16 +1760,13 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                     }}
                   >
                     <div className="item-name-cell">
-                      <span
-                        className={`item-signal-dot ${item.className}`}
-                        aria-hidden="true"
-                      ></span>
+  <span
+    className={`item-signal-dot ${item.className}`}
+    aria-hidden="true"
+  />
 
-                      <div className="item-copy">
-                        <strong>{item.name}</strong>
-                        <small>{item.meta}</small>
-                      </div>
-                    </div>
+  <strong>{item.name}</strong>
+</div>
 
                     <div className={`status-pill ${item.className}`}>
                       {item.vulnerability}
@@ -1741,8 +1784,8 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
               ) : (
                 <div className="item-list-empty">
                   {isLoading
-                    ? "Loading backend threats..."
-                    : "No threat records returned yet."}
+                    ? "Loading recent threat signals..."
+                    : "No recent threat signals available."}
                 </div>
               )}
             </div>

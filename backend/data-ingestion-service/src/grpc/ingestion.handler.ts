@@ -1,8 +1,14 @@
 import { ServerUnaryCall, sendUnaryData } from "@grpc/grpc-js";
 import { logger } from "@phoenix/common";
+<<<<<<< HEAD
 import { GetHealthDto, IngestDataDto, CreateHazardDto } from "../dto/ingestion.dto";
 import { GetHealthEntity, IngestDataEntity, CreateHazardEntity } from "../entity/ingestion.entity";
 import { getHealth, ingestData, createHazardData } from "../services/ingestion.service";
+=======
+import { GetHealthDto, IngestDataDto } from "../dto/ingestion.dto";
+import { GetHealthEntity } from "../entity/ingestion.entity";
+import { getHealth } from "../services/ingestion.service";
+>>>>>>> 97497578c5f35c6c65d54b382079ea6f91f33380
 
 export const ingestionHandler = {
   GetIngestionHealth: (
@@ -11,7 +17,9 @@ export const ingestionHandler = {
   ) => {
     try {
       const response = getHealth(call.request);
-      logger.info(`Ingestion service GetHealth response: ${JSON.stringify(response)}`);
+      logger.info(
+        `Ingestion service GetHealth response: ${JSON.stringify(response)}`,
+      );
       callback(null, response);
     } catch (error) {
       callback({
@@ -20,6 +28,7 @@ export const ingestionHandler = {
       });
     }
   },
+<<<<<<< HEAD
 
   IngestData: (
     call: ServerUnaryCall<IngestDataDto, IngestDataEntity>,
@@ -53,3 +62,6 @@ export const ingestionHandler = {
     }
     },
 };
+=======
+};
+>>>>>>> 97497578c5f35c6c65d54b382079ea6f91f33380

@@ -18,6 +18,7 @@ This guide outlines how the AI/ML team should use GitHub for all project tasks.
 ### 1. Start from your assigned task branch
 
 Examples:
+
 - `ai-ml/ai003-data-cleaning`
 - `ai-ml/ai004-feature-engineering`
 - `ai-ml/ai005-synthetic-data`
@@ -76,8 +77,8 @@ git push -u origin <your-branch>
 
 Create a PR with:
 
-* **base:** task branch
-* **compare:** your branch
+- **base:** task branch
+- **compare:** your branch
 
 Example:
 
@@ -93,12 +94,12 @@ Once the task is complete, the task branch will be merged into `dev`.
 
 ## Important Rules
 
-* do **not** work directly on `main`
-* do **not** work directly on `dev`
-* do **not** work directly on the task branch
-* always create your own branch
-* always open PR into the task branch
-* only task leads should merge PRs into the task branch
+- do **not** work directly on `main`
+- do **not** work directly on `dev`
+- do **not** work directly on the task branch
+- always create your own branch
+- always open PR into the task branch
+- only task leads should merge PRs into the task branch
 
 ---
 
@@ -114,9 +115,9 @@ your branch → task branch → dev → main
 
 If you face any issues with:
 
-* permissions
-* merge conflicts
-* branch creation
-* PR approvals
+- permissions
+- merge conflicts
+- branch creation
+- PR approvals
 
 please reach out to the AI/ML lead.

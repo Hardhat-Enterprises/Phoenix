@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package notification;
+
+service NotificationService {
+    rpc GetNotificationHealth(GetNotificationHealthRequest) returns (GetNotificationHealthResponse);
+    rpc GetNotifications(GetNotificationsRequest) returns (GetNotificationsResponse);
+}
+
+message GetNotificationHealthRequest {
+}
+
+message GetNotificationHealthResponse {
+    int32 status = 1;
+    string message = 2;
+}
+
+message GetNotificationsRequest {
+}
+
+message GetNotificationsResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated Notification notifications = 3;
+}
+
+message Notification {
+    int32 id = 1;
+    string title = 2;
+    string body = 3;
+    string recipient = 4;
+}

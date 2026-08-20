@@ -1,0 +1,20 @@
+# AI009 Baseline Config - Single source of truth
+
+data:
+  pipeline: AI008
+  cleaning: AI003
+
+model:
+  name: baseline_model
+  version: v1
+  save_path: models/baseline_logisticregression_v1.pkl
+
+training:
+  seed: 42
+  test_size: 0.2
+  val_size: 0.1
+
+outputs:
+  metrics: outputs/metrics_test.json
+  predictions: outputs/predictions_val.csv
+  conf_matrix: outputs/conf_matrix_test.png

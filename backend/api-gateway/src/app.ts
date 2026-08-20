@@ -5,6 +5,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { config, connectRabbitMQ, logger } from "@phoenix/common";
 
+
 import userRoutes from "./routes/user.routes";
 import ingestionRoutes from "./routes/ingestion.routes";
 import notificationRoutes from "./routes/notification.routes";
@@ -13,6 +14,7 @@ import storageRoutes from "./routes/storage.routes";
 
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "@phoenix/common";
+import { apiRateLimiter } from "./middleware/rateLimit.middleware"
 
 // import authRoutes from "./routes/auth.routes";
 
@@ -22,6 +24,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(apiRateLimiter);
 
 // app.use("/auth", authRoutes);
 

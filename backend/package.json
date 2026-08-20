@@ -2,6 +2,7 @@
   "name": "microservices-backend",
   "private": true,
   "scripts": {
+    "test": "vitest run",
     "dev:gateway": "nodemon --watch api-gateway/src --watch libs/common/src --watch libs/proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P api-gateway/tsconfig.json api-gateway/src/app.ts\"",
     "dev:user": "nodemon --watch user-service/src --watch proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P user-service/tsconfig.json user-service/src/app.ts\"",
     "dev:ingestion": "nodemon --watch data-ingestion-service/src --watch libs/proto --ext ts,proto --exec \"ts-node -r tsconfig-paths/register -P data-ingestion-service/tsconfig.json data-ingestion-service/src/app.ts\"",
@@ -51,14 +52,17 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.1.0",
     "@types/node": "^24.12.2",
+    "@types/supertest": "^7.2.1",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "copyfiles": "^2.4.1",
     "cpy-cli": "^7.0.0",
     "nodemon": "^3.1.10",
+    "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
   }
 }

@@ -20,8 +20,8 @@
 
 .settings-header h1 {
   margin: 0 0 8px;
-  font-size: 34px;
-  font-weight: 800;
+  font-size: 35px;
+  font-weight: 600;
   color: #0b1b3a;
   line-height: 1.1;
 }
@@ -218,11 +218,6 @@
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-}
-
-.secondary-btn {
-  background: #edf2fb;
-  color: #1d4c9e;
 }
 
 .danger-btn {

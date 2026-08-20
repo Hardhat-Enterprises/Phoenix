@@ -16,3 +16,6 @@ Thumbs.db
 *.key
 api_keys/
 secrets/
+
+backend.code-workspace
+backend/.env.docker

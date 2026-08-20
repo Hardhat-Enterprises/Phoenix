@@ -38,7 +38,7 @@ export function EmptyState({ title, description, actionLabel, onAction }) {
         {actionLabel && onAction && (
           <button
             type="button"
-            className="interface-state__button"
+            className="btn btn-primary interface-state__button"
             onClick={onAction}
           >
             {actionLabel}
@@ -68,7 +68,7 @@ export function ErrorState({
         {onRetry && (
           <button
             type="button"
-            className="interface-state__button"
+            className="btn btn-primary interface-state__button"
             onClick={onRetry}
           >
             {retryLabel}
@@ -98,7 +98,7 @@ export function AuthenticationState({
         {onAction && (
           <button
             type="button"
-            className="interface-state__button"
+            className="btn btn-primary interface-state__button"
             onClick={onAction}
           >
             {actionLabel}
@@ -128,7 +128,7 @@ export function OfflineState({
         {onRetry && (
           <button
             type="button"
-            className="interface-state__button"
+            className="btn btn-primary interface-state__button"
             onClick={onRetry}
           >
             {retryLabel}
@@ -141,7 +141,7 @@ export function OfflineState({
 
 export function RetryButton({ label = "Retry", onClick }) {
   return (
-    <button type="button" className="interface-state__button" onClick={onClick}>
+    <button type="button" className="btn interface-state__button" onClick={onClick}>
       {label}
     </button>
   );

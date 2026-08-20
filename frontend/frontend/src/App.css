@@ -82,14 +82,30 @@ body {
 }
 
 .temp-bell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 40px;
   height: 40px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.35);
   background: #10265d;
   color: #ffd34d;
-  font-size: 18px;
   cursor: pointer;
+}
+
+.temp-bell:hover {
+  background: #163a86;
+}
+
+.temp-bell[aria-expanded="true"] {
+  background: #163a86;
+  border-color: #ffd34d;
+}
+
+.temp-bell-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .header-auth-summary {

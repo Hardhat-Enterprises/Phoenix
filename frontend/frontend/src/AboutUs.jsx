@@ -55,20 +55,6 @@ const processSteps = [
   },
 ];
 
-const scopeInItems = [
-  "A prototype data pipeline that combines hazard data with cyber threat indicators.",
-  "A lightweight, explainable risk-scoring or rule-based anomaly-detection prototype, suitable for demonstration purposes.",
-  "A web-based dashboard visualising hazard-to-threat correlations and key insights.",
-  "A proof-of-concept alert verification workflow to explore authenticated communications.",
-  "Technical documentation and recommendations for future scaling.",
-];
-
-const scopeOutItems = [
-  "Full production-grade cryptographic infrastructure (e.g. a complete PKI system) — verification logic is simulated using mock tokens, signature libraries, or simplified trust models.",
-  "Live integration with government or emergency services systems.",
-  "Full-scale, production deployment beyond the 12-week Capstone trimester.",
-];
-
 const capabilities = [
   "Secure sign-in with role-based session handling.",
   "Central dashboard showing live hazard, threat and risk totals.",
@@ -87,82 +73,6 @@ const inDevelopment = [
   "Broader hazard-to-cyber correlation pipeline: wider data sources beyond the current prototype feeds are still being integrated.",
   "A dedicated Help Center page has not been built yet — for now, support questions go through the contact details below.",
   "Live delivery of real-time notifications to external systems is still being finalised.",
-];
-
-const productOwner = {
-  organisation: "Deakin University — Cyber Security & Disaster Resilience research team",
-  contact: "A/Prof. Lennon Chang",
-  email: "lennon.chang@deakin.edu.au",
-};
-
-const projectLead = "Priyanka";
-
-const teamStreams = [
-  {
-    name: "Frontend",
-    members: [
-      "Priyanka (Project Lead)",
-      "Aayan Omar Siddiqui",
-      "Sian Fernandez",
-      "Sathvik Nandan Reddy Chintalapani",
-      "Goutham Rao Jonpelli",
-      "Tai Nguyen",
-      "Ayman Abdullah A Alamri",
-      "Inderjeet Singh",
-      "Raghad Mansour Abdulmohsen Alkhamis",
-      "Bhargavi Kalpesh Raval",
-      "Varun Reddy Maligireddy",
-    ],
-  },
-  {
-    name: "Backend",
-    members: [
-      "Trung Quan Tran",
-      "Divya Kalyan Kandru",
-      "Cody Parfitt-Carr",
-      "Hasith Themiya Abeysingha Herath Mudiyanselage",
-      "Onaya Cabral",
-      "Hayden Louis Thompson",
-      "Titiksha Mahaveer Rathod",
-      "Rasanjana Shehan Sandeepa Ranmunige",
-      "David Kiprop Chesang",
-      "Digraj Saini",
-    ],
-  },
-  {
-    name: "AI / ML",
-    members: [
-      "Sam Braley",
-      "Praveen Iramon",
-      "Thush Dodanwala",
-      "Gaurish Kapoor",
-      "Danny Zhao",
-      "Trey Christopher Martin",
-      "Abhishek Tekuru",
-      "Harleen Kaur",
-      "Pragati Juyal",
-      "Dimaga Nayanindu Kumarathissa Appukutti Dewage",
-    ],
-  },
-  {
-    name: "Cybersecurity",
-    members: [
-      "Abdul Rehman",
-      "Jessica Kakshapati",
-      "Divjot Singh",
-      "Mannat",
-      "Himanshu Khanna",
-      "Dilano Xavier",
-      "Saad Mohammed S Alhussain",
-      "Muath Ibrahim M Alqubayshi",
-      "Izaan Omar Siddiqui",
-      "Vipul",
-      "Branito Dhammaraya",
-      "Arshdeep Singh Sagwal",
-      "Jasmanpreet Singh",
-      "Md Isa Sayek Huda",
-    ],
-  },
 ];
 
 export default function AboutUs({ setPage }) {
@@ -285,26 +195,6 @@ export default function AboutUs({ setPage }) {
           </div>
         </section>
 
-        <section className="about-card" aria-labelledby="about-scope">
-          <h2 className="about-card-title" id="about-scope">
-            Project Scope
-          </h2>
-
-          <h3 className="scope-subheading">In Scope for This Capstone</h3>
-          <ul className="about-list">
-            {scopeInItems.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-
-          <h3 className="scope-subheading">Out of Scope</h3>
-          <ul className="about-list">
-            {scopeOutItems.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </section>
-
         <section className="about-card" aria-labelledby="about-capabilities">
           <h2 className="about-card-title" id="about-capabilities">
             Current Capabilities
@@ -335,45 +225,6 @@ export default function AboutUs({ setPage }) {
               <li key={item}>{item}</li>
             ))}
           </ul>
-        </section>
-
-        <section className="about-card" aria-labelledby="about-owner">
-          <h2 className="about-card-title" id="about-owner">
-            Product Owner
-          </h2>
-
-          <p className="about-body-text">
-            {productOwner.organisation}, represented by{" "}
-            {productOwner.contact} (
-            <a href={`mailto:${productOwner.email}`} className="support-link">
-              {productOwner.email}
-            </a>
-            ).
-          </p>
-        </section>
-
-        <section className="about-card" aria-labelledby="about-team">
-          <h2 className="about-card-title" id="about-team">
-            Project Team
-          </h2>
-
-          <p className="about-body-text" style={{ marginBottom: "14px" }}>
-            Project Lead: <strong>{projectLead}</strong>. The wider student
-            team is organised into four streams:
-          </p>
-
-          <div className="team-columns">
-            {teamStreams.map((stream) => (
-              <div className="team-column" key={stream.name}>
-                <h3 className="team-column-heading">{stream.name}</h3>
-                <ul className="team-list">
-                  {stream.members.map((member) => (
-                    <li key={member}>{member}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
         </section>
 
         <section
@@ -420,3 +271,4 @@ export default function AboutUs({ setPage }) {
     </div>
   );
 }
+

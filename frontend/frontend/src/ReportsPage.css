@@ -1,7 +1,9 @@
 .reports-content {
   flex: 1;
-  padding: 34px 38px;
+  padding: 32px;
   background-color: var(--page-bg);
+  min-width: 0;
+  width: 100%;
 }
 
 .url-ingestion-card {
@@ -94,10 +96,11 @@
 .url-form-group input,
 .url-form-group select,
 .url-form-group textarea {
-  background: var(--card-bg);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 10px;
   color: #24364f;
+  color-scheme: light;
   font: inherit;
   font-size: 14px;
   min-height: 42px;
@@ -517,4 +520,8 @@
     row-gap: 10px;
     padding: 18px 22px;
   }
+}
+
+@media (max-width: 720px) {
+  .reports-content { padding: 20px 16px; }
 }

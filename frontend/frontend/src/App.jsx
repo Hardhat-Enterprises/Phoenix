@@ -214,7 +214,6 @@ function App() {
                   <button
                     type="button"
                     className="header-role header-role-button"
-                    className="btn btn-primary"
                     aria-haspopup="menu"
                     aria-expanded={showAdminMenu}
                     onClick={() => setShowAdminMenu((visible) => !visible)}
@@ -241,7 +240,6 @@ function App() {
                       </button>
                       <button
                         type="button"
-                        className="btn btn-primary"
                         role="menuitem"
                         className="admin-menu-logout"
                         onClick={() => handleLogout()}
@@ -279,7 +277,6 @@ function App() {
                   <button
                     type="button"
                     className="header-auth-button"
-                    className="btn btn-primary"
                     onClick={() => handleLogout()}
                   >
                     Logout
@@ -291,7 +288,6 @@ function App() {
             <button
               type="button"
               className="header-auth-button"
-              className="btn btn-primary"
               onClick={() => goToPage("login")}
             >
               Login
@@ -410,3 +406,4 @@ function App() {
 }
 
 export default App;
+

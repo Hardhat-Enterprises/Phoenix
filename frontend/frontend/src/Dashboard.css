@@ -12,12 +12,14 @@
 
 .dashboard-content {
   flex: 1;
-  padding: 34px 38px;
+  padding: 32px;
+  min-width: 0;
 }
 
 .dashboard-main-area {
   width: 100%;
-  max-width: 1040px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .content-wrap {
@@ -126,10 +128,11 @@
 
 .anomaly-field input,
 .anomaly-field select {
-  background: var(--card-bg);
+  background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: var(--text);
+  color: #001a3e;
+  color-scheme: light;
   font-size: 14px;
   min-height: 40px;
   padding: 9px 10px;
@@ -1123,4 +1126,11 @@
   .detection-output-grid {
     grid-template-columns: 1fr;
   }
+}
+
+@media (max-width: 720px) {
+  .dashboard-content { padding: 20px 16px; }
+  .ai-detection-card,
+  .map-card,
+  .item-list-card { padding: 18px 16px; }
 }

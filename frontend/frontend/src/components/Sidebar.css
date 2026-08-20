@@ -9,10 +9,11 @@
 
 .sidebar {
   width: 280px;
-  min-height: 100vh;
+  min-height: 100%;
   background-color: #eef3f9;
   border-right: 1px solid #d7e1ee;
   padding: 18px 16px;
+  position: relative;
 }
 
 .sidebar-panel {
@@ -94,7 +95,7 @@
 
 /* Mobile: sidebar slides in from the left instead of taking up
    permanent width. The .sidebar-open class is set by AppLayout. */
-@media (max-width: 1023px) {
+@media (max-width: 1199px) {
   .sidebar {
     position: fixed;
     top: 0;
@@ -106,6 +107,7 @@
     overflow-y: auto;
     transform: translateX(-100%);
     transition: transform 0.2s ease;
+    box-shadow: 16px 0 36px rgba(7, 22, 51, 0.2);
   }
 
   .sidebar-open .sidebar {
@@ -123,3 +125,5 @@
     transform: none;
   }
 }
+
+

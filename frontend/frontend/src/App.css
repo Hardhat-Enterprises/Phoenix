@@ -1,5 +1,5 @@
 body {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
   background-color: var(--bg);
@@ -11,7 +11,10 @@ body {
 
 .login-page {
   min-height: 100vh;
+  min-height: 100svh;
   background: var(--bg, #f3f3f3);
+  display: flex;
+  flex-direction: column;
 }
 
 .temp-header {
@@ -22,13 +25,15 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 20px;
-  flex-wrap: wrap;
+  min-height: 106px;
+  flex: 0 0 auto;
 }
 
 .temp-header-left {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .temp-logo {
@@ -37,16 +42,14 @@ body {
   border-radius: 50%;
   background: var(--logo-bg, #c7d0ec);
   display: flex;
-  align-items: left;
+  align-items: center;
   justify-content: center;
   overflow: hidden; /* Ensures the image doesn't bleed outside the circle */
 }
 
 .temp-logo img {
-  width: 100%; /* Makes image width match the 44px container */
-  height: 100%; /* Makes image height match the 44px container */
-  width: 100%; /* Makes image width match the 44px container */
-  height: 100%; /* Makes image height match the 44px container */
+  width: 100%;
+  height: 100%;
   object-fit: cover; /* Crops the image to fill the circle without stretching */
 }
 .temp-header h2 {
@@ -128,10 +131,10 @@ body {
 }
 
 .page-content {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 36px;
+  display: block;
+  flex: 1 0 auto;
+  min-width: 0;
+  width: 100%;
 }
 
 .login-form {
@@ -872,3 +875,69 @@ body {
     }
   }
 }
+
+/* Shared application shell */
+.app-body {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: calc(100svh - 106px);
+  width: 100%;
+}
+.app-content {
+  background: var(--page-bg, #eef3f8);
+  min-width: 0;
+  overflow-x: hidden;
+  text-align: left;
+  width: 100%;
+}
+
+/* Keep controls readable regardless of the operating-system colour scheme. */
+.app-content input,
+.app-content select,
+.app-content textarea {
+  background-color: #ffffff;
+  color: #001a3e;
+  color-scheme: light;
+}
+
+.app-content input::placeholder,
+.app-content textarea::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+.app-content input:disabled,
+.app-content select:disabled,
+.app-content textarea:disabled {
+  background-color: #f1f5f9;
+  color: #64748b;
+  opacity: 1;
+}
+.menu-button, .sidebar-overlay { display: none; }
+.skip-link { background: #fff; border-radius: 0 0 8px 8px; color: #071633; font-weight: 700; left: 16px; padding: 10px 14px; position: fixed; top: 0; transform: translateY(-120%); transition: transform .15s ease; z-index: 300; }
+.skip-link:focus { transform: translateY(0); }
+@media (max-width: 1199px) {
+  .temp-header { min-height: 88px; padding: 12px 18px; }
+  .temp-logo { height: 54px; width: 54px; }
+  .temp-header-left h2 { font-size: 21px; }
+  .temp-header-left p { font-size: 13px; }
+  .menu-button { align-items: center; background: transparent; border: 1px solid rgba(255,255,255,.45); border-radius: 10px; color: #fff; cursor: pointer; display: inline-flex; flex: 0 0 42px; font-size: 22px; height: 42px; justify-content: center; }
+  .app-body { display: block; min-height: calc(100svh - 88px); }
+  .sidebar-overlay { background: rgba(7,22,51,.52); border: 0; display: block; inset: 0; position: fixed; z-index: 110; }
+}
+@media (max-width: 720px) {
+  .temp-header { align-items: stretch; flex-wrap: wrap; gap: 10px; }
+  .temp-header-left { flex: 1 1 auto; }
+  .temp-header-left > div:last-child { min-width: 0; }
+  .temp-header-left p { max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .temp-header-right { flex: 1 1 100%; margin-left: 0; }
+  .temp-search { flex: 1 1 auto; min-width: 0; width: auto; }
+}
+@media (max-width: 420px) {
+  .temp-header { padding-inline: 12px; }
+  .temp-logo { height: 46px; width: 46px; }
+  .temp-header-left p { display: none; }
+  .header-role { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+

@@ -31,6 +31,11 @@ import {
   authorizeSelfOrRoles,
 } from "../middleware/auth.middleware";
 
+import {
+  apiRateLimiter,
+  loginRateLimiter,
+} from "../middleware/rateLimit.middleware";
+
 const router = Router();
 
 /**
@@ -348,7 +353,7 @@ router.post("/auth/register", authenticate, authorize(["admin"]), register);
  *       500:
  *         description: Internal server error
  */
-router.post("/auth/login", login);
+router.post("/auth/login", loginRateLimiter, login);
 
 /**
  * @swagger

@@ -12,6 +12,8 @@ import {
   postIngestionAnomaly,
 } from "./services/phoenixApi";
 import { LoadingState, ErrorState, EmptyState } from "./components/States";
+import { usePreferences } from "./PreferencesContext";
+import { formatDisplayDate } from "./displayDate";
 import "./Dashboard.css";
 
 const formatLabel = (value) =>
@@ -614,41 +616,36 @@ const formatConfidence = (value) => {
     : `${Math.round(number)}%`;
 };
 
-const formatShortDate = (value) => {
-  if (!value) {
-    return "Recent";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Recent";
-  }
-
-  return date.toLocaleDateString(undefined, {
-    day: "2-digit",
-    month: "short",
-  });
-};
+const formatShortDate = (value, dateFormat) => formatDisplayDate(
+  value,
+  dateFormat,
+  {
+    fallback: "Recent",
+    systemOptions: {
+      day: "2-digit",
+      month: "short",
+    },
+  },
+);
 
 // Formats the Threat Chart's "last updated" date using only the value
 // returned by the API. Never falls back to the browser's current date.
-const formatChartDate = (value) => {
-  if (!value) {
-    return "Date unavailable";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Date unavailable";
-  }
-
-  return date.toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-};
+const formatChartDate = (value, dateFormat) => formatDisplayDate(
+  value,
+  dateFormat,
+  {
+    fallback: "Date unavailable",
+    includeTime: true,
+    systemOptions: {
+      dateStyle: "medium",
+      timeStyle: "short",
+    },
+    timeOptions: {
+      hour: "numeric",
+      minute: "2-digit",
+    },
+  },
+);
 
 const buildAnomalyPayload = (region, timestamp) => ({
   time_window: toModelTimeWindow(timestamp),
@@ -743,7 +740,7 @@ const normalizeAnomalyIntegration = (integration) => {
 const isAnomalyIntegration = (integration) =>
   integration?.integration_type === "anomaly";
 
-const normalizeThreatRow = (threat, index) => {
+const normalizeThreatRow = (threat, index, dateFormat) => {
   const vulnerability = formatLabel(
     threat.risk_level || threat.severity || "Unknown",
   );
@@ -770,7 +767,7 @@ const normalizeThreatRow = (threat, index) => {
       `${threatType} detected in the Phoenix backend activity feed.`,
     source: formatLabel(threat.category || threat.threat_type || "Phoenix API"),
     region,
-    meta: `${formatLabel(region)} | ${formatShortDate(detectedAt)}`,
+    meta: `${formatLabel(region)} | ${formatShortDate(detectedAt, dateFormat)}`,
     riskValue: riskValueFor(vulnerability, threat.confidence_score),
     detectedAt,
     raw: threat,
@@ -883,6 +880,8 @@ const hazardMatchesSelection = (hazard, locations, selection) => {
 };
 
 function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
+  const { preferences } = usePreferences();
+  const dateFormat = preferences.dateFormat;
   const [apiStatus, setApiStatus] = useState("Checking");
   const [threats, setThreats] = useState([]);
   const [threatsByRiskLevel, setThreatsByRiskLevel] = useState({});
@@ -1187,7 +1186,10 @@ if (
     [apiStatus, hazardTotal, riskTotal, threatTotal],
   );
 
-  const itemRows = useMemo(() => threats.map(normalizeThreatRow), [threats]);
+  const itemRows = useMemo(
+    () => threats.map((threat, index) => normalizeThreatRow(threat, index, dateFormat)),
+    [dateFormat, threats],
+  );
 
   // Location and Risk Map Controls derived values
   const locationOptions = useMemo(
@@ -1601,11 +1603,14 @@ if (
                     <div>
                       <span>Processed</span>
                       <strong>
-                        {displayedDetection.processedAt
-                          ? new Date(
-                              displayedDetection.processedAt,
-                            ).toLocaleString()
-                          : "-"}
+                        {formatDisplayDate(
+                          displayedDetection.processedAt,
+                          dateFormat,
+                          {
+                            fallback: "-",
+                            includeTime: true,
+                          },
+                        )}
                       </strong>
                     </div>
                   </div>
@@ -1707,7 +1712,7 @@ if (
               {locationOptions.stats.missingCoordCount > 0 &&
                 ` · ${locationOptions.stats.missingCoordCount} locations missing coordinates`}
               {unresolvedHazardCount > 0 && (
-                <span style={{ color: "#c00" }}>
+                <span style={{ color: "var(--color-error-text)" }}>
                   {" · "}
                   {unresolvedHazardCount} hazard{unresolvedHazardCount === 1 ? "" : "s"} shown as
                   demonstration data (location not reliably linked)
@@ -1829,7 +1834,7 @@ if (
                 </span>
 
                 <span className="threat-chart-updated">
-                  Last updated: {formatChartDate(chartsLastUpdated)}
+                  Last updated: {formatChartDate(chartsLastUpdated, dateFormat)}
                 </span>
               </div>
             </div>

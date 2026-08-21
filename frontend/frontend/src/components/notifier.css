@@ -261,3 +261,41 @@
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
   z-index: 300;
 }
+
+:root[data-theme="dark"] .notif-header,
+:root[data-theme="dark"] .notif-item,
+:root[data-theme="dark"] .notif-clear {
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .notif-close:hover,
+:root[data-theme="dark"] .notif-title,
+:root[data-theme="dark"] .notif-modal-title {
+  color: var(--color-heading);
+}
+
+:root[data-theme="dark"] .notif-item.unread,
+:root[data-theme="dark"] .notif-clear:hover {
+  background: var(--color-interactive-surface-hover);
+}
+
+:root[data-theme="dark"] .notif-count {
+  background: var(--color-selected-bg);
+  color: var(--color-selected-text);
+}
+
+:root[data-theme="dark"] .notif-item.read .notif-title,
+:root[data-theme="dark"] .notif-modal-body {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .notif-btn-secondary {
+  background: var(--color-input-bg);
+  border-color: var(--color-control-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .notif-btn-primary {
+  background: var(--color-interactive);
+  color: var(--color-on-interactive);
+}

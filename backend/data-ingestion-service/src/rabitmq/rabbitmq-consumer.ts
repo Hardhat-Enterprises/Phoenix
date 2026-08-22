@@ -1,4 +1,4 @@
-import { getChannel } from "@phoenix/common";
+import { getChannel, logger } from "@phoenix/common";
 import {
   coreModelIntegration,
   createCyberData,
@@ -48,10 +48,17 @@ export const consumeCoreModelIntegrationData = async (queueName: string) => {
     queueName,
     async (msg) => {
       if (msg) {
-        const content = msg.content.toString();
-        console.log(`Received message from ${queueName}:`, content);
-        await coreModelIntegration(JSON.parse(content));
-        channel.ack(msg);
+        try {
+          const content = msg.content.toString();
+          logger.info(
+            `Received ADCRS integration message ${msg.properties.messageId || "without-id"}`,
+          );
+          await coreModelIntegration(JSON.parse(content));
+          channel.ack(msg);
+        } catch (error) {
+          logger.error(`Rejected invalid ADCRS integration message: ${error}`);
+          channel.nack(msg, false, false);
+        }
       }
     },
     { noAck: false },

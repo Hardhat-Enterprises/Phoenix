@@ -8,6 +8,8 @@ import {
   HttpStatusCode,
   logger,
   IntegrationLog,
+  IntegrationStatus,
+  IntegrationType,
   UserAccount,
   GeoLocation,
   EventStatus,
@@ -182,12 +184,32 @@ export const getUserDashboard = async (
       totalThreats,
       activeThreats,
       totalIngestionLog,
+      totalRiskAssessments,
+      criticalRiskAssessments,
     ] = await Promise.all([
       HazardEvent.count(),
       HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.8 } } }),
       CyberThreat.count(),
-      CyberThreat.count({ where: { severity: { [Op.gte]: 0.8 } } }),
+      CyberThreat.count({
+        where: { severity: { [Op.in]: ["high", "critical"] } },
+      }),
       IntegrationLog.count(),
+      IntegrationLog.count({
+        where: {
+          integration_type: IntegrationType.CORE,
+          status: IntegrationStatus.COMPLETED,
+          output: { [Op.like]: '%"teavs_alert"%' },
+        },
+      }),
+      IntegrationLog.count({
+        where: {
+          integration_type: IntegrationType.CORE,
+          status: IntegrationStatus.COMPLETED,
+          output: {
+            [Op.like]: '%"risk_level":"critical"%"teavs_alert"%',
+          },
+        },
+      }),
     ]);
 
     return GetUserDashboardEntity.toEntity({
@@ -198,6 +220,8 @@ export const getUserDashboard = async (
       total_threats: totalThreats,
       active_threats: activeThreats,
       total_ingestions: totalIngestionLog,
+      total_risk_assessments: totalRiskAssessments,
+      critical_risk_assessments: criticalRiskAssessments,
       last_updated: new Date().toISOString(),
     });
   } catch (error) {
@@ -221,6 +245,10 @@ export const getUserDashboardCharts = async (
       mediumThreats,
       highThreats,
       criticalThreats,
+      lowRiskAssessments,
+      mediumRiskAssessments,
+      highRiskAssessments,
+      criticalRiskAssessments,
     ] = await Promise.all([
       HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.2 } } }),
       HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.4 } } }),
@@ -230,6 +258,34 @@ export const getUserDashboardCharts = async (
       CyberThreat.count({ where: { severity: "medium" } }),
       CyberThreat.count({ where: { severity: "high" } }),
       CyberThreat.count({ where: { severity: "critical" } }),
+      IntegrationLog.count({
+        where: {
+          integration_type: IntegrationType.CORE,
+          status: IntegrationStatus.COMPLETED,
+          output: { [Op.like]: '%"risk_level":"low"%"teavs_alert"%' },
+        },
+      }),
+      IntegrationLog.count({
+        where: {
+          integration_type: IntegrationType.CORE,
+          status: IntegrationStatus.COMPLETED,
+          output: { [Op.like]: '%"risk_level":"medium"%"teavs_alert"%' },
+        },
+      }),
+      IntegrationLog.count({
+        where: {
+          integration_type: IntegrationType.CORE,
+          status: IntegrationStatus.COMPLETED,
+          output: { [Op.like]: '%"risk_level":"high"%"teavs_alert"%' },
+        },
+      }),
+      IntegrationLog.count({
+        where: {
+          integration_type: IntegrationType.CORE,
+          status: IntegrationStatus.COMPLETED,
+          output: { [Op.like]: '%"risk_level":"critical"%"teavs_alert"%' },
+        },
+      }),
     ]);
 
     return {
@@ -247,6 +303,12 @@ export const getUserDashboardCharts = async (
         high: highThreats,
         critical: criticalThreats,
       }),
+      risk_assessments_by_level: JSON.stringify({
+        low: lowRiskAssessments,
+        medium: mediumRiskAssessments,
+        high: highRiskAssessments,
+        critical: criticalRiskAssessments,
+      }),
       last_updated: new Date().toISOString(),
     };
   } catch (error) {
@@ -261,7 +323,8 @@ export const getUserDashboardActivity = async (
   try {
     logger.info("Fetching dashboard activity data from database...");
 
-    const [recentHazards, recentThreats] = await Promise.all([
+    const [recentHazards, recentThreats, recentRiskAssessments] =
+      await Promise.all([
       HazardEvent.findAll({
         limit: 5,
         order: [["created_at", "DESC"]],
@@ -270,13 +333,23 @@ export const getUserDashboardActivity = async (
         limit: 5,
         order: [["created_at", "DESC"]],
       }),
-    ]);
+      IntegrationLog.findAll({
+        where: {
+          integration_type: IntegrationType.CORE,
+          status: IntegrationStatus.COMPLETED,
+          output: { [Op.like]: '%"teavs_alert"%' },
+        },
+        limit: 5,
+        order: [["created_at", "DESC"]],
+      }),
+      ]);
 
     return {
       status: HttpStatusCode.HTTP_STATUS_OK,
       message: "Dashboard activity data retrieved successfully",
       recent_hazards: JSON.stringify(recentHazards),
       recent_threats: JSON.stringify(recentThreats),
+      recent_risk_assessments: JSON.stringify(recentRiskAssessments),
       last_updated: new Date().toISOString(),
     };
   } catch (error) {

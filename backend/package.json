@@ -15,6 +15,7 @@
     "build:storage-service": "tsc -b storage-service/tsconfig.json && tsc-alias -p storage-service/tsconfig.json && cpy \"libs/proto/**/*.proto\" dist/libs/proto",
     "build:notification-service": "tsc -b notification-service/tsconfig.json && tsc-alias -p notification-service/tsconfig.json && cpy \"libs/proto/**/*.proto\" dist/libs/proto",
     "build": "tsc -b",
+    "test:teavs-adcrs": "npm run build:common && node --test tests/teavs-adcrs.test.js",
     "start:gateway": "node -r tsconfig-paths/register dist/api-gateway/src/app.js",
     "start:user-service": "node -r tsconfig-paths/register dist/user-service/src/app.js",
     "start:ingestion": "node -r tsconfig-paths/register dist/data-ingestion-service/src/app.js",

@@ -1,5 +1,6 @@
-import fs from "fs/promises";
 import {
+  CoreModelIntegrationEnvelope,
+  createTeavsAlert,
   HazardDataStreamRequest,
   CyberDataStreamRequest,
   HttpStatusCode,
@@ -143,14 +144,46 @@ export const createCyberData = async (content: any) => {
 };
 
 export const coreModelIntegration = async (payload: any) => {
-  const integrationLog = await IntegrationLog.create({
-    integration_type: IntegrationType.CORE,
-    input: JSON.stringify(payload),
-    status: IntegrationStatus.CREATED,
-  });
+  const isEnvelope =
+    payload &&
+    typeof payload === "object" &&
+    typeof payload.integration_event_id === "string" &&
+    payload.payload &&
+    typeof payload.payload === "object";
+  const envelope = isEnvelope
+    ? (payload as CoreModelIntegrationEnvelope)
+    : undefined;
+  const modelInput = envelope?.payload ?? payload?.input_data ?? payload;
+  const integrationEventId = envelope?.integration_event_id;
+
+  const [integrationLog, created] = integrationEventId
+    ? await IntegrationLog.findOrCreate({
+        where: { integration_event_id: integrationEventId },
+        defaults: {
+          integration_event_id: integrationEventId,
+          integration_type: IntegrationType.CORE,
+          input: JSON.stringify(modelInput),
+          status: IntegrationStatus.CREATED,
+        },
+      })
+    : [
+        await IntegrationLog.create({
+          integration_type: IntegrationType.CORE,
+          input: JSON.stringify(modelInput),
+          status: IntegrationStatus.CREATED,
+        }),
+        true,
+      ];
 
   try {
-    if (!payload) {
+    if (!created && integrationLog.status === IntegrationStatus.COMPLETED) {
+      logger.info(
+        `Skipping duplicate ADCRS integration ${integrationLog.integration_event_id}`,
+      );
+      return integrationLog.output ? JSON.parse(integrationLog.output) : undefined;
+    }
+
+    if (!modelInput) {
       logger.error("Core model integration failed: Payload empty");
 
       await integrationLog.update({
@@ -161,7 +194,9 @@ export const coreModelIntegration = async (payload: any) => {
       return;
     }
 
-    console.log("Received core model integration data:", payload);
+    logger.info(
+      `Processing ADCRS integration ${integrationLog.integration_event_id}`,
+    );
 
     const trainingModel = await StoredFile.findOne({
       where: {
@@ -192,33 +227,40 @@ export const coreModelIntegration = async (payload: any) => {
       return;
     }
 
-    const modelInput = payload.input_data ?? payload;
-
-    if (!modelInput) {
-      logger.error("Model input data is empty");
-
-      await integrationLog.update({
-        status: IntegrationStatus.ERROR,
-        note: "Model input data is empty",
-      });
-
-      return;
-    }
-
     await integrationLog.update({
       status: IntegrationStatus.PROCESSING,
+      input: JSON.stringify(modelInput),
+      note: null,
     });
 
     const result = await runInference(trainingModel.file_data, modelInput);
-
-    console.log("Core model inference result:", result);
+    const signingSecret = process.env.TEAVS_ADCRS_SIGNING_SECRET || "";
+    const teavsAlert = createTeavsAlert({
+      sourceIntegrationId: integrationLog.integration_event_id,
+      input: modelInput,
+      output: result,
+      signingSecret,
+    });
+    const integratedResult = {
+      ...result,
+      teavs_alert: teavsAlert,
+      integration_metadata: {
+        source: "ADCRS",
+        target: "TEAVS",
+        processed_at: new Date().toISOString(),
+      },
+    };
 
     await integrationLog.update({
-      output: JSON.stringify(result),
+      output: JSON.stringify(integratedResult),
       status: IntegrationStatus.COMPLETED,
     });
 
-    return result;
+    logger.info(
+      `Completed secure TEAVS-ADCRS integration ${integrationLog.integration_event_id}`,
+    );
+
+    return integratedResult;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
 

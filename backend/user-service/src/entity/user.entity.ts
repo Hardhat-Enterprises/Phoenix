@@ -36,6 +36,8 @@ export class GetUserDashboardEntity {
   total_threats: number;
   active_threats: number;
   total_ingestions: number;
+  total_risk_assessments: number;
+  critical_risk_assessments: number;
   last_updated: string;
 
   static toEntity(item: any): GetUserDashboardEntity {
@@ -47,6 +49,8 @@ export class GetUserDashboardEntity {
     response.total_threats = item.total_threats;
     response.active_threats = item.active_threats;
     response.total_ingestions = item.total_ingestions;
+    response.total_risk_assessments = item.total_risk_assessments;
+    response.critical_risk_assessments = item.critical_risk_assessments;
     response.last_updated = item.last_updated;
 
     return response;
@@ -58,6 +62,7 @@ export class GetUserDashboardChartsEntity {
   message: string;
   hazards_by_severity: string;
   threats_by_risk_level: string;
+  risk_assessments_by_level: string;
   last_updated: string;
 }
 
@@ -66,5 +71,6 @@ export class GetUserDashboardActivityEntity {
   message: string;
   recent_hazards: string;
   recent_threats: string;
+  recent_risk_assessments: string;
   last_updated: string;
 }

@@ -7,9 +7,12 @@ import { threatHandler } from "./grpc/threat.handler";
 import { hazardHandler } from "./grpc/hazard.handler";
 import { trainingModelHandler } from "./grpc/training-model.handler";
 import { integrationHandler } from "./grpc/integration.handler";
-import { config, initDatabase } from "@phoenix/common";
+import { config, initDatabase, setDefaultComponent } from "@phoenix/common";
 
 dotenv.config();
+
+// CY017: name this service in every security log record it emits.
+setDefaultComponent("user-service");
 
 const PROTO_PATH = path.resolve(
   process.env.USER_PROTO_PATH || "libs/proto/user.proto",

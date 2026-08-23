@@ -45,6 +45,8 @@ import {
   type LogTransport,
 } from './logTransport';
 
+// Fallback only. Every service names itself at startup via setDefaultComponent();
+// this value appearing in a record means a service forgot to do so.
 const DEFAULT_COMPONENT: ComponentName = process.env.SERVICE ?? 'phoenix-backend';
 
 let activeTransport: LogTransport = new ConsoleJsonTransport();
@@ -314,7 +316,7 @@ export function logRbacDenied(input: RbacDeniedInput): void {
     severity: input.severity ?? 'medium',
     outcome: input.outcome ?? 'blocked',
     response_code: input.response_code ?? 403,
-    rule_triggered: input.rule_triggered ?? 'CY010 Rule 2 - Role-Based Access Restriction',  
+    rule_triggered: input.rule_triggered ?? 'CY010 Rule 2 - Role-Based Access Restriction',
   });
 }
 

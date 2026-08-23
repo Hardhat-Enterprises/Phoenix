@@ -3,7 +3,12 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import * as dotenv from "dotenv";
 import { ingestionHandler } from "./grpc/ingestion.handler";
-import { connectRabbitMQ, logger, RabbitMQQueueType } from "@phoenix/common";
+import {
+  connectRabbitMQ,
+  logger,
+  RabbitMQQueueType,
+  setDefaultComponent,
+} from "@phoenix/common";
 import {
   consumeCoreModelIntegrationData,
   consumeCyberData,
@@ -11,6 +16,9 @@ import {
 } from "./rabitmq/rabbitmq-consumer";
 
 dotenv.config();
+
+// CY017: name this service in every security log record it emits.
+setDefaultComponent("data-ingestion-service");
 
 //const PROTO_PATH = path.resolve(process.cwd(), "libs/proto/ingestion.proto");
 const PROTO_PATH = path.resolve(`${process.env.INGESTION_PROTO_PATH}`);

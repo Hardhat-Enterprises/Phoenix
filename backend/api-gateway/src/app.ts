@@ -3,7 +3,12 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { config, connectRabbitMQ, logger } from "@phoenix/common";
+import {
+  config,
+  connectRabbitMQ,
+  logger,
+  setDefaultComponent,
+} from "@phoenix/common";
 
 import userRoutes from "./routes/user.routes";
 import ingestionRoutes from "./routes/ingestion.routes";
@@ -18,6 +23,9 @@ import { swaggerSpec } from "@phoenix/common";
 // import authRoutes from "./routes/auth.routes";
 
 dotenv.config();
+
+// CY017: name this service in every security log record it emits.
+setDefaultComponent("api-gateway");
 
 const app = express();
 

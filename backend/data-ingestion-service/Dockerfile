@@ -12,7 +12,7 @@ COPY . .
 RUN npm install
 RUN npm run build:common
 RUN npm run build:proto
-RUN npm run build:ingestion
+RUN npm run build:ingestion-service
 
 RUN echo "=== DIST ===" && ls -R dist
 

@@ -3,6 +3,8 @@ import {
   UserAccount,
   fromRequest,
   logRbacDenied,
+  logTokenInvalid,
+  type TokenInvalidReason,
 } from "@phoenix/common";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
@@ -12,6 +14,21 @@ const JWT_SECRET = process.env.AUTH_JWT_SECRET || process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   throw new Error("JWT secret is not defined");
 }
+
+/**
+ * CY017: translate a `jsonwebtoken` verification error into the module's
+ * `token_invalid` reason vocabulary. Severity is assigned by reason -- an
+ * expired token is routine (low), a bad signature is a forgery attempt (high).
+ */
+const toTokenInvalidReason = (error: unknown): TokenInvalidReason => {
+  if (error instanceof jwt.TokenExpiredError) return "expired";
+
+  if (error instanceof jwt.JsonWebTokenError) {
+    return error.message === "invalid signature" ? "bad_signature" : "malformed";
+  }
+
+  return "malformed";
+};
 
 export const authenticate = async (
   req: Request,
@@ -42,6 +59,12 @@ export const authenticate = async (
 
     next();
   } catch (error) {
+    // CY017: JWT verification failed. The reason drives the severity.
+    logTokenInvalid({
+      ...fromRequest(req),
+      reason: toTokenInvalidReason(error),
+    });
+
     return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
       status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
       message: "Invalid token",

@@ -16,6 +16,7 @@ import {
   ReferenceDay,
   ReferenceTime,
   UserRole,
+  logTokenInvalid,
 } from "@phoenix/common";
 
 import {
@@ -461,6 +462,18 @@ export const refreshToken = async (
       refresh_token: dto.refresh_token,
     };
   } catch (error) {
+    // CY017: an expired refresh token is a distinct, routine event. This
+    // service has no Express request, so the context is a static fallback
+    // until caller context is forwarded over gRPC metadata.
+    if (error instanceof jwt.TokenExpiredError) {
+      logTokenInvalid({
+        ip_address: "unknown",
+        endpoint: "grpc:RefreshToken",
+        method: "RPC",
+        reason: "refresh_expired",
+      });
+    }
+
     logger.error(`Refresh token error: ${error}`);
 
     return {

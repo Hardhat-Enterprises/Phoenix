@@ -3,6 +3,7 @@ import {
   UserAccount,
   fromRequest,
   logRbacDenied,
+  logAccessRestricted,
 } from "@phoenix/common";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
@@ -20,7 +21,16 @@ export const authenticate = async (
 ) => {
   const authHeader = req.headers.authorization;
 
+  // Access restricted: no Authorization header was provided.
   if (!authHeader) {
+    logAccessRestricted({
+      ...fromRequest(req),
+      reason: "authentication_failure",
+      details: {
+        failure: "missing_authorization_header",
+      },
+    });
+
     return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
       status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
       message: "No token provided",
@@ -32,12 +42,28 @@ export const authenticate = async (
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
     const user = await UserAccount.findByPk(decoded.user_id);
+
+    // The JWT itself has already been verified, but it is no longer the
+    // token stored on the account.
     if (!user || user.access_token !== token) {
+      logAccessRestricted({
+        ...fromRequest(req),
+        user_id: decoded.user_id?.toString(),
+        role: decoded.role,
+        reason: "authentication_failure",
+        details: {
+          failure: !user
+            ? "user_not_found"
+            : "token_no_longer_matches_account",
+        },
+      });
+
       return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
         status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
         message: "Logged out",
       });
     }
+
     (req as any).user = decoded;
 
     next();

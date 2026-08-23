@@ -27,7 +27,7 @@ export const authenticate = async (
       ...fromRequest(req),
       reason: "authentication_failure",
       details: {
-        failure: "missing_authorization_header",
+        cause: "missing_authorization_header",
       },
     });
 
@@ -43,18 +43,35 @@ export const authenticate = async (
     const decoded: any = jwt.verify(token, JWT_SECRET);
     const user = await UserAccount.findByPk(decoded.user_id);
 
-    // The JWT itself has already been verified, but it is no longer the
-    // token stored on the account.
-    if (!user || user.access_token !== token) {
+    // User does not exist.
+    if (!user) {
       logAccessRestricted({
         ...fromRequest(req),
         user_id: decoded.user_id?.toString(),
         role: decoded.role,
         reason: "authentication_failure",
         details: {
-          failure: !user
-            ? "user_not_found"
-            : "token_no_longer_matches_account",
+          cause: "user_not_found",
+        },
+      });
+
+      return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
+        status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
+        message: "Logged out",
+      });
+    }
+
+    // The JWT itself has already been verified, but it is no longer the
+    // token stored on the account.
+    if (user.access_token !== token) {
+      logAccessRestricted({
+        ...fromRequest(req),
+        user_id: decoded.user_id?.toString(),
+        role: decoded.role,
+        reason: "authentication_failure",
+        severity: "high",
+        details: {
+          cause: "token_no_longer_matches_account",
         },
       });
 
@@ -80,7 +97,7 @@ export const authorize = (roles: string[]) => {
     const user = (req as any).user;
 
     if (!user || !roles.includes(user.role)) {
-      // record the RBAC decision. The 403 response below is unchanged --
+      // Record the RBAC decision. The 403 response below is unchanged --
       // logging observes the decision, it does not make it.
       logRbacDenied({
         ...fromRequest(req),
@@ -101,7 +118,10 @@ export const authorize = (roles: string[]) => {
   };
 };
 
-export const authorizeSelfOrRoles = (roles: string[], paramName = "userId") => {
+export const authorizeSelfOrRoles = (
+  roles: string[],
+  paramName = "userId",
+) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
 

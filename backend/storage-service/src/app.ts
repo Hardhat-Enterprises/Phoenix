@@ -2,13 +2,20 @@ import * as path from "path";
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import * as dotenv from "dotenv";
-import { config, initDatabase, setDefaultComponent } from "@phoenix/common";
+import {
+  config,
+  initDatabase,
+  setDefaultComponent,
+  setLogTransport,
+  WinstonTransport,
+} from "@phoenix/common";
 import { storageHandler } from "./grpc/storage.handler";
 
 dotenv.config();
 
 // CY017: name this service in every security log record it emits.
 setDefaultComponent("storage-service");
+setLogTransport(new WinstonTransport());
 
 const PROTO_PATH = path.resolve(
   process.env.STORAGE_PROTO_PATH || "libs/proto/storage.proto",

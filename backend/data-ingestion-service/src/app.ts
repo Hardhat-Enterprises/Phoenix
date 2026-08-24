@@ -8,6 +8,8 @@ import {
   logger,
   RabbitMQQueueType,
   setDefaultComponent,
+  setLogTransport,
+  WinstonTransport,
 } from "@phoenix/common";
 import {
   consumeCoreModelIntegrationData,
@@ -19,6 +21,7 @@ dotenv.config();
 
 // CY017: name this service in every security log record it emits.
 setDefaultComponent("data-ingestion-service");
+setLogTransport(new WinstonTransport());
 
 //const PROTO_PATH = path.resolve(process.cwd(), "libs/proto/ingestion.proto");
 const PROTO_PATH = path.resolve(`${process.env.INGESTION_PROTO_PATH}`);

@@ -8,6 +8,8 @@ import {
   connectRabbitMQ,
   logger,
   setDefaultComponent,
+  setLogTransport,
+  WinstonTransport,
 } from "@phoenix/common";
 
 import userRoutes from "./routes/user.routes";
@@ -26,6 +28,7 @@ dotenv.config();
 
 // CY017: name this service in every security log record it emits.
 setDefaultComponent("api-gateway");
+setLogTransport(new WinstonTransport());
 
 const app = express();
 

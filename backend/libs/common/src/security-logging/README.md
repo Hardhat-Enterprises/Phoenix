@@ -1,194 +1,316 @@
-# CY017 — Reusable Security Logging Module
+# Security Monitoring & Audit Logging Implementation v1.1
 
-TypeScript implementation of the Project Phoenix security logging module.
+**Area 5 - Cybersecurity stream.** First fully working implementation, proposed for merge into `dev`.
 
-Integrated into the live backend on 29 Jul 2026. It is exported from
-`@phoenix/common`, so any service imports it the same way it imports `logger` or
-`HttpStatusCode`:
+Structured, machine-readable logging for security-relevant events: authentication
+attempts, authorisation failures and token validation. Records are emitted as one JSON
+object per line through the team's existing Winston logger.
 
-```ts
-import { fromRequest, logRbacDenied } from "@phoenix/common";
-```
+---
 
-See [Live call sites](#live-call-sites) for what is currently instrumented and
-[How to verify](#how-to-verify) for the commands that exercise each event.
+## 1. Impact on existing behaviour
 
-## Files
+**No change to how the application behaves.**
 
-| File | Purpose |
-|---|---|
-| `securityLogTypes.ts` | Typed union types for event types, severity, outcome, rules, reason sub-classifiers, and the `SecurityLogRecord` shape. |
-| `logTransport.ts` | `LogTransport` interface, default `ConsoleJsonTransport`, and `NullTransport` for tests. |
-| `expressLogContext.ts` | `fromRequest(req)` extracts `ip_address`, `endpoint`, `method`, `user_id`, `role`, and `request_id` from an Express request. |
-| `grpcLogContext.ts` | `fromGrpcMetadata(metadata)` reconstructs the same context inside a gRPC service, from metadata the api-gateway attaches. Added during integration — see [Crossing the gRPC boundary](#crossing-the-grpc-boundary). |
-| `securityLogger.ts` | Core `logSecurityEvent()` plus eight typed helper functions. |
-| `index.ts` | Convenience re-export file. |
+- **No HTTP status code, response body, route or middleware order changed.** Every logging
+  call is inserted immediately *before* an existing `return res.status(...)`. The API
+  contract is byte-for-byte identical.
+- **No `.proto` file, database schema, environment variable or dependency added.**
+  Everything uses Node built-ins and the Winston version already in `package.json`.
+- **Existing `logger.*` calls behave exactly as before.** `logger.ts` was modified, but its
+  output for every existing call shape is unchanged, including calls that pass a second
+  metadata argument.
+- **No other team member's logic was altered.** Only log calls were added.
 
-## Helper functions
+---
 
-| Helper | Event type | Reason values |
+## 2. The module
+
+At `backend/libs/common/src/security-logging/`, exported through `@phoenix/common` in the
+same way the shared `logger` and `HttpStatusCode` already are.
+
+| File | Lines | Role |
 |---|---|---|
-| `logAuthFailure` | `auth_failure` | `bad_password`, `unknown_user`, `account_locked`, `lockout_active` |
-| `logTokenInvalid` | `token_invalid` | `expired`, `malformed`, `bad_signature`, `tampered_claims`, `refresh_expired`, `refresh_replay` |
-| `logTokenIssued` | `token_issued` | none |
-| `logRbacDenied` | `rbac_denied` | none |
-| `logValidationFailure` | `validation_failure` | `missing_field`, `invalid_type`, `invalid_enum`, `length_exceeded`, `bad_format`, `size_exceeded` |
-| `logRateLimitExceeded` | `rate_limit_exceeded` | `rate_limit_hit`, `throttled` |
-| `logDuplicateAlert` | `duplicate_alert` | none |
-| `logAccessRestricted` | `access_restricted` | Sync: `authentication_failure`, `rate_limit_hit`, `throttling`, `duplicate_request`; Async: `repeated_rate_limit_hit`, `repeated_throttling`, `repeated_duplicate_request`, `repeated_invalid_input`, `repeated_authentication_failure`, `repeated_rbac_denied`, `sustained_abuse_pattern` |
+| `securityLogTypes.ts` | 237 | **Vocabulary.** Event types, severities, outcomes, reason sub-classifiers and the `SecurityLogRecord` shape - typed unions, so an invalid event name will not compile. |
+| `securityLogger.ts` | 390 | **Core.** `logSecurityEvent()` plus eight typed helpers, one per event type. Applies per-event defaults and runs the sanitiser. |
+| `expressLogContext.ts` | 58 | **Context.** `fromRequest(req)` extracts `ip_address`, `endpoint`, `method`, `user_id`, `role`, `request_id`. |
+| `grpcLogContext.ts` | 92 | Same for gRPC calls. Present but not yet used - see §7. |
+| `logTransport.ts` | 28 | **Delivery interface.** One method (`emit(record)`) plus a console implementation. |
+| `winstonTransport.ts` | 130 | **Adapter.** Delivers records through the shared Winston logger. |
 
-## Output format
+### Design principle
 
-The module creates structured JSON records. The default transport prints each record as one line:
-
-```ts
-console.log(JSON.stringify(record));
-```
-
-That means the current output is NDJSON: newline-delimited JSON. `console.log` is only the temporary output method; the log format is still structured JSON.
-
-## Running the demo
-
-From the `Logging module/` root directory:
-
-```bash
-npm install && npm run demo
-```
-
-## Quick start
+The module separates two jobs usually tangled together: **producing** a record (what
+happened, which fields describe it - this module) and **delivering** it (console, file,
+database, SIEM - Winston). `LogTransport` is the boundary:
 
 ```ts
-import { fromRequest } from './expressLogContext';
-import { logAuthFailure } from './securityLogger';
+export interface LogTransport {
+  emit(record: SecurityLogRecord): void;
+}
+```
 
-const ctx = fromRequest(req);
+Anything with an `emit` method can be a destination, so changing where logs go is one line
+at service startup - no call site changes.
 
-logAuthFailure({
-  ...ctx,
-  reason: 'unknown_user',
-  details: { attempted_username: 'example@example.com' },
+### Safety properties
+
+- **Redaction is centralised.** `sanitiseDetails()` runs inside `logSecurityEvent()`, before
+  any transport sees the data. It redacts sensitive keys (`password`, `token`, `jwt`,
+  `authorization`, `cookie`, `secret`, `credential` and others), strips control characters,
+  truncates long strings, caps nesting depth and handles circular references. No transport
+  can bypass it.
+- **No secret is ever recorded.** Passwords, token values and `Authorization` headers are
+  never passed to the logger and would be redacted if they were.
+- **`endpoint` records the route template** (`/api/users/auth/logout/:userId`), not the
+  concrete URL, so identifiers do not leak into that field. Where a target ID matters it is
+  recorded explicitly in `details`.
+
+---
+
+## 3. How a record is produced
+
+An analyst calls the admin-only `GET /api/users/user`.
+
+**1) Call site.** `authorize()` finds the role is wrong:
+
+```ts
+logRbacDenied({
+  ...fromRequest(req),
+  details: { required_roles: roles, actual_role: user?.role ?? null, check: "roles" },
 });
 ```
 
-## Transport replacement
+**2) Typed helper.** `logRbacDenied()` fills in what an RBAC denial means: `severity: medium`,
+`outcome: blocked`, `response_code: 403` and the rule tag. All overridable, so call sites
+stay short.
 
-When database, SIEM, Winston, Pino, or multi-output logging is added later, implement `LogTransport` and set it once at startup:
+**3) Core builder.** `logSecurityEvent()` stamps timestamp and component, sanitises
+`details`, drops `undefined` fields and hands the record to the active transport.
+
+**4) Delivery.** `WinstonTransport` translates it into a Winston call; Winston formats and
+writes it.
+
+```
+authorize()                            decides
+  └─ logRbacDenied()                   classifies
+       └─ logSecurityEvent()           builds + sanitises
+            └─ activeTransport.emit()  ← the seam
+                 └─ WinstonTransport   translates
+                      └─ logger.log()  Winston → stdout
+```
+
+**Resulting record:**
+
+```json
+{
+  "timestamp": "2026-08-24T13:08:02.076Z",
+  "component": "api-gateway",
+  "event_type": "rbac_denied",
+  "severity": "medium",
+  "outcome": "blocked",
+  "user_id": "6b060193-1402-4682-9bde-03df00f7a07f",
+  "role": "analyst",
+  "ip_address": "::ffff:192.168.65.1",
+  "endpoint": "/api/users/user",
+  "method": "GET",
+  "response_code": 403,
+  "rule_triggered": "CY010 Rule 2 - Role-Based Access Restriction",
+  "request_id": "55513429-6bd0-485d-85d9-e33a926bf770",
+  "details": {
+    "required_roles": ["admin"],
+    "actual_role": "analyst",
+    "check": "roles"
+  },
+  "level": "warn",
+  "message": "rbac_denied | required_roles=admin actual_role=analyst check=roles"
+}
+```
+
+Emitted as a single line; shown formatted here.
+
+---
+
+## 4. Relationship with the existing Winston logger
+
+Winston is **not replaced**. It is now the delivery mechanism for security records as well as
+operational ones - one logger, one place to configure where output goes.
+
+| | Security logging module | Winston |
+|---|---|---|
+| Decides | which fields a record has, which values are legal, what gets redacted | where the line is written, at what level |
+| Owns | schema, vocabulary, sanitisation | transports, filtering, formatting |
+
+Records carry both `severity` (the security judgement, `low` … `critical`) and `level`
+(Winston's operational level). These are deliberately separate: a SIEM rule filters on
+`severity`, Winston's routing works off `level`.
+
+Adding durable storage or a SIEM feed is therefore a single change in `logger.ts`, covering
+both streams:
 
 ```ts
-import { setLogTransport } from './securityLogger';
-import { MyDatabaseTransport } from './myDatabaseTransport';
-
-setLogTransport(new MyDatabaseTransport());
+transports: [
+  new winston.transports.Console(),
+  new winston.transports.File({ filename: "/var/log/phoenix/security.log" }),
+]
 ```
 
-Existing middleware and handlers do not need to change.
+No change to the module, no change to any call site.
 
+---
 
-## Live call sites
+## 5. Changes outside the module
 
-Instrumented as of 29 Jul 2026. Every response body and status code is unchanged
-from before integration — logging observes decisions, it does not make them.
+Six files, all additive.
 
-| Event | Reason | Where | Trigger |
-|---|---|---|---|
-| `token_issued` | — | `api-gateway` `user.controller.ts` `login` / `refresh` | successful login or token refresh |
-| `auth_failure` | `unknown_user` | `user-service` `user.service.ts` `loginUser` | username not in `user_account` |
-| `auth_failure` | `bad_password` | `user-service` `user.service.ts` `loginUser` | username exists, bcrypt compare fails |
-| `validation_failure` | `missing_field` | `user-service` `user.service.ts` `loginUser` | username or password absent |
-| `rbac_denied` | — | `api-gateway` `auth.middleware.ts` `authorize` | role not in the route's allowed roles |
-| `rbac_denied` | — | `api-gateway` `auth.middleware.ts` `authorizeSelfOrRoles` | neither role nor self-access permits it |
-| `token_invalid` | `expired` / `malformed` / `bad_signature` | `api-gateway` `auth.middleware.ts` `authenticate` | `jwt.verify` throws; reason mapped from the JWT error |
-| `access_restricted` | `authentication_failure` | `api-gateway` `auth.middleware.ts` `authenticate` | no `Authorization` header, or token superseded/revoked |
+### `libs/common/src/config/logger.ts` - the one shared file with a behavioural change
 
-Not yet instrumented, because the control being logged does not exist in the
-codebase yet: `rate_limit_exceeded` (no rate limiter), `duplicate_alert` (no
-Alert entity), and the asynchronous `access_restricted` reasons (need the
-persistent-violation monitor, which needs a store — Redis is configured but
-unused).
+The Winston format previously destructured four fields and discarded the rest, which would
+have flattened a structured record into a single string. It now branches:
 
-## Anti-enumeration and where an event is logged
+```ts
+winston.format.printf((info) => {
+  if ((info as Record<symbol, unknown>)[SECURITY_EVENT]) {
+    return JSON.stringify(info);        // security record → NDJSON
+  }
 
-`unknown_user` and `bad_password` are deliberately logged in **user-service**,
-not in the api-gateway. The login endpoint returns the identical message
-`"Invalid username or password"` for both cases so the API cannot be used to
-discover which usernames exist — which means the gateway genuinely does not know
-which of the two happened. Only user-service does.
-
-The API response stays generic; only the log is precise. That is the point: the
-security value lives in the log, not in the response.
-
-## Crossing the gRPC boundary
-
-Logging inside user-service creates a problem: gRPC request messages carry no
-caller context, so a record logged there would have no client IP and no
-correlation ID.
-
-Rather than add fields to the shared `.proto` files (which other workstreams
-depend on), the api-gateway attaches the context as **gRPC metadata** — the
-transport-level key/value channel that exists for exactly this purpose. It needs
-no schema change and is ignored by any service that does not read it.
-
-```
-api-gateway                                  user-service
-  buildSecurityMetadata(req)  ──metadata──▶   fromGrpcMetadata(call.metadata)
-  x-forwarded-for, x-request-id,              → { ip_address, endpoint,
-  x-original-endpoint, x-original-method         method, request_id, ... }
+  const { level, message, timestamp, service } = info;
+  return `[${timestamp}] [${level}] [${service}]: ${message}`;   // unchanged
+})
 ```
 
-The result is that an `auth_failure` logged inside user-service still reports
-`"ip_address": "::1"` and `"endpoint": "/api/users/auth/login"` — the real client
-and the real HTTP endpoint, not `grpc:LoginUser`.
+- The `else` branch is **character-for-character the original function body**, so existing
+  operational output is unaffected.
+- The branch triggers only on a symbol created via `Symbol.for("phoenix.security_event")`,
+  which only `WinstonTransport` sets. Another service's metadata object cannot trigger it by
+  accident - symbols are never produced by JSON parsing, gRPC responses or object literals.
+- Symbol keys are ignored by `JSON.stringify`, so the marker routes the record without
+  appearing in the output.
+- `defaultMeta`, `level` and `transports` are untouched.
 
-`fromGrpcMetadata` types its argument structurally (anything with `get(key)`)
-rather than importing `@grpc/grpc-js`, so this module stays framework-agnostic
-and can be unit-tested with a plain object.
+### `api-gateway/src/middleware/request-id.middleware.ts` - new file
 
-## Correlation IDs
+Assigns one correlation identifier per incoming HTTP request, so all records from that
+request can be tied together. `fromRequest()` already reads `x-request-id`, so the middleware
+writes back into `req.headers` and the module needs no change.
 
-`attachRequestId` (`api-gateway/src/middleware/request-id.middleware.ts`) gives
-every request an `x-request-id`, preserving an inbound one if present and
-generating a UUID otherwise. It is echoed on the response.
+A caller-supplied ID is honoured only if it matches `^[A-Za-z0-9._-]{8,64}$`; anything else is
+replaced with a generated UUID. Since the value is written verbatim into audit records, this
+prevents an unbounded or deliberately colliding identifier entering the log. The ID is also
+returned in the response header.
 
-Without it, `request_id` would only be populated when a caller happened to send
-the header, which defeats the purpose — a single request can produce several
-records across two services, and the correlation ID is what ties them together.
+### The five `app.ts` files - two lines each
 
-## How to verify
+Each service declares its identity and delivery mechanism at startup:
 
-With the stack running (`docker compose up -d` in `backend/`) and a test account
-seeded (see `backend/database/seed_security_test_users.sql`):
+```ts
+setDefaultComponent("api-gateway");          // names this service in every record
+setLogTransport(new WinstonTransport());     // routes records through Winston
+```
+
+`api-gateway/src/app.ts` additionally registers the correlation-ID middleware first in the
+chain, so an identifier exists before any route or auth check runs:
+
+```ts
+app.use(attachRequestId);
+```
+
+`data-ingestion-service`, `storage-service` and `notification-service` emit no security
+records yet - their lines are inert, present so records are attributed correctly the moment
+anyone instruments them.
+
+`setDefaultComponent` is explicit rather than environment-derived because `docker-compose.yaml`
+uses a single shared `.env.docker` for all services, so one variable cannot hold a different
+value per service.
+
+---
+
+## 6. What is wired and where
+
+Seven call sites across two services, producing nine distinct record types
+
+### `rbac_denied` - role-based authorisation denied
+
+| Call site | Middleware | Service | Reason | Fires when |
+|---|---|---|---|---|
+| `auth.middleware.ts` | `authorize()` | api-gateway | *(none)* | Token valid, role not in the permitted list |
+| `auth.middleware.ts` | `authorizeSelfOrRoles()` | api-gateway | *(none)* | Neither the role check nor the self-access check passed |
+
+`rbac_denied` carries no reason sub-classifier; `details.check` distinguishes the two
+(`"roles"` / `"self_or_roles"`) and the second also records `requested_user_id`.
+
+### `access_restricted` - request refused before authorisation
+
+| Call site | Middleware | Service | Reason | Fires when |
+|---|---|---|---|---|
+| `auth.middleware.ts` | `authenticate()` | api-gateway | `authentication_failure` | No `Authorization` header |
+| `auth.middleware.ts` | `authenticate()` | api-gateway | `authentication_failure` | Token valid but the account no longer exists |
+| `auth.middleware.ts` | `authenticate()` | api-gateway | `authentication_failure` | Signature valid but token no longer matches the account - logout, newer login or replay. Severity `high` |
+
+All three share one reason; `details.cause` distinguishes them
+(`missing_authorization_header` / `user_not_found` / `token_no_longer_matches_account`).
+
+### `token_invalid` - JWT verification failed
+
+| Call site | Middleware | Service | Reason | Fires when |
+|---|---|---|---|---|
+| `auth.middleware.ts` | `authenticate()` catch block | api-gateway | `expired` / `malformed` / `bad_signature` | Access token past its expiry, not a parseable JWT, or signature does not verify |
+| `user.service.ts` | `refreshToken()` catch block | user-service | `refresh_expired` | Refresh token past its expiry |
+
+A helper maps the `jsonwebtoken` error to the reason vocabulary, because **severity is assigned
+by reason**: an expired token is routine (`low`), a bad signature is a probable forgery attempt
+(`high`).
+
+---
+
+## 7. Known limitations
+
+- **`user-service` records carry no client IP or correlation ID.** gRPC calls carry no HTTP
+  headers, so `refresh_expired` uses a static fallback (`ip_address: "unknown"`,
+  `endpoint: "grpc:RefreshToken"`). `grpcLogContext.ts` exists to close this via gRPC metadata;
+  it needs coordination with the API/Auth areas and is not yet wired.
+- **`LOG_LEVEL` now affects security logging.** It defaults to `info`, so all records pass
+  today. Raised to `warn`, `info`-severity records would be dropped silently.
+- **Records go to stdout only** and are lost when a container is recreated. A File transport is
+  the next step - see §4.
+- **Not yet instrumented:** `token_issued`, `auth_failure`, `validation_failure`.
+  `rate_limit_exceeded` and `duplicate_alert` are blocked until a rate limiter and an Alert
+  entity exist.
+
+---
+
+## 8. How to verify
 
 ```bash
-# auth_failure / unknown_user
-curl -s -X POST localhost:3001/api/users/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"ghost_user","password":"x"}'
+cd backend
+docker compose build && docker compose up -d
 
-# rbac_denied — analyst hitting an admin-only route
-TOKEN=$(curl -s -X POST localhost:3001/api/users/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"isa_sec_analyst","password":"<password>"}' \
-  | python3 -c 'import sys,json;print(json.load(sys.stdin)["access_token"])')
-curl -s localhost:3001/api/users/user -H "Authorization: Bearer $TOKEN"
-
-# token_invalid / malformed
-curl -s localhost:3001/api/users/meta/seasons -H 'Authorization: Bearer nope'
-
-# access_restricted / authentication_failure
-curl -s localhost:3001/api/users/meta/seasons
+# security records only
+docker logs -f api-gateway 2>&1 | grep --line-buffered '^{' | jq .
 ```
 
-Then read the records back:
+| Test | Expected response | Expected record |
+|---|---|---|
+| Analyst token → `GET /api/users/user` | 403 `Access denied` | 1 × `rbac_denied`, `check: "roles"` |
+| **Admin token → same route** | not 403 | **none** |
+| Analyst → `POST /api/users/auth/logout/<other user id>` | 403 | 1 × `rbac_denied`, `check: "self_or_roles"` |
+| No `Authorization` header → `GET /api/users/user` | 401 `No token provided` | 1 × `access_restricted`, `cause: missing_authorization_header` |
+| Log out, then reuse the old token | 401 `Logged out` | 1 × `access_restricted`, `cause: token_no_longer_matches_account`, severity `high` |
+| `Authorization: Bearer notatoken` | 401 `Invalid token` | 1 × `token_invalid`, `malformed` |
+| Valid token with characters appended | 401 | 1 × `token_invalid`, `bad_signature`, severity `high` |
+| Expired refresh token → `/auth/refresh` | 401 | 1 × `token_invalid`, `refresh_expired` - in **user-service** logs |
+
+The admin case is the control: no record confirms that successful authorisation is not logged
+as a denial.
+
+Finally, confirm the change to `logger.ts` did not affect other services' logging. The tests
+above filter to JSON records only, so view the unfiltered log and check that ordinary
+operational lines still print in their original plaintext format:
 
 ```bash
-docker logs api-gateway 2>&1 | grep '^{"timestamp"'
-docker logs user-service 2>&1 | grep '^{"timestamp"'
+docker logs api-gateway --tail 40
 ```
 
-## Safety notes
-
-- The logger records security decisions; it does not make blocking or detection decisions itself.
-- It does not write to a database, SIEM, dashboard, or remote service in this phase.
-- It does not aggregate repeated events across windows; the async monitor will consume these records later.
-- The `details` field is sanitised: control characters are removed, long strings are truncated, circular references are handled, and sensitive keys such as passwords, tokens, secrets, cookies, authorization headers, and raw request bodies are redacted.
-- No security log record contains a JWT. Before this integration, `user.handler.ts` logged whole auth responses with `JSON.stringify(response)`, which printed freshly minted access and refresh tokens in plaintext on every successful login and refresh. That is now `summariseAuthResponse()`, which emits an allowlist of safe fields and reports token presence as a boolean. An allowlist rather than a denylist, so a field added to `AuthEntity` later cannot leak by default.
+```
+[2026-08-24T02:11:04.220Z] [info] [microservices-backend]: LoginUser response: ...
+```

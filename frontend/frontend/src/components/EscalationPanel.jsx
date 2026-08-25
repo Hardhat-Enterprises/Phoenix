@@ -8,15 +8,27 @@ export default function EscalationPanel({
   const [analyst, setAnalyst] = useState("");
   const [showAssignInput, setShowAssignInput] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
+  const [assignError, setAssignError] = useState("");
 
   const handleAssign = () => {
     if (!showAssignInput) {
       setShowAssignInput(true);
       return;
     }
-    if (analyst.trim() === "") return;
+    if (analyst.trim() === "") {
+      setAssignError("Enter an analyst name to continue.");
+      return;
+    }
+    setAssignError("");
     setStatus("assigned");
     setShowAssignInput(false);
+  };
+
+  const handleAnalystChange = (event) => {
+    setAnalyst(event.target.value);
+    if (assignError) {
+      setAssignError("");
+    }
   };
 
   const handleConfirm = () => {
@@ -29,6 +41,7 @@ export default function EscalationPanel({
     setAnalyst("");
     setShowAssignInput(false);
     setConfirmAction(null);
+    setAssignError("");
   };
 
   const statusConfig = {
@@ -163,12 +176,13 @@ export default function EscalationPanel({
           <input
             type="text"
             value={analyst}
-            onChange={(e) => setAnalyst(e.target.value)}
+            onChange={handleAnalystChange}
             onKeyDown={(e) => e.key === "Enter" && handleAssign()}
             placeholder="e.g. Jane Smith"
             style={styles.assignInput}
             autoFocus
             aria-required="true"
+            aria-invalid={Boolean(assignError)}
             aria-describedby={
               assignError ? "escalation-assign-error" : undefined
             }

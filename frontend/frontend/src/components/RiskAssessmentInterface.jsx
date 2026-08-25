@@ -79,6 +79,25 @@ function ErrorState({ message, onRetry }) {
   );
 }
 
+// Sprint 2 — distinct from ErrorState on purpose. A generic ErrorState with
+// a Retry button implies something transient and fixable failed. When the
+// backend genuinely doesn't expose this endpoint in this environment,
+// retrying won't help — so this state says so plainly, with no Retry
+// button, rather than implying a fixable failure. See
+// riskAssessmentApi.js's RISK_BACKEND_UNAVAILABLE error code.
+function UnavailableState() {
+  return (
+    <div className="ra-state ra-state--unavailable" role="status">
+      <h3>Not available in this environment</h3>
+      <p>
+        Risk assessment data isn't available from the backend configured for
+        this environment. This isn't an error you can fix by retrying — the
+        environment simply doesn't have this endpoint enabled yet.
+      </p>
+    </div>
+  );
+}
+
 function RiskAssessmentListItem({ assessment, onSelect }) {
   return (
     <li className="ra-list-item">
@@ -180,28 +199,47 @@ export default function RiskAssessmentInterface() {
   const [view, setView] = useState("list"); // "list" | "detail"
   const [assessments, setAssessments] = useState([]);
   const [selected, setSelected] = useState(null);
-  const [listStatus, setListStatus] = useState("loading"); // loading | ready | empty | error
+  const [listStatus, setListStatus] = useState("loading"); // loading | ready | empty | error | unavailable
   const [detailStatus, setDetailStatus] = useState("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [isDemoSource, setIsDemoSource] = useState(true);
 
+  // NOTE: loadList intentionally does NOT call setListStatus/setErrorMessage
+  // synchronously before its first `await` — the initial "loading"/"" values
+  // already come from useState's defaults above, and the retry path resets
+  // them explicitly in its own onClick handler (a real event handler, not an
+  // effect). Calling setState synchronously inside a function that's invoked
+  // directly from useEffect trips the react-hooks/set-state-in-effect rule.
   const loadList = useCallback(async () => {
-    setListStatus("loading");
-    setErrorMessage("");
     try {
       const { data, demo } = await getRiskAssessments();
       setIsDemoSource(demo);
       setAssessments(data);
       setListStatus(data.length === 0 ? "empty" : "ready");
     } catch (err) {
+      if (err.code === "RISK_BACKEND_UNAVAILABLE") {
+        setIsDemoSource(false);
+        setListStatus("unavailable");
+        return;
+      }
       setErrorMessage(err.message || "Unable to reach the risk-assessment service.");
       setListStatus("error");
     }
   }, []);
 
-  // Load risk assessments when the component mounts.
+  // This is the standard "fetch data on mount" pattern (loadList only calls
+  // setState after its `await` resolves). This rule flags any effect-invoked
+  // async function that eventually calls setState, which would rule out data
+  // fetching in effects entirely — not a bug, just an overly strict rule for
+  // this well-established pattern.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadList();
+  }, [loadList]);
+
+  const retryList = useCallback(() => {
+    setListStatus("loading");
+    setErrorMessage("");
     loadList();
   }, [loadList]);
 
@@ -244,7 +282,8 @@ export default function RiskAssessmentInterface() {
       {view === "list" && (
         <>
           {listStatus === "loading" && <LoadingState label="Loading risk assessments…" />}
-          {listStatus === "error" && <ErrorState message={errorMessage} onRetry={loadList} />}
+          {listStatus === "error" && <ErrorState message={errorMessage} onRetry={retryList} />}
+          {listStatus === "unavailable" && <UnavailableState />}
           {listStatus === "empty" && <EmptyState />}
           {listStatus === "ready" && (
             <RiskAssessmentList assessments={assessments} onSelect={handleSelect} />

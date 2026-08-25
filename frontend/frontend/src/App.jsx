@@ -21,6 +21,7 @@ import NotFound from "./NotFound";
 import { APP_CONFIG, PAGE_KEYS } from "./config/appConfig";
 import { MAIN_PAGE_KEYS } from "./config/navigation";
 import { DEFAULT_USER_ROLE, USER_ROLES } from "./config/roles";
+import { HOME_PATH, pathForKey, routeForPath } from "./config/routes";
 
 // Pages the Back action should never return the user to.
 const NON_RETURNABLE_PAGES = [
@@ -29,23 +30,7 @@ const NON_RETURNABLE_PAGES = [
   PAGE_KEYS.THREATS,
 ];
 
-// Pages currently recognised by the state-based frontend navigation.
-// The routing team can later connect NotFound to URL-based routing.
-const KNOWN_PAGES = [
-  PAGE_KEYS.LOGIN,
-  PAGE_KEYS.FORGOT_PASSWORD,
-  PAGE_KEYS.CREATE_USER,
-  PAGE_KEYS.DASHBOARD,
-  PAGE_KEYS.ALERTS,
-  PAGE_KEYS.ABOUT,
-  PAGE_KEYS.REPORTS,
-  PAGE_KEYS.THREATS,
-  PAGE_KEYS.RISK_ASSESSMENT,
-  PAGE_KEYS.SETTINGS,
-];
-
 function App() {
-  const [page, setPage] = useState(APP_CONFIG.defaultPage);
   const [authSession, setAuthSession] = useState(() => getAuthSession());
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [selectedThreat, setSelectedThreat] = useState(null);
@@ -53,8 +38,17 @@ function App() {
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const adminMenuRef = useRef(null);
+  const menuButtonRef = useRef(null);
+
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const mainPages = MAIN_PAGE_KEYS;
+
+  // The "current page key" derived from the real URL — this is what replaces
+  // the old `page` state now that the browser URL is the source of truth.
+  const currentPageKey = routeForPath(location.pathname)?.key;
+  const showChrome = mainPages.includes(currentPageKey);
 
   const isLoggedIn = Boolean(authSession?.accessToken);
 
@@ -85,8 +79,23 @@ function App() {
     };
   }, [showAdminMenu]);
 
-  // Back from Threat Details uses real browser history, so it returns the
-  // user to wherever they actually came from.
+  // Single navigation entry point, now backed by real URLs. Kept as a
+  // `setPage`-style function taking a PAGE_KEYS key so LoginForm,
+  // ForgotPassword, CreateUser, Dashboard, Alerts, RiskAssessmentPage and
+  // SettingsPage — none of which know about react-router — don't need to
+  // change at all.
+  const goToPage = (nextKey) => {
+    if (!nextKey || nextKey === currentPageKey) {
+      return;
+    }
+
+    setPreviousPage(currentPageKey);
+    navigate(pathForKey(nextKey));
+  };
+
+  // Back from Threat Details uses the page-key history we track ourselves
+  // (browser history alone isn't reliable here, since the user may have
+  // arrived via a direct link or a refresh).
   const handleBackFromThreatDetails = () => {
     setSelectedThreat(null);
 
@@ -215,7 +224,7 @@ function App() {
                         }}
                       >
                         <span className="admin-menu-icon" aria-hidden="true">
-                          ＋
+                          +
                         </span>
 
                         <span>
@@ -231,7 +240,7 @@ function App() {
                         onClick={() => handleLogout()}
                       >
                         <span className="admin-menu-icon" aria-hidden="true">
-                          ↪
+                          &rarr;
                         </span>
 
                         <span>
@@ -265,7 +274,7 @@ function App() {
               onClick={() => goToPage(PAGE_KEYS.LOGIN)}
             >
               Login
-            </Link>
+            </button>
           )}
         </div>
       </div>
@@ -275,86 +284,85 @@ function App() {
       )}
 
       <div className="page-content">
-        {page === PAGE_KEYS.LOGIN && (
-          <LoginForm setPage={goToPage} onLogin={handleLogin} />
-        )}
+        <Routes>
+          <Route path="/" element={<Navigate to={HOME_PATH} replace />} />
 
-        {page === PAGE_KEYS.FORGOT_PASSWORD && (
-          <ForgotPassword setPage={goToPage} />
-        )}
+          <Route
+            path={pathForKey(PAGE_KEYS.LOGIN)}
+            element={<LoginForm setPage={goToPage} onLogin={handleLogin} />}
+          />
 
-        {page === PAGE_KEYS.CREATE_USER && isAdmin && (
-          <CreateUser setPage={goToPage} />
-        )}
+          <Route
+            path={pathForKey(PAGE_KEYS.FORGOT_PASSWORD)}
+            element={<ForgotPassword setPage={goToPage} />}
+          />
 
-        {page === PAGE_KEYS.DASHBOARD && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
+          <Route
+            path={pathForKey(PAGE_KEYS.CREATE_USER)}
+            element={
+              isAdmin ? (
+                <CreateUser
+                  setPage={goToPage}
+                  currentUserRole={authSession?.user?.role}
+                />
+              ) : (
+                <Navigate to={HOME_PATH} replace />
+              )
+            }
+          />
 
-            <Dashboard
-              setPage={goToPage}
-              setSelectedThreat={setSelectedThreat}
-              isLoggedIn={isLoggedIn}
-            />
-          </div>
-        )}
+          <Route
+            path={pathForKey(PAGE_KEYS.DASHBOARD)}
+            element={withShell(
+              <Dashboard
+                setPage={goToPage}
+                setSelectedThreat={setSelectedThreat}
+                isLoggedIn={isLoggedIn}
+              />,
+            )}
+          />
 
-        {page === PAGE_KEYS.ALERTS && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
+          <Route
+            path={pathForKey(PAGE_KEYS.ALERTS)}
+            element={withShell(
+              <Alerts setPage={goToPage} setSelectedThreat={setSelectedThreat} />,
+            )}
+          />
 
-            <Alerts
-              setPage={goToPage}
-              setSelectedThreat={setSelectedThreat}
-            />
-          </div>
-        )}
+          <Route path={pathForKey(PAGE_KEYS.ABOUT)} element={withShell(<AboutUs />)} />
 
-        {page === PAGE_KEYS.ABOUT && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <AboutUs />
-          </div>
-        )}
+          <Route path={pathForKey(PAGE_KEYS.REPORTS)} element={withShell(<ReportsPage />)} />
 
-        {page === PAGE_KEYS.REPORTS && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <ReportsPage />
-          </div>
-        )}
+          <Route
+            path={pathForKey(PAGE_KEYS.THREATS)}
+            element={withShell(
+              <ThreatDetails
+                selectedThreat={selectedThreat}
+                onBack={handleBackFromThreatDetails}
+              />,
+            )}
+          />
 
-        {page === PAGE_KEYS.THREATS && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
+          <Route
+            path={pathForKey(PAGE_KEYS.RISK_ASSESSMENT)}
+            element={withShell(<RiskAssessmentPage />)}
+          />
 
-            <ThreatDetails
-              selectedThreat={selectedThreat}
-              onBack={handleBackFromThreatDetails}
-            />
-          </div>
-        )}
+          <Route
+            path={pathForKey(PAGE_KEYS.SETTINGS)}
+            element={withShell(
+              <SettingsPage
+                setPage={goToPage}
+                authSession={authSession}
+                onLogout={handleLogout}
+              />,
+            )}
+          />
 
-        {page === PAGE_KEYS.RISK_ASSESSMENT && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <RiskAssessmentPage />
-          </div>
-        )}
+          <Route path="/help" element={withShell(<HelpSupportPage />)} />
 
-        {page === PAGE_KEYS.SETTINGS && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-
-            <SettingsPage
-              setPage={goToPage}
-              authSession={authSession}
-              onLogout={handleLogout}
-            />
-          </div>
-        )}
-
-        {!KNOWN_PAGES.includes(page) && <NotFound />}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </div>
 
       <Footer />

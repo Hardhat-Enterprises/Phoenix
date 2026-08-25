@@ -213,6 +213,15 @@ export const registerUser = async ({ username, email, password, role }) => {
 //      the success message is identical either way.
 //   2. If the backend doesn't expose this endpoint yet, say so plainly rather
 //      than pretending the reset succeeded.
+//
+// NOTE: network-failure detection below matches on "could not reach the"
+// case-insensitively, rather than a literal "Could not reach the Phoenix API
+// gateway" string. The exact wording/capitalisation of that message now
+// lives in config/environment.js's error text and has already changed once
+// during a merge — matching case-insensitively on a stable substring avoids
+// silently breaking this check again if the wording changes further.
+const NETWORK_ERROR_SNIPPET = "could not reach the";
+
 export const requestPasswordReset = async (identifier) => {
   const trimmed = identifier.trim();
 
@@ -228,7 +237,7 @@ export const requestPasswordReset = async (identifier) => {
     // doesn't support this yet — tell the user plainly instead of a generic error.
     if (
       error.status === 404 ||
-      error.message?.includes("Could not reach the Phoenix API gateway")
+      error.message?.toLowerCase().includes(NETWORK_ERROR_SNIPPET)
     ) {
       const unavailable = new Error(
         "Password recovery isn't available from the backend yet. Please contact an administrator for help resetting your password.",
@@ -287,7 +296,7 @@ export const getSafeAuthErrorMessage = (error, fallback) => {
   }
 
   // Network/gateway failures already carry a friendly message from apiRequest.
-  if (error.message?.includes("Could not reach the Phoenix API gateway")) {
+  if (error.message?.toLowerCase().includes(NETWORK_ERROR_SNIPPET)) {
     return error.message;
   }
 

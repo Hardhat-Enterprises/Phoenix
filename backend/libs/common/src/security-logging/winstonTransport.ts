@@ -52,8 +52,6 @@ const formatScalar = (value: unknown): string => {
  * Flatten details into `key=value` pairs, using dotted keys for nested objects
  * and indexed keys for arrays of objects.
  *
- * Recursion is bounded: sanitiseDetails() has already capped depth and replaced
- * circular references before any transport sees the details.
  */
 const flattenDetails = (
   value: unknown,
@@ -93,11 +91,8 @@ const flattenDetails = (
  *
  * Details are flattened rather than JSON-stringified because a JSON string
  * nested inside a JSON record escapes every quote, which is unreadable in raw
- * output. The structured `details` object remains in the record, so this is a
- * friendlier rendering of data that is still available in full.
+ * output. 
  *
- * `details` is sanitised by logSecurityEvent before reaching any transport, so
- * nothing sensitive can leak through this string.
  */
 const buildMessage = (record: SecurityLogRecord): string => {
   const parts: string[] = [record.event_type];

@@ -1,10 +1,8 @@
 # Security Monitoring & Audit Logging Implementation v1.1
 
-**Area 5 - Cybersecurity stream.** First fully working implementation, proposed for merge into `dev`.
+**Cybersecurity stream.** First fully working implementation, proposed for merge into `dev`.
 
-Structured, machine-readable logging for security-relevant events: authentication
-attempts, authorisation failures and token validation. Records are emitted as one JSON
-object per line through the team's existing Winston logger.
+Provides structured, machine-readable logging for security events, outputting one JSON object per line via Winston. Currently completed events include authentication attempts, authorisation failures and token validation. Tested with Postman and observed live.
 
 ---
 
@@ -24,7 +22,7 @@ object per line through the team's existing Winston logger.
 
 ---
 
-## 2. The module
+## 2. The Security Logging module
 
 At `backend/libs/common/src/security-logging/`, exported through `@phoenix/common` in the
 same way the shared `logger` and `HttpStatusCode` already are.
@@ -72,7 +70,7 @@ at service startup - no call site changes.
 
 An analyst calls the admin-only `GET /api/users/user`.
 
-**1) Call site.** `authorize()` finds the role is wrong:
+**1) Call site.** `authorize()` finds the role is wrong and invoke the corresponding helper of `logSecurityEvent()`:
 
 ```ts
 logRbacDenied({
@@ -82,8 +80,8 @@ logRbacDenied({
 ```
 
 **2) Typed helper.** `logRbacDenied()` fills in what an RBAC denial means: `severity: medium`,
-`outcome: blocked`, `response_code: 403` and the rule tag. All overridable, so call sites
-stay short.
+`outcome: blocked`, `response_code: 403` and the rule tag. All overridable, so call sites codes
+stay brief.
 
 **3) Core builder.** `logSecurityEvent()` stamps timestamp and component, sanitises
 `details`, drops `undefined` fields and hands the record to the active transport.
@@ -134,7 +132,7 @@ Emitted as a single line; shown formatted here.
 ## 4. Relationship with the existing Winston logger
 
 Winston is **not replaced**. It is now the delivery mechanism for security records as well as
-operational ones - one logger, one place to configure where output goes.
+operational ones. One logger, one place to configure where output goes whether SIEM or storage.
 
 | | Security logging module | Winston |
 |---|---|---|
@@ -183,23 +181,21 @@ winston.format.printf((info) => {
   operational output is unaffected.
 - The branch triggers only on a symbol created via `Symbol.for("phoenix.security_event")`,
   which only `WinstonTransport` sets. Another service's metadata object cannot trigger it by
-  accident - symbols are never produced by JSON parsing, gRPC responses or object literals.
-- Symbol keys are ignored by `JSON.stringify`, so the marker routes the record without
-  appearing in the output.
+  accident.
+
 - `defaultMeta`, `level` and `transports` are untouched.
 
 ### `api-gateway/src/middleware/request-id.middleware.ts` - new file
 
 Assigns one correlation identifier per incoming HTTP request, so all records from that
-request can be tied together. `fromRequest()` already reads `x-request-id`, so the middleware
-writes back into `req.headers` and the module needs no change.
+request can be tied together. 
 
 A caller-supplied ID is honoured only if it matches `^[A-Za-z0-9._-]{8,64}$`; anything else is
 replaced with a generated UUID. Since the value is written verbatim into audit records, this
 prevents an unbounded or deliberately colliding identifier entering the log. The ID is also
 returned in the response header.
 
-### The five `app.ts` files - two lines each
+### The five service's `app.ts` files - two lines each
 
 Each service declares its identity and delivery mechanism at startup:
 
@@ -214,10 +210,7 @@ chain, so an identifier exists before any route or auth check runs:
 ```ts
 app.use(attachRequestId);
 ```
-
-`data-ingestion-service`, `storage-service` and `notification-service` emit no security
-records yet - their lines are inert, present so records are attributed correctly the moment
-anyone instruments them.
+The remaining services are `user-service`, `data-ingestion-service`, `storage-service` and `notification-service`. With the exception of user-service, they do not yet emit security records, but their configurations are in place to ensure correct attribution the moment they are instrumented.
 
 `setDefaultComponent` is explicit rather than environment-derived because `docker-compose.yaml`
 uses a single shared `.env.docker` for all services, so one variable cannot hold a different
@@ -279,7 +272,7 @@ by reason**: an expired token is routine (`low`), a bad signature is a probable 
 
 ---
 
-## 8. How to verify
+## 8. Testing the Implementation
 
 ```bash
 cd backend

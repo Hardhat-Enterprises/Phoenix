@@ -3,13 +3,21 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { config, connectRabbitMQ, logger } from "@phoenix/common";
+import {
+  config,
+  connectRabbitMQ,
+  logger,
+  setDefaultComponent,
+  setLogTransport,
+  WinstonTransport,
+} from "@phoenix/common";
 
 import userRoutes from "./routes/user.routes";
 import ingestionRoutes from "./routes/ingestion.routes";
 import notificationRoutes from "./routes/notification.routes";
 import threatRoutes from "./routes/threat.routes";
 import storageRoutes from "./routes/storage.routes";
+import { attachRequestId } from "./middleware/request-id.middleware";
 
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "@phoenix/common";
@@ -18,7 +26,15 @@ import { swaggerSpec } from "@phoenix/common";
 
 dotenv.config();
 
+// CY017: name this service in every security log record it emits.
+setDefaultComponent("api-gateway");
+setLogTransport(new WinstonTransport());
+
 const app = express();
+
+// CY017: assign a correlation ID before anything else, so every security log
+// record produced by this request carries the same identifier.
+app.use(attachRequestId);
 
 app.use(cors());
 app.use(express.json());

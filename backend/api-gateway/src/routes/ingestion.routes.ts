@@ -354,6 +354,4 @@ router.post(
  */
 router.post("/core", authenticate, coreModelIntegration);
 
-//hi
 export default router;
-

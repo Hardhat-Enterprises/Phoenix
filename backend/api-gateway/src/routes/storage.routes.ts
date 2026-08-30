@@ -3,6 +3,12 @@ import { getHealth, uploadFile } from "../controllers/storage.controller";
 import multer from "multer";
 import { authenticate } from "../middleware/auth.middleware";
 
+import { rateLimit } from "../middleware/rateLimit.middleware";
+import {
+    rateLimitStore,
+    writeRateLimit,
+} from "../middleware/rateLimit.store";
+
 const router = Router();
 
 const upload = multer({ dest: "uploads/" });
@@ -132,5 +138,11 @@ router.get("/health", getHealth);
  *                   type: string
  *                   example: "Error uploading file"
  */
-router.post("/upload", authenticate, upload.single("file"), uploadFile);
+router.post(
+    "/upload", 
+    authenticate, 
+    rateLimit(writeRateLimit, rateLimitStore),
+    upload.single("file"), 
+    uploadFile,
+);
 export default router;

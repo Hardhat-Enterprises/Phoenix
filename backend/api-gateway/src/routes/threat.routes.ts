@@ -2,6 +2,12 @@ import { Router } from "express";
 import { getThreats, getThreat } from "../controllers/threat.controller";
 import { authenticate } from "../middleware/auth.middleware";
 
+import { rateLimit } from "../middleware/rateLimit.middleware";
+import {
+    rateLimitStore,
+    standardReadRateLimit,
+} from "../middleware/rateLimit.store";
+
 const router = Router();
 
 /**
@@ -152,7 +158,12 @@ const router = Router();
  *                   type: string
  *                   example: "Error fetching threats"
  */
-router.get("/", authenticate, getThreats);
+router.get(
+    "/", 
+    authenticate, 
+    rateLimit(standardReadRateLimit, rateLimitStore),
+    getThreats,
+);
 
 /**
  * @swagger
@@ -261,6 +272,11 @@ router.get("/", authenticate, getThreats);
  *                   type: string
  *                   example: "Error fetching threat"
  */
-router.get("/:threatId", authenticate, getThreat);
+router.get(
+    "/:threatId", 
+    authenticate, 
+    rateLimit(standardReadRateLimit, rateLimitStore),
+    getThreat,
+);
 
 export default router;

@@ -7,6 +7,12 @@ import {
 } from "../controllers/ingestion.controller";
 import { authenticate, authorize } from "../middleware/auth.middleware";
 
+import { rateLimit } from "../middleware/rateLimit.middleware";
+import {
+    rateLimitStore,
+    writeRateLimit,
+    expensiveOperationRateLimit,
+} from "../middleware/rateLimit.store";
 const router = Router();
 
 /**
@@ -150,6 +156,7 @@ router.get("/health", getHealth);
 router.post(
   "/hazard",
   authenticate,
+  rateLimit(writeRateLimit, rateLimitStore),
   authorize(["ingestion service"]),
   ingestHazardData,
 );
@@ -257,6 +264,7 @@ router.post(
 router.post(
   "/cyber",
   authenticate,
+  rateLimit(writeRateLimit, rateLimitStore),
   authorize(["ingestion service"]),
   ingestCyberData,
 );
@@ -352,6 +360,11 @@ router.post(
  *       500:
  *         description: Internal server error
  */
-router.post("/core", authenticate, coreModelIntegration);
+router.post(
+  "/core", 
+  authenticate, 
+  rateLimit(expensiveOperationRateLimit, rateLimitStore),
+  coreModelIntegration,
+);
 
 export default router;

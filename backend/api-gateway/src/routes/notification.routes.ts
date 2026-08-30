@@ -4,6 +4,12 @@ import {
   getNotifications,
 } from "../controllers/notification.controller";
 
+import { rateLimit } from "../middleware/rateLimit.middleware";
+import {
+  rateLimitStore,
+  standardReadRateLimit,
+} from "../middleware/rateLimit.store";
+
 const router = Router();
 
 /**
@@ -73,6 +79,10 @@ router.get("/health", getHealth);
  *                   type: string
  *                   example: Error fetching notifications
  */
-router.get("/", getNotifications);
+router.get(
+  "/",
+  rateLimit(standardReadRateLimit, rateLimitStore), 
+  getNotifications,
+);
 
 export default router;

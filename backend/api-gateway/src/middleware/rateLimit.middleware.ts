@@ -1,4 +1,5 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction} from "express";
+import { buildRateLimitKey} from "@phoenix/common/rate-limit/rate-limit-key";
 
 interface RateLimitPolicy {
     name: string;
@@ -7,10 +8,20 @@ interface RateLimitPolicy {
     identifierType: "user" | "ip" | "api-key";
 }
 
+interface RateLimitResult {
+    allowed: boolean;
+    limit: number;
+    remaining: number;
+    resetAt: number;
+    retryAfterSeconds: number;
+}
+
 interface RateLimitStore {
-    increment(key: string, windowSeconds: number): Promise<number>;
-    getTTL(key: string): Promise<number>;
-    reset(key: string): Promise<void>;
+    consume(
+        key: string,
+        limit: number,
+        windowSeconds: number,
+    ): Promise<RateLimitResult>;
 }
 
 const getClientIdentifier = (
@@ -27,11 +38,11 @@ const getClientIdentifier = (
         return `user:${user.user_id}`;
     }
 
-    if (identifierType === "ip") {
+    if (identifierType == "ip") {
         return `ip:${req.ip}`;
     }
 
-    if (identifierType === "api-key") {
+    if (identifierType == "api-key") {
         const apiKey = req.headers["x-api-key"];
 
         if (!apiKey || Array.isArray(apiKey)) {
@@ -40,14 +51,8 @@ const getClientIdentifier = (
 
         return `api-key:${apiKey}`;
     }
-    return null;
-};
 
-const buildsRateLimitKey = (
-    policy: RateLimitPolicy,
-    identifier: string,
-): string => {
-    return `ratelimit:${policy.name}:${identifier}`;
+    return null;
 };
 
 export const rateLimit = (
@@ -72,32 +77,32 @@ export const rateLimit = (
                 });
                 return;
             }
+            const key = buildRateLimitKey({
+                environment: process.env.NODE_ENV || "development",
+                policy: policy.name,
+                clientIdentifier: identifier,
+            });
 
-            const key = buildsRateLimitKey(policy, identifier);
-
-            const count = await store.increment(
+            const result = await store.consume (
                 key,
+                policy.limit,
                 policy.windowSeconds,
             );
 
-            const ttl = await store.getTTL(key);
+            res.setHeader("RateLimit-Limit", result.limit);
+            res.setHeader("RateLimit-Remaining", result.remaining);
+            res.setHeader("RateLimit-Reset", result.resetAt);
 
-            const remaining = Math.max(
-               policy.limit - count,
-               0,
-            );
+            if (!result.allowed) {
+                res.setHeader(
+                    "Retry-After",
+                    result.retryAfterSeconds,
+                );
 
-            res.setHeader("RateLimit-Limit", policy.limit);
-            res.setHeader("RateLimit-Remaining", remaining);
-            res.setHeader("RateLimit-Reset", ttl);
-
-            if (count > policy.limit) {
-                res.setHeader("Retry-After", ttl);
-
-                res.status(429).json({
+                res.status(429). json({
                     status: 429,
                     message: "Too many requests. Please try again later.",
-                    retryAfter: ttl,
+                    retryAfter: result.retryAfterSeconds,
                 });
 
                 return;
@@ -105,9 +110,9 @@ export const rateLimit = (
 
             next();
         } catch (error) {
-            console.error("Rate limit store error:", error);
+            console.error("Rate limit store error: ", error);
 
-            // if Redis fails to open / unavailable
+            // If Redis is unavailable, allow the request to continue
             next();
         }
     };

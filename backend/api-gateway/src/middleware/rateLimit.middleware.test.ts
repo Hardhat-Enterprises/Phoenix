@@ -5,9 +5,13 @@ import { Request, Response, NextFunction } from "express";
 describe("Rate Limit Middleware", () => {
     it("allows a request when it is below the rate limit", async () => {
         const store = {
-            increment: vi.fn().mockResolvedValue(1),
-            getTTL: vi.fn().mockResolvedValue(60),
-            reset: vi.fn(),
+            consume: vi.fn().mockResolvedValue({
+                allowed: true,
+                limit: 5,
+                remaining: 4,
+                resetAt: 60,
+                retryAfterSeconds: 0,
+            })
         };
 
         const policy = {
@@ -39,9 +43,13 @@ describe("Rate Limit Middleware", () => {
 
     it("allows a request when it reaches the rate limit", async () => {
         const store = {
-            increment: vi.fn().mockResolvedValue(5),
-            getTTL: vi.fn().mockResolvedValue(60),
-            reset: vi.fn(),
+            consume: vi.fn().mockResolvedValue({
+                allowed: true,
+                limit: 5,
+                remaining: 0,
+                resetAt: 60,
+                retryAfterSeconds: 0,
+            }),
         };
 
         const policy = {
@@ -72,10 +80,14 @@ describe("Rate Limit Middleware", () => {
     });
         it("rejects a request when it exceeds the rate limit", async () => {
         const store = {
-            increment: vi.fn().mockResolvedValue(6),
-            getTTL: vi.fn().mockResolvedValue(60),
-            reset: vi.fn(),
-        };
+            consume: vi.fn().mockResolvedValue({
+                allowed: false,
+                limit: 5,
+                remaining: 0,
+                resetAt: 60,
+                retryAfterSeconds: 60,
+            }),
+        };    
 
         const policy = {
             name: "test-policy",
@@ -110,11 +122,9 @@ describe("Rate Limit Middleware", () => {
     });
         it("allows the request when the rate-limit store is unavailable", async () => {
         const store = {
-            increment: vi.fn().mockRejectedValue(
+            consume: vi.fn().mockRejectedValue(
                 new Error("Redis unavailable"),
             ),
-            getTTL: vi.fn(),
-            reset: vi.fn(),
         };
 
         const policy = {
@@ -145,9 +155,13 @@ describe("Rate Limit Middleware", () => {
     });
         it("sets the correct rate limit headers", async () => {
         const store = {
-            increment: vi.fn().mockResolvedValue(2),
-            getTTL: vi.fn().mockResolvedValue(45),
-            reset: vi.fn(),
+             consume: vi.fn().mockResolvedValue({
+                allowed: true,
+                limit: 5,
+                remaining: 3,
+                resetAt: 45,
+                retryAfterSeconds: 0,
+             }),
         };
 
         const policy = {
@@ -190,9 +204,13 @@ describe("Rate Limit Middleware", () => {
     });
         it("uses the API key to identify the client", async () => {
         const store = {
-            increment: vi.fn().mockResolvedValue(1),
-            getTTL: vi.fn().mockResolvedValue(60),
-            reset: vi.fn(),
+             consume: vi.fn().mockResolvedValue({
+                allowed: true,
+                limit: 5,
+                remaining: 4,
+                resetAt: 60,
+                retryAfterSeconds: 0,
+             }),
         };
 
         const policy = {
@@ -221,8 +239,9 @@ describe("Rate Limit Middleware", () => {
 
         await middleware(req, res, next);
 
-        expect(store.increment).toHaveBeenCalledWith(
-            "ratelimit:api-key-policy:api-key:test-api-key",
+        expect(store.consume).toHaveBeenCalledWith(
+            `phoenix:ratelimit:${process.env.NODE_ENV}:api-key-policy:api-key%3Atest-api-key`,
+            5,
             60,
         );
 
@@ -230,9 +249,13 @@ describe("Rate Limit Middleware", () => {
     });
         it("uses the authenticated user ID to identify the client", async () => {
         const store = {
-            increment: vi.fn().mockResolvedValue(1),
-            getTTL: vi.fn().mockResolvedValue(60),
-            reset: vi.fn(),
+             consume: vi.fn().mockResolvedValue({
+                allowed: true,
+                limit: 10,
+                remaining: 9,
+                resetAt: 60,
+                retryAfterSeconds: 0,
+             }),
         };
 
         const policy = {
@@ -261,8 +284,9 @@ describe("Rate Limit Middleware", () => {
 
         await middleware(req, res, next);
 
-        expect(store.increment).toHaveBeenCalledWith(
-            "ratelimit:user-policy:user:user-123",
+        expect(store.consume).toHaveBeenCalledWith(
+            `phoenix:ratelimit:${process.env.NODE_ENV}:user-policy:user%3Auser-123`,
+            10,
             60,
         );
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import EvidenceEntry from "./components/EvidenceEntry";
 import "./ReportsPage.css";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import ReportPDF from "./components/ReportPDF";
@@ -386,6 +387,7 @@ function ReportsPage() {
 
   return (
     <main className="reports-content">
+      <EvidenceEntry />
       <section className="url-ingestion-card">
         <div className="url-ingestion-header">
           <div>

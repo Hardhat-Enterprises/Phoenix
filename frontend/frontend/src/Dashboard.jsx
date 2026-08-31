@@ -1746,8 +1746,6 @@ if (
               {locationOptions.stats.missingCoordCount > 0 &&
                 ` ┬╖ ${locationOptions.stats.missingCoordCount} locations missing coordinates`}
               {unresolvedHazardCount > 0 && (
-                <span style={{ color: "#c00" }}>
-                  {" ┬╖ "}
                 <span style={{ color: "var(--color-error-text)" }}>
                   {" · "}
                   {unresolvedHazardCount} hazard{unresolvedHazardCount === 1 ? "" : "s"} shown as

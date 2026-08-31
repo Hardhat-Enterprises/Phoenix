@@ -1,4 +1,4 @@
-import { apiRequest } from "./authApi";
+import { apiRequest, getAccessToken } from "./authApi";
 
 const toQueryString = (params = {}) => {
   const query = new URLSearchParams();
@@ -98,6 +98,30 @@ export const getDashboardActivity = async () => {
   });
 
   return unwrapData(payload);
+};
+
+// The gateway exposes GET /api/notifications only. Until it also exposes
+// mutation endpoints, dismiss / clear / mark-read stay client-side and the UI
+// must say so rather than implying the change was saved.
+export const NOTIFICATION_MUTATIONS_SUPPORTED = false;
+
+// Sending an alert needs a backend send endpoint. None exists yet, so the
+// confirmation modal must not claim an alert was delivered.
+export const NOTIFICATION_SEND_SUPPORTED = false;
+
+export const getNotifications = async (params = {}) => {
+  const accessToken = getAccessToken();
+
+  // The endpoint sits outside /api/users, so its auth requirement is not known
+  // here. Send the token when we have one and let the gateway decide.
+  const payload = await apiRequest(
+    `/api/notifications${toQueryString(params)}`,
+    {
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    },
+  );
+
+  return withListMeta(payload, ["notifications", "alerts", "items", "data"]);
 };
 
 export const getApiHealth = async () => {

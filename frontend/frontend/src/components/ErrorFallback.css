@@ -1,0 +1,61 @@
+.error-fallback {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #f5f7fa;
+}
+
+.error-fallback__card {
+  width: 100%;
+  max-width: 560px;
+  padding: 2.5rem;
+  background: white;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.error-fallback__brand {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.error-fallback__actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.error-fallback__actions button {
+  min-height: 44px;
+  padding: 0.7rem 1.2rem;
+  border: 1px solid #333;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.error-fallback__actions button:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+:root[data-theme="dark"] .error-fallback {
+  background: var(--color-page-bg);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .error-fallback__card {
+  background: var(--color-surface);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme="dark"] .error-fallback__actions button {
+  background: var(--color-input-bg);
+  border-color: var(--color-control-border);
+  color: var(--color-text);
+}

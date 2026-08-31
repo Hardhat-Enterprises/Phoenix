@@ -1,0 +1,20 @@
+{
+  "model": "one_class_svm",
+  "evaluation_mode": "unsupervised",
+  "n_rows": 169539,
+  "n_features": 50,
+  "threshold": 1.9753780076401377,
+  "threshold_quantile": 0.9299999999999999,
+  "anomaly_rate": 0.07011128150682239,
+  "score_mean": -149.64883875566485,
+  "score_std": 147.77163264883114,
+  "score_iqr": 140.34183597757595,
+  "stability_score": 1.0,
+  "precision": null,
+  "recall": null,
+  "f1": null,
+  "roc_auc": null,
+  "pr_auc": null,
+  "false_positive_rate": null,
+  "false_negative_rate": null
+}

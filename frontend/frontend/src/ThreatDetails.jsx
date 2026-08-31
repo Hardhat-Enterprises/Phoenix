@@ -1,5 +1,5 @@
 import "./ThreatDetails.css";
-
+import "./components/design.css";
 const threatLevels = [
   { label: "No Threat", className: "no-threat" },
   { label: "Low", className: "low" },
@@ -55,7 +55,7 @@ const buildThreatDescription = (selectedThreat) => {
   return `Backend threat record summary: ${facts.join(", ")}.`;
 };
 
-function ThreatDetails({ selectedThreat }) {
+function ThreatDetails({ selectedThreat, onBack }) {
   const backendThreat = readBackendThreat(selectedThreat);
   const threatName =
     selectedThreat?.name ||
@@ -70,9 +70,7 @@ function ThreatDetails({ selectedThreat }) {
     formatLabel(backendThreat.severity) ||
     "Not provided";
   const threatSource =
-    selectedThreat?.source ||
-    backendThreat.source ||
-    "Not provided";
+    selectedThreat?.source || backendThreat.source || "Not provided";
   const eventType = hasValue(backendThreat.event_type)
     ? formatLabel(backendThreat.event_type)
     : "Not provided";
@@ -82,7 +80,6 @@ function ThreatDetails({ selectedThreat }) {
   const threatDescription = buildThreatDescription(selectedThreat);
 
   const getRiskColor = () => {
-   // const level = selectedThreat?.vulnerability?.toLowerCase();
     if (threatSeverity === "Critical") {
       return "#d93636";
     }
@@ -128,13 +125,15 @@ function ThreatDetails({ selectedThreat }) {
       <main className="threat-details-main">
         <div className="threat-details-card">
           <div className="threat-details-header">
-            <h1>Threat Details</h1>
-            <p>Detailed cybersecurity threat intelligence and incident overview</p>
+            <h1>Threat Details</h1> <br></br>
+            <p>
+              Detailed cybersecurity threat intelligence and incident overview
+            </p>
           </div>
 
           {!selectedThreat ? (
             <div className="no-threat-selected-box">
-              <h2>No Threat Selected</h2>
+              <h2>No Threat Selected</h2> <br></br>
               <p>Please select a threat from the dashboard item list.</p>
             </div>
           ) : (
@@ -183,6 +182,17 @@ function ThreatDetails({ selectedThreat }) {
                 <strong>Threat Description</strong>
                 <p>{threatDescription}</p>
               </div>
+            </div>
+          )}
+          {onBack && (
+            <div className="threat-back-row">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onBack}
+              >
+                &larr; Back
+              </button>
             </div>
           )}
         </div>

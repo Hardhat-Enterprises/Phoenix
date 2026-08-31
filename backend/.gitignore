@@ -1,4 +1,7 @@
 .env
-
+.env.docker
+.env.keys
 /node_modules
 /dist
+/.venv
+.tsbuildinfo

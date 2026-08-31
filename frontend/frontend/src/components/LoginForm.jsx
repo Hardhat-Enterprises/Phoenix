@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { loginUser, saveAuthSession } from "../services/authApi";
+import "./design.css";
 
 export default function LoginForm({ setPage, onLogin }) {
   const [username, setUsername] = useState("");
@@ -28,7 +29,7 @@ export default function LoginForm({ setPage, onLogin }) {
 
       const savedSession = saveAuthSession(session);
       onLogin?.(savedSession);
-      setStatusMessage("Signed in successfully. Opening dashboard...");
+      setStatusMessage("Signed in successfully. Opening dashboard..."); //
       setPage("dashboard");
     } catch (error) {
       setErrorMessage(error.message);
@@ -39,31 +40,41 @@ export default function LoginForm({ setPage, onLogin }) {
 
   return (
     <form className="login-form" onSubmit={handleSubmit}>
-      <label>Username or Email</label>
+      <label className="label-required">Username or Email</label>
       <input
         type="text"
+        name="username"
         placeholder="Enter your username or email"
         value={username}
         onChange={(event) => setUsername(event.target.value)}
         autoComplete="username"
+        aria-required="true"
+        aria-describedby={errorMessage ? "login-error" : undefined}
       />
-
-      <label>Password</label>
+      <label className="label-required">Password</label>
       <input
         type="password"
+        name="password"
         placeholder="Enter your password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         autoComplete="current-password"
+        aria-required="true"
+        aria-describedby={errorMessage ? "login-error" : undefined}
       />
-
-      {errorMessage && <p className="login-message login-error">{errorMessage}</p>}
-      {statusMessage && <p className="login-message login-success">{statusMessage}</p>}
-
-      <button type="submit" disabled={isSubmitting}>
+      {errorMessage && (
+        <p id="login-error" className="login-message login-error">
+          {errorMessage}
+        </p>
+      )}
+      {statusMessage && (
+        <p id="login-status" className="login-message login-success">
+          {statusMessage}
+        </p>
+      )}
+      <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
         {isSubmitting ? "Signing In..." : "Sign In"}
       </button>
-
       <div className="login-extra">
         <span
           className="forgot"
@@ -84,7 +95,11 @@ export default function LoginForm({ setPage, onLogin }) {
           Remember Me
         </label>
       </div>
-      <button type="button" onClick={() => setPage("about")}>
+      <button
+        type="button"
+        className="btn btn-primary"
+        onClick={() => setPage("about")}
+      >
         About Us
       </button>
     </form>

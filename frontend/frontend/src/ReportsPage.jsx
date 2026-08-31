@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import EvidenceEntry from "./components/EvidenceEntry";
 import "./ReportsPage.css";
+import "./components/design.css";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import ReportPDF from "./components/ReportPDF";
+import { usePreferences } from "./PreferencesContext";
+import { formatDisplayDate } from "./displayDate";
 import {
   getIngestionHealth,
   getIntegrations,
@@ -42,6 +45,15 @@ const formatDateTime = (value) => {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 };
 
+const formatUserDateTime = (value, dateFormat) => formatDisplayDate(
+  value,
+  dateFormat,
+  {
+    fallback: value || "-",
+    includeTime: true,
+  },
+);
+
 const formatScore = (value) => {
   const number = Number(value);
   return Number.isFinite(number) ? number.toFixed(4) : "-";
@@ -58,7 +70,9 @@ const getEvidenceTitle = (input = {}) => {
   }
 
   if (input.text) {
-    return input.text.length > 70 ? `${input.text.slice(0, 70)}...` : input.text;
+    return input.text.length > 70
+      ? `${input.text.slice(0, 70)}...`
+      : input.text;
   }
 
   return "Core model output";
@@ -89,13 +103,13 @@ const sanitizeFileName = (value) => {
   return cleaned || "core_model_report";
 };
 
-const buildIntegrationReport = (integration) => {
+const buildIntegrationReport = (integration, dateFormat) => {
   const input = integration.input || {};
   const output = integration.output || {};
   const status = integration.status || "-";
-  const risk =
-    output.risk_level || (status === "error" ? "Error" : "Pending");
+  const risk = output.risk_level || (status === "error" ? "Error" : "Pending");
   const title = getEvidenceTitle(input);
+  const processedTime = getProcessedTime(integration);
 
   return {
     id: integration.integration_event_id || title,
@@ -105,7 +119,8 @@ const buildIntegrationReport = (integration) => {
     risk,
     riskClass: getRiskClass(output.risk_level, status),
     status,
-    date: formatDateTime(getProcessedTime(integration)),
+    date: formatDateTime(processedTime),
+    displayDate: formatUserDateTime(processedTime, dateFormat),
     fileName: `${sanitizeFileName(title)}_verification_report.pdf`,
     input,
     output,
@@ -235,6 +250,8 @@ const getRiskClass = (riskLevel, status) => {
 };
 
 function ReportsPage() {
+  const { preferences } = usePreferences();
+  const dateFormat = preferences.dateFormat;
   const [form, setForm] = useState(() => ({
     ...defaultForm,
     timestamp: getCurrentDateTimeLocal(),
@@ -253,8 +270,10 @@ function ReportsPage() {
   );
 
   const generatedReports = useMemo(
-    () => displayedIntegrations.map(buildIntegrationReport),
-    [displayedIntegrations],
+    () => displayedIntegrations.map((integration) => (
+      buildIntegrationReport(integration, dateFormat)
+    )),
+    [dateFormat, displayedIntegrations],
   );
 
   const latestResult = useMemo(
@@ -382,7 +401,8 @@ function ReportsPage() {
 
   const output = latestResult?.output || {};
   const riskLevel =
-    output.risk_level || (latestResult?.status === "error" ? "Error" : "Pending");
+    output.risk_level ||
+    (latestResult?.status === "error" ? "Error" : "Pending");
   const riskClass = getRiskClass(output.risk_level, latestResult?.status);
 
   return (
@@ -405,10 +425,14 @@ function ReportsPage() {
             <div className="url-form-group wide">
               <label>URL</label>
               <input
+                id="reports-url-input"
                 type="url"
                 placeholder="https://example.com/donate-now"
                 value={form.url}
                 onChange={updateField("url")}
+                aria-describedby={
+                  modelError ? "reports-model-error" : undefined
+                }
               />
             </div>
 
@@ -479,11 +503,15 @@ function ReportsPage() {
               </div>
 
               <div className="url-form-group">
-                <label>Hazard Location</label>
+                <label className="label-required">Hazard Location</label>
                 <input
                   type="text"
                   value={form.hazardLocation}
                   onChange={updateField("hazardLocation")}
+                  aria-required="true"
+                  aria-describedby={
+                    modelError ? "reports-model-error" : undefined
+                  }
                 />
               </div>
 
@@ -512,19 +540,31 @@ function ReportsPage() {
             </div>
           </div>
 
-          {modelError && <p className="ingestion-message error">{modelError}</p>}
+          {modelError && (
+            <p
+              id="reports-model-error"
+              className="ingestion-message error"
+              role="alert"
+            >
+              {modelError}
+            </p>
+          )}
 
           {modelMessage && (
             <p className="ingestion-message success">{modelMessage}</p>
           )}
 
           <div className="url-action-row">
-            <button className="primary-btn" type="submit" disabled={isRunningModel}>
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={isRunningModel}
+            >
               {isRunningModel ? "Checking..." : "Check Risk"}
             </button>
 
             <button
-              className="secondary-btn"
+              className="btn btn-secondary"
               type="button"
               disabled={isLoadingIntegrations || isRunningModel}
               onClick={handleRefreshResults}
@@ -618,7 +658,9 @@ function ReportsPage() {
                 <span>{formatScore(integration.output?.risk_score)}</span>
                 <span>{formatScore(integration.output?.confidence_score)}</span>
                 <span>{integration.status || "-"}</span>
-                <span>{formatDateTime(integration.output?.processed_at)}</span>
+                <span>
+                  {formatUserDateTime(integration.output?.processed_at, dateFormat)}
+                </span>
               </div>
             ))
           ) : (
@@ -636,7 +678,8 @@ function ReportsPage() {
           <div>
             <h2>Generated Verification Reports</h2>
             <p>
-              Downloadable report generated from the latest backend core model record.
+              Downloadable report generated from the latest backend core model
+              record.
             </p>
           </div>
         </div>
@@ -666,12 +709,12 @@ function ReportsPage() {
                 </span>
 
                 <span>{report.status}</span>
-                <span>{report.date}</span>
+                <span>{report.displayDate}</span>
 
                 <PDFDownloadLink
                   document={<ReportPDF report={report} />}
                   fileName={report.fileName}
-                  className="download-button"
+                  className="btn btn-primary"
                 >
                   {({ loading }) => (loading ? "Generating PDF" : "Download")}
                 </PDFDownloadLink>

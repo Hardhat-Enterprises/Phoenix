@@ -86,6 +86,13 @@ export const ROUTES = [
     title: "Integration Health",
     adminOnly: true,
   },
+  {
+    key: "componentShowcase",
+    path: "/admin/component-showcase",
+    label: "Component Showcase",
+    title: "Component Showcase",
+    adminOnly: true,
+  },
 ];
 
 export const HOME_PATH = "/dashboard";

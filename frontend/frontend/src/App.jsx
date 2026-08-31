@@ -46,6 +46,7 @@ const MAIN_PATHS = [
   "/risk-assessment",
   "/help",
   "/admin/integration-health",
+  "/admin/component-showcase",
 ];
 
 const UNSAVED_SETTINGS_MESSAGE =
@@ -62,7 +63,6 @@ function App() {
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hasUnsavedSettings, setHasUnsavedSettings] = useState(false);
-  const [page, setPage] = useState(null);
   const adminMenuRef = useRef(null);
   const notifBellRef = useRef(null);
   const menuButtonRef = useRef(null);
@@ -100,7 +100,6 @@ function App() {
     const nextPath = pathForKey(key);
     if (!confirmSettingsNavigation(nextPath)) return false;
 
-    setPage(key);
     navigate(nextPath);
     return true;
   };
@@ -420,7 +419,6 @@ function App() {
                           </small>
                         </span>
                       </button>
-
                       <button
                         type="button"
                         role="menuitem"
@@ -429,20 +427,13 @@ function App() {
                           goToPage("componentShowcase");
                         }}
                       >
-                        <span
-                          className="admin-menu-icon"
-                          aria-hidden="true"
-                        >
-                          ↪
+                        <span className="admin-menu-icon" aria-hidden="true">
+                          ◇
                         </span>
 
                         <span>
                           <strong>Component showcase</strong>
                           <small>Internal design tokens and examples</small>
-                          <strong>Logout</strong>
-                          <small>
-                            End your current session
-                          </small>
                         </span>
                       </button>
 
@@ -452,15 +443,13 @@ function App() {
                         className="admin-menu-logout"
                         onClick={() => handleLogout()}
                       >
-                        <span aria-hidden="true">
-                          component-showcase
+                        <span className="admin-menu-icon" aria-hidden="true">
+                          ↪
                         </span>
 
                         <span>
-                          <strong>Component showcase</strong>
-                          <small>
-                            Internal design tokens & examples
-                          </small>
+                          <strong>Logout</strong>
+                          <small>End your current session</small>
                         </span>
                       </button>
                     </div>
@@ -636,16 +625,6 @@ function App() {
             }
           />
         </Routes>
-
-        {page === "component-showcase" && isAdmin && (
-          <div style={{ display: "flex" }}>
-            <Sidebar
-              setPage={goToPage}
-              page={page}
-            />
-            <ComponentShowcase />
-          </div>
-        )}
       </div>
 
       <Footer />

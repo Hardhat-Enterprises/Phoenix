@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import "../index.css";
 import "./design.css";
 import "./ComponentShowcase.css";
@@ -8,67 +9,83 @@ export default function ComponentShowcase() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <main className="content-max showcase-root">
-      <header className="page-heading">Component Showcase</header>
+    <div className="content-max showcase-root">
+      <header className="page-heading">
+        <h1>Component Showcase</h1>
+        <p>Reusable Phoenix interface patterns and interaction states.</p>
+      </header>
 
       <section className="showcase-grid">
         <div className="card showcase-panel">
-          <h3>Buttons</h3>
+          <h2>Buttons</h2>
           <div className="showcase-row">
-            <button className="btn btn-primary">Primary</button>
-            <button className="btn btn-secondary">Secondary</button>
-            <button className="btn" disabled>
+            <button type="button" className="btn btn-primary">
+              Primary
+            </button>
+            <button type="button" className="btn btn-secondary">
+              Secondary
+            </button>
+            <button type="button" className="btn" disabled>
               Disabled
             </button>
           </div>
         </div>
 
         <div className="card showcase-panel">
-          <h3>Form Pattern</h3>
-          <label className="label-required">Name</label>
-          <input aria-required="true" placeholder="User full name" />
-
-          <label>Email</label>
-          <input placeholder="you@example.com" />
-        </div>
-
-        <div className="card showcase-panel">
-          <h3>Shared States</h3>
-          <div style={{ display: "grid", gap: 12 }}>
-            <LoadingState message="Loading example data..." />
-            <EmptyState
-              heading="No results"
-              message="This is the empty state."
-            />
-            <ErrorState
-              type="error"
-              heading="Fetch failed"
-              message="An error occurred."
-            />
+          <h2>Form Pattern</h2>
+          <div className="showcase-form">
+            <label className="showcase-field">
+              <span className="label-required">Name</span>
+              <input aria-required="true" placeholder="User full name" />
+            </label>
+            <label className="showcase-field">
+              <span>Email</span>
+              <input type="email" placeholder="you@example.com" />
+            </label>
           </div>
         </div>
 
         <div className="card showcase-panel">
-          <h3>Focus & Keyboard</h3>
+          <h2>Focus &amp; Keyboard</h2>
           <p className="muted">
-            Use Tab to move focus — focus ring is token-driven.
+            Use Tab to move focus — focus rings use shared design tokens.
           </p>
           <div className="showcase-row">
-            <a href="#" className="btn btn-secondary">
-              Link-Button
-            </a>
+            <Link to="/dashboard" className="btn btn-secondary">
+              Dashboard link
+            </Link>
             <button
+              type="button"
               className="btn btn-primary"
+              disabled={loading}
               onClick={() => {
                 setLoading(true);
-                setTimeout(() => setLoading(false), 900);
+                window.setTimeout(() => setLoading(false), 900);
               }}
             >
               {loading ? "Working..." : "Trigger"}
             </button>
           </div>
         </div>
+
+        <div className="card showcase-panel showcase-panel--states">
+          <h2>Shared States</h2>
+          <div className="showcase-states-grid">
+            <LoadingState
+              title="Loading data"
+              description="Loading example data..."
+            />
+            <EmptyState
+              title="No results"
+              description="This is the empty state."
+            />
+            <ErrorState
+              title="Fetch failed"
+              description="An error occurred while loading data."
+            />
+          </div>
+        </div>
       </section>
-    </main>
+    </div>
   );
 }

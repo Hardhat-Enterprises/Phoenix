@@ -57,7 +57,18 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const adminMenuRef = useRef(null);
-  const menuButtonRef = useRef(null);
+  const notifBellRef = useRef(null);
+
+  const mainPages = [
+    "about",
+    "dashboard",
+    "reports",
+    "alerts",
+    "threats",
+    "settings",
+    "riskAssessment",
+    "help",
+  ];
 
   const isLoggedIn = Boolean(authSession?.accessToken);
   const isAdmin = authSession?.user?.role?.toLowerCase() === "admin";
@@ -127,8 +138,23 @@ function App() {
     };
   }, [showAdminMenu]);
 
-  // Back from Threat Details uses real browser history, so it returns the
-  // user to wherever they actually came from.
+  // Single navigation entry point. Records the page being left so that the
+  // Threat Details page can offer a Back action that returns there.
+  const goToPage = (nextPage) => {
+    if (!nextPage || nextPage === page) {
+      return;
+    }
+
+    setPreviousPage(page);
+    setPage(nextPage);
+  };
+
+  // Closing the panel hands focus back to the bell that opened it.
+  const closeNotificationPanel = () => {
+    setShowNotifPanel(false);
+    notifBellRef.current?.focus();
+  };
+
   const handleBackFromThreatDetails = () => {
     setSelectedThreat(null);
 
@@ -233,9 +259,36 @@ function App() {
                 type="button"
                 className="temp-bell"
                 aria-label="Notifications"
-                onClick={() => setShowNotifPanel(!showNotifPanel)}
+                aria-haspopup="dialog"
+                aria-expanded={showNotifPanel}
+                onClick={() =>
+                  showNotifPanel
+                    ? closeNotificationPanel()
+                    : setShowNotifPanel(true)
+                }
+                ref={notifBellRef}
               >
-                !
+                <svg
+                  className="temp-bell-icon"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M12 3a5.5 5.5 0 0 0-5.5 5.5v3.2L5 15.2a.8.8 0 0 0 .7 1.2h12.6a.8.8 0 0 0 .7-1.2l-1.5-3.5V8.5A5.5 5.5 0 0 0 12 3Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M10 18.4a2.1 2.1 0 0 0 4 0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                </svg>
               </button>
             </>
           )}
@@ -382,9 +435,7 @@ function App() {
       </div>
 
       {showNotifPanel && (
-        <NotificationPanel
-          onClose={() => setShowNotifPanel(false)}
-        />
+        <NotificationPanel onClose={closeNotificationPanel} />
       )}
 
       <div className="page-content">

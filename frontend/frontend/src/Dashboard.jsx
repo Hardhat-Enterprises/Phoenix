@@ -12,9 +12,11 @@ import {
   postIngestionAnomaly,
 } from "./services/phoenixApi";
 import { LoadingState, ErrorState, EmptyState } from "./components/States";
+import { ANOMALY_DETECTION_ENABLED } from "./config/environment";
 import { usePreferences } from "./PreferencesContext";
 import { formatDisplayDate } from "./displayDate";
 import "./Dashboard.css";
+import "./dashboard-anomaly-styles.css";
 
 const formatLabel = (value) =>
   String(value || "Unknown")
@@ -1079,7 +1081,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
     a.updated_at ||
     0
   ).getTime();
- 
+
   return first - second;
 });
 
@@ -1350,6 +1352,16 @@ if (
   };
 
   const runDetection = async () => {
+    if (!ANOMALY_DETECTION_ENABLED) {
+      // Defense in depth: the form/button are already hidden when this flag
+      // is off, but this guard means the known-missing endpoint is never
+      // called even if something else manages to trigger this function.
+      setDetectionError(
+        "Anomaly detection is not available in this environment.",
+      );
+      return;
+    }
+
     setDetectionError("");
     showDetectionMessage("");
     setApiResult(null);
@@ -1487,7 +1499,12 @@ if (
             })}
           </section>
 
-          {/* Regional Anomaly Detection Section (Jack)*/}
+          {/* Regional Anomaly Detection Section (Jack) ΓÇö Sprint 2: gated behind
+              ANOMALY_DETECTION_ENABLED per "Risk and Anomaly Feature Control"
+              (Varun). The backend does not currently expose the anomaly
+              endpoint, so submission is disabled rather than left to fail on
+              click, and any displayed model output is explicitly labelled as
+              unvalidated. */}
           <section className="ai-detection-card">
             {/* Left Side Input */}
             <div className="ai-detection-input">
@@ -1498,49 +1515,61 @@ if (
                 region.
               </p>
 
-              <div className="anomaly-form-grid">
-                <label className="anomaly-field label-required">
-                  <span>Region</span>
+              {!ANOMALY_DETECTION_ENABLED ? (
+                <div className="anomaly-unavailable-panel" role="status">
+                  <h3>Not available in this environment</h3>
+                  <p>
+                    The backend does not currently expose the anomaly-detection
+                    endpoint. This form is disabled until that becomes available.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="anomaly-form-grid">
+                    <label className="anomaly-field label-required">
+                      <span>Region</span>
 
-                  <select
-                    value={selectedRegionId}
-                    onChange={(event) =>
-                      setSelectedRegionId(event.target.value)
-                    }
-                    aria-required="true"
-                    aria-describedby={detectionError ? "detection-error" : undefined}
+                      <select
+                        value={selectedRegionId}
+                        onChange={(event) =>
+                          setSelectedRegionId(event.target.value)
+                        }
+                        aria-required="true"
+                        aria-describedby={detectionError ? "detection-error" : undefined}
+                      >
+                        {anomalyRegions.map((region) => (
+                          <option key={region.id} value={region.id}>
+                            {region.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="anomaly-field label-required">
+                      <span>Timestamp</span>
+
+                      <input
+                        type="datetime-local"
+                        value={selectedTimestamp}
+                        onChange={(event) =>
+                          setSelectedTimestamp(event.target.value)
+                        }
+                        aria-required="true"
+                        aria-describedby={detectionError ? "detection-error" : undefined}
+                      />
+                    </label>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={runDetection}
+                    disabled={loadingDetection}
                   >
-                    {anomalyRegions.map((region) => (
-                      <option key={region.id} value={region.id}>
-                        {region.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="anomaly-field label-required">
-                  <span>Timestamp</span>
-
-                  <input
-                    type="datetime-local"
-                    value={selectedTimestamp}
-                    onChange={(event) =>
-                      setSelectedTimestamp(event.target.value)
-                    }
-                    aria-required="true"
-                    aria-describedby={detectionError ? "detection-error" : undefined}
-                  />
-                </label>
-              </div>
-
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={runDetection}
-                disabled={loadingDetection}
-              >
-                {loadingDetection ? "Running Detection..." : "Run Detection"}
-              </button>
+                    {loadingDetection ? "Running Detection..." : "Run Detection"}
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Right side output */}
@@ -1565,6 +1594,11 @@ if (
                 <p>No detection has been run yet.</p>
               ) : (
                 <>
+                  <p className="anomaly-model-disclaimer">
+                    The values below are raw, severity-derived model output.
+                    They are not a validated phishing or hazard correlation.
+                  </p>
+
                   <div className="detection-output-grid">
                     <div>
                       <span>Region</span>
@@ -1580,7 +1614,7 @@ if (
                     </div>
 
                     <div>
-                      <span>Risk Level</span>
+                      <span>Risk Level (unvalidated)</span>
                       <strong>
                         {displayedDetection.riskLevel || "Pending"}
                       </strong>
@@ -1702,16 +1736,18 @@ if (
 
             <div className="map-selection-summary" style={{ marginBottom: "1rem" }}>
               <strong>Selected location:</strong>{" "}
-              {selectedState || "All states"} → {selectedLga || "All LGAs"} →{" "}
+              {selectedState || "All states"} ΓåÆ {selectedLga || "All LGAs"} ΓåÆ{" "}
               {selectedSuburb === ALL_SUBURBS_VALUE ? "All locations" : selectedSuburb}
-              {" · "}
+              {" ┬╖ "}
               <strong>{filteredHazards.length}</strong> matching hazard
               {filteredHazards.length === 1 ? "" : "s"}
               {locationOptions.stats.duplicateCount > 0 &&
-                ` · ${locationOptions.stats.duplicateCount} duplicate locations removed`}
+                ` ┬╖ ${locationOptions.stats.duplicateCount} duplicate locations removed`}
               {locationOptions.stats.missingCoordCount > 0 &&
-                ` · ${locationOptions.stats.missingCoordCount} locations missing coordinates`}
+                ` ┬╖ ${locationOptions.stats.missingCoordCount} locations missing coordinates`}
               {unresolvedHazardCount > 0 && (
+                <span style={{ color: "#c00" }}>
+                  {" ┬╖ "}
                 <span style={{ color: "var(--color-error-text)" }}>
                   {" · "}
                   {unresolvedHazardCount} hazard{unresolvedHazardCount === 1 ? "" : "s"} shown as
@@ -1963,7 +1999,7 @@ if (
 
               {itemRows.length > 0 ? (
                 itemRows.map((item) => (
-                <div 
+                <div
                     className="item-list-row"
                     key={item.id}
                     onClick={() => {

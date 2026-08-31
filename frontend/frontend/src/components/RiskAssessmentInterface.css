@@ -220,6 +220,17 @@
   background: #fef2f2;
 }
 
+.ra-state--unavailable {
+  border-style: solid;
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.ra-state--unavailable h3 {
+  color: #9a3412;
+}
+
 /* --- buttons --- */
 
 .ra-btn {

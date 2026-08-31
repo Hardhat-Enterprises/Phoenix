@@ -99,6 +99,16 @@ function ThreatDetails({ selectedThreat, onBack }) {
     return "#2b9348";
   };
 
+  //const rawThreat = selectedThreat?.raw || {};
+  //const confidenceScore =
+   //rawThreat.confidence_score || selectedThreat?.confidence_score || "Not supplied";
+
+  //const detectedAt =
+    //selectedThreat?.detectedAt ||
+    //rawThreat.detected_at ||
+    //rawThreat.created_at ||
+    //"Not supplied";
+
   return (
     <div className="threat-details-page">
       <div className="threat-legend-card">

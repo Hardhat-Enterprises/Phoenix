@@ -769,8 +769,14 @@ const normalizeThreatRow = (threat, index, dateFormat) => {
       `${threatType} detected in the Phoenix backend activity feed.`,
     source: formatLabel(threat.category || threat.threat_type || "Phoenix API"),
     region,
-    meta: `${formatLabel(region)} | ${formatShortDate(detectedAt, dateFormat)}`,
-    riskValue: riskValueFor(vulnerability, threat.confidence_score),
+    //meta: `${formatLabel(region)} | ${formatShortDate(detectedAt)}`,
+    location: formatLabel(region),
+detectionDate: detectedAt,
+meta: `${formatLabel(region)} • ${formatShortDate(detectedAt)}`,
+    riskValue: riskValueFor(
+      vulnerability,
+      threat.confidence_score
+    ),
     detectedAt,
     raw: threat,
   };
@@ -1977,13 +1983,14 @@ if (
                 <span className="item-list-kicker">Backend activity</span>
                 <h2>Recent Threat Signals</h2>
                 <p>
-                  Latest cyber and anomaly indicators linked to hazard
-                  monitoring.
+                  Latest cyber-threat indicators.
                 </p>
               </div>
 
               <div className="item-list-actions">
-                <span className="item-count-pill">{itemRows.length} shown</span>
+                <span className="item-count-pill">
+                  {itemRows.length} Threats
+                </span>
 
                 <button
                   type="button"
@@ -2013,22 +2020,22 @@ if (
 
               {itemRows.length > 0 ? (
                 itemRows.map((item) => (
-                <div
+                <div 
                     className="item-list-row"
                     key={item.id}
                     onClick={() => {
-                      setSelectedThreat(item);
-                      setPage("threats");
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        setSelectedThreat(item);
-                        setPage("threats");
-                      }
-                    }}
-                  >
+                    setSelectedThreat(item);
+                    setPage("threatdetails");
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      setSelectedThreat(item);
+      setPage("threatdetails");
+    }
+  }}
+                >
                     <div className="item-name-cell">
   <span
     className={`item-signal-dot ${item.className}`}
@@ -2038,18 +2045,23 @@ if (
   <strong>{item.name}</strong>
 </div>
 
-                    <div className={`status-pill ${item.className}`}>
-                      {item.vulnerability}
-                    </div>
+<span>{item.location}</span>
 
-                    <div className="status-right-cell">
-                      <div className={`status-pill ${item.className}`}>
-                        {item.status}
-                      </div>
+<span>
+  {item.detectionDate
+    ? new Date(item.detectionDate).toLocaleDateString()
+    : "-"}
+</span>
 
-                      <span className="row-arrow">&gt;</span>
-                    </div>
-                  </div>
+<div className={`status-pill ${item.className}`}>
+  {item.vulnerability}
+</div>
+
+<div className={`status-pill ${item.className}`}>
+  {item.status}
+</div>
+
+                  </div> 
                 ))
               ) : (
                 <div className="item-list-empty">

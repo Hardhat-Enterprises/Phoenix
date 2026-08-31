@@ -83,3 +83,28 @@
   font-size: 16px;
   color: #64748b;
 }
+
+:root[data-theme="dark"] .sidebar-container .card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme="dark"] .sidebar-container .card-title,
+:root[data-theme="dark"] .sidebar-container .action-btn {
+  color: var(--color-heading);
+}
+
+:root[data-theme="dark"] .sidebar-container .item-text,
+:root[data-theme="dark"] .sidebar-container .arrow {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .sidebar-container .action-btn {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .sidebar-container .action-btn:hover {
+  background: var(--color-interactive-surface-hover);
+}

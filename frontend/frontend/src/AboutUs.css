@@ -418,3 +418,73 @@ a.quick-link-button:hover,
 a.quick-link-button:focus-visible {
   text-decoration: none;
 }
+
+:root[data-theme="dark"] .about-page {
+  background: var(--color-page-bg);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .about-card,
+:root[data-theme="dark"] .role-card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme="dark"] .team-card,
+:root[data-theme="dark"] .team-column,
+:root[data-theme="dark"] .about-support-card {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .purpose-icon {
+  background-color: var(--color-surface-subtle);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .process-icon {
+  background: var(--color-selected-bg);
+}
+
+:root[data-theme="dark"] .about-page-title,
+:root[data-theme="dark"] .about-card-title,
+:root[data-theme="dark"] .purpose-heading,
+:root[data-theme="dark"] .role-title,
+:root[data-theme="dark"] .process-title,
+:root[data-theme="dark"] .team-name,
+:root[data-theme="dark"] .scope-subheading,
+:root[data-theme="dark"] .team-column-heading {
+  color: var(--color-heading);
+}
+
+:root[data-theme="dark"] .about-page-subtitle,
+:root[data-theme="dark"] .about-body-text,
+:root[data-theme="dark"] .role-kicker,
+:root[data-theme="dark"] .role-desc,
+:root[data-theme="dark"] .process-desc,
+:root[data-theme="dark"] .about-list,
+:root[data-theme="dark"] .team-role,
+:root[data-theme="dark"] .team-list {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .team-column-heading {
+  border-bottom-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .support-link {
+  color: var(--color-interactive);
+}
+
+:root[data-theme="dark"] .quick-link-button {
+  background: var(--color-input-bg);
+  border-color: var(--color-control-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .quick-link-button:hover,
+:root[data-theme="dark"] .quick-link-button:focus-visible {
+  background: var(--color-interactive);
+  color: var(--color-on-interactive);
+}

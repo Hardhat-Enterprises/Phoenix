@@ -19,6 +19,7 @@ body {
 
 .temp-header {
   background: var(--header-bg, #0b121c);
+  box-shadow: inset 0 -2px 0 var(--color-control-border);
   color: var(--header-text, #ffffff);
   padding: 18px 28px;
   display: flex;
@@ -85,14 +86,30 @@ body {
 }
 
 .temp-bell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  border: 1px solid var(--border-color, #cbc3c3);
-  background: var(--bell-bg, #1a4380);
-  color: var(--bell-color, #ffd34d);
-  font-size: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: #10265d;
+  color: #ffd34d;
   cursor: pointer;
+}
+
+.temp-bell:hover {
+  background: #163a86;
+}
+
+.temp-bell[aria-expanded="true"] {
+  background: #163a86;
+  border-color: #ffd34d;
+}
+
+.temp-bell-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .header-auth-summary {
@@ -883,6 +900,12 @@ body {
   min-height: calc(100svh - 106px);
   width: 100%;
 }
+
+@media (min-width: 1200px) {
+  :root[data-sidebar-collapsed="true"] .app-body {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+}
 .app-content {
   background: var(--page-bg, #eef3f8);
   min-width: 0;
@@ -895,22 +918,22 @@ body {
 .app-content input,
 .app-content select,
 .app-content textarea {
-  background-color: #ffffff;
-  color: #001a3e;
-  color-scheme: light;
+  background-color: var(--color-input-bg);
+  color: var(--color-text);
+  color-scheme: inherit;
 }
 
 .app-content input::placeholder,
 .app-content textarea::placeholder {
-  color: #64748b;
+  color: var(--color-placeholder);
   opacity: 1;
 }
 
 .app-content input:disabled,
 .app-content select:disabled,
 .app-content textarea:disabled {
-  background-color: #f1f5f9;
-  color: #64748b;
+  background-color: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
   opacity: 1;
 }
 .menu-button, .sidebar-overlay { display: none; }
@@ -938,6 +961,94 @@ body {
   .temp-logo { height: 46px; width: 46px; }
   .temp-header-left p { display: none; }
   .header-role { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .login-page {
+  background: var(--color-page-bg);
+}
+
+:root[data-theme="dark"] .temp-search,
+:root[data-theme="dark"] .header-auth-button,
+:root[data-theme="dark"] .login-form input,
+:root[data-theme="dark"] .forgot-password-card input,
+:root[data-theme="dark"] .create-user-form input,
+:root[data-theme="dark"] .create-user-form select {
+  background: var(--color-input-bg);
+  border-color: var(--color-control-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .header-auth-button:hover {
+  background: var(--color-interactive-surface-hover);
+}
+
+:root[data-theme="dark"] .header-role {
+  background: var(--color-selected-bg);
+  border-color: var(--color-selected-bg);
+  color: var(--color-selected-text);
+}
+
+:root[data-theme="dark"] .login-form label,
+:root[data-theme="dark"] .forgot,
+:root[data-theme="dark"] .remember,
+:root[data-theme="dark"] .forgot-password-card label,
+:root[data-theme="dark"] .create-user-form label {
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .forgot-password-card,
+:root[data-theme="dark"] .about-box,
+:root[data-theme="dark"] .admin-menu,
+:root[data-theme="dark"] .create-user-card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .forgot-password-card h2,
+:root[data-theme="dark"] .create-user-heading h1,
+:root[data-theme="dark"] .admin-menu button {
+  color: var(--color-heading);
+}
+
+:root[data-theme="dark"] .forgot-subtext,
+:root[data-theme="dark"] .create-user-heading p,
+:root[data-theme="dark"] .admin-menu small {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .admin-menu button:hover,
+:root[data-theme="dark"] .admin-menu button:focus-visible,
+:root[data-theme="dark"] .create-user-back {
+  background: var(--color-interactive-surface-hover);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .admin-menu-icon {
+  background: var(--color-selected-bg);
+  color: var(--color-selected-text);
+}
+
+:root[data-theme="dark"] .admin-menu .admin-menu-logout:hover,
+:root[data-theme="dark"] .admin-menu .admin-menu-logout:focus-visible {
+  background: var(--color-error-bg);
+}
+
+:root[data-theme="dark"] .admin-menu-logout .admin-menu-icon,
+:root[data-theme="dark"] .admin-menu-logout strong {
+  color: var(--color-error-text);
+}
+
+:root[data-theme="dark"] .back-login-btn,
+:root[data-theme="dark"] .create-user-submit {
+  background: var(--color-interactive);
+  color: var(--color-on-interactive);
+}
+
+:root[data-theme="dark"] .skip-link {
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 

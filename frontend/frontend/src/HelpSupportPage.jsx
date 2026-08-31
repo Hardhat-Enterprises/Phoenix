@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
+import { usePreferences } from "./PreferencesContext";
 import "./HelpSupportPage.css";
 
 // Support contact is a placeholder until the team approves the real address.
 const SUPPORT_EMAIL = "phoenix.support@example.com";
 
-// localStorage keys used by the app (must match Dashboard.jsx / SettingsPage.jsx).
+//localStorage key used by Dashboard.jsx.
 const DASHBOARD_CACHE_KEY = "phoenixDashboardSnapshot";
-const SETTINGS_STORAGE_KEY = "phoenixSettings";
 
 // ---------------------------------------------------------------------------
 // Help content. Every answer describes ONLY what the current frontend does.
@@ -156,11 +156,12 @@ const FAQ_ITEMS = [
 ];
 
 export default function HelpSupportPage({ setPage }) {
+  const { clearUserPreferences, preferences } = usePreferences();
   const [query, setQuery] = useState("");
   const [openItems, setOpenItems] = useState({});
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [cleared, setCleared] = useState(false);
+  const [clearStatus, setClearStatus] = useState(null);
 
   const normalisedQuery = query.trim().toLowerCase();
 
@@ -217,10 +218,40 @@ export default function HelpSupportPage({ setPage }) {
   }
 
   function handleClearData() {
-    localStorage.removeItem(DASHBOARD_CACHE_KEY);
-    localStorage.removeItem(SETTINGS_STORAGE_KEY);
-    setCleared(true);
-    setTimeout(() => setCleared(false), 3000);
+    if (
+      preferences.confirmImportantActions
+      && !window.confirm(
+        "Clear saved dashboard data and preferences from this browser?",
+      )
+    ) {
+      return;
+    }
+
+    let dashboardCleared = false;
+
+    try {
+      localStorage.removeItem(DASHBOARD_CACHE_KEY);
+      dashboardCleared = true;
+    } catch {
+      dashboardCleared = false;
+    }
+
+    const preferencesResult = clearUserPreferences();
+    let message = "Saved data could not be cleared from this browser.";
+
+    if (dashboardCleared && preferencesResult.ok) {
+      message = "Saved data cleared from this browser.";
+    } else if (dashboardCleared) {
+      message = "Dashboard cache cleared, but preferences could not be cleared.";
+    } else if (preferencesResult.ok) {
+      message = "Preferences cleared, but dashboard cache could not be cleared.";
+    }
+
+    setClearStatus({
+      message,
+      ok: dashboardCleared && preferencesResult.ok,
+    });
+    setTimeout(() => setClearStatus(null), 3000);
   }
 
   function backToTop() {
@@ -373,9 +404,9 @@ export default function HelpSupportPage({ setPage }) {
         </p>
       </section>
 
-      {cleared && (
-        <div className="help-toast" role="status">
-          Saved data cleared from this browser.
+      {clearStatus && (
+        <div className="help-toast" role={clearStatus.ok ? "status" : "alert"}>
+          {clearStatus.message}
         </div>
       )}
 

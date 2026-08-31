@@ -43,3 +43,19 @@
   outline: 3px solid currentColor;
   outline-offset: 3px;
 }
+
+:root[data-theme="dark"] .error-fallback {
+  background: var(--color-page-bg);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .error-fallback__card {
+  background: var(--color-surface);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme="dark"] .error-fallback__actions button {
+  background: var(--color-input-bg);
+  border-color: var(--color-control-border);
+  color: var(--color-text);
+}

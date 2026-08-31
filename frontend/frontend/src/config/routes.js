@@ -104,6 +104,11 @@ export function sidebarRoutes({ isAdmin = false } = {}) {
   );
 }
 
+// Everything the global navigation search may surface for the current user.
+export function searchableRoutes({ isAdmin = false } = {}) {
+  return ROUTES.filter((r) => !r.path.includes(":") && (!r.adminOnly || isAdmin));
+}
+
 // Translate an old setPage("dashboard") key into a real URL.
 export function pathForKey(key) {
   const match = ROUTES.find((route) => route.key === key);
@@ -111,7 +116,21 @@ export function pathForKey(key) {
   return match ? match.path : HOME_PATH;
 }
 
+// Build the URL for a single threat.
+export function threatPath(threatId) {
+  return `/threats/${encodeURIComponent(threatId)}`;
+}
+
 // Find the route entry for a browser path.
+// Exact paths win; parameterised paths such as /threats/:threatId are
+// matched by prefix so the tab title is still correct on /threats/abc123.
 export function routeForPath(pathname) {
-  return ROUTES.find((route) => route.path === pathname);
+  const exact = ROUTES.find((r) => !r.path.includes(":") && r.path === pathname);
+  if (exact) return exact;
+
+  return ROUTES.find((r) => {
+    if (!r.path.includes(":")) return false;
+    const prefix = r.path.split("/:")[0];
+    return pathname.startsWith(`${prefix}/`);
+  });
 }

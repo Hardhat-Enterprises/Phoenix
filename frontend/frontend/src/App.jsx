@@ -25,6 +25,7 @@ import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
 import CreateUser from "./CreateUser";
 import ComponentShowcase from "./components/ComponentShowcase";
+import GlobalSearch from "./components/GlobalSearch";
 import { usePreferences } from "./PreferencesContext";
 import IntegrationHealthPanel from "./components/IntegrationHealthPanel";
 import {
@@ -79,9 +80,9 @@ function App() {
 
   const isLoggedIn = Boolean(authSession?.accessToken);
   const isAdmin = authSession?.user?.role?.toLowerCase() === "admin";
-  const showChrome = MAIN_PATHS.includes(location.pathname);
-
-  const [page, setPage] = useState(null);
+  const showChrome =
+    MAIN_PATHS.includes(location.pathname) ||
+    location.pathname.startsWith("/threats/");
 
   const updateUnsavedSettings = useCallback((hasUnsavedChanges) => {
     const nextValue = Boolean(hasUnsavedChanges);
@@ -271,6 +272,10 @@ function App() {
     </div>
   );
 
+  // Admin-only routes redirect anyone else to the dashboard.
+  const adminOnly = (content) =>
+    isAdmin ? content : <Navigate to={HOME_PATH} replace />;
+
   return (
     <div className="login-page">
       <a className="skip-link" href="#main-content">
@@ -319,11 +324,7 @@ function App() {
         <div className="temp-header-right">
           {showChrome && (
             <>
-              <input
-                type="text"
-                placeholder="Search in site"
-                className="temp-search"
-              />
+              <GlobalSearch isAdmin={isAdmin} />
 
               <button
                 type="button"
@@ -395,11 +396,8 @@ function App() {
                           goToPage("createUser");
                         }}
                       >
-                        <span
-                          className="admin-menu-icon"
-                          aria-hidden="true"
-                        >
-                          ＋
+                        <span className="admin-menu-icon" aria-hidden="true">
+                          {"\uFF0B"}
                         </span>
 
                         <span>
@@ -436,8 +434,10 @@ function App() {
                       <button
                         type="button"
                         role="menuitem"
-                        className="admin-menu-logout"
-                        onClick={() => handleLogout()}
+                        onClick={() => {
+                          setShowAdminMenu(false);
+                          goToPage("componentShowcase");
+                        }}
                       >
                         <span
                           className="admin-menu-icon"
@@ -447,6 +447,8 @@ function App() {
                         </span>
 
                         <span>
+                          <strong>Component showcase</strong>
+                          <small>Internal design tokens and examples</small>
                           <strong>Logout</strong>
                           <small>
                             End your current session
@@ -457,10 +459,8 @@ function App() {
                       <button
                         type="button"
                         role="menuitem"
-                        onClick={() => {
-                          setShowAdminMenu(false);
-                          goToPage("component-showcase");
-                        }}
+                        className="admin-menu-logout"
+                        onClick={() => handleLogout()}
                       >
                         <span aria-hidden="true">
                           component-showcase
@@ -493,13 +493,9 @@ function App() {
               )}
             </div>
           ) : (
-            <button
-              type="button"
-              className="header-auth-button"
-              onClick={() => goToPage("login")}
-            >
+            <Link to={pathForKey("login")} className="header-auth-button">
               Login
-            </button>
+            </Link>
           )}
         </div>
       </div>
@@ -534,13 +530,12 @@ function App() {
 
           <Route
             path="/admin/create-user"
-            element={
-              isAdmin ? (
-                <CreateUser setPage={goToPage} />
-              ) : (
-                <Navigate to={HOME_PATH} replace />
-              )
-            }
+            element={adminOnly(<CreateUser setPage={goToPage} />)}
+          />
+
+          <Route
+            path="/admin/component-showcase"
+            element={adminOnly(withShell(<ComponentShowcase />))}
           />
 
           {/* Admin-only backend integration diagnostics */}
@@ -593,6 +588,16 @@ function App() {
 
           <Route
             path="/threats"
+            element={withShell(
+              <ThreatDetails
+                selectedThreat={selectedThreat}
+                onBack={handleBackFromThreatDetails}
+              />,
+            )}
+          />
+
+          <Route
+            path="/threats/:threatId"
             element={withShell(
               <ThreatDetails
                 selectedThreat={selectedThreat}

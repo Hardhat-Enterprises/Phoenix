@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { threatPath } from "./config/routes";
 import {
   getApiHealth,
   getDashboardActivity,
@@ -902,6 +904,7 @@ const hazardMatchesSelection = (hazard, locations, selection) => {
 };
 
 function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
+  const navigate = useNavigate();
   const { preferences } = usePreferences();
   const dateFormat = preferences.dateFormat;
   const [apiStatus, setApiStatus] = useState("Checking");

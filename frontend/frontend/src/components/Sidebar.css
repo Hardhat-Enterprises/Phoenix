@@ -2,14 +2,18 @@
   Final sidebar styling for my assigned toolbar task.
   I refined the spacing, colours, button size, and active state
   so the component looks closer to the high-fidelity design.
+
+  Week 5 update: menu items are now links rather than buttons,
+  and the sidebar becomes an off-canvas drawer below 1024px.
 */
 
 .sidebar {
   width: 280px;
-  min-height: 100vh;
+  min-height: 100%;
   background-color: #eef3f9;
   border-right: 1px solid #d7e1ee;
   padding: 18px 16px;
+  position: relative;
 }
 
 .sidebar-panel {
@@ -45,7 +49,9 @@
   gap: 14px;
   cursor: pointer;
   text-align: left;
-  transition: background-color 0.2s ease, border-color 0.2s ease,
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
     transform 0.2s ease;
 }
 
@@ -55,29 +61,69 @@
   transform: translateY(-1px);
 }
 
+.sidebar-item:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .sidebar-item.active {
-  background-color: #aec7f2;
-  border-color: #97b7eb;
+  background-color: #9fc2ff;
+  border-color: #89a9df;
 }
 
 .sidebar-icon {
   width: 15px;
   height: 15px;
   border-radius: 5px;
-  background-color: #9daec3;
+  background-color: #7796bb;
   flex-shrink: 0;
 }
 
 .sidebar-item.active .sidebar-icon {
-  background-color: #3f7df0;
+  background-color: #3b6cc7;
 }
 
 .sidebar-text {
   font-size: 16px;
   font-weight: 600;
-  color: #40556f;
+  color: #0b3465;
 }
 
 .sidebar-item.active .sidebar-text {
   color: #245fd6;
 }
+
+/* Mobile: sidebar slides in from the left instead of taking up
+   permanent width. The .sidebar-open class is set by AppLayout. */
+@media (max-width: 1199px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 120;
+    width: min(280px, 80vw);
+    min-height: 100%;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: 16px 0 36px rgba(7, 22, 51, 0.2);
+  }
+
+  .sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar-item {
+    transition: none;
+  }
+
+  .sidebar-item:hover {
+    transform: none;
+  }
+}
+
+

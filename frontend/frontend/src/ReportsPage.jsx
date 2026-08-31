@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./ReportsPage.css";
+import "./components/design.css";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import ReportPDF from "./components/ReportPDF";
 import {
@@ -57,7 +58,9 @@ const getEvidenceTitle = (input = {}) => {
   }
 
   if (input.text) {
-    return input.text.length > 70 ? `${input.text.slice(0, 70)}...` : input.text;
+    return input.text.length > 70
+      ? `${input.text.slice(0, 70)}...`
+      : input.text;
   }
 
   return "Core model output";
@@ -92,8 +95,7 @@ const buildIntegrationReport = (integration) => {
   const input = integration.input || {};
   const output = integration.output || {};
   const status = integration.status || "-";
-  const risk =
-    output.risk_level || (status === "error" ? "Error" : "Pending");
+  const risk = output.risk_level || (status === "error" ? "Error" : "Pending");
   const title = getEvidenceTitle(input);
 
   return {
@@ -381,7 +383,8 @@ function ReportsPage() {
 
   const output = latestResult?.output || {};
   const riskLevel =
-    output.risk_level || (latestResult?.status === "error" ? "Error" : "Pending");
+    output.risk_level ||
+    (latestResult?.status === "error" ? "Error" : "Pending");
   const riskClass = getRiskClass(output.risk_level, latestResult?.status);
 
   return (
@@ -403,10 +406,14 @@ function ReportsPage() {
             <div className="url-form-group wide">
               <label>URL</label>
               <input
+                id="reports-url-input"
                 type="url"
                 placeholder="https://example.com/donate-now"
                 value={form.url}
                 onChange={updateField("url")}
+                aria-describedby={
+                  modelError ? "reports-model-error" : undefined
+                }
               />
             </div>
 
@@ -477,11 +484,15 @@ function ReportsPage() {
               </div>
 
               <div className="url-form-group">
-                <label>Hazard Location</label>
+                <label className="label-required">Hazard Location</label>
                 <input
                   type="text"
                   value={form.hazardLocation}
                   onChange={updateField("hazardLocation")}
+                  aria-required="true"
+                  aria-describedby={
+                    modelError ? "reports-model-error" : undefined
+                  }
                 />
               </div>
 
@@ -510,19 +521,31 @@ function ReportsPage() {
             </div>
           </div>
 
-          {modelError && <p className="ingestion-message error">{modelError}</p>}
+          {modelError && (
+            <p
+              id="reports-model-error"
+              className="ingestion-message error"
+              role="alert"
+            >
+              {modelError}
+            </p>
+          )}
 
           {modelMessage && (
             <p className="ingestion-message success">{modelMessage}</p>
           )}
 
           <div className="url-action-row">
-            <button className="primary-btn" type="submit" disabled={isRunningModel}>
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={isRunningModel}
+            >
               {isRunningModel ? "Checking..." : "Check Risk"}
             </button>
 
             <button
-              className="secondary-btn"
+              className="btn btn-secondary"
               type="button"
               disabled={isLoadingIntegrations || isRunningModel}
               onClick={handleRefreshResults}
@@ -634,7 +657,8 @@ function ReportsPage() {
           <div>
             <h2>Generated Verification Reports</h2>
             <p>
-              Downloadable report generated from the latest backend core model record.
+              Downloadable report generated from the latest backend core model
+              record.
             </p>
           </div>
         </div>
@@ -669,7 +693,7 @@ function ReportsPage() {
                 <PDFDownloadLink
                   document={<ReportPDF report={report} />}
                   fileName={report.fileName}
-                  className="download-button"
+                  className="btn btn-primary"
                 >
                   {({ loading }) => (loading ? "Generating PDF" : "Download")}
                 </PDFDownloadLink>

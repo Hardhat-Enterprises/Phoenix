@@ -162,7 +162,8 @@ function SettingsPage({ setPage, authSession, onLogout }) {
               <div>
                 <h2>Alert Filters</h2>
                 <p className="settings-subtext">
-                  Configure the types of alerts and preferences shown in the dashboard.
+                  Configure the types of alerts and preferences shown in the
+                  dashboard.
                 </p>
               </div>
 
@@ -219,12 +220,21 @@ function SettingsPage({ setPage, authSession, onLogout }) {
                   type="checkbox"
                   checked={settings.locationTracking}
                   onChange={updateLocationTracking}
+                  aria-describedby={
+                    locationMessage ? "settings-location-message" : undefined
+                  }
                 />
                 <span>Allow Location Tracking</span>
               </label>
 
               {locationMessage && (
-                <p className="settings-inline-status">{locationMessage}</p>
+                <p
+                  id="settings-location-message"
+                  className="settings-inline-status"
+                  role="status"
+                >
+                  {locationMessage}
+                </p>
               )}
 
               <div className="settings-dropdown-group">
@@ -275,7 +285,7 @@ function SettingsPage({ setPage, authSession, onLogout }) {
                 </>
               ) : (
                 <button
-                  className="settings-action-btn secondary-btn"
+                  className="btn btn-primary settings-action-btn"
                   type="button"
                   onClick={() => setPage("login")}
                 >

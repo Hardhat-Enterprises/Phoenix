@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  Routes,
+  Route,
+  Navigate,
+  Link,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import "./App.css";
+import "./components/design.css";
 import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer";
@@ -11,28 +20,34 @@ import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
 import ThreatDetails from "./ThreatDetails";
 import RiskAssessmentPage from "./RiskAssessmentPage";
+import HelpSupportPage from "./HelpSupportPage";
 import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
-import HelpSupportPage from "./HelpSupportPage";
-import {
-  AuthenticationState,
-  LoadingState,
-  ErrorState,
-  EmptyState,
-} from "./components/States";
 import CreateUser from "./CreateUser";
+import ComponentShowcase from "./components/ComponentShowcase";
+import { HOME_PATH, pathForKey, routeForPath, APP_NAME } from "./config/routes";
 
-
-// Pages the Back action should never return the user to.
-const NON_RETURNABLE_PAGES = ["login", "forgotPassword", "threats"];
+// Pages that show the header search and notification bell.
+const MAIN_PATHS = [
+  "/dashboard",
+  "/alerts",
+  "/reports",
+  "/about",
+  "/settings",
+  "/threats",
+  "/risk-assessment",
+  "/help",
+];
 
 function App() {
-  const [page, setPage] = useState("dashboard");
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [authSession, setAuthSession] = useState(() => getAuthSession());
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [selectedThreat, setSelectedThreat] = useState(null);
-  const [previousPage, setPreviousPage] = useState("dashboard");
   const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const adminMenuRef = useRef(null);
   const notifBellRef = useRef(null);
 
@@ -48,14 +63,43 @@ function App() {
   ];
 
   const isLoggedIn = Boolean(authSession?.accessToken);
-
   const isAdmin = authSession?.user?.role?.toLowerCase() === "admin";
+  const showChrome = MAIN_PATHS.includes(location.pathname);
+
+  const [page, setPage] = useState(null);
+
+  // Compatibility shim: teammates' pages still call setPage("dashboard").
+  // Translate those keys into real navigation so their code keeps working.
+  const goToPage = (key) => {
+    setPage(key);
+    navigate(pathForKey(key));
+  };
+
+  // Browser tab title follows the current route.
+  useEffect(() => {
+    const route = routeForPath(location.pathname);
+    document.title = `${route ? route.title : "Page not found"} | ${APP_NAME}`;
+  }, [location.pathname]);
+
+  // Escape closes the mobile menu and returns focus to the menu button.
+  useEffect(() => {
+    if (!sidebarOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setSidebarOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [sidebarOpen]);
 
   useEffect(() => {
     if (!showAdminMenu) return undefined;
 
     const closeMenu = (event) => {
-      if (!adminMenuRef.current?.contains(event.target)) setShowAdminMenu(false);
+      if (!adminMenuRef.current?.contains(event.target))
+        setShowAdminMenu(false);
     };
     const closeOnEscape = (event) => {
       if (event.key === "Escape") setShowAdminMenu(false);
@@ -88,14 +132,16 @@ function App() {
 
   const handleBackFromThreatDetails = () => {
     setSelectedThreat(null);
-    goToPage(
-      NON_RETURNABLE_PAGES.includes(previousPage) ? "dashboard" : previousPage,
-    );
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(HOME_PATH);
+    }
   };
 
   const handleLogin = (session) => {
     setAuthSession(session);
-    goToPage("dashboard");
+    navigate(HOME_PATH);
   };
 
   const handleLogout = async (nextPage = "dashboard") => {
@@ -105,19 +151,62 @@ function App() {
     goToPage(nextPage);
   };
 
+  // Closes the mobile drawer and returns focus to the button that opened it.
+  // Sidebar calls this after every link click, so the drawer closes on
+  // navigation without needing an effect that watches the route.
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+    menuButtonRef.current?.focus();
+  };
+
+  // The shared shell: header, Sidebar, page content, Footer.
+  // Replaces the seven repeated display:flex wrappers.
+  const withShell = (content) => (
+    <div className={`app-body${sidebarOpen ? " sidebar-open" : ""}`}>
+      <Sidebar isAdmin={isAdmin} onNavigate={closeSidebar} />
+      {sidebarOpen && (
+        <button
+          type="button"
+          className="sidebar-overlay"
+          aria-label="Close navigation menu"
+          onClick={closeSidebar}
+        />
+      )}
+      <main id="main-content" className="app-content" tabIndex={-1}>
+        {content}
+      </main>
+    </div>
+  );
+
   return (
     <div className="login-page">
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
+
       <div className="temp-header">
         <div className="temp-header-left">
           <button
             type="button"
+            ref={menuButtonRef}
+            className="menu-button"
+            aria-expanded={sidebarOpen}
+            aria-label={
+              sidebarOpen ? "Close navigation menu" : "Open navigation menu"
+            }
+            onClick={() => setSidebarOpen((open) => !open)}
+          >
+            <span aria-hidden="true">{sidebarOpen ? "\u2715" : "\u2630"}</span>
+          </button>
+
+          <Link
+            to={HOME_PATH}
             className="temp-logo logo-home-button"
-            onClick={() => goToPage("dashboard")}
             aria-label="Phoenix home, go to Dashboard"
             title="Go to Dashboard"
           >
             <img src="/logo.png" alt="Phoenix logo" />
-          </button>
+          </Link>
 
           <div>
             <h2>Phoenix</h2>
@@ -126,7 +215,7 @@ function App() {
         </div>
 
         <div className="temp-header-right">
-          {mainPages.includes(page) && (
+          {showChrome && (
             <>
               <input
                 type="text"
@@ -183,25 +272,69 @@ function App() {
                     aria-expanded={showAdminMenu}
                     onClick={() => setShowAdminMenu((visible) => !visible)}
                   >
-                    Admin <span aria-hidden="true">⌄</span>
+                    Admin <span aria-hidden="true">{"\u2304"}</span>
                   </button>
                   {showAdminMenu && (
                     <div className="admin-menu" role="menu">
-                      <button type="button" role="menuitem" onClick={() => { setShowAdminMenu(false); goToPage("createUser"); }}>
-                        <span className="admin-menu-icon" aria-hidden="true">＋</span>
-                        <span><strong>Create user</strong><small>Add a dashboard or app account</small></span>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowAdminMenu(false);
+                          goToPage("createUser");
+                        }}
+                      >
+                        <span className="admin-menu-icon" aria-hidden="true">
+                          ＋
+                        </span>
+                        <span>
+                          <strong>Create user</strong>
+                          <small>Add a dashboard or app account</small>
+                        </span>
                       </button>
-                      <button type="button" role="menuitem" className="admin-menu-logout" onClick={() => handleLogout()}>
-                        <span className="admin-menu-icon" aria-hidden="true">↪</span>
-                        <span><strong>Logout</strong><small>End your current session</small></span>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="admin-menu-logout"
+                        onClick={() => handleLogout()}
+                      >
+                        <span className="admin-menu-icon" aria-hidden="true">
+                          ↪
+                        </span>
+                        <span>
+                          <strong>Logout</strong>
+                          <small>End your current session</small>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowAdminMenu(false);
+                          goToPage("component-showcase");
+                        }}
+                      >
+                        <span aria-hidden="true">component-showcase</span>
+                        <span>
+                          <strong>Component showcase</strong>
+                          <small>Internal design tokens & examples</small>
+                        </span>
                       </button>
                     </div>
                   )}
                 </div>
               ) : (
                 <>
-                  <span className="header-role">{authSession?.user?.role || "user"}</span>
-                  <button type="button" className="header-auth-button" onClick={() => handleLogout()}>Logout</button>
+                  <span className="header-role">
+                    {authSession?.user?.role || "user"}
+                  </span>
+                  <button
+                    type="button"
+                    className="header-auth-button"
+                    onClick={() => handleLogout()}
+                  >
+                    Logout
+                  </button>
                 </>
               )}
             </div>
@@ -216,86 +349,107 @@ function App() {
           )}
         </div>
       </div>
+
       {showNotifPanel && (
         <NotificationPanel onClose={closeNotificationPanel} />
       )}
 
       <div className="page-content">
-        {page === "login" && (
-          <LoginForm setPage={goToPage} onLogin={handleLogin} />
-        )}
+        <Routes>
+          <Route path="/" element={<Navigate to={HOME_PATH} replace />} />
 
-        {page === "forgotPassword" && <ForgotPassword setPage={goToPage} />}
+          <Route
+            path="/login"
+            element={<LoginForm setPage={goToPage} onLogin={handleLogin} />}
+          />
+          <Route
+            path="/forgot-password"
+            element={<ForgotPassword setPage={goToPage} />}
+          />
 
-        {page === "createUser" && isAdmin && (
-          <CreateUser setPage={goToPage} />
-        )}
+          <Route
+            path="/admin/create-user"
+            element={
+              isAdmin ? (
+                <CreateUser setPage={goToPage} />
+              ) : (
+                <Navigate to={HOME_PATH} replace />
+              )
+            }
+          />
 
-        {page === "dashboard" && (
+          <Route
+            path="/dashboard"
+            element={withShell(
+              <Dashboard
+                setPage={goToPage}
+                setSelectedThreat={setSelectedThreat}
+                isLoggedIn={isLoggedIn}
+              />,
+            )}
+          />
+
+          <Route
+            path="/alerts"
+            element={withShell(
+              <Alerts
+                setPage={goToPage}
+                setSelectedThreat={setSelectedThreat}
+              />,
+            )}
+          />
+
+          <Route path="/about" element={withShell(<AboutUs />)} />
+          <Route path="/reports" element={withShell(<ReportsPage />)} />
+          <Route
+            path="/risk-assessment"
+            element={withShell(<RiskAssessmentPage />)}
+          />
+
+          <Route
+            path="/threats"
+            element={withShell(
+              <ThreatDetails
+                selectedThreat={selectedThreat}
+                onBack={handleBackFromThreatDetails}
+              />,
+            )}
+          />
+
+          <Route
+            path="/settings"
+            element={withShell(
+              <SettingsPage
+                setPage={goToPage}
+                authSession={authSession}
+                onLogout={handleLogout}
+              />,
+            )}
+          />
+
+          <Route
+            path="/help"
+            element={withShell(<HelpSupportPage setPage={goToPage} />)}
+          />
+
+          <Route
+            path="*"
+            element={
+              <div className="not-found">
+                <h1>Page not found</h1>
+                <p>The address you entered does not match any Phoenix page.</p>
+                <Link to={HOME_PATH} className="header-auth-button">
+                  Return to Dashboard
+                </Link>
+              </div>
+            }
+          />
+        </Routes>
+
+        {page === "component-showcase" && isAdmin && (
           <div style={{ display: "flex" }}>
             <Sidebar setPage={goToPage} page={page} />
-
-            <Dashboard
-              setPage={goToPage}
-              setSelectedThreat={setSelectedThreat}
-              isLoggedIn={isLoggedIn}
-            />
-          </div>
-        )}
-
-        {page === "alerts" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-
-            <Alerts setPage={goToPage} setSelectedThreat={setSelectedThreat} />
-          </div>
-        )}
-
-        {page === "about" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <AboutUs />
-          </div>
-        )}
-
-        {page === "reports" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <ReportsPage />
-          </div>
-        )}
-
-        {page === "threats" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <ThreatDetails
-              selectedThreat={selectedThreat}
-              onBack={handleBackFromThreatDetails}
-            />
-          </div>
-        )}
-
-        {page === "riskAssessment" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <RiskAssessmentPage />
-          </div>
-        )}
-
-        {page === "settings" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <SettingsPage
-              setPage={goToPage}
-              authSession={authSession}
-              onLogout={handleLogout}
-            />
-          </div>
-        )}
-        {page === "help" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <HelpSupportPage setPage={goToPage} />
+            <ComponentShowcase />
           </div>
         )}
       </div>
@@ -306,3 +460,4 @@ function App() {
 }
 
 export default App;
+

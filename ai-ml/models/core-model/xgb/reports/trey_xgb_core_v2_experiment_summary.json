@@ -1,0 +1,93 @@
+{
+  "generated_at_utc": "2026-05-11T14:18:10Z",
+  "run_id": "trey_xgb_core_v2",
+  "model": {
+    "model_type": "sklearn",
+    "model_name": "xgboost",
+    "task_type": "classification"
+  },
+  "best_f1": 0.7237184466019418,
+  "best_epoch": 58,
+  "checkpoint_path": "ai-ml/models/core-models/xgb/checkpoints/trey_xgb_core_v2/core_xgb_xgboost_trey_xgb_core_v2_best.joblib",
+  "dataset_used": "ai-ml/datasets/phoenix_combined_dataset_large.csv",
+  "metrics": {
+    "validation": {
+      "accuracy": 0.73,
+      "precision": 0.7249205184641722,
+      "recall": 0.73,
+      "f1": 0.717340895522388,
+      "confusion_matrix": [
+        [
+          91,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          60,
+          0,
+          25
+        ],
+        [
+          0,
+          0,
+          46,
+          0
+        ],
+        [
+          0,
+          56,
+          0,
+          22
+        ]
+      ],
+      "auc": 0.903438962218032
+    },
+    "test": {
+      "accuracy": 0.7333333333333333,
+      "precision": 0.73130641068079,
+      "recall": 0.7333333333333333,
+      "f1": 0.7272033023735811,
+      "confusion_matrix": [
+        [
+          90,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          55,
+          0,
+          29
+        ],
+        [
+          0,
+          0,
+          47,
+          0
+        ],
+        [
+          0,
+          51,
+          0,
+          28
+        ]
+      ],
+      "auc": 0.8972714164013184
+    }
+  },
+  "rows": {
+    "input": 2000,
+    "processed": 2000,
+    "train": 1400,
+    "val": 300,
+    "test": 300
+  },
+  "tensorboard": {
+    "enabled": true,
+    "log_dir": "ai-ml/models/core-models/xgb/logs/tensorboard/trey_xgb_core_v2",
+    "status": "enabled"
+  }
+}

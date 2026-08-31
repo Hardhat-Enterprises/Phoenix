@@ -4,9 +4,9 @@
 
 .risk-assessment-page {
   width: 100%;
-  padding: 24px;
+  padding: 32px;
   background: #f3f6fb;
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 .risk-assessment-title-section {
@@ -32,4 +32,8 @@
   padding: 20px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
   max-width: 900px;
+}
+
+@media (max-width: 720px) {
+  .risk-assessment-page { padding: 20px 16px; }
 }

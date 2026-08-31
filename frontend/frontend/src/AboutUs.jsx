@@ -1,267 +1,274 @@
 import React from "react";
+import "./AboutUs.css";
 
-const styles = {
-  page: {
-    width: "100%",
-    boxSizing: "border-box",
+const roles = [
+  {
+    icon: "🚒",
+    iconClass: "emergency",
+    kicker: "Emergency Services & Local Councils",
+    title: "Coordinating response",
+    description:
+      "Emergency services and local councils are PHOENIX's primary users. The dashboard is designed to help them coordinate disaster response by viewing hazard information and correlated cyber risk signals in one place.",
   },
-
-  contentArea: {
-    padding: "24px",
+  {
+    icon: "🏘️",
+    iconClass: "stakeholders",
+    kicker: "Communities & Residents",
+    title: "Trustworthy alerts",
+    description:
+      "Victorian communities and residents are also a primary audience. A core goal of PHOENIX is to help the public rely on authenticated, trustworthy alerts during bushfire and flood events, rather than scams or misinformation.",
   },
-
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: "20px",
-    padding: "20px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-    marginBottom: "22px",
-    border: "1px solid #e8edf5",
+  {
+    icon: "🏥",
+    iconClass: "analysts",
+    kicker: "Critical Service Operators",
+    title: "Early risk awareness",
+    description:
+      "Operators of critical services, such as health services, are a secondary audience who benefit from early awareness of correlated hazard and cyber risk signals affecting their operations.",
   },
+];
 
-  cardTitle: {
-    margin: "0 0 14px 0",
-    textAlign: "left",
-    fontSize: "18px",
-    fontWeight: "800",
-    color: "#11264d",
+const processSteps = [
+  {
+    icon: "📡",
+    title: "Hazard & Threat Data Collection",
+    description:
+      "Real-time hazard signals (such as weather and emergency feeds) are combined with cyber threat indicators, such as scam patterns and threat intelligence.",
   },
-
-  phoenixBanner: {
-    width: "100%",
-    height: "220px",
-    borderRadius: "16px",
-    objectFit: "cover",
-    display: "block",
-    marginBottom: "14px",
-    backgroundColor: "#0d2e5c",
+  {
+    icon: "🧮",
+    title: "Risk Correlation & Scoring",
+    description:
+      "A lightweight, explainable risk-scoring and anomaly-detection prototype correlates hazard data with cyber threat indicators to highlight areas of concern.",
   },
-
-  bodyText: {
-    margin: 0,
-    color: "#4b5d7a",
-    fontSize: "14px",
-    lineHeight: "1.7",
+  {
+    icon: "🔏",
+    title: "Alert Verification (Prototype)",
+    description:
+      "A proof-of-concept workflow explores how official communications could be verified, using simplified trust models rather than production-grade cryptography.",
   },
-
-  purposeRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "18px",
-    flexWrap: "wrap",
+  {
+    icon: "📊",
+    title: "Insights Display",
+    description:
+      "The resulting insights are presented on the web dashboard for stakeholder review.",
   },
+];
 
-  purposeIcon: {
-    width: "140px",
-    height: "120px",
-    borderRadius: "14px",
-    objectFit: "cover",
-    backgroundColor: "#eef3fb",
-    border: "1px solid #dde6f3",
-    flexShrink: 0,
-  },
+const capabilities = [
+  "Secure sign-in with role-based session handling.",
+  "Central dashboard showing live hazard, threat and risk totals.",
+  "Regional anomaly detection panel that submits a request to the backend AI model and displays the result.",
+  "Threat chart summarising recent threat signals by severity.",
+  "Recent threat signal list with a detailed drill-down view for each item.",
+  "Risk map displaying hazard markers with severity colour-coding.",
+  "Location filter controls (state, local government area and suburb) built into the Risk Map, ready to narrow hazards down once location data is available.",
+  "Alerts, Reports and Settings pages accessible from the main navigation.",
+];
 
-  purposeContent: {
-    flex: 1,
-    minWidth: "250px",
-  },
+const inDevelopment = [
+  "Location data: the backend does not yet have location records loaded, so the state / LGA / suburb filters have no options to choose from yet.",
+  "Precise hazard-to-suburb linking: hazard records currently store only a state code, so hazards can only be matched to a location at state level for now.",
+  "Full alert verification (TEAVS-inspired): the current build does not yet include a working cryptographic verification workflow — this remains a proof-of-concept goal.",
+  "Broader hazard-to-cyber correlation pipeline: wider data sources beyond the current prototype feeds are still being integrated.",
+  "A dedicated Help Center page has not been built yet — for now, support questions go through the contact details below.",
+  "Live delivery of real-time notifications to external systems is still being finalised.",
+];
 
-  purposeHeading: {
-    margin: "0 0 8px 0",
-    fontSize: "16px",
-    fontWeight: "800",
-    color: "#11264d",
-  },
-};
+export default function AboutUs({ setPage }) {
+  const goTo = (target) => {
+    if (typeof setPage === "function") {
+      setPage(target);
+    }
+  };
 
-export default function AboutUs() {
   return (
-    <div style={styles.page}>
-      <div style={styles.contentArea}>
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>What is PHOENIX?</h2>
+    <div className="about-page">
+      <div className="about-content">
+        <h1 className="about-page-title">About PHOENIX</h1>
+        <p className="about-page-subtitle">
+          Safeguarding Community Trust and Critical Services from Cyber
+          Threats in Bushfire and Flood Disasters
+        </p>
+
+        <section className="about-card" aria-labelledby="about-what-is">
+          <h2 className="about-card-title" id="about-what-is">
+            What is PHOENIX?
+          </h2>
 
           <img
             src="/about-banner.png"
-            alt="About Us banner"
-            style={styles.phoenixBanner}
+            alt="PHOENIX disaster and cyber risk monitoring dashboard banner"
+            className="about-banner"
           />
 
-          <p style={styles.bodyText}>
-            PHOENIX is a dashboard designed to support disaster management
-            stakeholders by bringing together hazard monitoring, cyber threat
-            visibility, and decision-support information in one place. It is
-            intended to improve awareness, communication, and timely response
-            during critical situations.
+          <p className="about-body-text">
+            PHOENIX is a Deakin University Capstone project run with the
+            Cyber Security &amp; Disaster Resilience research team. It
+            explores how AI-assisted risk modelling and secure alert
+            verification can help protect communities and emergency
+            services from cyber threats that emerge during bushfire and
+            flood events — for example, fraudulent donation sites and
+            misinformation that can spread when a community is most
+            vulnerable.
           </p>
-        </div>
 
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Purpose</h2>
+          <p className="about-body-text" style={{ marginTop: "10px" }}>
+            The project prototypes a system that correlates real-time
+            hazard signals (such as weather and emergency feeds) with
+            cyber threat indicators (such as scam patterns and threat
+            intelligence), and presents the resulting insights through
+            this dashboard. This site is the working prototype produced by
+            a multidisciplinary student Capstone team across Frontend,
+            Backend, AI/ML and Cybersecurity streams, developed within a
+            12-week trimester.
+          </p>
+        </section>
 
-          <div style={styles.purposeRow}>
+        <section className="about-card" aria-labelledby="about-purpose">
+          <h2 className="about-card-title" id="about-purpose">
+            System Purpose
+          </h2>
+
+          <div className="purpose-row">
             <img
               src="/system-purpose.png"
-              alt="Purpose"
-              style={styles.purposeIcon}
+              alt="Illustration representing PHOENIX's goal of improving situational awareness"
+              className="purpose-icon"
             />
 
-            <div style={styles.purposeContent}>
-              <h3 style={styles.purposeHeading}>Improving Awareness</h3>
-              <p style={styles.bodyText}>
-                The purpose of PHOENIX is to improve awareness of both physical
-                and digital risks during disaster events. The system provides
-                clear and accessible information that helps users monitor
-                hazards, understand cyber-related threats, and support better
-                response planning.
+            <div className="purpose-content">
+              <h3 className="purpose-heading">
+                Two Components, One Prototype
+              </h3>
+              <p className="about-body-text">
+                PHOENIX focuses on two proof-of-concept components: an
+                AI-assisted hazard-to-cyber risk modelling module (inspired
+                by ADCRS), and a secure alert verification workflow
+                (inspired by TEAVS). Together, the goal is to improve
+                awareness of physical and digital risks during disaster
+                events, and to help build community trust in official
+                alerts and communications.
               </p>
             </div>
           </div>
-        </div>
+        </section>
 
+        <section className="about-card" aria-labelledby="about-who-uses">
+          <h2 className="about-card-title" id="about-who-uses">
+            Who Uses This System?
+          </h2>
 
-        {/* ── GOUTHAM'S SECTION: Who Uses This System + Footer ── */}
-
-        {/* Who Uses This System */}
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Who Uses This System?</h2>
-
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: "16px",
-            marginBottom: "10px"
-          }}>
-
-            {/* Card 1 */}
-            <div style={{
-              borderRadius: "14px",
-              overflow: "hidden",
-              border: "1px solid #e8edf5",
-              background: "#fff",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
-            }}>
-              <div style={{
-                background: "#1a1a2e",
-                height: "110px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "3rem"
-              }}>🚨</div>
-              <div style={{ padding: "12px" }}>
-                <p style={{ fontSize: "0.7rem", color: "#888", textTransform: "uppercase", margin: "0 0 4px 0" }}>Emergency Managers</p>
-                <p style={{ fontWeight: 700, fontSize: "0.9rem", color: "#11264d", margin: "0 0 6px 0" }}>Responsible for...</p>
-                <p style={{ fontSize: "0.8rem", color: "#4b5d7a", lineHeight: 1.5, margin: 0 }}>
-                  Coordinate disaster response and resource allocation across affected regions.
-                </p>
+          <div className="role-grid">
+            {roles.map((role) => (
+              <div className="role-card" key={role.kicker}>
+                <div className={`role-card-icon ${role.iconClass}`} aria-hidden="true">
+                  {role.icon}
+                </div>
+                <div className="role-card-body">
+                  <p className="role-kicker">{role.kicker}</p>
+                  <h3 className="role-title">{role.title}</h3>
+                  <p className="role-desc">{role.description}</p>
+                </div>
               </div>
-            </div>
-
-            {/* Card 2 */}
-            <div style={{
-              borderRadius: "14px",
-              overflow: "hidden",
-              border: "1px solid #e8edf5",
-              background: "#fff",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
-            }}>
-              <div style={{
-                background: "#0d1b2a",
-                height: "110px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "3rem"
-              }}>🔐</div>
-              <div style={{ padding: "12px" }}>
-                <p style={{ fontSize: "0.7rem", color: "#888", textTransform: "uppercase", margin: "0 0 4px 0" }}>Cyber Analysts</p>
-                <p style={{ fontWeight: 700, fontSize: "0.9rem", color: "#11264d", margin: "0 0 6px 0" }}>Focus on identify...</p>
-                <p style={{ fontSize: "0.8rem", color: "#4b5d7a", lineHeight: 1.5, margin: 0 }}>
-                  Monitor and respond to cyber threats and suspicious digital communications.
-                </p>
-              </div>
-            </div>
-
-            {/* Card 3 */}
-            <div style={{
-              borderRadius: "14px",
-              overflow: "hidden",
-              border: "1px solid #e8edf5",
-              background: "#fff",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
-            }}>
-              <div style={{
-                background: "#1b2838",
-                height: "110px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "3rem"
-              }}>🏛</div>
-              <div style={{ padding: "12px" }}>
-                <p style={{ fontSize: "0.7rem", color: "#888", textTransform: "uppercase", margin: "0 0 4px 0" }}>Stakeholders</p>
-                <p style={{ fontWeight: 700, fontSize: "0.9rem", color: "#11264d", margin: "0 0 6px 0" }}>Engaged parties...</p>
-                <p style={{ fontSize: "0.8rem", color: "#4b5d7a", lineHeight: 1.5, margin: 0 }}>
-                  Review insights and reports to support informed decision-making during events.
-                </p>
-              </div>
-            </div>
-
+            ))}
           </div>
-        </div>
+        </section>
 
-        {/* How the System Supports Monitoring */}
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>How the System Supports Monitoring</h2>
+        <section className="about-card" aria-labelledby="about-how-it-works">
+          <h2 className="about-card-title" id="about-how-it-works">
+            How PHOENIX Works
+          </h2>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-
-            <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
-              <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: "#e8eaf6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", flexShrink: 0 }}>🗄</div>
-              <div>
-                <p style={{ fontWeight: 600, fontSize: "0.88rem", color: "#11264d", margin: 0 }}>Data Collection</p>
-                <p style={{ fontSize: "0.78rem", color: "#4b5d7a", margin: 0 }}>Disaster and cyber data received</p>
+          <div className="process-list">
+            {processSteps.map((step) => (
+              <div className="process-step" key={step.title}>
+                <div className="process-icon" aria-hidden="true">
+                  {step.icon}
+                </div>
+                <div>
+                  <h3 className="process-title">{step.title}</h3>
+                  <p className="process-desc">{step.description}</p>
+                </div>
               </div>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
-              <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: "#e8eaf6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", flexShrink: 0 }}>⚙</div>
-              <div>
-                <p style={{ fontWeight: 600, fontSize: "0.88rem", color: "#11264d", margin: 0 }}>Data Processing</p>
-                <p style={{ fontSize: "0.78rem", color: "#4b5d7a", margin: 0 }}>Risk and alert information processed</p>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
-              <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: "#e8eaf6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", flexShrink: 0 }}>🔍</div>
-              <div>
-                <p style={{ fontWeight: 600, fontSize: "0.88rem", color: "#11264d", margin: 0 }}>Insights Display</p>
-                <p style={{ fontSize: "0.78rem", color: "#4b5d7a", margin: 0 }}>Dashboard presents insights for stakeholder review</p>
-              </div>
-            </div>
-
+            ))}
           </div>
-        </div>
+        </section>
 
-        {/* Support / Contact Footer */}
-        <div style={{
-          ...styles.card,
-          background: "#f0f2f8",
-          border: "1px solid #d8dce8"
-        }}>
-          <h2 style={styles.cardTitle}>Support / Contact</h2>
-          <p style={styles.bodyText}>
+        <section className="about-card" aria-labelledby="about-capabilities">
+          <h2 className="about-card-title" id="about-capabilities">
+            Current Capabilities
+            <span className="status-badge done">Available now</span>
+          </h2>
+
+          <ul className="about-list">
+            {capabilities.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="about-card" aria-labelledby="about-in-development">
+          <h2 className="about-card-title" id="about-in-development">
+            Features in Development
+            <span className="status-badge progress">In progress</span>
+          </h2>
+
+          <p className="about-body-text" style={{ marginBottom: "10px" }}>
+            PHOENIX is a prototype under active development. The items
+            below are known gaps that have not been completed yet, so
+            results in these areas should not be treated as final:
+          </p>
+
+          <ul className="about-list">
+            {inDevelopment.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section
+          className="about-card about-support-card"
+          aria-labelledby="support-contact-heading"
+          id="support-contact"
+        >
+          <h2 className="about-card-title" id="support-contact-heading">
+            Support &amp; Contact
+          </h2>
+
+          <p className="about-body-text">
             For assistance, reach out to{" "}
-            <a
-              href="mailto:support@phoenixdashboard.com"
-              style={{ color: "#3b5bdb", textDecoration: "none", fontWeight: 600 }}
-            >
+            <a href="mailto:support@phoenixdashboard.com" className="support-link">
               support@phoenixdashboard.com
             </a>
+            . A dedicated Help Center page is planned but not built yet —
+            see Features in Development above.
           </p>
-        </div>
 
+          <div className="quick-links">
+            <button
+              type="button"
+              className="quick-link-button"
+              onClick={() => goTo("dashboard")}
+            >
+              Go to Dashboard
+            </button>
+
+            <button
+              type="button"
+              className="quick-link-button"
+              onClick={() => goTo("reports")}
+            >
+              Go to Reports
+            </button>
+
+            <a href="#support-contact" className="quick-link-button">
+              Help &amp; Support
+            </a>
+          </div>
+        </section>
       </div>
     </div>
-  );}
+  );
+}
+

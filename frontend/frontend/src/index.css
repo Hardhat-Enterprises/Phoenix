@@ -1,18 +1,22 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
+  --text: #001a3e;
+  --text-h: #fafbfc;
+  --text-weight: 500;
+  --content-width: 800px;
+
   --bg: #fff;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --accent: #183379;
+  --accent-bg: rgba(0, 58, 159, 0.506);
+  --accent-border: rgba(0, 58, 159, 0.506);
+  --social-bg: rgba(234, 234, 234, 0.5);
+  --shadow:
+    rgba(52, 49, 49, 0.641) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/145% var(--sans);
@@ -24,6 +28,44 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  --border-width: 1px;
+  --border-color: var(--border);
+  --focus-ring: 3px solid #1a4380;
+
+  --heading-color: #1f3a5f;
+  --muted: #64748b;
+  --card-bg: #ffffff;
+  --danger: #ef4444;
+  --success: #166534;
+  --warning: #f97316;
+  --info: #2563eb;
+  --page-bg: #eef3f8;
+  --brand: #1a4380;
+
+  --font-family-base: system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-family-heading: var(--heading);
+  --base-font-size: 18px;
+
+  --shadow-sm: 0 2px 6px 0 #5356620f;
+  --shadow-md: 0 4px 12px 0 #5356620f;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  --shadow-lg: 0 10px 30px rgba(2, 6, 23, 0.12);
+  --muted: #64748b;
+
+  --interactive: #1d3e7b;
 
   @media (max-width: 1024px) {
     font-size: 16px;
@@ -55,11 +97,7 @@ body {
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
+  width: 100%;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -70,7 +108,7 @@ h1,
 h2 {
   font-family: var(--heading);
   font-weight: 500;
-  color: var(--text-h);
+  color: var(--heading-color);
 }
 
 h1 {
@@ -95,6 +133,27 @@ p {
   margin: 0;
 }
 
+.content-max {
+  max-width: 1126px;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+/* Standard page heading and card utilities */
+.page-heading {
+  color: var(--heading-color);
+  font-family: var(--font-family-heading);
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
 code,
 .counter {
   font-family: var(--mono);
@@ -109,3 +168,4 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+

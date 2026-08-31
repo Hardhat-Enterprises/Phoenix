@@ -1,0 +1,26 @@
+# configs/gradient_boosting_config.yaml
+dataset:
+  path: "../datasets/phoenix_combined_dataset_large.csv" 
+  target_column: "hazard_severity" 
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  random_seed: 42
+
+model:
+  type: "sklearn"
+  name: "gradient_boosting"
+  hyperparameters:
+    n_estimators: 100
+    learning_rate: 0.1
+    max_depth: 3
+    random_state: 42
+
+training:
+  evaluate_on_test: true
+  tensorboard_enabled: true
+output:
+  run_id: "aarnav_gb_core_v1"
+  log_dir: "logs/"
+  checkpoint_dir: "checkpoints/"
+  report_dir: "reports/"

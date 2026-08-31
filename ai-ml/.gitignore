@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+
+# Mac
+.DS_Store
+
+# Virtual env
+venv/
+
+# Data files
+datasets/
+
+# Experiment outputs
+Sample Records/
+
+.env
+ai-ml/models/ai012-anomaly/data/
+ai-ml/models/ai012-anomaly/checkpoints/*.pkl
+!ai-ml/models/ai012-anomaly/checkpoints/best.pkl

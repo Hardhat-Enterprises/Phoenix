@@ -1,23 +1,28 @@
 // riskAssessmentApi.js
 //
-// Adapter layer for the Risk-Assessment feature (Sprint 1, Varun Reddy Maligireddy).
+// Adapter layer for the Risk-Assessment feature (Varun Reddy Maligireddy).
 //
-// WHY THIS FILE EXISTS
-// This adapter returns clearly-labelled demo data in the exact shape the UI expects.
-// The live endpoint has now been confirmed by Aayan (PHOENIX API Endpoint Documentation):
-//   GET /api/users/risk-assessments
-//   GET /api/users/risk-assessments/:assessmentId
-// Flip DEMO_MODE to false below once the backend is actually deployed and reachable.
-// The UI components never need to change — normalizeAssessment() below maps the real
-// API's field names (integration_event_id, related_hazard_event_id, detected_at, etc.)
-// onto the same shape the demo data already uses.
+// Sprint 1: built the demo prototype and documented the confirmed live shape.
+// Sprint 2 ("Risk and Anomaly Feature Control"): the supplied backend for
+// this environment does not actually expose the risk-assessment endpoints,
+// so:
+//   - demo mode is now controlled by an environment feature flag, not a
+//     hardcoded constant, so it can be switched per-environment without a
+//     code change.
+//   - when demo mode is off and the live endpoint is unreachable/unsupported,
+//     the UI shows an honest "Not available in this environment" state
+//     rather than a generic, alarming error (see getRiskAssessments below).
 //
-// IMPORTANT: this file must never let demo data be mistaken for real integration data.
-// Every demo record carries `isDemo: true`, and the UI must always surface a "Demo data"
-// label when isDemo is true. Per the sprint brief: do NOT present integration logs as
-// risk assessments.
+// IMPORTANT: this file must never let demo data be mistaken for real
+// integration data. Every demo record carries `isDemo: true`, and the UI
+// must always surface a "Demo data" label when isDemo is true. Per the
+// sprint brief: do NOT present integration logs as risk assessments — this
+// adapter only ever calls /api/users/risk-assessments, never the
+// integrations endpoint, so that fallback never existed here to begin with.
 
-const DEMO_MODE = true;
+import { RISK_ASSESSMENT_DEMO_MODE } from "../config/environment";
+
+const DEMO_MODE = RISK_ASSESSMENT_DEMO_MODE;
 
 const demoRiskAssessments = [
   {
@@ -84,7 +89,12 @@ function simulateNetwork(value, { fail = false, delayMs = 400 } = {}) {
 
 // --- Live API normalization -------------------------------------------------
 //
-// Per Aayan's PHOENIX API Endpoint Documentation (Section 8):
+// Documented shape from Aayan's PHOENIX API Endpoint Documentation (Section 8)
+// — kept here for when the endpoint actually becomes available in a given
+// environment. See also docs/RISK_ANOMALY_FIELDS.md for the future
+// model-output fields (phishing probability, hazard-correlation probability,
+// relationship type, evidence, priority, model version) that are not part of
+// this shape yet.
 //
 // List item shape (GET /api/users/risk-assessments):
 //   { integration_event_id, related_hazard_event_id, related_threat_id,
@@ -101,9 +111,6 @@ function simulateNetwork(value, { fail = false, delayMs = 400 } = {}) {
 // Both endpoints wrap the payload as { status, message, data } — and per the
 // documented examples, `data` is an array in both cases (even for a single record).
 
-// integration_confidence arrives as a 0–1 decimal on the live API; the UI expects
-// a High/Medium/Low label to drive the existing pill styling. Thresholds below are
-// a reasonable first pass — adjust once real confidence distributions are known.
 function confidenceLabel(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "Unknown";
@@ -112,9 +119,6 @@ function confidenceLabel(value) {
   return "Low";
 }
 
-// linked_event_type / event_status are plain uuid strings on the list endpoint but
-// nested { ..._id, ..._description } objects on the detail endpoint. Prefer the
-// human-readable description when present; fall back to the raw value otherwise.
 function readDescriptive(value, descriptionKey) {
   if (value && typeof value === "object") {
     return value[descriptionKey] || value.id || "Unknown";
@@ -143,12 +147,24 @@ function normalizeAssessment(record) {
   };
 }
 
-// The documented wrapper always nests the payload in `data`, and `data` is an
-// array in both the list and detail examples — this unwraps either shape safely.
 function unwrapData(json) {
   if (Array.isArray(json?.data)) return json.data;
   if (json?.data) return [json.data];
   return [];
+}
+
+// This environment's supplied backend does not expose the risk-assessment
+// endpoints at all — so any failure while DEMO_MODE is off is treated as
+// "not available in this environment" rather than a generic, alarming
+// error. This keeps the message honest about what's actually going on
+// (the feature isn't wired up here yet) instead of implying something is
+// broken that the person could fix by retrying.
+function makeUnavailableError() {
+  const error = new Error(
+    "Risk assessment data is not available in this environment.",
+  );
+  error.code = "RISK_BACKEND_UNAVAILABLE";
+  return error;
 }
 
 /**
@@ -161,13 +177,17 @@ export async function getRiskAssessments() {
     return { data, demo: true };
   }
 
-  const res = await fetch("/api/users/risk-assessments");
-  if (!res.ok) {
-    throw new Error(`Failed to load risk assessments (status ${res.status})`);
+  try {
+    const res = await fetch("/api/users/risk-assessments");
+    if (!res.ok) {
+      throw new Error(`status ${res.status}`);
+    }
+    const json = await res.json();
+    const data = unwrapData(json).map(normalizeAssessment);
+    return { data, demo: false };
+  } catch {
+    throw makeUnavailableError();
   }
-  const json = await res.json();
-  const data = unwrapData(json).map(normalizeAssessment);
-  return { data, demo: false };
 }
 
 /**
@@ -185,14 +205,19 @@ export async function getRiskAssessmentById(assessmentId) {
     return { data, demo: true };
   }
 
-  const res = await fetch(`/api/users/risk-assessments/${assessmentId}`);
-  if (res.status === 404) throw new Error("NOT_FOUND");
-  if (!res.ok) {
-    throw new Error(`Failed to load risk assessment (status ${res.status})`);
+  try {
+    const res = await fetch(`/api/users/risk-assessments/${assessmentId}`);
+    if (res.status === 404) throw new Error("NOT_FOUND");
+    if (!res.ok) {
+      throw new Error(`status ${res.status}`);
+    }
+    const json = await res.json();
+    const [record] = unwrapData(json);
+    if (!record) throw new Error("NOT_FOUND");
+    const data = normalizeAssessment(record);
+    return { data, demo: false };
+  } catch (err) {
+    if (err.message === "NOT_FOUND") throw err;
+    throw makeUnavailableError();
   }
-  const json = await res.json();
-  const [record] = unwrapData(json);
-  if (!record) throw new Error("NOT_FOUND");
-  const data = normalizeAssessment(record);
-  return { data, demo: false };
 }

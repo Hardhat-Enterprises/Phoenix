@@ -62,21 +62,11 @@ function App() {
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hasUnsavedSettings, setHasUnsavedSettings] = useState(false);
+  const [page, setPage] = useState(null);
   const adminMenuRef = useRef(null);
   const notifBellRef = useRef(null);
   const menuButtonRef = useRef(null);
   const hasUnsavedSettingsRef = useRef(false);
-
-  const mainPages = [
-    "about",
-    "dashboard",
-    "reports",
-    "alerts",
-    "threats",
-    "settings",
-    "riskAssessment",
-    "help",
-  ];
 
   const isLoggedIn = Boolean(authSession?.accessToken);
   const isAdmin = authSession?.user?.role?.toLowerCase() === "admin";

@@ -774,7 +774,7 @@ const normalizeThreatRow = (threat, index, dateFormat) => {
     //meta: `${formatLabel(region)} | ${formatShortDate(detectedAt)}`,
     location: formatLabel(region),
 detectionDate: detectedAt,
-meta: `${formatLabel(region)} • ${formatShortDate(detectedAt)}`,
+meta: `${formatLabel(region)} • ${formatShortDate(detectedAt, dateFormat)}`,
     riskValue: riskValueFor(
       vulnerability,
       threat.confidence_score
@@ -1215,6 +1215,11 @@ if (
     () => threats.map((threat, index) => normalizeThreatRow(threat, index, dateFormat)),
     [dateFormat, threats],
   );
+
+  const openThreatDetails = (threat) => {
+    setSelectedThreat(threat);
+    navigate(threatPath(threat.id));
+  };
 
   // Location and Risk Map Controls derived values
   const locationOptions = useMemo(
@@ -2026,18 +2031,15 @@ if (
                 <div 
                     className="item-list-row"
                     key={item.id}
-                    onClick={() => {
-                    setSelectedThreat(item);
-                    setPage("threatdetails");
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      setSelectedThreat(item);
-      setPage("threatdetails");
-    }
-  }}
+                    onClick={() => openThreatDetails(item)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openThreatDetails(item);
+                      }
+                    }}
                 >
                     <div className="item-name-cell">
   <span
@@ -2051,9 +2053,7 @@ if (
 <span>{item.location}</span>
 
 <span>
-  {item.detectionDate
-    ? new Date(item.detectionDate).toLocaleDateString()
-    : "-"}
+  {formatShortDate(item.detectionDate, dateFormat)}
 </span>
 
 <div className={`status-pill ${item.className}`}>

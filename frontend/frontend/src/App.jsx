@@ -50,6 +50,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const adminMenuRef = useRef(null);
   const notifBellRef = useRef(null);
+  const menuButtonRef = useRef(null);
 
   const mainPages = [
     "about",
@@ -112,17 +113,6 @@ function App() {
       document.removeEventListener("keydown", closeOnEscape);
     };
   }, [showAdminMenu]);
-
-  // Single navigation entry point. Records the page being left so that the
-  // Threat Details page can offer a Back action that returns there.
-  const goToPage = (nextPage) => {
-    if (!nextPage || nextPage === page) {
-      return;
-    }
-
-    setPreviousPage(page);
-    setPage(nextPage);
-  };
 
   // Closing the panel hands focus back to the bell that opened it.
   const closeNotificationPanel = () => {

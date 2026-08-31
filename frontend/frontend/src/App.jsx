@@ -25,6 +25,7 @@ import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
 import CreateUser from "./CreateUser";
 import ComponentShowcase from "./components/ComponentShowcase";
+import GlobalSearch from "./components/GlobalSearch";
 import { HOME_PATH, pathForKey, routeForPath, APP_NAME } from "./config/routes";
 
 // Pages that show the header search and notification bell.
@@ -53,16 +54,13 @@ function App() {
 
   const isLoggedIn = Boolean(authSession?.accessToken);
   const isAdmin = authSession?.user?.role?.toLowerCase() === "admin";
-  const showChrome = MAIN_PATHS.includes(location.pathname);
-
-  const [page, setPage] = useState(null);
+  const showChrome =
+    MAIN_PATHS.includes(location.pathname) ||
+    location.pathname.startsWith("/threats/");
 
   // Compatibility shim: teammates' pages still call setPage("dashboard").
   // Translate those keys into real navigation so their code keeps working.
-  const goToPage = (key) => {
-    setPage(key);
-    navigate(pathForKey(key));
-  };
+  const goToPage = (key) => navigate(pathForKey(key));
 
   // Browser tab title follows the current route.
   useEffect(() => {
@@ -134,7 +132,6 @@ function App() {
   };
 
   // The shared shell: header, Sidebar, page content, Footer.
-  // Replaces the seven repeated display:flex wrappers.
   const withShell = (content) => (
     <div className={`app-body${sidebarOpen ? " sidebar-open" : ""}`}>
       <Sidebar isAdmin={isAdmin} onNavigate={closeSidebar} />
@@ -151,6 +148,10 @@ function App() {
       </main>
     </div>
   );
+
+  // Admin-only routes redirect anyone else to the dashboard.
+  const adminOnly = (content) =>
+    isAdmin ? content : <Navigate to={HOME_PATH} replace />;
 
   return (
     <div className="login-page">
@@ -191,11 +192,7 @@ function App() {
         <div className="temp-header-right">
           {showChrome && (
             <>
-              <input
-                type="text"
-                placeholder="Search in site"
-                className="temp-search"
-              />
+              <GlobalSearch isAdmin={isAdmin} />
 
               <button
                 className="temp-bell"
@@ -231,7 +228,7 @@ function App() {
                         }}
                       >
                         <span className="admin-menu-icon" aria-hidden="true">
-                          ＋
+                          {"\uFF0B"}
                         </span>
                         <span>
                           <strong>Create user</strong>
@@ -241,29 +238,31 @@ function App() {
                       <button
                         type="button"
                         role="menuitem"
-                        className="admin-menu-logout"
-                        onClick={() => handleLogout()}
+                        onClick={() => {
+                          setShowAdminMenu(false);
+                          goToPage("componentShowcase");
+                        }}
                       >
                         <span className="admin-menu-icon" aria-hidden="true">
-                          ↪
+                          {"\u25A6"}
                         </span>
                         <span>
-                          <strong>Logout</strong>
-                          <small>End your current session</small>
+                          <strong>Component showcase</strong>
+                          <small>Internal design tokens and examples</small>
                         </span>
                       </button>
                       <button
                         type="button"
                         role="menuitem"
-                        onClick={() => {
-                          setShowAdminMenu(false);
-                          goToPage("component-showcase");
-                        }}
+                        className="admin-menu-logout"
+                        onClick={() => handleLogout()}
                       >
-                        <span aria-hidden="true">component-showcase</span>
+                        <span className="admin-menu-icon" aria-hidden="true">
+                          {"\u21AA"}
+                        </span>
                         <span>
-                          <strong>Component showcase</strong>
-                          <small>Internal design tokens & examples</small>
+                          <strong>Logout</strong>
+                          <small>End your current session</small>
                         </span>
                       </button>
                     </div>
@@ -285,13 +284,9 @@ function App() {
               )}
             </div>
           ) : (
-            <button
-              type="button"
-              className="header-auth-button"
-              onClick={() => goToPage("login")}
-            >
+            <Link to={pathForKey("login")} className="header-auth-button">
               Login
-            </button>
+            </Link>
           )}
         </div>
       </div>
@@ -315,13 +310,12 @@ function App() {
 
           <Route
             path="/admin/create-user"
-            element={
-              isAdmin ? (
-                <CreateUser setPage={goToPage} />
-              ) : (
-                <Navigate to={HOME_PATH} replace />
-              )
-            }
+            element={adminOnly(<CreateUser setPage={goToPage} />)}
+          />
+
+          <Route
+            path="/admin/component-showcase"
+            element={adminOnly(withShell(<ComponentShowcase />))}
           />
 
           <Route
@@ -363,6 +357,16 @@ function App() {
           />
 
           <Route
+            path="/threats/:threatId"
+            element={withShell(
+              <ThreatDetails
+                selectedThreat={selectedThreat}
+                onBack={handleBackFromThreatDetails}
+              />,
+            )}
+          />
+
+          <Route
             path="/settings"
             element={withShell(
               <SettingsPage
@@ -391,13 +395,6 @@ function App() {
             }
           />
         </Routes>
-
-        {page === "component-showcase" && isAdmin && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={goToPage} page={page} />
-            <ComponentShowcase />
-          </div>
-        )}
       </div>
 
       <Footer />
@@ -406,4 +403,3 @@ function App() {
 }
 
 export default App;
-

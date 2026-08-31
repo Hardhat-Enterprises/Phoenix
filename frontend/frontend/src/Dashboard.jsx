@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { threatPath } from "./config/routes";
 import {
   getApiHealth,
   getDashboardActivity,
@@ -883,6 +885,7 @@ const hazardMatchesSelection = (hazard, locations, selection) => {
 };
 
 function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
+  const navigate = useNavigate();
   const [apiStatus, setApiStatus] = useState("Checking");
   const [threats, setThreats] = useState([]);
   const [threatsByRiskLevel, setThreatsByRiskLevel] = useState({});
@@ -1963,14 +1966,14 @@ if (
                     key={item.id}
                     onClick={() => {
                       setSelectedThreat(item);
-                      setPage("threats");
+                      navigate(threatPath(item.id));
                     }}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         setSelectedThreat(item);
-                        setPage("threats");
+                        navigate(threatPath(item.id));
                       }
                     }}
                   >

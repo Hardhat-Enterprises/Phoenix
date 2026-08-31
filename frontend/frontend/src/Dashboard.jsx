@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { threatPath } from "./config/routes";
+import RegionalThreatExplorer from "./components/RegionalThreatExplorer/RegionalThreatExplorer";
 import {
+
   getApiHealth,
   getDashboardActivity,
   getDashboardCharts,
@@ -2076,6 +2078,8 @@ if (
             </div>
           </section>
         </div>
+
+        <RegionalThreatExplorer />
       </main>
     </div>
   );

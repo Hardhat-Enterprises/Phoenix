@@ -7,20 +7,21 @@ export default function ForgotPassword({ setPage }) {
           Enter your username or email and we will send a password reset link.
         </p>
 
-        <label htmlFor="reset-email">Username or Email</label>
+        <label htmlFor="reset-email" className="label-required">Username or Email</label>
         <input
           id="reset-email"
           type="text"
           placeholder="Enter your username or email"
+          aria-required="true"
         />
 
-        <button type="button" className="forgot-btn">
+        <button type="button" className="btn btn-primary" >
           Send Password Reset
         </button>
 
         <button
           type="button"
-          className="back-login-btn"
+          className="btn"
           onClick={() => setPage("login")}
         >
           Back to Login

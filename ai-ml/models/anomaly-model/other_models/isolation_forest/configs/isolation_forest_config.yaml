@@ -1,0 +1,99 @@
+# AI012 anomaly optimization config: Isolation Forest
+
+dataset:
+  path: "../../../datasets/anomaly_detection_hourly_2020_2024.csv"
+  labels_path: "../data/processed/anomaly_labels_v1.csv"
+  target_column: null
+  evaluation_mode: "unsupervised"
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  split:
+    train: 0.7
+    val: 0.15
+    test: 0.15
+  random_seed: 42
+  stratify: false
+
+preprocessing:
+  missing_value_strategy: "median"
+  normalization: "standard"
+  scaling: "standard"
+  encoding: "one_hot"
+  feature_selection: true
+  selected_features: []
+  drop_columns:
+    - "row_id"
+    - "time_window"
+    - "timestamp"
+    - "anomaly_reason"
+
+model:
+  type: "isolation_forest"
+  task_type: "anomaly_detection"
+  hyperparameters:
+    n_estimators: 150
+    contamination: 0.07
+    max_samples: "auto"
+    max_features: 1.0
+    bootstrap: false
+    n_jobs: -1
+
+training:
+  epochs: 1
+  verbose: true
+  tensorboard_enabled: true
+  tensorboard_log_dir: "../logs/tensorboard/ai012_anomaly_optimization"
+  tensorboard_run_name: "isolation_forest"
+  checkpointing:
+    enabled: true
+    save_best_only: true
+    max_checkpoints: 3
+
+evaluation:
+  threshold_tuning: true
+  threshold_grid_size: 101
+  default_contamination: 0.07
+  supervised_if_labels_available: true
+  unsupervised_fallback: true
+  unsupervised_strategy: "score_quantile"
+  stability:
+    enabled: true
+    bootstrap_iterations: 10
+    sample_fraction: 0.8
+  metrics:
+    - "anomaly_rate"
+    - "score_mean"
+    - "score_std"
+    - "score_iqr"
+    - "threshold_quantile"
+    - "stability_score"
+  supervised_metrics:
+    enabled: true
+    metrics:
+      - "precision"
+      - "recall"
+      - "f1"
+      - "roc_auc"
+      - "pr_auc"
+      - "false_positive_rate"
+      - "false_negative_rate"
+
+outputs:
+  reports_dir: "../reports"
+  graphs_dir: "../comparison/graphs"
+  checkpoints_dir: "../checkpoints"
+  logs_dir: "../data/outputs"
+  results_file: "../reports/isolation_forest_metrics.json"
+  scores_file: "../data/outputs/isolation_forest_scores.csv"
+  flags_file: "../data/outputs/isolation_forest_flags.csv"
+  threshold_file: "../reports/isolation_forest_threshold_tuning.csv"
+
+output:
+  path: "../checkpoints"
+  log_path: "../data/outputs"
+  reports_path: "../reports"
+  save_best_only: true
+  organize_checkpoints_by_run: true
+  previous_checkpoints_to_keep: 3
+  checkpoint_prefix: "ai012_isolation_forest"

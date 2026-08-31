@@ -1,5 +1,5 @@
 import "./ThreatDetails.css";
-
+import "./components/design.css";
 const threatLevels = [
   { label: "No Threat", className: "no-threat" },
   { label: "Low", className: "low" },
@@ -70,9 +70,7 @@ function ThreatDetails({ selectedThreat, onBack }) {
     formatLabel(backendThreat.severity) ||
     "Not provided";
   const threatSource =
-    selectedThreat?.source ||
-    backendThreat.source ||
-    "Not provided";
+    selectedThreat?.source || backendThreat.source || "Not provided";
   const eventType = hasValue(backendThreat.event_type)
     ? formatLabel(backendThreat.event_type)
     : "Not provided";
@@ -117,13 +115,15 @@ function ThreatDetails({ selectedThreat, onBack }) {
       <main className="threat-details-main">
         <div className="threat-details-card">
           <div className="threat-details-header">
-            <h1>Threat Details</h1>
-            <p>Detailed cybersecurity threat intelligence and incident overview</p>
+            <h1>Threat Details</h1> <br></br>
+            <p>
+              Detailed cybersecurity threat intelligence and incident overview
+            </p>
           </div>
 
           {!selectedThreat ? (
             <div className="no-threat-selected-box">
-              <h2>No Threat Selected</h2>
+              <h2>No Threat Selected</h2> <br></br>
               <p>Please select a threat from the dashboard item list.</p>
             </div>
           ) : (
@@ -176,7 +176,11 @@ function ThreatDetails({ selectedThreat, onBack }) {
           )}
           {onBack && (
             <div className="threat-back-row">
-              <button type="button" className="threat-back-button" onClick={onBack}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onBack}
+              >
                 &larr; Back
               </button>
             </div>

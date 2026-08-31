@@ -1,0 +1,11 @@
+{
+  "purpose": "Generic training pipeline output manifest template",
+  "paths_are_relative_to": "ai-ml/training_pipeline",
+  "expected_outputs": {
+    "logs": "logs/",
+    "checkpoints": "checkpoints/",
+    "tensorboard": "logs/tensorboard/",
+    "experiment_reports": "reports/"
+  },
+  "recommended_config": "configs/socialmedia_disaster_pytorch_tensorboard.json"
+}

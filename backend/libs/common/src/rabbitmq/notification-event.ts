@@ -1,7 +1,6 @@
 export interface NotificationEvent {
   eventId: string;
   eventType: string;
-  recipientUserId: string;
   title: string;
   message: string;
   occurredAt: string;

@@ -55,15 +55,16 @@ Notification.init(
     user_id: {
       type: DataTypes.UUID,
       allowNull: false,
+      unique: "notifications_event_id_user_id_unique",
       references: {
-        model: "users",
-        key: "id",
+        model: "user_account",
+        key: "user_id",
       },
     },
     event_id: {
       type: DataTypes.TEXT,
       allowNull: false,
-      unique: true,
+      unique: "notifications_event_id_user_id_unique",
     },
     event_type: {
       type: DataTypes.TEXT,

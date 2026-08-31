@@ -61,12 +61,10 @@ test("maps a critical hazard to the shared notification payload", () => {
   const event = createHazardNotificationEvent(
     hazardPayload,
     "hazard-1",
-    "user-1",
   );
 
   assert.equal(event.eventId, "hazard:hazard-1");
   assert.equal(event.eventType, NotificationRoutingKey.HAZARD_CRITICAL);
-  assert.equal(event.recipientUserId, "user-1");
   assert.equal(event.occurredAt, "2026-08-12T00:30:00.000Z");
   assert.deepEqual(event.metadata, {
     hazardEventId: "hazard-1",
@@ -79,11 +77,10 @@ test("maps a critical hazard to the shared notification payload", () => {
 });
 
 test("maps a critical cyber threat to the shared notification payload", () => {
-  const event = createCyberNotificationEvent(cyberPayload, "user-1");
+  const event = createCyberNotificationEvent(cyberPayload);
 
   assert.equal(event.eventId, "cyber:source-event-1");
   assert.equal(event.eventType, NotificationRoutingKey.CYBER_CRITICAL);
-  assert.equal(event.recipientUserId, "user-1");
   assert.equal(event.occurredAt, "2026-08-12T02:00:00.000Z");
   assert.deepEqual(event.metadata, {
     sourceEventId: "source-event-1",
@@ -121,7 +118,7 @@ test("publishes a persistent JSON event to the agreed topic exchange", async () 
       return true;
     },
   } as unknown as Pick<Channel, "assertExchange" | "publish">;
-  const event = createCyberNotificationEvent(cyberPayload, "user-1");
+  const event = createCyberNotificationEvent(cyberPayload);
 
   await publishNotificationEvent(
     event,
@@ -142,7 +139,6 @@ test("rejects an invalid source timestamp before publishing", () => {
     () =>
       createCyberNotificationEvent(
         { ...cyberPayload, timestamp: "not-a-date" },
-        "user-1",
       ),
     /timestamp is invalid/,
   );

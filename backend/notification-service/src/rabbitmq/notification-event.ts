@@ -27,7 +27,6 @@ export const parseNotificationEvent = (content: Buffer): NotificationEvent => {
   const requiredStringFields = [
     "eventId",
     "eventType",
-    "recipientUserId",
     "title",
     "message",
     "occurredAt",

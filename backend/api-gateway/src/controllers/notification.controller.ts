@@ -1,9 +1,17 @@
 import { Request, Response } from "express";
-import {
-  Notification,
-  HttpStatusCode,
-  logger,
-} from "@phoenix/common";
+import { HttpStatusCode, logger } from "@phoenix/common";
+import { notificationGrpcClient } from "../grpc/notification.grpc";
+
+const getAuthenticatedUserId = (req: Request): string | undefined =>
+  (req as any).user?.user_id;
+
+const sendGrpcError = (res: Response, message: string, error: unknown): Response => {
+  logger.error(`${message}: ${error}`);
+  return res.status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR).json({
+    status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    message,
+  });
+};
 
 /**
  * Get all notifications for the authenticated user
@@ -12,9 +20,9 @@ import {
 export const getNotifications = async (
   req: Request,
   res: Response
-): Promise<Response> => {
+): Promise<Response | void> => {
   try {
-    const userId = (req as any).user?.user_id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
         status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
@@ -25,43 +33,31 @@ export const getNotifications = async (
     // Pagination
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, parseInt(req.query.limit as string) || 10);
-    const offset = (page - 1) * limit;
-
-    // Filtering
     const isReadFilter = req.query.read;
-    let where: any = { user_id: userId };
-    if (isReadFilter !== undefined && isReadFilter !== "") {
-      where.is_read = isReadFilter === "true";
-    }
-
-    const { count, rows } = await Notification.findAndCountAll({
-      where,
-      order: [["created_at", "DESC"]],
+    notificationGrpcClient.GetNotifications({
+      user_id: userId,
+      page,
       limit,
-      offset,
-    });
-
-    return res.status(HttpStatusCode.HTTP_STATUS_OK).json({
-      status: HttpStatusCode.HTTP_STATUS_OK,
-      message: "Notifications retrieved successfully",
-      data: {
-        notifications: rows,
-        pagination: {
-          total: count,
-          page,
-          limit,
-          totalPages: Math.ceil(count / limit),
+      has_is_read: isReadFilter !== undefined && isReadFilter !== "",
+      is_read: isReadFilter === "true",
+    }, (error, response) => {
+      if (error) return sendGrpcError(res, "Error fetching notifications", error);
+      return res.status(response.status).json({
+        status: response.status,
+        message: response.message,
+        data: {
+          notifications: response.notifications,
+          pagination: {
+            total: response.total,
+            page: response.page,
+            limit: response.limit,
+            totalPages: response.total_pages,
+          },
         },
-      },
+      });
     });
   } catch (error) {
-    logger.error(`Error fetching notifications: ${error}`);
-    return res
-      .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-      .json({
-        status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        message: "Error fetching notifications",
-      });
+    return sendGrpcError(res, "Error fetching notifications", error);
   }
 };
 
@@ -71,9 +67,9 @@ export const getNotifications = async (
 export const getUnreadCount = async (
   req: Request,
   res: Response
-): Promise<Response> => {
+): Promise<Response | void> => {
   try {
-    const userId = (req as any).user?.user_id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
         status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
@@ -81,28 +77,16 @@ export const getUnreadCount = async (
       });
     }
 
-    const unreadCount = await Notification.count({
-      where: {
-        user_id: userId,
-        is_read: false,
-      },
-    });
-
-    return res.status(HttpStatusCode.HTTP_STATUS_OK).json({
-      status: HttpStatusCode.HTTP_STATUS_OK,
-      message: "Unread notification count retrieved",
-      data: {
-        unreadCount,
-      },
+    notificationGrpcClient.GetUnreadNotificationCount({ user_id: userId }, (error, response) => {
+      if (error) return sendGrpcError(res, "Error fetching unread count", error);
+      return res.status(response.status).json({
+        status: response.status,
+        message: response.message,
+        data: { unreadCount: response.unread_count },
+      });
     });
   } catch (error) {
-    logger.error(`Error fetching unread count: ${error}`);
-    return res
-      .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-      .json({
-        status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        message: "Error fetching unread count",
-      });
+    return sendGrpcError(res, "Error fetching unread count", error);
   }
 };
 
@@ -112,10 +96,12 @@ export const getUnreadCount = async (
 export const markAsRead = async (
   req: Request,
   res: Response
-): Promise<Response> => {
+): Promise<Response | void> => {
   try {
-    const userId = (req as any).user?.user_id;
-    const { notificationId } = req.params;
+    const userId = getAuthenticatedUserId(req);
+    const notificationId = Array.isArray(req.params.notificationId)
+      ? req.params.notificationId[0]
+      : req.params.notificationId;
 
     if (!userId) {
       return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
@@ -131,38 +117,19 @@ export const markAsRead = async (
       });
     }
 
-    const notification = await Notification.findOne({
-      where: {
-        notification_id: notificationId,
-        user_id: userId,
-      },
-    });
-
-    if (!notification) {
-      return res.status(HttpStatusCode.HTTP_STATUS_NOT_FOUND).json({
-        status: HttpStatusCode.HTTP_STATUS_NOT_FOUND,
-        message: "Notification not found",
+    notificationGrpcClient.MarkNotificationAsRead({
+      notification_id: notificationId,
+      user_id: userId,
+    }, (error, response) => {
+      if (error) return sendGrpcError(res, "Error marking notification as read", error);
+      return res.status(response.status).json({
+        status: response.status,
+        message: response.message,
+        data: { notification: response.notification },
       });
-    }
-
-    notification.is_read = true;
-    await notification.save();
-
-    return res.status(HttpStatusCode.HTTP_STATUS_OK).json({
-      status: HttpStatusCode.HTTP_STATUS_OK,
-      message: "Notification marked as read",
-      data: {
-        notification,
-      },
     });
   } catch (error) {
-    logger.error(`Error marking notification as read: ${error}`);
-    return res
-      .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-      .json({
-        status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        message: "Error marking notification as read",
-      });
+    return sendGrpcError(res, "Error marking notification as read", error);
   }
 };
 
@@ -172,9 +139,9 @@ export const markAsRead = async (
 export const markAllAsRead = async (
   req: Request,
   res: Response
-): Promise<Response> => {
+): Promise<Response | void> => {
   try {
-    const userId = (req as any).user?.user_id;
+    const userId = getAuthenticatedUserId(req);
     if (!userId) {
       return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
         status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
@@ -182,31 +149,16 @@ export const markAllAsRead = async (
       });
     }
 
-    const [updatedCount] = await Notification.update(
-      { is_read: true },
-      {
-        where: {
-          user_id: userId,
-          is_read: false,
-        },
-      }
-    );
-
-    return res.status(HttpStatusCode.HTTP_STATUS_OK).json({
-      status: HttpStatusCode.HTTP_STATUS_OK,
-      message: "All notifications marked as read",
-      data: {
-        updatedCount,
-      },
+    notificationGrpcClient.MarkAllNotificationsAsRead({ user_id: userId }, (error, response) => {
+      if (error) return sendGrpcError(res, "Error marking all notifications as read", error);
+      return res.status(response.status).json({
+        status: response.status,
+        message: response.message,
+        data: { updatedCount: response.updated_count },
+      });
     });
   } catch (error) {
-    logger.error(`Error marking all notifications as read: ${error}`);
-    return res
-      .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-      .json({
-        status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        message: "Error marking all notifications as read",
-      });
+    return sendGrpcError(res, "Error marking all notifications as read", error);
   }
 };
 
@@ -216,10 +168,12 @@ export const markAllAsRead = async (
 export const deleteNotification = async (
   req: Request,
   res: Response
-): Promise<Response> => {
+): Promise<Response | void> => {
   try {
-    const userId = (req as any).user?.user_id;
-    const { notificationId } = req.params;
+    const userId = getAuthenticatedUserId(req);
+    const notificationId = Array.isArray(req.params.notificationId)
+      ? req.params.notificationId[0]
+      : req.params.notificationId;
 
     if (!userId) {
       return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
@@ -235,77 +189,18 @@ export const deleteNotification = async (
       });
     }
 
-    const notification = await Notification.findOne({
-      where: {
-        notification_id: notificationId,
-        user_id: userId,
-      },
-    });
-
-    if (!notification) {
-      return res.status(HttpStatusCode.HTTP_STATUS_NOT_FOUND).json({
-        status: HttpStatusCode.HTTP_STATUS_NOT_FOUND,
-        message: "Notification not found",
+    notificationGrpcClient.DeleteNotification({
+      notification_id: notificationId,
+      user_id: userId,
+    }, (error, response) => {
+      if (error) return sendGrpcError(res, "Error deleting notification", error);
+      return res.status(response.status).json({
+        status: response.status,
+        message: response.message,
       });
-    }
-
-    await notification.destroy();
-
-    return res.status(HttpStatusCode.HTTP_STATUS_OK).json({
-      status: HttpStatusCode.HTTP_STATUS_OK,
-      message: "Notification deleted successfully",
     });
   } catch (error) {
-    logger.error(`Error deleting notification: ${error}`);
-    return res
-      .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-      .json({
-        status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        message: "Error deleting notification",
-      });
-  }
-};
-
-/**
- * Create a new notification (admin/system use)
- */
-export const createNotification = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  try {
-    const { user_id, title, message, type, data } = req.body;
-
-    if (!user_id || !title || !message) {
-      return res.status(HttpStatusCode.HTTP_STATUS_BAD_REQUEST).json({
-        status: HttpStatusCode.HTTP_STATUS_BAD_REQUEST,
-        message: "Missing required fields: user_id, title, message",
-      });
-    }
-
-    const notification = await Notification.create({
-      user_id,
-      title,
-      message,
-      type: type || "info",
-      data: data || {},
-    });
-
-    return res.status(HttpStatusCode.HTTP_STATUS_CREATED).json({
-      status: HttpStatusCode.HTTP_STATUS_CREATED,
-      message: "Notification created successfully",
-      data: {
-        notification,
-      },
-    });
-  } catch (error) {
-    logger.error(`Error creating notification: ${error}`);
-    return res
-      .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-      .json({
-        status: HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR,
-        message: "Error creating notification",
-      });
+    return sendGrpcError(res, "Error deleting notification", error);
   }
 };
 
@@ -313,9 +208,12 @@ export const createNotification = async (
  * Get notification health (system endpoint)
  */
 export const getHealth = (req: Request, res: Response) => {
-  return res.status(HttpStatusCode.HTTP_STATUS_OK).json({
-    status: HttpStatusCode.HTTP_STATUS_OK,
-    message: "Notification service is healthy",
+  notificationGrpcClient.GetNotificationHealth({}, (error, response) => {
+    if (error) return sendGrpcError(res, "Error fetching notification health", error);
+    return res.status(response.status).json({
+      status: response.status,
+      message: response.message,
+    });
   });
 };
 

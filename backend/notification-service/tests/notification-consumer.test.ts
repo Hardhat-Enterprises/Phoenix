@@ -22,7 +22,6 @@ const topology: NotificationTopology = {
 const validEvent = {
   eventId: "event-1",
   eventType: "notification.test",
-  recipientUserId: "user-1",
   title: "Test",
   message: "Test notification",
   occurredAt: "2026-08-12T00:00:00.000Z",

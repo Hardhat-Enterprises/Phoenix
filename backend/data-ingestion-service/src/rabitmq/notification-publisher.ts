@@ -34,11 +34,9 @@ export const isCriticalCyberThreat = (
 export const createHazardNotificationEvent = (
   payload: HazardDataStreamRequest,
   hazardEventId: string,
-  recipientUserId: string,
 ): NotificationEvent => ({
   eventId: `hazard:${hazardEventId}`,
   eventType: NotificationRoutingKey.HAZARD_CRITICAL,
-  recipientUserId,
   title: `Critical ${payload.hazard_type} hazard`,
   message: `A critical ${payload.hazard_type} hazard was detected in ${payload.hazard_location}.`,
   occurredAt: toIsoDateTime(payload.hazard_timestamp || payload.timestamp),
@@ -54,11 +52,9 @@ export const createHazardNotificationEvent = (
 
 export const createCyberNotificationEvent = (
   payload: CyberDataStreamRequest,
-  recipientUserId: string,
 ): NotificationEvent => ({
   eventId: `cyber:${payload.event_id}`,
   eventType: NotificationRoutingKey.CYBER_CRITICAL,
-  recipientUserId,
   title: `Critical ${payload.threat_type} cyber threat`,
   message: `A critical ${payload.threat_type} cyber threat was detected by ${payload.source}.`,
   occurredAt: toIsoDateTime(payload.timestamp),
@@ -93,30 +89,13 @@ export const publishNotificationEvent = async (
   );
 };
 
-const getDefaultRecipient = (): string | undefined => {
-  const recipientUserId = process.env.NOTIFICATION_DEFAULT_RECIPIENT_USER_ID;
-  if (!recipientUserId) {
-    logger.warn(
-      "Critical event notification skipped: NOTIFICATION_DEFAULT_RECIPIENT_USER_ID is not configured",
-    );
-  }
-  return recipientUserId;
-};
-
 export const publishCriticalHazardNotification = async (
   payload: HazardDataStreamRequest,
   hazardEventId: string,
 ): Promise<void> => {
   if (!isCriticalHazard(payload)) return;
 
-  const recipientUserId = getDefaultRecipient();
-  if (!recipientUserId) return;
-
-  const event = createHazardNotificationEvent(
-    payload,
-    hazardEventId,
-    recipientUserId,
-  );
+  const event = createHazardNotificationEvent(payload, hazardEventId);
   await publishNotificationEvent(
     event,
     NotificationRoutingKey.HAZARD_CRITICAL,
@@ -129,10 +108,7 @@ export const publishCriticalCyberNotification = async (
 ): Promise<void> => {
   if (!isCriticalCyberThreat(payload)) return;
 
-  const recipientUserId = getDefaultRecipient();
-  if (!recipientUserId) return;
-
-  const event = createCyberNotificationEvent(payload, recipientUserId);
+  const event = createCyberNotificationEvent(payload);
   await publishNotificationEvent(
     event,
     NotificationRoutingKey.CYBER_CRITICAL,

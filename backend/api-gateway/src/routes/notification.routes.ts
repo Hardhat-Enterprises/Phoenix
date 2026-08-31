@@ -6,11 +6,9 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
-  createNotification,
 } from "../controllers/notification.controller";
 import { authenticate, authorize } from "../middleware/auth.middleware";
 import {
-  validateCreateNotification,
   validatePagination,
   validateReadStatusFilter,
 } from "../middleware/notification.validation.middleware";
@@ -293,70 +291,5 @@ router.patch("/read-all", authenticate, markAllAsRead);
  *         description: Internal server error
  */
 router.delete("/:notificationId", authenticate, deleteNotification);
-
-/**
- * @swagger
- * /api/notifications/create:
- *   post:
- *     summary: Create a new notification
- *     description: Creates a new notification. Typically used by admin or system services to send notifications to users.
- *     tags:
- *       - Notifications
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - user_id
- *               - title
- *               - message
- *             properties:
- *               user_id:
- *                 type: string
- *                 format: uuid
- *                 description: The user ID to send the notification to
- *               title:
- *                 type: string
- *                 description: Notification title
- *               message:
- *                 type: string
- *                 description: Notification message
- *               type:
- *                 type: string
- *                 enum: [hazard_alert, cyber_threat, system, info, warning, error]
- *                 default: info
- *               data:
- *                 type: object
- *                 description: Additional notification data
- *     responses:
- *       201:
- *         description: Notification created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: integer
- *                   example: 201
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     notification:
- *                       type: object
- *       400:
- *         description: Bad request - missing required fields
- *       401:
- *         description: Unauthorized - no valid token provided
- *       500:
- *         description: Internal server error
- */
-router.post("/create", authenticate, validateCreateNotification, createNotification);
 
 export default router;

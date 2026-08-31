@@ -548,7 +548,7 @@
   box-shadow: 0 4px 12px rgba(16, 42, 67, 0.04);
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(150px, 1fr) minmax(220px, 2fr) 70px;
+   grid-template-columns: minmax(150px, 1fr) minmax(220px, 2fr) minmax(70px, auto);
   overflow: hidden;
   padding: 14px 16px 14px 18px;
   position: relative;
@@ -646,6 +646,7 @@
   min-width: 48px;
   padding: 6px 9px;
   text-align: center;
+  white-space: nowrap;
 }
 
 /* Empty chart placeholder */

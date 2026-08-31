@@ -32,27 +32,32 @@ VALUES
 -- =========================
 -- HAZARD_EVENT
 -- =========================
-INSERT INTO hazard_event (
-    hazard_type,
-    severity_level,
-    event_status,
-    start_time,
-    geo_location_id,
-    source_id,
-    description
+WITH inserted_hazard AS (
+    INSERT INTO hazard_event (
+        hazard_type,
+        severity_level,
+        event_status,
+        start_time,
+        source_id,
+        description
+    )
+    SELECT
+        'Flood',
+        'high',
+        'active',
+        NOW(),
+        s.source_id,
+        'Severe flooding due to heavy rainfall'
+    FROM data_source s
+    WHERE s.source_name = 'Bureau of Meteorology'
+    LIMIT 1
+    RETURNING hazard_event_id
 )
-SELECT
-    'Flood',
-    'high',
-    'active',
-    NOW(),
-    g.geo_location_id,
-    s.source_id,
-    'Severe flooding due to heavy rainfall'
-FROM geo_location g
-CROSS JOIN data_source s
+INSERT INTO hazard_location (hazard_event_id, geo_location_id)
+SELECT ih.hazard_event_id, g.geo_location_id
+FROM inserted_hazard ih
+CROSS JOIN geo_location g
 WHERE g.state_region = 'Victoria'
-  AND s.source_name = 'Bureau of Meteorology'
 LIMIT 1;
 
 
@@ -99,7 +104,7 @@ VALUES
 -- EVENT_STATUS
 -- =========================
 INSERT INTO event_status (
-    event_status_description
+       event_status_dscription
 )
 VALUES 
     ('Active'),
@@ -134,5 +139,5 @@ CROSS JOIN cyber_threat t
 CROSS JOIN linked_event_type let
 CROSS JOIN event_status es
 WHERE let.linked_event_type_description = 'Combined Event'
-  AND es.event_status_description = 'Active'
+AND es.event_status_dscription = 'Active'
 LIMIT 1;

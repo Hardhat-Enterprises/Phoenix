@@ -778,24 +778,38 @@ const normalizeThreatRow = (threat, index, dateFormat) => {
 
 // Always returns all four severity rows (critical, high, medium, low),
 // even when a level has zero threats, so the chart never hides a level.
+// Always returns all four severity rows (critical, high, medium, low).
+// A level with an explicit 0 renders as a real zero-width bar. A level
+// whose key is missing from the API response is marked unavailable and
+// is never silently treated as zero.
 const normalizeThreatChartRows = (threatsByRiskLevel = {}) => {
   const riskLevels = ["critical", "high", "medium", "low"];
-  const counts = riskLevels.map((riskLevel) =>
-    Number(threatsByRiskLevel[riskLevel] ?? 0),
+
+  const rawCounts = riskLevels.map((riskLevel) => {
+    const value = threatsByRiskLevel[riskLevel];
+    return value === undefined || value === null ? null : Number(value);
+  });
+
+  const availableCounts = rawCounts.filter(
+    (count) => count !== null && Number.isFinite(count)
   );
-  const maxCount = Math.max(...counts, 0);
+  const maxCount = availableCounts.length > 0 ? Math.max(...availableCounts) : 0;
 
   return riskLevels.map((riskLevel, index) => {
-    const count = counts[index];
+    const count = rawCounts[index];
+    const isAvailable = count !== null && Number.isFinite(count);
     const severity = formatLabel(riskLevel);
 
     return {
       id: `threat-chart-${riskLevel}`,
       name: severity,
       severity,
-      count,
+      count: isAvailable ? count : null,
+      isAvailable,
       riskValue:
-        maxCount > 0 ? Math.max(8, Math.round((count / maxCount) * 100)) : 0,
+        isAvailable && maxCount > 0
+          ? Math.round((count / maxCount) * 100)
+          : 0,
     };
   });
 };
@@ -1141,8 +1155,8 @@ if (
         const anyCounts = Object.values(counts).some(
           (count) => Number(count) > 0,
         );
-        setChartsStatus(anyCounts ? "success" : "empty");
-        setChartsLastUpdated(charts.last_updated ?? null);
+       setChartsStatus(anyCounts ? "success" : "empty");
+       setChartsLastUpdated(charts.last_updated ?? null);
       } else {
         setChartsStatus("error");
         setChartsLastUpdated(null);
@@ -1926,7 +1940,9 @@ if (
                         />
                       </div>
 
-                      <span className="threat-value">{threat.count}</span>
+                      <span className="threat-value">
+                        {threat.isAvailable ? threat.count : "Unavailable"}
+                      </span>
                     </div>
                   ))}
                 </div>

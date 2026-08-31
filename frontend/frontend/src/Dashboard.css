@@ -128,11 +128,11 @@
 
 .anomaly-field input,
 .anomaly-field select {
-  background: #ffffff;
+  background: var(--color-input-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: #001a3e;
-  color-scheme: light;
+  color: var(--color-text);
+  color-scheme: inherit;
   font-size: 14px;
   min-height: 40px;
   padding: 9px 10px;
@@ -1133,4 +1133,149 @@
   .ai-detection-card,
   .map-card,
   .item-list-card { padding: 18px 16px; }
+}
+
+:root[data-theme="dark"] .ai-detection-output {
+  border-left-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .detection-output-grid div,
+:root[data-theme="dark"] .anomaly-driver-list,
+:root[data-theme="dark"] .anomaly-signal-list {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .detection-output-grid span,
+:root[data-theme="dark"] .anomaly-driver-list span,
+:root[data-theme="dark"] .anomaly-signal-list span,
+:root[data-theme="dark"] .anomaly-signal-list small {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .detection-output-grid strong,
+:root[data-theme="dark"] .anomaly-driver-list strong,
+:root[data-theme="dark"] .anomaly-signal-list strong {
+  color: var(--color-interactive);
+}
+
+:root[data-theme="dark"] .detection-status-message {
+  background: var(--color-success-bg);
+  border-color: var(--color-success-border);
+  color: var(--color-success-text);
+}
+
+:root[data-theme="dark"] .detection-status-message.info {
+  background: var(--color-info-bg);
+  border-color: var(--color-info-border);
+  color: var(--color-info-text);
+}
+
+:root[data-theme="dark"] .detection-error-message,
+:root[data-theme="dark"] .item-list-error {
+  background: var(--color-error-bg);
+  border-color: var(--color-error-border);
+  color: var(--color-error-text);
+}
+
+:root[data-theme="dark"] .item-list-card,
+:root[data-theme="dark"] .item-list-table,
+:root[data-theme="dark"] .item-list-row {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .item-list-card {
+  background: var(--color-surface);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme="dark"] .item-list-table-head {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .item-list-row:hover {
+  background-color: var(--color-interactive-surface-hover);
+}
+
+:root[data-theme="dark"] .item-list-row:focus {
+  outline-color: var(--color-focus);
+}
+
+:root[data-theme="dark"] .item-list-header h2,
+:root[data-theme="dark"] .item-copy strong {
+  color: var(--color-heading);
+}
+
+:root[data-theme="dark"] .item-list-title-block p,
+:root[data-theme="dark"] .item-list-kicker,
+:root[data-theme="dark"] .item-copy small {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .item-count-pill {
+  background: var(--color-selected-bg);
+  border-color: var(--color-interactive);
+  color: var(--color-selected-text);
+}
+
+:root[data-theme="dark"] .item-signal-dot {
+  border-color: var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-border);
+}
+
+:root[data-theme="dark"] .threat-chart-section,
+:root[data-theme="dark"] .threat-chart-header,
+:root[data-theme="dark"] .threat-chart-body,
+:root[data-theme="dark"] .threat-chart-footer,
+:root[data-theme="dark"] .map-card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .threat-chart-header h2,
+:root[data-theme="dark"] .threat-name,
+:root[data-theme="dark"] .empty-chart-text strong,
+:root[data-theme="dark"] .threat-chart-footer strong,
+:root[data-theme="dark"] .map-header h2,
+:root[data-theme="dark"] .risk-map-summary strong,
+:root[data-theme="dark"] .risk-map-list-item strong,
+:root[data-theme="dark"] .unmapped-hazard-note strong {
+  color: var(--color-heading);
+}
+
+:root[data-theme="dark"] .threat-row,
+:root[data-theme="dark"] .empty-chart-placeholder,
+:root[data-theme="dark"] .severity-legend,
+:root[data-theme="dark"] .risk-map-summary,
+:root[data-theme="dark"] .risk-map-list-item,
+:root[data-theme="dark"] .map-detail-empty,
+:root[data-theme="dark"] .unmapped-hazard-note,
+:root[data-theme="dark"] .map-hazard-row {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .threat-bar-track,
+:root[data-theme="dark"] .threat-value {
+  background: var(--color-input-bg);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .threat-value,
+:root[data-theme="dark"] .empty-chart-text span,
+:root[data-theme="dark"] .threat-chart-footer,
+:root[data-theme="dark"] .map-header p,
+:root[data-theme="dark"] .risk-map-summary span,
+:root[data-theme="dark"] .risk-map-list-item small,
+:root[data-theme="dark"] .map-detail-empty,
+:root[data-theme="dark"] .unmapped-hazard-note,
+:root[data-theme="dark"] .map-hazard-row {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .risk-map-attribution {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-muted);
 }

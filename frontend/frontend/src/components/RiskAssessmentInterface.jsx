@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { usePreferences } from "../PreferencesContext";
+import { formatDisplayDate } from "../displayDate";
 import "./RiskAssessmentInterface.css";
 import { getRiskAssessments, getRiskAssessmentById } from "./riskAssessmentApi";
 
@@ -34,16 +36,19 @@ function DemoBadge() {
   return <span className="ra-demo-badge">Demo data</span>;
 }
 
-function formatDateTime(iso) {
-  if (!iso) return "Not provided";
-  try {
-    return new Date(iso).toLocaleString("en-AU", {
+function formatDateTime(iso, dateFormat) {
+  return formatDisplayDate(iso, dateFormat, {
+    fallback: "Not provided",
+    includeTime: true,
+    systemOptions: {
       dateStyle: "medium",
       timeStyle: "short",
-    });
-  } catch {
-    return "Not provided";
-  }
+    },
+    timeOptions: {
+      hour: "numeric",
+      minute: "2-digit",
+    },
+  });
 }
 
 function LoadingState({ label }) {
@@ -128,6 +133,9 @@ function DetailRow({ label, value }) {
 }
 
 function RiskAssessmentDetail({ assessment, onBack }) {
+  const { preferences } = usePreferences();
+  const dateFormat = preferences.dateFormat;
+
   return (
     <div className="ra-detail">
       <button type="button" className="ra-btn ra-btn--back" onClick={onBack}>
@@ -159,11 +167,11 @@ function RiskAssessmentDetail({ assessment, onBack }) {
         <DetailRow label="Linkage reason" value={assessment.linkageReason} />
         <DetailRow label="Related hazard ID" value={assessment.relatedHazardId} />
         <DetailRow label="Related threat ID" value={assessment.relatedThreatId} />
-        <DetailRow label="Event time" value={formatDateTime(assessment.eventTime)} />
-        <DetailRow label="Detected time" value={formatDateTime(assessment.detectedTime)} />
-        <DetailRow label="Reported time" value={formatDateTime(assessment.reportedTime)} />
-        <DetailRow label="Created at" value={formatDateTime(assessment.createdAt)} />
-        <DetailRow label="Updated at" value={formatDateTime(assessment.updatedAt)} />
+        <DetailRow label="Event time" value={formatDateTime(assessment.eventTime, dateFormat)} />
+        <DetailRow label="Detected time" value={formatDateTime(assessment.detectedTime, dateFormat)} />
+        <DetailRow label="Reported time" value={formatDateTime(assessment.reportedTime, dateFormat)} />
+        <DetailRow label="Created at" value={formatDateTime(assessment.createdAt, dateFormat)} />
+        <DetailRow label="Updated at" value={formatDateTime(assessment.updatedAt, dateFormat)} />
       </dl>
 
       {assessment.isDemo && (

@@ -3,6 +3,8 @@ import "./ReportsPage.css";
 import "./components/design.css";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import ReportPDF from "./components/ReportPDF";
+import { usePreferences } from "./PreferencesContext";
+import { formatDisplayDate } from "./displayDate";
 import {
   getIngestionHealth,
   getIntegrations,
@@ -41,6 +43,15 @@ const formatDateTime = (value) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 };
+
+const formatUserDateTime = (value, dateFormat) => formatDisplayDate(
+  value,
+  dateFormat,
+  {
+    fallback: value || "-",
+    includeTime: true,
+  },
+);
 
 const formatScore = (value) => {
   const number = Number(value);
@@ -91,12 +102,13 @@ const sanitizeFileName = (value) => {
   return cleaned || "core_model_report";
 };
 
-const buildIntegrationReport = (integration) => {
+const buildIntegrationReport = (integration, dateFormat) => {
   const input = integration.input || {};
   const output = integration.output || {};
   const status = integration.status || "-";
   const risk = output.risk_level || (status === "error" ? "Error" : "Pending");
   const title = getEvidenceTitle(input);
+  const processedTime = getProcessedTime(integration);
 
   return {
     id: integration.integration_event_id || title,
@@ -106,7 +118,8 @@ const buildIntegrationReport = (integration) => {
     risk,
     riskClass: getRiskClass(output.risk_level, status),
     status,
-    date: formatDateTime(getProcessedTime(integration)),
+    date: formatDateTime(processedTime),
+    displayDate: formatUserDateTime(processedTime, dateFormat),
     fileName: `${sanitizeFileName(title)}_verification_report.pdf`,
     input,
     output,
@@ -236,6 +249,8 @@ const getRiskClass = (riskLevel, status) => {
 };
 
 function ReportsPage() {
+  const { preferences } = usePreferences();
+  const dateFormat = preferences.dateFormat;
   const [form, setForm] = useState(() => ({
     ...defaultForm,
     timestamp: getCurrentDateTimeLocal(),
@@ -254,8 +269,10 @@ function ReportsPage() {
   );
 
   const generatedReports = useMemo(
-    () => displayedIntegrations.map(buildIntegrationReport),
-    [displayedIntegrations],
+    () => displayedIntegrations.map((integration) => (
+      buildIntegrationReport(integration, dateFormat)
+    )),
+    [dateFormat, displayedIntegrations],
   );
 
   const latestResult = useMemo(
@@ -639,7 +656,9 @@ function ReportsPage() {
                 <span>{formatScore(integration.output?.risk_score)}</span>
                 <span>{formatScore(integration.output?.confidence_score)}</span>
                 <span>{integration.status || "-"}</span>
-                <span>{formatDateTime(integration.output?.processed_at)}</span>
+                <span>
+                  {formatUserDateTime(integration.output?.processed_at, dateFormat)}
+                </span>
               </div>
             ))
           ) : (
@@ -688,7 +707,7 @@ function ReportsPage() {
                 </span>
 
                 <span>{report.status}</span>
-                <span>{report.date}</span>
+                <span>{report.displayDate}</span>
 
                 <PDFDownloadLink
                   document={<ReportPDF report={report} />}

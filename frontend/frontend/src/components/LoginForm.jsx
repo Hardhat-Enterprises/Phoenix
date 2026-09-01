@@ -39,29 +39,47 @@ export default function LoginForm({ setPage, onLogin }) {
   };
 
   return (
-    <form className="login-form" onSubmit={handleSubmit}>
-      <label className="label-required">Username or Email</label>
-      <input
-        type="text"
-        name="username"
-        placeholder="Enter your username or email"
-        value={username}
-        onChange={(event) => setUsername(event.target.value)}
-        autoComplete="username"
-        aria-required="true"
-        aria-describedby={errorMessage ? "login-error" : undefined}
-      />
-      <label className="label-required">Password</label>
-      <input
-        type="password"
-        name="password"
-        placeholder="Enter your password"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-        autoComplete="current-password"
-        aria-required="true"
-        aria-describedby={errorMessage ? "login-error" : undefined}
-      />
+    <main id="main-content" className="login-main">
+      <section className="login-card" aria-labelledby="login-title">
+        <div className="login-heading">
+          <span className="login-eyebrow">Secure access</span>
+          <h1 id="login-title">Welcome back</h1>
+          <p>Sign in to access the Phoenix monitoring dashboard.</p>
+        </div>
+
+        <form className="login-form" onSubmit={handleSubmit}>
+          <label className="login-field label-required" htmlFor="login-username">
+            <span>Username or email</span>
+            <input
+              id="login-username"
+              type="text"
+              name="username"
+              placeholder="Enter your username or email"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              autoComplete="username"
+              autoFocus
+              aria-required="true"
+              aria-invalid={Boolean(errorMessage)}
+              aria-describedby={errorMessage ? "login-error" : undefined}
+            />
+          </label>
+
+          <label className="login-field label-required" htmlFor="login-password">
+            <span>Password</span>
+            <input
+              id="login-password"
+              type="password"
+              name="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              aria-required="true"
+              aria-invalid={Boolean(errorMessage)}
+              aria-describedby={errorMessage ? "login-error" : undefined}
+            />
+          </label>
       {errorMessage && (
         <p id="login-error" className="login-message login-error">
           {errorMessage}
@@ -72,36 +90,27 @@ export default function LoginForm({ setPage, onLogin }) {
           {statusMessage}
         </p>
       )}
-      <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-        {isSubmitting ? "Signing In..." : "Sign In"}
-      </button>
-      <div className="login-extra">
-        <span
-          className="forgot"
-          onClick={() => setPage("forgotPassword")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              setPage("forgotPassword");
-            }
-          }}
-        >
-          Forgotten Password?
-        </span>
+          <div className="login-extra">
+            <label className="remember">
+              <input type="checkbox" />
+              <span>Remember me</span>
+            </label>
 
-        <label className="remember">
-          <input type="checkbox" />
-          Remember Me
-        </label>
-      </div>
-      <button
-        type="button"
-        className="btn btn-primary"
-        onClick={() => setPage("about")}
-      >
-        About Us
-      </button>
-    </form>
+            <button className="forgot" type="button" onClick={() => setPage("forgotPassword")}>
+              Forgot password?
+            </button>
+          </div>
+
+          <button type="submit" className="btn btn-primary login-submit" disabled={isSubmitting}>
+            {isSubmitting ? "Signing in..." : "Sign in"}
+          </button>
+        </form>
+
+        <div className="login-footer">
+          <span>New to Phoenix?</span>
+          <button type="button" onClick={() => setPage("about")}>Learn about the platform</button>
+        </div>
+      </section>
+    </main>
   );
 }

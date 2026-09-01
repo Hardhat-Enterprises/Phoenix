@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { threatPath } from "./config/routes";
-import RegionalThreatExplorer from "./components/RegionalThreatExplorer/RegionalThreatExplorer";
 import {
 
   getApiHealth,
@@ -386,8 +385,7 @@ const buildRiskMapPoints = (hazards, locations) =>
         tone: severityRankFor(severity),
       };
     })
-    .filter(Boolean)
-    .slice(0, 8);
+    .filter(Boolean);
 
 const groupRiskMapPoints = (points) => {
   const groups = new Map();
@@ -931,6 +929,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
   const [selectedState, setSelectedState] = useState("");
   const [selectedLga, setSelectedLga] = useState("");
   const [selectedSuburb, setSelectedSuburb] = useState(ALL_SUBURBS_VALUE);
+  const [selectedMapPointId, setSelectedMapPointId] = useState("");
 
   // Anomaly detection state
   const [selectedRegionId, setSelectedRegionId] = useState("VIC_GIPPSLAND");
@@ -1286,6 +1285,7 @@ if (
     setSelectedState("");
     setSelectedLga("");
     setSelectedSuburb(ALL_SUBURBS_VALUE);
+    setSelectedMapPointId("");
   };
 
   const hazardRows = useMemo(
@@ -1529,7 +1529,7 @@ if (
             })}
           </section>
 
-          {/* Regional Anomaly Detection Section (Jack) ΓÇö Sprint 2: gated behind
+          {/* Regional Anomaly Detection Section (Jack) - Sprint 2: gated behind
               ANOMALY_DETECTION_ENABLED per "Risk and Anomaly Feature Control"
               (Varun). The backend does not currently expose the anomaly
               endpoint, so submission is disabled rather than left to fail on
@@ -1696,24 +1696,18 @@ if (
           {/* Risk Map Section (Jack) */}
           <section className="map-card">
             <div className="map-header">
-              <h2>Risk Map</h2>
-              <p>
-                Hazard data is now loaded from the Phoenix backend. The map
-                component can use these hazard records when it is ready.
-              </p>
+              <div>
+                <span className="map-eyebrow">Regional overview</span>
+                <h2>Risk Map</h2>
+                <p>Explore backend hazard records by state, local government area, and suburb.</p>
+              </div>
+              <span className="map-result-badge">
+                {filteredHazards.length} hazard{filteredHazards.length === 1 ? "" : "s"}
+              </span>
             </div>
 
             {/* Location and Risk Map Controls */}
-            <div
-              className="map-controls"
-              style={{
-                display: "flex",
-                gap: "0.75rem",
-                flexWrap: "wrap",
-                alignItems: "flex-end",
-                margin: "1rem 0",
-              }}
-            >
+            <div className="map-controls">
               <label>
                 <div>State / Region</div>
                 <select value={selectedState} onChange={handleStateChange}>
@@ -1759,24 +1753,24 @@ if (
                 </select>
               </label>
 
-              <button type="button" onClick={handleResetMapControls}>
+              <button className="map-reset-button" type="button" onClick={handleResetMapControls}>
                 Reset map
               </button>
             </div>
 
-            <div className="map-selection-summary" style={{ marginBottom: "1rem" }}>
+            <div className="map-selection-summary" role="status">
               <strong>Selected location:</strong>{" "}
-              {selectedState || "All states"} ΓåÆ {selectedLga || "All LGAs"} ΓåÆ{" "}
+              {selectedState || "All states"} / {selectedLga || "All LGAs"} /{" "}
               {selectedSuburb === ALL_SUBURBS_VALUE ? "All locations" : selectedSuburb}
-              {" ┬╖ "}
+              {" | "}
               <strong>{filteredHazards.length}</strong> matching hazard
               {filteredHazards.length === 1 ? "" : "s"}
               {locationOptions.stats.duplicateCount > 0 &&
-                ` ┬╖ ${locationOptions.stats.duplicateCount} duplicate locations removed`}
+                ` | ${locationOptions.stats.duplicateCount} duplicate locations removed`}
               {locationOptions.stats.missingCoordCount > 0 &&
-                ` ┬╖ ${locationOptions.stats.missingCoordCount} locations missing coordinates`}
+                ` | ${locationOptions.stats.missingCoordCount} locations missing coordinates`}
               {unresolvedHazardCount > 0 && (
-                <span style={{ color: "var(--color-error-text)" }}>
+                <span className="map-selection-warning">
                   {" · "}
                   {unresolvedHazardCount} hazard{unresolvedHazardCount === 1 ? "" : "s"} shown as
                   demonstration data (location not reliably linked)
@@ -1805,7 +1799,7 @@ if (
                 {projectedRiskMapGroups.length > 0 ? (
                   projectedRiskMapGroups.map((point) => (
                     <button
-                      className={`risk-map-marker ${point.tone}`}
+                      className={`risk-map-marker ${point.tone} ${selectedMapPointId === point.id ? "selected" : ""}`}
                       key={point.id}
                       style={{
                         left: `${point.left}%`,
@@ -1813,6 +1807,9 @@ if (
                       }}
                       title={`${point.type} | ${point.location} | ${point.latitude.toFixed(4)}, ${point.longitude.toFixed(4)}`}
                       type="button"
+                      aria-label={`${point.type}, ${point.severity} risk at ${point.location}; ${point.count} mapped item${point.count === 1 ? "" : "s"}`}
+                      aria-pressed={selectedMapPointId === point.id}
+                      onClick={() => setSelectedMapPointId((current) => current === point.id ? "" : point.id)}
                     >
                       <span>{point.count > 1 ? point.count : ""}</span>
                     </button>
@@ -1845,14 +1842,27 @@ if (
                     <span>Shown on map</span>
                     <strong>{riskMapPoints.length}</strong>
                   </div>
+
+                  <div className="risk-map-summary">
+                    <span>Mapped groups</span>
+                    <strong>{riskMapGroups.length}</strong>
+                  </div>
+
+                  <div className="risk-map-summary">
+                    <span>Unmapped</span>
+                    <strong>{unresolvedHazardCount}</strong>
+                  </div>
                 </div>
 
                 <div className="risk-map-list">
                   {projectedRiskMapGroups.length > 0 ? (
                     projectedRiskMapGroups.map((point) => (
-                      <div
-                        className="risk-map-list-item"
+                      <button
+                        type="button"
+                        className={`risk-map-list-item ${selectedMapPointId === point.id ? "selected" : ""}`}
                         key={`detail-${point.id}`}
+                        aria-pressed={selectedMapPointId === point.id}
+                        onClick={() => setSelectedMapPointId((current) => current === point.id ? "" : point.id)}
                       >
                         <span
                           className={`map-severity-dot ${point.tone}`}
@@ -1862,12 +1872,13 @@ if (
                           <strong>{point.type}</strong>
                           <small>{point.location}</small>
                           <small>{point.count} mapped items</small>
+                          <small>{point.status} · {point.source}</small>
                         </div>
 
                         <span className={`map-risk-pill ${point.tone}`}>
                           {point.severity}
                         </span>
-                      </div>
+                      </button>
                     ))
                   ) : (
                     <div className="map-detail-empty">
@@ -2079,7 +2090,6 @@ if (
           </section>
         </div>
 
-        <RegionalThreatExplorer />
       </main>
     </div>
   );

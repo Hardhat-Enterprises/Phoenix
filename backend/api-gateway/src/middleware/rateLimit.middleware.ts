@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction} from "express";
 import { buildRateLimitKey} from "@phoenix/common/rate-limit/rate-limit-key";
+import { getClientIdentifier } from "./clientIdentifier";
 
 interface RateLimitPolicy {
     name: string;
@@ -24,36 +25,7 @@ interface RateLimitStore {
     ): Promise<RateLimitResult>;
 }
 
-const getClientIdentifier = (
-    req: Request,
-    identifierType: RateLimitPolicy["identifierType"],
-): string | null => {
-    if (identifierType === "user") {
-        const user = (req as any).user;
 
-        if (!user?.user_id) {
-            return null;
-        }
-
-        return `user:${user.user_id}`;
-    }
-
-    if (identifierType == "ip") {
-        return `ip:${req.ip}`;
-    }
-
-    if (identifierType == "api-key") {
-        const apiKey = req.headers["x-api-key"];
-
-        if (!apiKey || Array.isArray(apiKey)) {
-            return null;
-        }
-
-        return `api-key:${apiKey}`;
-    }
-
-    return null;
-};
 
 export const rateLimit = (
     policy: RateLimitPolicy,
@@ -80,7 +52,7 @@ export const rateLimit = (
             const key = buildRateLimitKey({
                 environment: process.env.NODE_ENV || "development",
                 policy: policy.name,
-                clientIdentifier: identifier,
+                clientIdentifier: identifier.value,
             });
 
             const result = await store.consume (

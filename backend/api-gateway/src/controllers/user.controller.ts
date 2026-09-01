@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { userGrpcClient } from "../grpc/user.grpc";
-import { HttpStatusCode, logger } from "@phoenix/common";
+import { HttpStatusCode, fromRequest, logger, logTokenIssued } from "@phoenix/common";
 
 const REFRESH_COOKIE_NAME = "refresh_token";
 
@@ -110,6 +110,22 @@ export const login = (req: Request, res: Response) => {
       });
     }
 
+    if (
+      response?.status === HttpStatusCode.HTTP_STATUS_OK &&
+      response?.access_token
+    ) {
+      logTokenIssued({
+        ...fromRequest(req),
+        user_id: response.user_id,
+        role: response.role,
+        response_code: response.status,
+        details: {
+          grant_type: "password",
+          username: response.username,
+        },
+      });
+    }
+
     return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
       status: response?.status,
       message: response?.message,
@@ -138,6 +154,21 @@ export const refresh = (req: Request, res: Response) => {
       return res
         .status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED)
         .json({ message: "Invalid or expired refresh token" });
+    }
+
+    if (
+      response?.status === HttpStatusCode.HTTP_STATUS_OK &&
+      response?.access_token
+    ) {
+      logTokenIssued({
+        ...fromRequest(req),
+        user_id: response.user_id,
+        role: response.role,
+        response_code: response.status,
+        details: {
+          grant_type: "refresh_token",
+        },
+      });
     }
 
     return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({

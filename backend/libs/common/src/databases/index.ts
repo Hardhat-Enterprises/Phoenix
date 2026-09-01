@@ -15,6 +15,7 @@ import { LinkedEventType } from "./models/linked-event-typed";
 import { Season } from "./models/season.model";
 import { ReferenceDay } from "./models/reference-day.model";
 import { ReferenceTime } from "./models/reference-time.model";
+import { Notification } from "./models/notification.model";
 
 DataSource.hasMany(DataIngestionStreamingLog, {
   foreignKey: "source_id",
@@ -64,6 +65,7 @@ export {
   Season,
   ReferenceDay,
   ReferenceTime,
+  Notification,
 };
 
 export * from "./models";

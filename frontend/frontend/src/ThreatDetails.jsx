@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getThreats } from "./services/phoenixApi";
+import { getThreat } from "./services/phoenixApi";
 import { HOME_PATH } from "./config/routes";
 import "./ThreatDetails.css";
 import "./components/design.css";
@@ -31,90 +31,71 @@ const formatConfidence = (value) => {
   return number <= 1 ? `${Math.round(number * 100)}%` : `${number}%`;
 };
 
+const needsSignIn = (error) =>
+  error?.status === 401 ||
+  String(error?.message || "").toLowerCase().includes("sign in");
+
 const readBackendThreat = (selectedThreat) =>
-  selectedThreat?.raw?.raw || selectedThreat?.raw || {};
-
-// Matches a threat record against an id from the URL. Mirrors the id
-// fallback chain used by normalizeThreatRow in Dashboard.jsx.
-const idOf = (threat) =>
-  String(
-    threat?.id ??
-      threat?.threat_id ??
-      threat?.raw?.threat_id ??
-      threat?.raw?.id ??
-      threat?.event_id ??
-      threat?.uuid ??
-      "",
-  );
-
-const buildThreatDescription = (selectedThreat) => {
-  const backendThreat = readBackendThreat(selectedThreat);
-
-  if (hasValue(selectedThreat?.description)) {
-    return selectedThreat.description;
-  }
-
-  const facts = [
-    hasValue(backendThreat.threat_type) &&
-      `Threat type is ${formatLabel(backendThreat.threat_type)}`,
-    hasValue(backendThreat.severity) &&
-      `severity is ${formatLabel(backendThreat.severity)}`,
-    hasValue(backendThreat.event_type) &&
-      `event type is ${formatLabel(backendThreat.event_type)}`,
-    hasValue(backendThreat.source) && `source is ${backendThreat.source}`,
-    hasValue(backendThreat.confidence_score) &&
-      `confidence is ${formatConfidence(backendThreat.confidence_score)}`,
-  ].filter(Boolean);
-
-  if (facts.length === 0) {
-    return "No threat description was provided by the backend for this record.";
-  }
-
-  return `Backend threat record summary: ${facts.join(", ")}.`;
-};
+  selectedThreat?.raw?.raw ||
+  selectedThreat?.raw ||
+  selectedThreat ||
+  {};
 
 function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
   const { threatId } = useParams();
   const navigate = useNavigate();
+  const [requestState, setRequestState] = useState({
+    threatId: null,
+    status: "loading",
+    threat: null,
+  });
+  const [requestAttempt, setRequestAttempt] = useState(0);
+  const routeRequest = requestState.threatId === threatId ? requestState : null;
+  const status = threatId ? routeRequest?.status || "loading" : "ready";
 
-  // Use the threat already in memory when it matches the URL. That covers
-  // the normal click-through and avoids a network call.
-  const stateMatches =
-    threatFromState && (!threatId || idOf(threatFromState) === threatId);
-
-  const [fetched, setFetched] = useState(null);
-  const [fetchStatus, setFetchStatus] = useState("loading");
-
-  // A threat already in memory needs no fetch, so the fetch status does not
-  // apply. Deriving this rather than writing it into state inside the effect
-  // avoids an extra render pass.
-  const needsFetch = Boolean(threatId) && !stateMatches;
-  const status = needsFetch ? fetchStatus : "ready";
-
-  // After a refresh or on a shared link the in-memory threat is gone, so
-  // reload the list and find the id. There is no get-by-id endpoint.
+  // Parameterized routes always load the exact backend record; the base route
+  // retains its existing Dashboard selection behavior.
   useEffect(() => {
-    if (!needsFetch) return undefined;
+    if (!threatId) return undefined;
 
-    let cancelled = false;
+    const controller = new AbortController();
 
-    getThreats({ limit: 100 })
-      .then(({ items }) => {
-        if (cancelled) return;
-        const match = items.find((item) => idOf(item) === threatId);
-        setFetched(match || null);
-        setFetchStatus(match ? "ready" : "notfound");
+    getThreat(threatId, { signal: controller.signal })
+      .then((threat) => {
+        if (controller.signal.aborted) return;
+
+        setRequestState({
+          threatId,
+          status: threat ? "ready" : "empty",
+          threat,
+        });
       })
-      .catch(() => {
-        if (!cancelled) setFetchStatus("error");
+      .catch((error) => {
+        if (controller.signal.aborted) return;
+
+        let nextStatus = "error";
+
+        if (needsSignIn(error)) {
+          nextStatus = "auth";
+        } else if (error?.status === 404) {
+          nextStatus = "notfound";
+        }
+
+        setRequestState({
+          threatId,
+          status: nextStatus,
+          threat: null,
+        });
       });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [threatId, needsFetch]);
+    return () => controller.abort();
+  }, [threatId, requestAttempt]);
 
-  const selectedThreat = stateMatches ? threatFromState : fetched;
+  const selectedThreat = threatId ? routeRequest?.threat : threatFromState;
+  const retryThreat = () => {
+    setRequestState({ threatId, status: "loading", threat: null });
+    setRequestAttempt((attempt) => attempt + 1);
+  };
 
   const handleBack = () => {
     if (onBack) return onBack();
@@ -131,19 +112,32 @@ function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
     selectedThreat?.vulnerability ||
     formatLabel(backendThreat.severity) ||
     "Not provided";
-  const threatStatus =
-    selectedThreat?.status ||
-    formatLabel(backendThreat.severity) ||
-    "Not provided";
+  const threatStatus = selectedThreat?.status || "Not provided";
   const threatSource =
-    selectedThreat?.source || backendThreat.source || "Not provided";
+    backendThreat.source || selectedThreat?.source || "Not provided";
   const eventType = hasValue(backendThreat.event_type)
     ? formatLabel(backendThreat.event_type)
     : "Not provided";
   const confidence = hasValue(backendThreat.confidence_score)
     ? formatConfidence(backendThreat.confidence_score)
     : "Not provided";
-  const threatDescription = buildThreatDescription(selectedThreat);
+  const backendDetails = threatId ? backendThreat.details : null;
+  let threatDescription = "Not provided";
+
+  if (typeof backendDetails === "string" && hasValue(backendDetails)) {
+    threatDescription = backendDetails;
+  } else if (
+    typeof backendDetails?.description === "string" &&
+    hasValue(backendDetails.description)
+  ) {
+    threatDescription = backendDetails.description;
+  } else if (
+    !threatId &&
+    typeof selectedThreat?.description === "string" &&
+    hasValue(selectedThreat.description)
+  ) {
+    threatDescription = selectedThreat.description;
+  }
 
   const getRiskColor = () => {
     if (threatSeverity === "Critical") {
@@ -165,8 +159,7 @@ function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
     return "#2b9348";
   };
 
-  // Chooses which panel to show inside the card: loading, error,
-  // not-found, the threat itself, or the original empty state.
+  // Chooses which panel to show inside the existing card layout.
   const renderBody = () => {
     if (status === "loading") {
       return (
@@ -177,14 +170,11 @@ function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
       );
     }
 
-    if (status === "error") {
+    if (status === "auth") {
       return (
         <div className="no-threat-selected-box" role="alert">
-          <h2>Could not load this threat</h2> <br />
-          <p>
-            The Phoenix API did not respond. Check your connection or sign in,
-            then try again.
-          </p>
+          <h2>Sign in required</h2> <br />
+          <p>Please sign in before loading threat details.</p>
         </div>
       );
     }
@@ -197,6 +187,31 @@ function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
             No threat matches the id <strong>{threatId}</strong>. It may have
             been removed, or the link may be incorrect.
           </p>
+        </div>
+      );
+    }
+
+    if (status === "empty") {
+      return (
+        <div className="no-threat-selected-box" role="alert">
+          <h2>Threat data unavailable</h2> <br />
+          <p>The Phoenix API returned no threat record for this request.</p>
+        </div>
+      );
+    }
+
+    if (status === "error") {
+      return (
+        <div className="no-threat-selected-box" role="alert">
+          <h2>Could not load this threat</h2> <br />
+          <p>Threat details could not be loaded. Please try again.</p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={retryThreat}
+          >
+            Retry
+          </button>
         </div>
       );
     }

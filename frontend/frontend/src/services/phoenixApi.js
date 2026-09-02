@@ -144,6 +144,18 @@ export const getThreats = async (params = {}) => {
   return withListMeta(payload, ["threats"]);
 };
 
+export const getThreat = async (threatId, { signal } = {}) => {
+  const payload = await apiRequest(
+    `/api/users/threats/${encodeURIComponent(threatId)}`,
+    {
+      requiresAuth: true,
+      signal,
+    },
+  );
+
+  return payload?.threat || null;
+};
+
 export const getHazards = async (params = {}) => {
   const payload = await apiRequest(`/api/users/hazards${toQueryString(params)}`, {
     requiresAuth: true,

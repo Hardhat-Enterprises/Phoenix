@@ -121,7 +121,23 @@ function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
   const confidence = hasValue(backendThreat.confidence_score)
     ? formatConfidence(backendThreat.confidence_score)
     : "Not provided";
-  const threatDescription = selectedThreat?.description || "Not provided";
+  const backendDetails = threatId ? backendThreat.details : null;
+  let threatDescription = "Not provided";
+
+  if (typeof backendDetails === "string" && hasValue(backendDetails)) {
+    threatDescription = backendDetails;
+  } else if (
+    typeof backendDetails?.description === "string" &&
+    hasValue(backendDetails.description)
+  ) {
+    threatDescription = backendDetails.description;
+  } else if (
+    !threatId &&
+    typeof selectedThreat?.description === "string" &&
+    hasValue(selectedThreat.description)
+  ) {
+    threatDescription = selectedThreat.description;
+  }
 
   const getRiskColor = () => {
     if (threatSeverity === "Critical") {

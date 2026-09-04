@@ -96,18 +96,7 @@ function App() {
         </div>
       </div>
       {showNotifPanel && (
-        <NotificationPanel
-          onAlert={(item) => {
-        //Alter for future backend
-            fetch("http://192.168.50.251:3000/alert", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(item)
-            });
-
-            setShowNotifPanel(false);
-          }}
-        />
+        <NotificationPanel onClose={() => setShowNotifPanel(false)} />
       )}
 
 

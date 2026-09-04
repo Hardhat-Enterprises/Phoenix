@@ -1,6 +1,6 @@
 import { Op } from "sequelize";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 import {
 	CyberThreat,

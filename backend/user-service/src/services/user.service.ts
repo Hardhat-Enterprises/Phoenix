@@ -232,7 +232,9 @@ export const getUserDashboard = async (
       HazardEvent.count(),
       HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.8 } } }),
       CyberThreat.count(),
-      CyberThreat.count({ where: { severity: { [Op.gte]: 0.8 } } }),
+      CyberThreat.count({
+        where: { severity: { [Op.in]: ["high", "critical"] } },
+      }),
       IntegrationLog.count(),
     ]);
 

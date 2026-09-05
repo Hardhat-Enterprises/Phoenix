@@ -1,0 +1,55 @@
+# Australian emergency and relief agencies
+# ========================================
+# Used by E4 (agency impersonation) to detect content imitating an official body.
+#
+# MAINTENANCE: DataQuoll's /incidents response includes source.agency for every
+# incident. Running scripts/refresh_agencies.py will append any agency codes seen
+# in live data that are not already listed here, so this file stays current
+# without manual research.
+
+version: "1.0.0"
+
+# Full names and common variations. Matching is case-insensitive.
+agencies:
+  - name: "Bureau of Meteorology"
+    aliases: ["BOM", "Bureau of Meteorology", "the Bureau"]
+    domains: ["bom.gov.au"]
+
+  - name: "Country Fire Authority"
+    aliases: ["CFA", "Country Fire Authority"]
+    domains: ["cfa.vic.gov.au"]
+
+  - name: "NSW Rural Fire Service"
+    aliases: ["RFS", "NSW RFS", "Rural Fire Service"]
+    domains: ["rfs.nsw.gov.au"]
+
+  - name: "State Emergency Service"
+    aliases: ["SES", "State Emergency Service", "VICSES", "NSW SES"]
+    domains: ["ses.vic.gov.au", "ses.nsw.gov.au"]
+
+  - name: "VicEmergency"
+    aliases: ["VicEmergency", "Vic Emergency"]
+    domains: ["emergency.vic.gov.au"]
+
+  - name: "Queensland Fire and Emergency Services"
+    aliases: ["QFES", "Queensland Fire"]
+    domains: ["qfes.qld.gov.au"]
+
+  - name: "Emergency Management Australia"
+    aliases: ["EMA", "Emergency Management Australia"]
+    domains: ["nema.gov.au"]
+
+  - name: "Services Australia"
+    aliases: ["Services Australia", "Centrelink"]
+    domains: ["servicesaustralia.gov.au", "centrelink.gov.au"]
+
+  - name: "Australian Red Cross"
+    aliases: ["Red Cross", "Australian Red Cross"]
+    domains: ["redcross.org.au"]
+
+# Domains that are legitimate. A message referencing an agency AND linking to
+# its real domain is far less likely to be impersonation.
+# E4 fires when an agency is referenced but the URL does NOT match its domain.
+trusted_domain_suffixes:
+  - ".gov.au"
+  - ".org.au"

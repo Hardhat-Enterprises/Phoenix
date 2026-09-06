@@ -60,6 +60,22 @@ export const ROUTES = [
     title: "Help and Support",
     inSidebar: true,
   },
+
+  // Parameterised routes. Not in the Sidebar and not searchable, but listed
+  // here so page titles resolve on /threats/abc123 and /hazards/abc123.
+  {
+    key: "threatDetails",
+    path: "/threats/:threatId",
+    label: "Threat Details",
+    title: "Threat Details",
+  },
+  {
+    key: "hazardDetails",
+    path: "/hazards/:hazardId",
+    label: "Hazard Details",
+    title: "Hazard Details",
+  },
+
   {
     key: "login",
     path: "/login",
@@ -126,6 +142,11 @@ export function pathForKey(key) {
 // Build the URL for a single threat.
 export function threatPath(threatId) {
   return `/threats/${encodeURIComponent(threatId)}`;
+}
+
+// Build the URL for a single hazard.
+export function hazardPath(hazardId) {
+  return `/hazards/${encodeURIComponent(hazardId)}`;
 }
 
 // Find the route entry for a browser path.

@@ -39,7 +39,6 @@ const Dashboard = lazy(() => import("./Dashboard"));
 const SettingsPage = lazy(() => import("./SettingsPage"));
 const Alerts = lazy(() => import("./Alerts"));
 const ReportsPage = lazy(() => import("./ReportsPage"));
-const ThreatDetails = lazy(() => import("./ThreatDetails"));
 const RiskAssessmentPage = lazy(() => import("./RiskAssessmentPage"));
 const HelpSupportPage = lazy(() => import("./HelpSupportPage"));
 const CreateUser = lazy(() => import("./CreateUser"));
@@ -49,6 +48,8 @@ const ComponentShowcase = lazy(
 const IntegrationHealthPanel = lazy(
   () => import("./components/IntegrationHealthPanel"),
 );
+const ThreatDetails = lazy(() => import("./ThreatDetails"));
+const HazardDetails = lazy(() => import("./HazardDetails"));
 
 function RouteLoadingState() {
   return (
@@ -610,6 +611,10 @@ function App() {
                 onBack={handleBackFromThreatDetails}
               />,
             )}
+          />
+                    <Route
+            path="/hazards/:hazardId"
+            element={withShell(<HazardDetails />)}
           />
 
           <Route

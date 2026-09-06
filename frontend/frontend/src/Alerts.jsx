@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AlertSidebar from "./components/AlertSidebar";
 import { getHazards } from "./services/phoenixApi";
+import { hazardPath } from "./config/routes";
 import "./Alerts.css";
 
 const formatLabel = (value) =>
@@ -124,8 +126,13 @@ const mapHazardToAlert = (hazard, index) => {
     },
   ].filter((field) => hasValue(field.value));
 
+  // Only a real backend identifier can open the detail endpoint. The
+  // positional fallback below is for React keys, not for navigation.
+  const backendId = hazard.hazard_event_id || hazard.id || "";
+
   return {
-    id: hazard.hazard_event_id || hazard.id || `hazard-alert-${index}`,
+    id: backendId || `hazard-alert-${index}`,
+    backendId,
     title,
     description: evidenceText,
     evidenceText,
@@ -183,6 +190,9 @@ const groupHazards = (hazards) => {
     groups.set(key, {
       ...hazard,
       id: key,
+      // The grouped row's id becomes a composite key, so hold on to the first
+      // underlying record's backend id for opening its detail page.
+      firstHazardId: hazard.backendId,
       count: 1,
       evidenceTexts: hasValue(hazard.evidenceText) ? [hazard.evidenceText] : [],
       evidenceUrls: hasValue(hazard.evidenceUrl) ? [hazard.evidenceUrl] : [],
@@ -211,6 +221,7 @@ const buildHazardChartRows = (hazards) => {
 };
 
 const Alerts = () => {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({
     hazardType: "All Hazard Types",
     alertLevel: "All Alert Levels",
@@ -220,6 +231,14 @@ const Alerts = () => {
   const [hazardTotal, setHazardTotal] = useState(0);
   const [hazardDataSource, setHazardDataSource] = useState("Loading");
   const [hazardLoading, setHazardLoading] = useState(true);
+
+  // A grouped row can stand for several records, so open the first of them.
+  // Rows without a backend id are not navigable and stay inert.
+  const openHazard = (hazard) => {
+    if (hasValue(hazard?.firstHazardId)) {
+      navigate(hazardPath(hazard.firstHazardId));
+    }
+  };
 
   useEffect(() => {
     let isActive = true;
@@ -440,67 +459,94 @@ const Alerts = () => {
                 </div>
 
                 <div className="hazard-list">
-                  {groupedHazards.map((hazard) => (
-                    <article className="hazard-row" key={hazard.id}>
-                      <div className="hazard-row-top">
-                        <div className="hazard-row-main">
-                          <strong>{hazard.title}</strong>
-                          <small>
-                            Grouped by matching alert priority, location and status.
-                          </small>
+                  {groupedHazards.map((hazard) => {
+                    const canOpen = hasValue(hazard.firstHazardId);
+
+                    return (
+                      <article
+                        className={`hazard-row${canOpen ? " hazard-row-clickable" : ""}`}
+                        key={hazard.id}
+                        role={canOpen ? "button" : undefined}
+                        tabIndex={canOpen ? 0 : undefined}
+                        aria-label={
+                          canOpen ? `Open hazard details for ${hazard.title}` : undefined
+                        }
+                        onClick={canOpen ? () => openHazard(hazard) : undefined}
+                        onKeyDown={
+                          canOpen
+                            ? (event) => {
+                                if (event.key === "Enter" || event.key === " ") {
+                                  event.preventDefault();
+                                  openHazard(hazard);
+                                }
+                              }
+                            : undefined
+                        }
+                      >
+                        <div className="hazard-row-top">
+                          <div className="hazard-row-main">
+                            <strong>{hazard.title}</strong>
+                            <small>
+                              {hazard.count > 1
+                                ? "Grouped by matching alert priority, location and status. Opens the first record."
+                                : "Grouped by matching alert priority, location and status."}
+                            </small>
+                          </div>
+
+                          <div className="hazard-row-badges">
+                            {hazard.count > 1 && (
+                              <span className="hazard-count-pill">
+                                {hazard.count} matches
+                              </span>
+                            )}
+
+                            {hazard.alertLevel && (
+                              <span
+                                className={`alert-status-pill ${statusClassFor(
+                                  hazard.alertLevel,
+                                )}`}
+                              >
+                                {hazard.alertLevel}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="hazard-row-badges">
-                          {hazard.count > 1 && (
-                            <span className="hazard-count-pill">
-                              {hazard.count} matches
+                        <div className="alert-card-meta">
+                          {(hazard.fields || []).map((field) => (
+                            <span key={`${hazard.id}-${field.label}`}>
+                              <small>{field.label}</small>
+                              <strong>{field.value}</strong>
                             </span>
-                          )}
-
-                          {hazard.alertLevel && (
-                            <span
-                              className={`alert-status-pill ${statusClassFor(
-                                hazard.alertLevel,
-                              )}`}
-                            >
-                              {hazard.alertLevel}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="alert-card-meta">
-                        {(hazard.fields || []).map((field) => (
-                          <span key={`${hazard.id}-${field.label}`}>
-                            <small>{field.label}</small>
-                            <strong>{field.value}</strong>
-                          </span>
-                        ))}
-                      </div>
-
-                      {(hazard.evidenceTexts.length > 0 ||
-                        hazard.evidenceUrls.length > 0) && (
-                        <div className="hazard-evidence-panel">
-                          <span>Reported evidence</span>
-
-                          {hazard.evidenceTexts.slice(0, 3).map((text) => (
-                            <p key={`${hazard.id}-${text}`}>{text}</p>
-                          ))}
-
-                          {hazard.evidenceUrls.slice(0, 2).map((url) => (
-                            <a
-                              href={url}
-                              key={`${hazard.id}-${url}`}
-                              rel="noreferrer"
-                              target="_blank"
-                            >
-                              {url}
-                            </a>
                           ))}
                         </div>
-                      )}
-                    </article>
-                  ))}
+
+                        {(hazard.evidenceTexts.length > 0 ||
+                          hazard.evidenceUrls.length > 0) && (
+                          <div className="hazard-evidence-panel">
+                            <span>Reported evidence</span>
+
+                            {hazard.evidenceTexts.slice(0, 3).map((text) => (
+                              <p key={`${hazard.id}-${text}`}>{text}</p>
+                            ))}
+
+                            {hazard.evidenceUrls.slice(0, 2).map((url) => (
+                              
+                               <a
+                                href={url}
+                                key={`${hazard.id}-${url}`}
+                                rel="noreferrer"
+                                target="_blank"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                {url}
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
                 </div>
               </>
             ) : (

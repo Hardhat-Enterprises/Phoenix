@@ -19,6 +19,7 @@ import SettingsPage from "./SettingsPage";
 import Alerts from "./Alerts";
 import ReportsPage from "./ReportsPage";
 import ThreatDetails from "./ThreatDetails";
+import HazardDetails from "./HazardDetails";
 import RiskAssessmentPage from "./RiskAssessmentPage";
 import HelpSupportPage from "./HelpSupportPage";
 import { getAuthSession, logoutUser } from "./services/authApi";
@@ -583,6 +584,10 @@ function App() {
                 onBack={handleBackFromThreatDetails}
               />,
             )}
+          />
+                    <Route
+            path="/hazards/:hazardId"
+            element={withShell(<HazardDetails />)}
           />
 
           <Route

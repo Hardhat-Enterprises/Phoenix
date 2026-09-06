@@ -152,6 +152,19 @@ export const getHazards = async (params = {}) => {
   return withListMeta(payload, ["hazards"]);
 };
 
+// Fetch a single hazard by id.
+// Path assumed to follow the list route — confirm with the backend team.
+export const getHazardById = async (hazardId) => {
+  const payload = await apiRequest(
+    `/api/users/hazards/${encodeURIComponent(hazardId)}`,
+    {
+      requiresAuth: true,
+    },
+  );
+
+  return unwrapData(payload);
+};
+
 export const getLocations = async () => {
   const payload = await apiRequest("/api/users/meta/locations", {
     requiresAuth: true,

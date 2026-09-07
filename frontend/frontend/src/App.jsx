@@ -50,17 +50,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const adminMenuRef = useRef(null);
   const notifBellRef = useRef(null);
-
-  const mainPages = [
-    "about",
-    "dashboard",
-    "reports",
-    "alerts",
-    "threats",
-    "settings",
-    "riskAssessment",
-    "help",
-  ];
+  const menuButtonRef = useRef(null);
 
   const isLoggedIn = Boolean(authSession?.accessToken);
   const isAdmin = authSession?.user?.role?.toLowerCase() === "admin";
@@ -112,17 +102,6 @@ function App() {
       document.removeEventListener("keydown", closeOnEscape);
     };
   }, [showAdminMenu]);
-
-  // Single navigation entry point. Records the page being left so that the
-  // Threat Details page can offer a Back action that returns there.
-  const goToPage = (nextPage) => {
-    if (!nextPage || nextPage === page) {
-      return;
-    }
-
-    setPreviousPage(page);
-    setPage(nextPage);
-  };
 
   // Closing the panel hands focus back to the bell that opened it.
   const closeNotificationPanel = () => {

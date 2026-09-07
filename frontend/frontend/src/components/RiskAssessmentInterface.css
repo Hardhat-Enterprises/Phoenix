@@ -220,6 +220,17 @@
   background: #fef2f2;
 }
 
+.ra-state--unavailable {
+  border-style: solid;
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.ra-state--unavailable h3 {
+  color: #9a3412;
+}
+
 /* --- buttons --- */
 
 .ra-btn {
@@ -325,4 +336,37 @@
   .ra-detail__grid {
     grid-template-columns: 1fr;
   }
+}
+
+:root[data-theme="dark"] .ra-page {
+  --ra-bg: var(--color-page-bg);
+  --ra-surface: var(--color-surface);
+  --ra-surface-hover: var(--color-interactive-surface-hover);
+  --ra-border: var(--color-border);
+  --ra-text: var(--color-text);
+  --ra-text-muted: var(--color-text-muted);
+  --ra-accent: var(--color-interactive);
+  --ra-accent-soft: var(--color-selected-bg);
+}
+
+:root[data-theme="dark"] .ra-pill:not([class*="ra-pill--"]),
+:root[data-theme="dark"] .ra-pill--dismissed {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .ra-state--error {
+  background: var(--color-error-bg);
+  border-color: var(--color-error-border);
+}
+
+:root[data-theme="dark"] .ra-btn {
+  background: var(--color-selected-bg);
+  color: var(--color-selected-text);
+}
+
+:root[data-theme="dark"] .ra-btn:hover,
+:root[data-theme="dark"] .ra-btn:focus-visible {
+  background: var(--color-interactive-surface-active);
 }

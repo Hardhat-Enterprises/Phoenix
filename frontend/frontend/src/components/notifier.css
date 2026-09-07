@@ -435,3 +435,62 @@
   color: #94a3b8;
   font-style: italic;
 }
+
+:root[data-theme="dark"] .notif-header,
+:root[data-theme="dark"] .notif-item,
+:root[data-theme="dark"] .notif-clear {
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .notif-close:hover,
+:root[data-theme="dark"] .notif-title,
+:root[data-theme="dark"] .notif-modal-title {
+  color: var(--color-heading);
+}
+
+:root[data-theme="dark"] .notif-item.unread,
+:root[data-theme="dark"] .notif-clear:hover {
+  background: var(--color-interactive-surface-hover);
+}
+
+:root[data-theme="dark"] .notif-count {
+  background: var(--color-selected-bg);
+  color: var(--color-selected-text);
+}
+
+:root[data-theme="dark"] .notif-item.read .notif-title,
+:root[data-theme="dark"] .notif-modal-body {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .notif-btn-secondary {
+  background: var(--color-input-bg);
+  border-color: var(--color-control-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .notif-btn-primary {
+  background: var(--color-interactive);
+  color: var(--color-on-interactive);
+}
+
+/* Dark-theme cover for the states this panel adds: a failed refresh reported
+   beside the list, records without a usable timestamp, and the note admitting
+   that dismiss and clear are local. */
+:root[data-theme="dark"] .notif-error-inline {
+  background: var(--color-error-bg);
+  border-color: var(--color-error-border);
+}
+
+:root[data-theme="dark"] .notif-error-inline .notif-error-text,
+:root[data-theme="dark"] .notif-error .notif-error-text {
+  color: var(--color-error-text);
+}
+
+:root[data-theme="dark"] .notif-time-unknown {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .notif-local-note {
+  color: var(--color-warning-text);
+}

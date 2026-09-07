@@ -40,8 +40,8 @@
   padding: 0.55rem 0.9rem;
   border-radius: var(--radius-sm);
   border: var(--border-width) solid var(--border-color);
-  background: var(--bg);
-  color: var(--text-h);
+  background: var(--color-surface);
+  color: var(--color-text);
   font-weight: var(--text-weight);
   cursor: pointer;
   transition:
@@ -64,10 +64,10 @@
 }
 
 .btn-secondary {
-  background: #ffffff;
+  background: var(--color-surface);
   border: 1px solid var(--border-color, #1a4380);
   border-radius: 8px;
-  color: var(--text, #1a4380);
+  color: var(--color-text);
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;

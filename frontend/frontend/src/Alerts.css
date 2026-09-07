@@ -112,11 +112,11 @@
 }
 
 .alert-filter-field select {
-  background: #ffffff;
+  background: var(--color-input-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: #001a3e;
-  color-scheme: light;
+  color: var(--color-text);
+  color-scheme: inherit;
   font-size: 13px;
   height: 38px;
   outline: none;
@@ -564,5 +564,62 @@
   .hazard-chart-row strong {
     text-align: left;
   }
+}
+
+:root[data-theme="dark"] .alerts-page-header p,
+:root[data-theme="dark"] .alert-row-main small,
+:root[data-theme="dark"] .alert-card-meta small,
+:root[data-theme="dark"] .alert-card-footer,
+:root[data-theme="dark"] .alert-card-footer small,
+:root[data-theme="dark"] .hazard-row-main small,
+:root[data-theme="dark"] .hazard-evidence-panel span,
+:root[data-theme="dark"] .alerts-empty-state {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .alerts-list-title,
+:root[data-theme="dark"] .alert-card-meta span,
+:root[data-theme="dark"] .priority-guide,
+:root[data-theme="dark"] .hazard-evidence-panel {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .alert-row:hover {
+  background: var(--color-interactive-surface-hover);
+}
+
+:root[data-theme="dark"] .alert-row-main strong,
+:root[data-theme="dark"] .alert-card-meta strong,
+:root[data-theme="dark"] .alert-card-footer strong,
+:root[data-theme="dark"] .priority-guide strong,
+:root[data-theme="dark"] .hazard-chart-row span,
+:root[data-theme="dark"] .hazard-chart-row strong,
+:root[data-theme="dark"] .hazard-row-main strong,
+:root[data-theme="dark"] .hazard-evidence-panel p {
+  color: var(--color-heading);
+}
+
+:root[data-theme="dark"] .priority-guide span {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .hazard-chart-list,
+:root[data-theme="dark"] .hazard-row {
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .hazard-chart-track {
+  background: var(--color-input-bg);
+}
+
+:root[data-theme="dark"] .hazard-count-pill {
+  background: var(--color-selected-bg);
+  border-color: var(--color-interactive);
+  color: var(--color-selected-text);
+}
+
+:root[data-theme="dark"] .hazard-evidence-panel a {
+  color: var(--color-interactive);
 }
 

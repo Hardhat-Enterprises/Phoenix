@@ -104,7 +104,7 @@ CREATE TABLE event_status(
 
 /*RISK_ASSESSMENT OR INTEGRATION TABLE 
   Fact table*/
- CREATE TABLE tisk_assessment (
+ CREATE TABLE risk_assessment (
 	integration_event_id 		UUID PRIMARY KEY DEFAULT gen_random_uuid()
 	,related_hazard_event_id 	UUID
 	,related_threat_id 			UUID

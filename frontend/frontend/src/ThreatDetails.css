@@ -208,3 +208,28 @@
   justify-content: flex-end;
   margin-top: 24px;
 }
+
+:root[data-theme="dark"] .no-threat-selected-box,
+:root[data-theme="dark"] .selected-threat-box {
+  background-color: var(--color-surface-subtle);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .selected-threat-box h2,
+:root[data-theme="dark"] .threat-info-grid p,
+:root[data-theme="dark"] .threat-description-section p {
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .threat-info-grid strong,
+:root[data-theme="dark"] .threat-description-section strong {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .threat-risk-badge {
+  background-color: var(--color-input-bg);
+}
+
+:root[data-theme="dark"] .threat-back-button:hover {
+  background-color: var(--color-interactive-surface-hover);
+}

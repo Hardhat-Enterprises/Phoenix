@@ -281,3 +281,108 @@
     break-inside: avoid;
   }
 }
+
+:root[data-theme="dark"] .help-page,
+:root[data-theme="dark"] .help-answer {
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .help-header h1,
+:root[data-theme="dark"] .help-search-label,
+:root[data-theme="dark"] .help-category h2,
+:root[data-theme="dark"] .help-question {
+  color: var(--color-heading);
+}
+
+:root[data-theme="dark"] .help-intro,
+:root[data-theme="dark"] .help-result-count,
+:root[data-theme="dark"] .help-caret {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .help-search-box,
+:root[data-theme="dark"] .help-answer {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .help-search-input,
+:root[data-theme="dark"] .help-copy-btn,
+:root[data-theme="dark"] .help-link-btn,
+:root[data-theme="dark"] .help-email {
+  background: var(--color-input-bg);
+  border-color: var(--color-control-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .help-search-input:focus,
+:root[data-theme="dark"] .help-question:focus-visible {
+  outline-color: var(--color-focus);
+}
+
+:root[data-theme="dark"] .help-chip {
+  background: var(--color-selected-bg);
+  border-color: var(--color-interactive);
+  color: var(--color-selected-text);
+}
+
+:root[data-theme="dark"] .help-chip:hover {
+  background: var(--color-interactive-surface-active);
+}
+
+:root[data-theme="dark"] .help-category h2,
+:root[data-theme="dark"] .help-item {
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .help-question {
+  background: var(--color-surface-subtle);
+}
+
+:root[data-theme="dark"] .help-question:hover,
+:root[data-theme="dark"] .help-link-btn:hover {
+  background: var(--color-interactive-surface-hover);
+}
+
+:root[data-theme="dark"] .help-link-btn {
+  color: var(--color-interactive);
+}
+
+@media print {
+  :root[data-theme="dark"] .help-page,
+  :root[data-theme="dark"] .help-answer {
+    color: #334155;
+  }
+
+  :root[data-theme="dark"] .help-page {
+    background: #ffffff;
+  }
+
+  :root[data-theme="dark"] .help-header h1,
+  :root[data-theme="dark"] .help-category h2,
+  :root[data-theme="dark"] .help-question {
+    color: #1e293b;
+  }
+
+  :root[data-theme="dark"] .help-answer,
+  :root[data-theme="dark"] .help-question,
+  :root[data-theme="dark"] .help-email {
+    background: #ffffff;
+    border-color: #e2e8f0;
+  }
+
+  :root[data-theme="dark"] .help-intro,
+  :root[data-theme="dark"] .help-result-count,
+  :root[data-theme="dark"] .help-caret {
+    color: #64748b;
+  }
+
+  :root[data-theme="dark"] .help-category h2,
+  :root[data-theme="dark"] .help-item {
+    border-color: #e2e8f0;
+  }
+
+  :root[data-theme="dark"] .help-email {
+    color: #334155;
+  }
+}

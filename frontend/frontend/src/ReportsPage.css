@@ -96,11 +96,11 @@
 .url-form-group input,
 .url-form-group select,
 .url-form-group textarea {
-  background: #ffffff;
+  background: var(--color-input-bg);
   border: 1px solid var(--border-color);
   border-radius: 10px;
-  color: #24364f;
-  color-scheme: light;
+  color: var(--color-text);
+  color-scheme: inherit;
   font: inherit;
   font-size: 14px;
   min-height: 42px;
@@ -524,4 +524,74 @@
 
 @media (max-width: 720px) {
   .reports-content { padding: 20px 16px; }
+}
+
+:root[data-theme="dark"] .hazard-context-panel,
+:root[data-theme="dark"] .score-tile {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .core-results-card,
+:root[data-theme="dark"] .model-output-card,
+:root[data-theme="dark"] .generated-reports-card {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme="dark"] .payload-preview,
+:root[data-theme="dark"] .result-text,
+:root[data-theme="dark"] .core-results-row,
+:root[data-theme="dark"] .generated-reports-header,
+:root[data-theme="dark"] .reports-row {
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .payload-preview summary,
+:root[data-theme="dark"] .payload-preview h4,
+:root[data-theme="dark"] .score-tile strong,
+:root[data-theme="dark"] .core-input-cell strong,
+:root[data-theme="dark"] .generated-reports-header h2,
+:root[data-theme="dark"] .report-title-cell strong {
+  color: var(--color-heading);
+}
+
+:root[data-theme="dark"] .score-tile span,
+:root[data-theme="dark"] .core-input-cell small,
+:root[data-theme="dark"] .core-results-empty,
+:root[data-theme="dark"] .generated-reports-header p,
+:root[data-theme="dark"] .reports-empty,
+:root[data-theme="dark"] .report-title-cell small {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .result-text,
+:root[data-theme="dark"] .core-results-row,
+:root[data-theme="dark"] .reports-row {
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .core-results-head,
+:root[data-theme="dark"] .reports-table-head {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .core-results-row:hover,
+:root[data-theme="dark"] .reports-row:hover {
+  background-color: var(--color-interactive-surface-hover);
+}
+
+:root[data-theme="dark"] .ingestion-message.error,
+:root[data-theme="dark"] .result-note {
+  background: var(--color-error-bg);
+  border-color: var(--color-error-border);
+  color: var(--color-error-text);
+}
+
+:root[data-theme="dark"] .ingestion-message.success {
+  background: var(--color-success-bg);
+  border-color: var(--color-success-border);
+  color: var(--color-success-text);
 }

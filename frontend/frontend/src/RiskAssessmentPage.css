@@ -37,3 +37,21 @@
 @media (max-width: 720px) {
   .risk-assessment-page { padding: 20px 16px; }
 }
+
+:root[data-theme="dark"] .risk-assessment-page {
+  background: var(--color-page-bg);
+}
+
+:root[data-theme="dark"] .risk-assessment-title-section h1 {
+  color: var(--color-heading);
+}
+
+:root[data-theme="dark"] .risk-assessment-title-section p {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .risk-assessment-card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}

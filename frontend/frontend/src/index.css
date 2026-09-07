@@ -1,13 +1,58 @@
 :root {
+  --color-page-bg: #eef3f8;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f8fbff;
+  --color-input-bg: #ffffff;
+  --color-text: #001a3e;
+  --color-text-muted: #64748b;
+  --color-heading: #1f3a5f;
+  --color-border: #d9e2ef;
+  --color-border-subtle: #edf1f7;
+  --color-control-border: #7d8ca3;
+  --color-interactive: #1d3e7b;
+  --color-interactive-hover: #173466;
+  --color-interactive-active: #10294f;
+  --color-on-interactive: #ffffff;
+  --color-interactive-surface-hover: #eef5ff;
+  --color-interactive-surface-active: #dbeafe;
+  --color-selected-bg: #dbeafe;
+  --color-selected-text: #0b3465;
+  --color-focus: #2563eb;
+  --focus-outline: 2px solid var(--color-focus);
+  --focus-shadow: 0 0 0 3px rgba(37, 99, 235, 0.28);
+  --color-placeholder: #64748b;
+  --color-disabled-bg: #e5e7eb;
+  --color-disabled-border: #cbd5e1;
+  --color-disabled-text: #64748b;
+  --color-success-bg: #e8f7ee;
+  --color-success-border: #bde8cc;
+  --color-success-text: #166534;
+  --color-error-bg: #fef2f2;
+  --color-error-border: #fecaca;
+  --color-error-text: #991b1b;
+  --color-warning-bg: #fff7ed;
+  --color-warning-border: #fed7aa;
+  --color-warning-text: #9a3412;
+  --color-info-bg: #eff6ff;
+  --color-info-border: #bfdbfe;
+  --color-info-text: #1e40af;
+  --color-code-bg: #f4f3ec;
+  --color-code-text: #001a3e;
+  --shadow-card: 0 6px 18px rgba(0, 0, 0, 0.05);
+  --error-bg: var(--color-error-bg);
+  --error-border: var(--color-error-border);
+  --error-text: var(--color-error-text);
+  --success-bg: var(--color-success-bg);
+  --success-border: var(--color-success-border);
+  --success-text: var(--color-success-text);
+
   --text: #001a3e;
   --text-h: #fafbfc;
   --text-weight: 500;
   --content-width: 800px;
-
   --bg: #fff;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
-
   --accent: #183379;
   --accent-bg: rgba(0, 58, 159, 0.506);
   --accent-border: rgba(0, 58, 159, 0.506);
@@ -21,7 +66,7 @@
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -38,7 +83,7 @@
 
   --border-width: 1px;
   --border-color: var(--border);
-  --focus-ring: 3px solid #1a4380;
+  --focus-ring: var(--focus-shadow);
 
   --heading-color: #1f3a5f;
   --muted: #64748b;
@@ -56,14 +101,12 @@
 
   --shadow-sm: 0 2px 6px 0 #5356620f;
   --shadow-md: 0 4px 12px 0 #5356620f;
+  --shadow-lg: 0 10px 30px rgba(2, 6, 23, 0.12);
 
   --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
-
-  --shadow-lg: 0 10px 30px rgba(2, 6, 23, 0.12);
-  --muted: #64748b;
 
   --interactive: #1d3e7b;
 
@@ -72,23 +115,482 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --color-page-bg: #0b121c;
+  --color-surface: #1f2028;
+  --color-surface-subtle: #2e303a;
+  --color-input-bg: #16171d;
+  --color-text: #f3f4f6;
+  --color-text-muted: #cbd5e1;
+  --color-heading: #f3f4f6;
+  --color-border: #475569;
+  --color-border-subtle: #374151;
+  --color-control-border: #94a3b8;
+  --color-interactive: #93c5fd;
+  --color-interactive-hover: #bfdbfe;
+  --color-interactive-active: #dbeafe;
+  --color-on-interactive: #0b121c;
+  --color-interactive-surface-hover: #2e303a;
+  --color-interactive-surface-active: #374151;
+  --color-selected-bg: #1f3a5f;
+  --color-selected-text: #dbeafe;
+  --color-focus: #60a5fa;
+  --focus-outline: 2px solid var(--color-focus);
+  --focus-shadow: 0 0 0 3px rgba(96, 165, 250, 0.35);
+  --color-placeholder: #94a3b8;
+  --color-disabled-bg: #374151;
+  --color-disabled-border: #475569;
+  --color-disabled-text: #94a3b8;
+  --color-success-bg: #143322;
+  --color-success-border: #2f6f49;
+  --color-success-text: #bbf7d0;
+  --color-error-bg: #451a1a;
+  --color-error-border: #7f1d1d;
+  --color-error-text: #fecaca;
+  --color-warning-bg: #431f0c;
+  --color-warning-border: #9a3412;
+  --color-warning-text: #fed7aa;
+  --color-info-bg: #172554;
+  --color-info-border: #1e40af;
+  --color-info-text: #bfdbfe;
+  --color-code-bg: #1f2028;
+  --color-code-text: #f3f4f6;
+  --shadow-card: 0 6px 18px rgba(0, 0, 0, 0.35);
+
+  --text: #9ca3af;
+  --text-h: #f3f4f6;
+  --bg: #16171d;
+  --border: #2e303a;
+  --code-bg: #1f2028;
+  --accent: #c084fc;
+  --accent-bg: rgba(192, 132, 252, 0.15);
+  --accent-border: rgba(192, 132, 252, 0.5);
+  --social-bg: rgba(47, 48, 58, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  --heading-color: #f3f4f6;
+  --muted: #9ca3af;
+  --card-bg: #1f2028;
+  --page-bg: #0b121c;
+  --brand: #1a4380;
+  --interactive: #1d3e7b;
+  --border-color: var(--border);
+  --focus-ring: var(--focus-shadow);
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] #social .button-icon {
+  filter: invert(1) brightness(2);
+}
+
+:root[data-reduced-motion="true"],
+:root[data-reduced-motion="true"] *,
+:root[data-reduced-motion="true"] *::before,
+:root[data-reduced-motion="true"] *::after {
+  animation: none !important;
+  scroll-behavior: auto !important;
+  transition: none !important;
+}
+
+:root[data-density="compact"] {
+  --space-xxs: 3px;
+  --space-xs: 6px;
+  --space-sm: 10px;
+  --space-md: 13px;
+  --space-lg: 20px;
+  --space-xl: 27px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .dashboard-content,
+  .alerts-page-layout,
+  .reports-content,
+  .risk-assessment-page,
+  .threat-details-page
+) {
+  padding: 24px;
+}
+
+:root[data-density="compact"] .app-content .settings-page {
+  padding: 22px 24px;
+}
+
+:root[data-density="compact"] .app-content .about-content {
+  padding: 18px;
+}
+
+:root[data-density="compact"] .app-content .help-page {
+  padding: 18px 16px 60px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .overview-grid,
+  .map-card,
+  .threat-chart-section
+) {
+  margin-bottom: 20px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .alerts-page-header,
+  .settings-header,
+  .settings-device-notice,
+  .settings-subtext,
+  .url-ingestion-card,
+  .core-results-card,
+  .model-output-card
+) {
+  margin-bottom: 18px;
+}
+
+:root[data-density="compact"] .app-content .ai-detection-card {
+  margin-bottom: 16px;
+}
+
+:root[data-density="compact"] .app-content .about-card {
+  margin-bottom: 17px;
+}
+
+:root[data-density="compact"] .app-content .help-category {
+  margin-bottom: 21px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .report-title-section,
+  .risk-assessment-title-section
+) {
+  margin-bottom: 14px;
+}
+
+:root[data-density="compact"] .app-content .threat-description-section {
+  margin-top: 24px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .overview-card,
+  .hazard-context-panel,
+  .help-search-box
+) {
+  padding: 14px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .ai-detection-card,
+  .about-card,
+  .risk-assessment-card
+) {
+  padding: 16px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .settings-card,
+  .threat-legend-card
+) {
+  padding: 18px;
+}
+
+:root[data-density="compact"] .app-content .item-list-card {
+  padding: 20px;
+}
+
+:root[data-density="compact"] .app-content .map-card {
+  padding: 20px 24px;
+}
+
+:root[data-density="compact"] .app-content .threat-details-card {
+  padding: 30px;
+}
+
+:root[data-density="compact"] .app-content .alerts-summary-card {
+  padding: 11px 13px;
+}
+
+:root[data-density="compact"] .app-content .alert-filter-panel {
+  padding: 12px;
+}
+
+:root[data-density="compact"] .app-content .hazard-evidence-panel {
+  padding: 9px;
+}
+
+:root[data-density="compact"] .app-content .account-summary {
+  padding: 11px;
+}
+
+:root[data-density="compact"] .app-content .role-card-body {
+  padding: 9px;
+}
+
+:root[data-density="compact"] .app-content .score-tile {
+  padding: 12px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .alerts-list-title,
+  .url-ingestion-header,
+  .generated-reports-header
+) {
+  padding-block: 14px;
+}
+
+:root[data-density="compact"] .app-content .url-ingestion-form {
+  padding-block: 17px 20px;
+}
+
+:root[data-density="compact"] .app-content .score-grid {
+  padding-block: 17px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .item-list-table-head,
+  .core-results-head,
+  .reports-table-head
+) {
+  padding-block: 12px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .item-list-row,
+  .core-results-row,
+  .reports-row
+) {
+  padding-block: 14px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .core-results-empty,
+  .reports-empty
+) {
+  padding-block: 17px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .anomaly-form-grid,
+  .alerts-summary-grid,
+  .alert-filter-panel,
+  .settings-theme-options,
+  .settings-choice-options
+) {
+  gap: 9px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .detection-output-grid,
+  .risk-map-summary-grid,
+  .risk-map-list,
+  .settings-option,
+  .help-support-row
+) {
+  gap: 8px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .overview-grid,
+  .score-grid,
+  .settings-card-heading,
+  .settings-section-heading
+) {
+  gap: 11px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .url-form-grid,
+  .role-grid,
+  .model-output-card .generated-reports-header
+) {
+  gap: 12px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .alerts-workspace,
+  .threat-info-grid
+) {
+  gap: 14px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .ai-detection-card,
+  .alerts-page-header,
+  .settings-grid
+) {
+  gap: 18px;
+}
+
+:root[data-density="compact"] .app-content .threat-details-page {
+  gap: 24px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .settings-options-column,
+  .settings-choice-options
+) {
+  row-gap: 9px;
+}
+
+:root[data-density="compact"] .app-content :is(
+  .anomaly-field,
+  .alert-filter-field,
+  .url-form-group,
+  .report-form-group,
+  .settings-dropdown-group
+) {
+  gap: 6px;
+}
+
+:root[data-density="compact"] .app-content .report-form-group {
+  margin-bottom: 11px;
+}
+
+:root[data-density="compact"] .app-content .settings-preference-section {
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+:root[data-density="compact"] .app-content .settings-preference-section.is-first {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+:root[data-density="compact"] .app-content .settings-section {
+  padding-block: 14px;
+}
+
+@media (max-width: 900px) {
+  :root[data-density="compact"] .app-content .settings-page {
+    padding: 16px;
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  :root[data-density="compact"] .app-content .reports-content {
+    padding: 18px;
+  }
+
+  :root[data-density="compact"] .app-content .score-grid {
+    padding-block: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root[data-density="compact"] .app-content .threat-details-page {
+    padding: 16px;
+  }
+
+  :root[data-density="compact"] .app-content .threat-details-card {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 760px) {
+  :root[data-density="compact"] .app-content .alerts-page-layout {
+    padding: 17px 13px;
+  }
+}
+
+@media (max-width: 720px) {
+  :root[data-density="compact"] .app-content :is(
+    .dashboard-content,
+    .reports-content,
+    .risk-assessment-page
+  ) {
+    padding: 16px 13px;
+  }
+
+  :root[data-density="compact"] .app-content :is(
+    .ai-detection-card,
+    .map-card,
+    .item-list-card
+  ) {
+    padding: 14px 13px;
+  }
+}
+
+@media (max-width: 640px) {
+  :root[data-density="compact"] .app-content .about-content {
+    padding: 11px;
+  }
+}
+
+@media (max-width: 600px) {
+  :root[data-density="compact"] .app-content .help-page {
+    padding: 12px 11px 60px;
+  }
+}
+
+:root[data-larger-text="true"] {
+  font-size: 27px;
+}
+
+:root[data-larger-text="true"] body {
+  font-weight: 500;
+}
+
+:root[data-theme="light"][data-high-contrast="true"] {
+  --color-page-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f1f5f9;
+  --color-input-bg: #ffffff;
+  --color-text: #000000;
+  --color-text-muted: #334155;
+  --color-heading: #000000;
+  --color-border: #475569;
+  --color-border-subtle: #64748b;
+  --color-control-border: #0f172a;
+  --color-interactive: #0b3b8c;
+  --color-interactive-hover: #082f70;
+  --color-interactive-active: #061f4d;
+  --color-on-interactive: #ffffff;
+  --color-focus: #0047cc;
+  --text: #000000;
+  --bg: #ffffff;
+  --border: #475569;
+  --heading-color: #000000;
+  --muted: #334155;
+  --card-bg: #ffffff;
+  --page-bg: #ffffff;
+  --interactive: #0b3b8c;
+  --border-color: var(--border);
+}
+
+:root[data-theme="dark"][data-high-contrast="true"] {
+  --color-page-bg: #0b121c;
+  --color-surface: #111827;
+  --color-surface-subtle: #1f2937;
+  --color-input-bg: #000000;
+  --color-text: #ffffff;
+  --color-text-muted: #e2e8f0;
+  --color-heading: #ffffff;
+  --color-border: #cbd5e1;
+  --color-border-subtle: #94a3b8;
+  --color-control-border: #f1f5f9;
+  --color-interactive: #bfdbfe;
+  --color-interactive-hover: #dbeafe;
+  --color-interactive-active: #eff6ff;
+  --color-on-interactive: #000000;
+  --color-focus: #facc15;
+  --text: #ffffff;
+  --text-h: #ffffff;
+  --bg: #000000;
+  --border: #cbd5e1;
+  --heading-color: #ffffff;
+  --muted: #e2e8f0;
+  --card-bg: #111827;
+  --page-bg: #0b121c;
+  --interactive: #1d4ed8;
+  --border-color: var(--border);
+}
+
+:root[data-high-contrast="true"] {
+  --focus-outline: 3px solid var(--color-focus);
+  --focus-shadow: 0 0 0 4px color-mix(in srgb, var(--color-focus) 45%, transparent);
+  --focus-ring: var(--focus-shadow);
+}
+
+@media (max-width: 1024px) {
+  :root[data-larger-text="true"] {
+    font-size: 24px;
   }
 }
 
@@ -168,4 +670,3 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
-

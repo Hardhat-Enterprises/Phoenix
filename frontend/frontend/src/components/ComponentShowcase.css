@@ -1,23 +1,59 @@
 .showcase-root {
-  padding: 28px 0 60px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+  width: 100%;
 }
 
 .showcase-grid {
+  align-items: start;
   display: grid;
   gap: 18px;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  align-items: start;
 }
 
 .showcase-panel {
   padding: 18px;
 }
 
+.showcase-panel h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
 .showcase-row {
-  display: flex;
-  gap: 10px;
   align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-top: 12px;
+}
+
+.showcase-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.showcase-field {
+  display: grid;
+  gap: 7px;
+}
+
+.showcase-field input {
+  box-sizing: border-box;
+  min-height: 42px;
+  width: 100%;
+}
+
+.showcase-panel--states {
+  grid-column: 1 / -1;
+}
+
+.showcase-states-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 16px;
 }
 
 .muted {
@@ -25,6 +61,21 @@
 }
 
 .page-heading {
-  font-size: 28px;
   margin: 0 0 18px;
+}
+
+.page-heading h1 {
+  font-size: 28px;
+  margin: 0;
+}
+
+.page-heading p {
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+
+@media (max-width: 900px) {
+  .showcase-states-grid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -124,3 +124,52 @@
     background-position: -200% 0;
   }
 }
+
+:root[data-theme="dark"] .interface-state,
+:root[data-theme="dark"] .interface-state--empty {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .interface-state__content h3 {
+  color: var(--color-heading);
+}
+
+:root[data-theme="dark"] .interface-state__content p {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .interface-state--loading {
+  background: var(--color-info-bg);
+  border-color: var(--color-info-border);
+}
+
+:root[data-theme="dark"] .interface-state--error {
+  background: var(--color-error-bg);
+  border-color: var(--color-error-border);
+}
+
+:root[data-theme="dark"] .interface-state--auth {
+  background: var(--color-info-bg);
+  border-color: var(--color-info-border);
+}
+
+:root[data-theme="dark"] .interface-state--offline {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+}
+
+:root[data-theme="dark"] .interface-state__skeletons span {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-subtle) 25%,
+    var(--color-border) 50%,
+    var(--color-surface-subtle) 75%
+  );
+}
+
+:root[data-theme="dark"] .interface-state__button {
+  background: var(--color-interactive);
+  color: var(--color-on-interactive);
+}

@@ -11,6 +11,7 @@ import {
   IntegrationType,
   IntegrationStatus,
   CyberThreat,
+  CoreModelIntegrationPayload,
 } from "@phoenix/common";
 import {
   HazardEvent,
@@ -142,15 +143,31 @@ export const createCyberData = async (content: any) => {
   }
 };
 
-export const coreModelIntegration = async (payload: any) => {
-  const integrationLog = await IntegrationLog.create({
-    integration_type: IntegrationType.CORE,
-    input: JSON.stringify(payload),
-    status: IntegrationStatus.CREATED,
-  });
-
+export const coreModelIntegration = async (
+  payload: CoreModelIntegrationPayload | any,
+) => {
+  let integrationLog: IntegrationLog | null = null;
   try {
-    if (!payload) {
+    const isTrackedPayload =
+      payload &&
+      typeof payload.integration_event_id === "string" &&
+      payload.input_data &&
+      typeof payload.input_data === "object";
+    const integrationEventId = isTrackedPayload
+      ? payload.integration_event_id
+      : undefined;
+    const modelInput = isTrackedPayload ? payload.input_data : payload;
+
+    integrationLog = await IntegrationLog.create({
+      ...(integrationEventId
+        ? { integration_event_id: integrationEventId }
+        : {}),
+      integration_type: IntegrationType.CORE,
+      input: modelInput ? JSON.stringify(modelInput) : null,
+      status: IntegrationStatus.CREATED,
+    });
+
+    if (!modelInput || Object.keys(modelInput).length === 0) {
       logger.error("Core model integration failed: Payload empty");
 
       await integrationLog.update({
@@ -161,12 +178,14 @@ export const coreModelIntegration = async (payload: any) => {
       return;
     }
 
-    console.log("Received core model integration data:", payload);
+    logger.info(
+      `Processing core model integration ${integrationLog.integration_event_id}`,
+    );
 
     const trainingModel = await StoredFile.findOne({
       where: {
         original_name:
-          "final_core_xgb_xgboost_trey_xgb_core_v2_epoch_100.joblib",
+          "m7_xgb_legacy_baseline.joblib",
       },
     });
 
@@ -192,26 +211,15 @@ export const coreModelIntegration = async (payload: any) => {
       return;
     }
 
-    const modelInput = payload.input_data ?? payload;
-
-    if (!modelInput) {
-      logger.error("Model input data is empty");
-
-      await integrationLog.update({
-        status: IntegrationStatus.ERROR,
-        note: "Model input data is empty",
-      });
-
-      return;
-    }
-
     await integrationLog.update({
       status: IntegrationStatus.PROCESSING,
     });
 
     const result = await runInference(trainingModel.file_data, modelInput);
 
-    console.log("Core model inference result:", result);
+    logger.info(
+      `Core model inference completed for ${integrationLog.integration_event_id}`,
+    );
 
     await integrationLog.update({
       output: JSON.stringify(result),
@@ -224,10 +232,12 @@ export const coreModelIntegration = async (payload: any) => {
 
     logger.error(`Core model integration error: ${errorMessage}`);
 
-    await integrationLog.update({
-      status: IntegrationStatus.ERROR,
-      note: errorMessage,
-    });
+    if (integrationLog) {
+      await integrationLog.update({
+        status: IntegrationStatus.ERROR,
+        note: errorMessage,
+      });
+    }
 
     return;
   }

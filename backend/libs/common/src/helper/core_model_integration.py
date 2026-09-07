@@ -113,6 +113,19 @@ SOURCE_ALIASES = {
 }
 
 MODEL_CACHE: dict[str, Any] = {}
+M7_SCHEMA_VERSION = "phoenix.m7.model-package.v1"
+
+
+def _is_m7_bundle(model: Any) -> bool:
+    """Return True when the loaded object is an M7 packaged pipeline."""
+    return (
+        isinstance(model, dict)
+        and model.get("schema_version") == M7_SCHEMA_VERSION
+        and "pipeline" in model
+        and "feature_columns" in model
+        and "label_classes" in model
+        and "metadata" in model
+    )
 
 
 def _load_model(model_path: str = DEFAULT_MODEL_PATH) -> Any:
@@ -134,6 +147,61 @@ def _load_model(model_path: str = DEFAULT_MODEL_PATH) -> Any:
     if cache_key not in MODEL_CACHE:
         MODEL_CACHE[cache_key] = joblib.load(path)
     return MODEL_CACHE[cache_key]
+
+def _predict_m7_bundle(bundle: dict[str, Any], input_data: dict) -> dict:
+    """Run prediction using the packaged M7 preprocessing pipeline."""
+    if not isinstance(input_data, dict):
+        raise ValueError("Input must be a dictionary/JSON object")
+
+    features = list(bundle["feature_columns"])
+    missing = sorted(
+        name
+        for name in features
+        if name not in input_data
+    )
+
+    if missing:
+        raise ValueError(
+            f"Prediction input is missing required fields: {missing}"
+        )
+
+    row = pd.DataFrame([
+        {
+            name: ""
+            if input_data[name] is None
+            else str(input_data[name])
+            for name in features
+        }
+    ])
+
+    pipeline = bundle["pipeline"]
+    encoded = int(pipeline.predict(row)[0])
+    probabilities = np.asarray(
+        pipeline.predict_proba(row)[0],
+        dtype=float,
+    )
+    classes = [str(value) for value in bundle["label_classes"]]
+
+    if encoded < 0 or encoded >= len(classes):
+        raise ValueError("Model returned an unknown class index")
+
+    if len(probabilities) != len(classes):
+        raise ValueError("Model probability output does not match its labels")
+
+    return {
+        "predicted_label": classes[encoded],
+        "confidence_score": round(float(probabilities.max()), 6),
+        "class_probabilities": {
+            label: round(float(probability), 6)
+            for label, probability in zip(classes, probabilities)
+        },
+        "model_version": str(bundle["model_version"]),
+        "package_schema_version": str(bundle["schema_version"]),
+        "target": str(bundle["metadata"]["target_column"]),
+        "production_eligible": bool(
+            bundle["metadata"]["production_eligible"]
+        ),
+    }
 
 
 def _normalise_string(value: Any) -> str:
@@ -277,12 +345,15 @@ def predict(
     input_data: dict,
     model_path: str = DEFAULT_MODEL_PATH,
 ) -> dict:
-    """Run Prediction using the saved core XCBoost model."""
+    """Run prediction using an M7 bundle or a legacy XGBoost model."""
+    model = _load_model(model_path)
+
+    if _is_m7_bundle(model):
+        return _predict_m7_bundle(model, input_data)
+
     errors = validate_input(input_data)
     if errors:
         raise ValueError(f"Invalid input: {errors}")
-
-    model = _load_model(model_path)
     features_df = build_feature_row(input_data, model)
 
     predicted_class = int(model.predict(features_df)[0])

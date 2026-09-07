@@ -185,6 +185,60 @@ router.post(
   ingestCyberData,
 );
 
+/**
+ * @swagger
+ * /api/ingestion/core:
+ *   post:
+ *     summary: Submit hazard context for asynchronous M7 model analysis
+ *     description: Runs the packaged M7 hazard-severity baseline. This model is not production-eligible and is not the final phishing model.
+ *     tags:
+ *       - Data Ingestion
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - text
+ *               - hazard_type
+ *               - hazard_location
+ *               - hazard_status
+ *               - source
+ *             properties:
+ *               text:
+ *                 type: string
+ *                 maxLength: 5000
+ *                 example: Urgent flood relief payment
+ *               hazard_type:
+ *                 type: string
+ *                 example: flood
+ *               hazard_location:
+ *                 type: string
+ *                 example: Victoria
+ *               hazard_status:
+ *                 type: string
+ *                 example: active
+ *               source:
+ *                 type: string
+ *                 example: OpenPhish
+ *               url:
+ *                 type: string
+ *                 format: uri
+ *                 maxLength: 2048
+ *                 description: Optional reference URL
+ *     responses:
+ *       202:
+ *         description: Analysis accepted; poll status_url for the result
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Authentication required
+ *       500:
+ *         description: Request could not be queued
+ */
 router.post("/core", authenticate, coreModelIntegration);
 
 export default router;

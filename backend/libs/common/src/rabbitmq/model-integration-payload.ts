@@ -1,12 +1,17 @@
+export interface CoreModelInputData {
+  url?: string | null;
+  text?: string | null;
+  timestamp?: string;
+  hazard_type?: string;
+  hazard_timestamp?: string;
+  hazard_location?: string;
+  hazard_status?: string;
+  source?: string;
+}
+
+/** Internal RabbitMQ envelope for an accepted core-model request. */
 export interface CoreModelIntegrationPayload {
-  url: string;
-  text: string;
-  timestamp: string;
-  hazard_type: string;
-  hazard_severity: number;
-  hazard_timestamp: string;
-  hazard_location: string;
-  hazard_status: string;
-  alert_level: string;
-  source: string;
+  integration_event_id: string;
+  input_data: CoreModelInputData;
+  accepted_at: string;
 }

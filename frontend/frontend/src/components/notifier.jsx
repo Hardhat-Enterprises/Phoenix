@@ -4,8 +4,15 @@ import {
   NOTIFICATION_MUTATIONS_SUPPORTED,
   NOTIFICATION_SEND_SUPPORTED,
 } from "../services/phoenixApi";
-import { adaptNotifications } from "../services/notificationAdapter";
+import {
+  adaptNotifications,
+  formatRelativeTime,
+} from "../services/notificationAdapter";
 import "./notifier.css";
+
+// Relative labels are re-rendered on this interval so an open panel does not
+// keep claiming "Just now" long after the fact.
+const CLOCK_TICK_MS = 30_000;
 
 const needsSignIn = (error) =>
   error?.status === 401 ||
@@ -26,22 +33,43 @@ const describeError = (error) => {
   );
 };
 
+const readTimeLabel = (item, now) => {
+  if (item.createdAtDate) {
+    return formatRelativeTime(item.createdAtDate, now);
+  }
+
+  // An unparseable value is still worth showing verbatim; a missing one has to
+  // say so, because a blank cell reads as a rendering bug.
+  return item.createdAtRaw || "Time not provided";
+};
+
 export default function NotificationPanel({ onClose }) {
   const [notifications, setNotifications] = useState([]);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
   const [toastMessage, setToastMessage] = useState("");
+  // Distinguishes "the backend returned nothing" from "you emptied this list
+  // locally", which need different empty-state wording.
+  const [clearedLocally, setClearedLocally] = useState(false);
+  const [now, setNow] = useState(() => new Date());
 
   const panelRef = useRef(null);
   const modalCloseRef = useRef(null);
   const toastTimerRef = useRef(null);
+  // Guards against an earlier slow response overwriting a later one, and
+  // against a response arriving after the panel has closed.
+  const requestIdRef = useRef(0);
+  const mountedRef = useRef(true);
 
   const unreadCount = notifications.filter(
     (item) => item.hasReadState && !item.read,
   ).length;
 
-  const loadNotifications = useCallback(async (signal) => {
+  const loadNotifications = useCallback(async () => {
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+
     setStatus("loading");
     setError(null);
 
@@ -49,15 +77,17 @@ export default function NotificationPanel({ onClose }) {
       // GET /api/notifications takes no parameters in the current contract.
       const response = await getNotifications();
 
-      if (signal?.aborted) {
+      if (!mountedRef.current || requestId !== requestIdRef.current) {
         return;
       }
 
+      // adaptNotifications sorts newest first with a stable tie-break.
       const items = adaptNotifications(response.items);
       setNotifications(items);
+      setClearedLocally(false);
       setStatus(items.length === 0 ? "empty" : "ready");
     } catch (requestError) {
-      if (signal?.aborted) {
+      if (!mountedRef.current || requestId !== requestIdRef.current) {
         return;
       }
 
@@ -67,16 +97,31 @@ export default function NotificationPanel({ onClose }) {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
+    mountedRef.current = true;
 
     const fetchNotifications = async () => {
-      await loadNotifications(controller.signal);
+      await loadNotifications();
     };
 
     fetchNotifications();
 
-    return () => controller.abort();
+    return () => {
+      mountedRef.current = false;
+    };
   }, [loadNotifications]);
+
+  // Only tick while something on screen actually shows a relative time.
+  useEffect(() => {
+    const hasDatedItem = notifications.some((item) => item.createdAtDate);
+
+    if (!hasDatedItem) {
+      return undefined;
+    }
+
+    const timer = setInterval(() => setNow(new Date()), CLOCK_TICK_MS);
+
+    return () => clearInterval(timer);
+  }, [notifications]);
 
   // Escape closes the panel, or the modal first when one is open.
   useEffect(() => {
@@ -144,6 +189,7 @@ export default function NotificationPanel({ onClose }) {
     );
 
     setNotifications(remaining);
+    setClearedLocally(true);
     setStatus(remaining.length === 0 ? "empty" : "ready");
 
     showToast(
@@ -155,6 +201,7 @@ export default function NotificationPanel({ onClose }) {
 
   function handleClearAll() {
     setNotifications([]);
+    setClearedLocally(true);
     setStatus("empty");
     showToast(
       NOTIFICATION_MUTATIONS_SUPPORTED
@@ -164,6 +211,11 @@ export default function NotificationPanel({ onClose }) {
   }
 
   const isLoading = status === "loading";
+  const hasItems = notifications.length > 0;
+  // A failed refresh keeps the last good list on screen and reports the failure
+  // beside it, rather than replacing readable content with an error page.
+  const showBlockingError = status === "error" && !hasItems;
+  const showInlineError = status === "error" && hasItems;
 
   return (
     <div
@@ -184,10 +236,10 @@ export default function NotificationPanel({ onClose }) {
           <button
             type="button"
             className="notif-refresh"
-            onClick={() => loadNotifications()}
+            onClick={loadNotifications}
             disabled={isLoading}
           >
-            Refresh
+            {isLoading ? "Refreshing..." : "Refresh"}
           </button>
           {onClose && (
             <button
@@ -202,28 +254,51 @@ export default function NotificationPanel({ onClose }) {
         </div>
       </div>
 
-      {isLoading && (
+      {isLoading && !hasItems && (
         <p className="notif-loading" role="status">
           Loading notifications...
         </p>
       )}
 
-      {status === "error" && (
+      {showBlockingError && (
         <div className="notif-error" role="alert">
           <p className="notif-error-text">{describeError(error)}</p>
           <button
             type="button"
             className="notif-retry"
-            onClick={() => loadNotifications()}
+            onClick={loadNotifications}
+            disabled={isLoading}
           >
-            Retry
+            {isLoading ? "Retrying..." : "Retry"}
           </button>
         </div>
       )}
 
-      {status === "empty" && <p className="notif-empty">No notifications.</p>}
+      {showInlineError && (
+        <div className="notif-error notif-error-inline" role="alert">
+          <p className="notif-error-text">
+            {describeError(error)} Showing the last notifications loaded.
+          </p>
+          <button
+            type="button"
+            className="notif-retry"
+            onClick={loadNotifications}
+            disabled={isLoading}
+          >
+            {isLoading ? "Retrying..." : "Retry"}
+          </button>
+        </div>
+      )}
 
-      {status === "ready" && (
+      {status === "empty" && (
+        <p className="notif-empty">
+          {clearedLocally
+            ? "You cleared these on this device. Refresh to load them again."
+            : "No notifications."}
+        </p>
+      )}
+
+      {hasItems && (
         <ul className="notif-list">
           {notifications.map((item) => (
             <li
@@ -262,10 +337,12 @@ export default function NotificationPanel({ onClose }) {
                       dateTime={item.createdAtIso}
                       title={item.createdAtExact}
                     >
-                      {item.createdAtLabel}
+                      {readTimeLabel(item, now)}
                     </time>
                   ) : (
-                    item.createdAtLabel && <span>{item.createdAtLabel}</span>
+                    <span className="notif-time-unknown">
+                      {readTimeLabel(item, now)}
+                    </span>
                   )}
                 </span>
               </button>
@@ -286,9 +363,14 @@ export default function NotificationPanel({ onClose }) {
         </ul>
       )}
 
-      {status === "ready" && (
+      {hasItems && (
         <div className="notif-footer">
-          <button type="button" className="notif-clear" onClick={handleClearAll}>
+          <button
+            type="button"
+            className="notif-clear"
+            onClick={handleClearAll}
+            disabled={isLoading}
+          >
             {NOTIFICATION_MUTATIONS_SUPPORTED
               ? "Clear all"
               : "Clear all (this device only)"}
@@ -296,7 +378,8 @@ export default function NotificationPanel({ onClose }) {
           {!NOTIFICATION_MUTATIONS_SUPPORTED && (
             <p className="notif-local-note">
               Dismiss, clear and mark-as-read change this view only. The backend
-              does not accept notification updates yet, so nothing is saved.
+              does not accept notification updates yet, so nothing is saved and
+              a refresh restores the full list.
             </p>
           )}
         </div>
@@ -323,12 +406,12 @@ export default function NotificationPanel({ onClose }) {
                   <dd>{selected.severity}</dd>
                 </>
               )}
-              {selected.createdAtLabel && (
-                <>
-                  <dt>Received</dt>
-                  <dd>{selected.createdAtExact || selected.createdAtLabel}</dd>
-                </>
-              )}
+              <dt>Received</dt>
+              <dd>
+                {selected.createdAtExact ||
+                  selected.createdAtRaw ||
+                  "Not provided by the backend"}
+              </dd>
               {selected.recipient && (
                 <>
                   <dt>Recipient</dt>

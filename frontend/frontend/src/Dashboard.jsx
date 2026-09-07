@@ -752,7 +752,7 @@ const normalizeThreatRow = (threat, index, dateFormat) => {
     threat.threat_type || threat.category || "Threat Signal",
   );
   const detectedAt = threat.detected_at || threat.created_at;
-  const region = threat.region || threat.location || "National feed";
+const region = threat.region || threat.location || threat.source || "Unknown source";  
 
   return {
     //id: threat.threat_id || threat.id || threat.title || `threat-${index}`,

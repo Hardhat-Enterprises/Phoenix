@@ -190,7 +190,12 @@ export default function NotificationPanel({ onClose }) {
 
     setNotifications(remaining);
     setClearedLocally(true);
-    setStatus(remaining.length === 0 ? "empty" : "ready");
+    // Hiding one record locally says nothing about whether the last refresh
+    // succeeded, so a failed one keeps reporting itself. An emptied list is the
+    // exception: there the "you cleared these" note is the more useful message.
+    setStatus(
+      remaining.length === 0 ? "empty" : status === "error" ? "error" : "ready",
+    );
 
     showToast(
       NOTIFICATION_MUTATIONS_SUPPORTED

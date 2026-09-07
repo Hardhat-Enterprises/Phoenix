@@ -8,13 +8,19 @@ export default function EscalationPanel({
   const [analyst, setAnalyst] = useState("");
   const [showAssignInput, setShowAssignInput] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
+  // Explains a blank-name submit, which the panel otherwise rejects silently.
+  const [assignError, setAssignError] = useState("");
 
   const handleAssign = () => {
     if (!showAssignInput) {
       setShowAssignInput(true);
       return;
     }
-    if (analyst.trim() === "") return;
+    if (analyst.trim() === "") {
+      setAssignError("Enter the analyst's name before assigning.");
+      return;
+    }
+    setAssignError("");
     setStatus("assigned");
     setShowAssignInput(false);
   };
@@ -29,6 +35,7 @@ export default function EscalationPanel({
     setAnalyst("");
     setShowAssignInput(false);
     setConfirmAction(null);
+    setAssignError("");
   };
 
   const statusConfig = {

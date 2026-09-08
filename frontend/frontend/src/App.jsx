@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   Routes,
   Route,
@@ -12,28 +19,45 @@ import "./components/design.css";
 import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer";
-import AboutUs from "./AboutUs";
-import Dashboard from "./Dashboard";
 import ForgotPassword from "./ForgotPassword";
-import SettingsPage from "./SettingsPage";
-import Alerts from "./Alerts";
-import ReportsPage from "./ReportsPage";
-import ThreatDetails from "./ThreatDetails";
-import RiskAssessmentPage from "./RiskAssessmentPage";
-import HelpSupportPage from "./HelpSupportPage";
 import { getAuthSession, logoutUser } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
-import CreateUser from "./CreateUser";
-import ComponentShowcase from "./components/ComponentShowcase";
 import GlobalSearch from "./components/GlobalSearch";
 import { usePreferences } from "./PreferencesContext";
-import IntegrationHealthPanel from "./components/IntegrationHealthPanel";
+import { LoadingState } from "./components/States";
 import {
   HOME_PATH,
   pathForKey,
   routeForPath,
   APP_NAME,
 } from "./config/routes";
+
+// Keep public entry screens in the initial bundle. Feature pages are fetched
+// only when their routes are visited, which reduces login and startup cost.
+const AboutUs = lazy(() => import("./AboutUs"));
+const Dashboard = lazy(() => import("./Dashboard"));
+const SettingsPage = lazy(() => import("./SettingsPage"));
+const Alerts = lazy(() => import("./Alerts"));
+const ReportsPage = lazy(() => import("./ReportsPage"));
+const ThreatDetails = lazy(() => import("./ThreatDetails"));
+const RiskAssessmentPage = lazy(() => import("./RiskAssessmentPage"));
+const HelpSupportPage = lazy(() => import("./HelpSupportPage"));
+const CreateUser = lazy(() => import("./CreateUser"));
+const ComponentShowcase = lazy(
+  () => import("./components/ComponentShowcase"),
+);
+const IntegrationHealthPanel = lazy(
+  () => import("./components/IntegrationHealthPanel"),
+);
+
+function RouteLoadingState() {
+  return (
+    <LoadingState
+      title="Loading page"
+      description="Preparing this section of Phoenix."
+    />
+  );
+}
 
 // Pages that show the header search and notification bell.
 const MAIN_PATHS = [
@@ -256,7 +280,9 @@ function App() {
       )}
 
       <main id="main-content" className="app-content" tabIndex={-1}>
-        {content}
+        <Suspense fallback={<RouteLoadingState />}>
+          {content}
+        </Suspense>
       </main>
     </div>
   );
@@ -484,7 +510,8 @@ function App() {
       )}
 
       <div className="page-content">
-        <Routes>
+        <Suspense fallback={<RouteLoadingState />}>
+          <Routes>
           <Route
             path="/"
             element={<Navigate to={HOME_PATH} replace />}
@@ -624,7 +651,8 @@ function App() {
               </div>
             }
           />
-        </Routes>
+          </Routes>
+        </Suspense>
       </div>
 
       <Footer />

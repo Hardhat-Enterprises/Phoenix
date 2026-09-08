@@ -23,6 +23,10 @@ import { GetHealthDto } from "../dto/ingestion.dto";
 import { GetHealthEntity } from "../entity/ingestion.entity";
 import { DataIngestionStreamingLog } from "@phoenix/common";
 
+const CORE_MODEL_FILENAME =
+  process.env.CORE_MODEL_FILENAME?.trim() ||
+  "m7_xgb_legacy_baseline.joblib";
+
 export const getHealth = (_getHealthDto: GetHealthDto): GetHealthEntity => {
   return {
     status: HttpStatusCode.HTTP_STATUS_OK,
@@ -184,8 +188,7 @@ export const coreModelIntegration = async (
 
     const trainingModel = await StoredFile.findOne({
       where: {
-        original_name:
-          "m7_xgb_legacy_baseline.joblib",
+        original_name: CORE_MODEL_FILENAME,
       },
     });
 

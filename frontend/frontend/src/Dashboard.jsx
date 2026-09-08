@@ -818,6 +818,8 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [threatError, setThreatError] = useState("");
+  const [chartError, setChartError] = useState("");
+  const [mapError, setMapError] = useState("");
 
   //Anomaly detection state
   const [selectedRegionId, setSelectedRegionId] =
@@ -882,6 +884,9 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
     const loadDashboardData = async () => {
       setIsLoading(true);
       setLoadError("");
+      setThreatError("");
+      setChartError("");
+      setMapError("");
 
       const healthResult = await Promise.resolve(getApiHealth()).then(
         (value) => ({ status: "fulfilled", value }),
@@ -927,6 +932,36 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
         risksResult,
         integrationsResult,
       ] = results;
+
+      if (chartsResult.status === "rejected") {
+  setChartError("Unable to load threat chart data.");
+} else {
+  setChartError("");
+}
+
+if (
+  hazardsResult.status === "rejected" &&
+  locationsResult.status === "rejected"
+) {
+  setMapError("Unable to load risk map data.");
+} else if (hazardsResult.status === "rejected") {
+  setMapError("Hazard data could not be loaded.");
+} else if (locationsResult.status === "rejected") {
+  setMapError(
+    "Location data could not be loaded. Some hazards may not appear on the map.",
+  );
+} else {
+  setMapError("");
+}
+
+if (
+  activityResult.status === "rejected" &&
+  threatsResult.status === "rejected"
+) {
+  setThreatError("Unable to load recent threat signals.");
+} else {
+  setThreatError("");
+}
       const allDataRequestsFailed = [
         overviewResult,
         chartsResult,
@@ -940,18 +975,22 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
         (result) => result.status === "rejected"
       );
 
-      if (allDataRequestsFailed) {
-        applyDashboardSnapshot(readDashboardSnapshot());
+if (allDataRequestsFailed) {
+  applyDashboardSnapshot(readDashboardSnapshot());
 
-        if (healthResult.status === "rejected") {
-          setLoadError(
-            "Could not reach the Phoenix API gateway. Check that Docker is running and the gateway is available on localhost:3001."
-          );
-        }
+  if (healthResult.status === "rejected") {
+    setLoadError(
+      "Could not reach the Phoenix API gateway. Cached dashboard data is shown where available.",
+    );
+  } else {
+    setLoadError(
+      "Dashboard services could not return data. Cached data is shown where available.",
+    );
+  }
 
-        setIsLoading(false);
-        return;
-      }
+  setIsLoading(false);
+  return;
+}
 
       const overview =
         overviewResult.status === "fulfilled" ? overviewResult.value : {};
@@ -1304,6 +1343,32 @@ if (
             </div>
           )}
 
+          <section className="threat-chart-section">
+  <div className="threat-chart-header">
+    <div>
+      <h2>Threat Chart</h2>
+
+      <p>
+        Loaded from the Phoenix dashboard charts endpoint.
+      </p>
+    </div>
+
+    <span className="backend-ready-badge">
+      {isLoading ? "Loading" : apiStatus}
+    </span>
+  </div>
+
+  {chartError && (
+    <div className="backend-status-message" role="alert">
+      {chartError}
+    </div>
+  )}
+
+  <div className="threat-chart-body">
+    {/* existing chart */}
+  </div>
+</section>
+
           <section
             className="overview-grid"
             aria-label="Dashboard overview"
@@ -1496,6 +1561,12 @@ if (
                 component can use these hazard records when it is ready.
               </p>
             </div>
+
+            {mapError && (
+  <div className="backend-status-message" role="alert">
+    {mapError}
+  </div>
+)}
 
             <div className="risk-map-layout">
               <div className="risk-map-canvas">

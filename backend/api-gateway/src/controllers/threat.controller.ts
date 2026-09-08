@@ -2,6 +2,17 @@ import { Request, Response } from "express";
 import { userGrpcClient } from "../grpc/user.grpc";
 import { HttpStatusCode, logger } from "@phoenix/common";
 
+const parseDetails = (value: unknown): unknown => {
+  if (typeof value !== "string") return value ?? {};
+  if (!value) return {};
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
 export const getThreats = (req: Request, res: Response) => {
   const { threat_type, severity, page, limit } = req.query;
 
@@ -20,10 +31,10 @@ export const getThreats = (req: Request, res: Response) => {
         .json({ message: "Error fetching threats" });
     }
 
-    const responseThreats = response.threats.map((threat) => {
+    const responseThreats = (response.threats || []).map((threat) => {
       return {
         ...threat,
-        detatils: JSON.parse(threat.details),
+        details: parseDetails(threat.details),
       };
     });
     logger.info(`GetThreats response from gRPC: ${JSON.stringify(response)}`);
@@ -54,9 +65,7 @@ export const getThreat = (req: Request, res: Response) => {
       message: response.message,
       threat: {
         ...response.threat,
-        details: JSON.parse(
-          response?.threat?.details ? response?.threat?.details : "",
-        ),
+        details: parseDetails(response?.threat?.details),
       },
     });
   });

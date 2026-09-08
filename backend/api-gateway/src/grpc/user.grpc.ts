@@ -86,6 +86,8 @@ export interface GetUserDashboardResponse {
   active_threats: number;
   total_ingestions: number;
   last_updated: string;
+  total_risk_assessments: number;
+  critical_risk_assessments: number;
 }
 
 export interface GetUserDashboardChartsRequest {}
@@ -96,6 +98,7 @@ export interface GetUserDashboardChartsResponse {
   hazards_by_severity: string;
   threats_by_risk_level: string;
   last_updated: string;
+  risk_assessments_by_level: string;
 }
 
 export interface GetUserDashboardActivityRequest {}
@@ -106,6 +109,7 @@ export interface GetUserDashboardActivityResponse {
   recent_hazards: string;
   recent_threats: string;
   last_updated: string;
+  recent_risk_assessments: string;
 }
 
 // ─── Threats ───────────────────────────────────────────────────────────────
@@ -317,6 +321,48 @@ export interface GetIntegrationResponse {
   integration?: IntegrationItem;
 }
 
+export interface RiskAssessmentItem {
+  risk_assessment_id: string;
+  source_integration_id: string;
+  integration_type: IntegrationType;
+  risk_score: number;
+  confidence_score: number;
+  predicted_class: number;
+  risk_level: string;
+  input: string;
+  teavs_alert: string;
+  status: IntegrationStatus;
+  note: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface GetRiskAssessmentsRequest {
+  risk_level?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface GetRiskAssessmentsResponse {
+  status: number;
+  message: string;
+  risk_assessments: RiskAssessmentItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface GetRiskAssessmentRequest {
+  risk_assessment_id: string;
+}
+
+export interface GetRiskAssessmentResponse {
+  status: number;
+  message: string;
+  risk_assessment?: RiskAssessmentItem;
+}
+
 export interface GetTrainingModelsRequest {}
 
 export interface GetTrainingModelsResponse {
@@ -495,6 +541,22 @@ export interface UserServiceClient {
     callback: (
       error: grpc.ServiceError | null,
       response: GetIntegrationResponse,
+    ) => void,
+  ): void;
+
+  GetRiskAssessments(
+    request: GetRiskAssessmentsRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetRiskAssessmentsResponse,
+    ) => void,
+  ): void;
+
+  GetRiskAssessment(
+    request: GetRiskAssessmentRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetRiskAssessmentResponse,
     ) => void,
   ): void;
 

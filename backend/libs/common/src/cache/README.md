@@ -85,6 +85,9 @@ group agreement on cache candidates before implementation proceeds).
 - `CacheService` (get/set/delete/deleteMany/exists), cache-aside, fail-soft
 - Jest test infrastructure (shared `jest.config.js`, path-alias resolution)
 - 12 unit tests: cache hit, miss, malformed-JSON eviction, Redis-down handling
+- `getEventStatuses` integrated with cache-aside pattern using
+  `createCacheKey()`, with full test coverage (cache hit, cache miss,
+  fail-soft fallback)
 
 ## What's still open
 
@@ -92,3 +95,28 @@ group agreement on cache candidates before implementation proceeds).
 - Integration of caching into the first approved read operation
 - Tests for Redis connection/disconnection, cache client startup, and the
   first cached endpoint (blocked on the above)
+  ## Cache key, TTL, and invalidation design — getEventStatuses
+
+**Key format:** `phoenix:{environment}:{service}:{resource}:{identifier}`,
+built via the shared `createCacheKey()` utility
+(`libs/common/src/cache/cache-key.ts`). Environment is read from
+`process.env.NODE_ENV` internally rather than passed by the caller,
+to avoid every call site needing to know/pass it correctly.
+
+**getEventStatuses key:** `createCacheKey("user-service", "event-statuses", "all")`
+→ e.g. `phoenix:development:user-service:event-statuses:all`
+
+**TTL:** 3600s (1 hour). Event statuses are near-static reference data;
+this bounds staleness without needing active invalidation.
+
+**Invalidation:** None implemented. No create/update endpoint exists
+for event statuses anywhere in the codebase, so TTL-only expiry is
+sufficient. If a write endpoint is added later, it must call
+`cacheService.delete(...)` using the same key on write.
+
+**Known gap (out of scope for this PR):** `getUsers`/`registerUser`
+in `user.service.ts` still use a separate, older caching mechanism
+(`getCache`/`setCache`/`deleteCache` from `@phoenix/common/redis/cache`)
+that predates this CacheService. Flagged to the team — needs migrating
+to the shared `cacheService`/`createCacheKey()` pattern to avoid two
+caching systems coexisting.

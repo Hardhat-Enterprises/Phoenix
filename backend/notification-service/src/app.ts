@@ -3,9 +3,18 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import dotenv from "dotenv";
 import { notificationHandler } from "./grpc/notification.handler";
-import { config } from "@phoenix/common";
+import {
+  config,
+  setDefaultComponent,
+  setLogTransport,
+  WinstonTransport,
+} from "@phoenix/common";
 
 dotenv.config();
+
+// CY017: name this service in every security log record it emits.
+setDefaultComponent("notification-service");
+setLogTransport(new WinstonTransport());
 
 const PROTO_PATH = path.resolve(`${process.env.NOTIFICATION_PROTO_PATH}`);
 

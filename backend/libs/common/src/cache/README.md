@@ -120,3 +120,38 @@ in `user.service.ts` still use a separate, older caching mechanism
 that predates this CacheService. Flagged to the team — needs migrating
 to the shared `cacheService`/`createCacheKey()` pattern to avoid two
 caching systems coexisting.
+
+## TTL matrix
+
+| Data category | Example resources | Recommended TTL | Reasoning |
+|---|---|---|---|
+| Static reference data | event-statuses, linked-event-types, seasons, reference-days, reference-times | 3600s (1 hour) | Rarely changes; no write endpoints currently exist for these tables |
+| Semi-static data | locations, user roles/permissions | 300–900s (5–15 min) | Changes occasionally (admin edits); short TTL bounds staleness without needing invalidation wiring for every edit path |
+| Frequently-changing data | dashboard stats, hazard/threat counts, activity feeds | 30–60s or no caching | Values change often; long TTLs risk showing stale operational data. Caching mainly helps under high read load, not correctness |
+| User-specific / session data | user profile, auth tokens | Not cached via this layer | Session/auth already has its own token-based mechanism; caching here would risk serving stale permissions after a role change |
+
+**Current implementation status:** only `event-statuses` (static reference data) is actually integrated so far. The other rows are the group's agreed target categorization for future endpoints, not yet implemented.
+
+## Invalidation matrix
+
+| Operation | Cache impact | Invalidation approach |
+|---|---|---|
+| Create | New record added to a cached collection | Delete the collection-level cache key (e.g. `event-statuses:all`) so the next read repopulates it with the new record included |
+| Update | Existing record's data changes | Delete both the collection-level key and any resource-specific key (e.g. `users:{id}`) tied to that record |
+| Delete | Record removed | Same as update — delete collection-level and resource-specific keys for the removed record |
+| Related-key invalidation | A change in one resource affects a derived/aggregate cache (e.g. dashboard counts) | Delete the derived cache key(s) alongside the source resource's key, since aggregates can silently go stale otherwise |
+
+**Current status:** no write endpoints exist yet for any of the currently-cached resources (event statuses), so no invalidation calls have been needed in practice. The matrix above is the group's agreed policy for when write endpoints for cached resources are added later.
+
+## Serialization
+
+`CacheService` handles JSON serialization/deserialization internally (`JSON.stringify` on set, `JSON.parse` on get) — callers pass and receive plain JS objects/arrays, never raw strings. No separate serialization helpers are needed at the call-site level.
+
+**Malformed cache value handling:** if a cached value fails to parse (corrupted data, manual Redis tampering, a schema change that breaks an old cached shape), `CacheService.get()` fails soft — it logs the error and returns `null`, which the calling code already treats identically to a cache miss. This means a corrupted cache entry self-heals on the next read: the miss triggers a fresh DB fetch and overwrites the bad entry.
+
+## Stale-data risk analysis
+
+- **Static reference data** (event statuses, seasons, etc.): low risk. These tables have no write endpoints currently, so the only staleness source is a TTL expiry window (max 1 hour) — acceptable for data that changes rarely if ever.
+- **Semi-static data** (locations, roles): moderate risk if a short TTL isn't respected consistently. An admin edit won't be reflected until the TTL expires, since no invalidation is wired up yet for these resources' write paths — worth revisiting once those endpoints are cached.
+- **Aggregate/dashboard data**: highest risk if cached at all, since these are meant to reflect near-real-time counts. Recommend either not caching these or using very short TTLs (30–60s) rather than relying on invalidation, since so many underlying tables can affect one aggregate.
+- **General mitigation:** the invalidation helpers (`invalidateCache`, `invalidateRelatedCache`) exist and are tested, ready to be called from write endpoints once those are built for currently-cached resources.

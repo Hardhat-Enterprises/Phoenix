@@ -400,6 +400,41 @@
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
   z-index: 300;
 }
+/* A refresh that fails while notifications are already on screen reports the
+   failure above the list instead of replacing it. */
+.notif-error-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  text-align: left;
+  background: #fef2f2;
+  border-bottom: 1px solid #fecaca;
+}
+
+.notif-error-inline .notif-error-text {
+  margin: 0;
+  flex: 1;
+  font-size: 12px;
+}
+
+.notif-error-inline .notif-retry {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.notif-retry:disabled,
+.notif-clear:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Records the backend sent without a usable timestamp. */
+.notif-time-unknown {
+  color: #94a3b8;
+  font-style: italic;
+}
 
 :root[data-theme="dark"] .notif-header,
 :root[data-theme="dark"] .notif-item,
@@ -437,4 +472,25 @@
 :root[data-theme="dark"] .notif-btn-primary {
   background: var(--color-interactive);
   color: var(--color-on-interactive);
+}
+
+/* Dark-theme cover for the states this panel adds: a failed refresh reported
+   beside the list, records without a usable timestamp, and the note admitting
+   that dismiss and clear are local. */
+:root[data-theme="dark"] .notif-error-inline {
+  background: var(--color-error-bg);
+  border-color: var(--color-error-border);
+}
+
+:root[data-theme="dark"] .notif-error-inline .notif-error-text,
+:root[data-theme="dark"] .notif-error .notif-error-text {
+  color: var(--color-error-text);
+}
+
+:root[data-theme="dark"] .notif-time-unknown {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .notif-local-note {
+  color: var(--color-warning-text);
 }

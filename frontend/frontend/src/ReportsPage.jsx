@@ -1,4 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { CORE_INTEGRATION_RESULTS_ID, integrationPath } from "./config/routes";
+import { getApiErrorState } from "./utils/apiErrorUtils";
+import { safeTrim } from "./utils/textUtils";
+import {
+  AuthenticationState,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "./components/States";
 import EvidenceEntry from "./components/EvidenceEntry";
 import "./ReportsPage.css";
 import "./components/design.css";
@@ -250,6 +260,9 @@ const getRiskClass = (riskLevel, status) => {
 };
 
 function ReportsPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const coreResultsHeadingRef = useRef(null);
   const { preferences } = usePreferences();
   const dateFormat = preferences.dateFormat;
   const [form, setForm] = useState(() => ({
@@ -257,7 +270,8 @@ function ReportsPage() {
     timestamp: getCurrentDateTimeLocal(),
   }));
   const [integrations, setIntegrations] = useState([]);
-  const [isLoadingIntegrations, setIsLoadingIntegrations] = useState(false);
+  const [isLoadingIntegrations, setIsLoadingIntegrations] = useState(true);
+  const [integrationsError, setIntegrationsError] = useState(null);
   const [isRunningModel, setIsRunningModel] = useState(false);
   const [ingestionStatus, setIngestionStatus] = useState("Checking");
   const [modelMessage, setModelMessage] = useState("");
@@ -288,19 +302,41 @@ function ReportsPage() {
 
   const loadIntegrations = async () => {
     setIsLoadingIntegrations(true);
+    setIntegrationsError(null);
 
     try {
       const response = await getIntegrations({ page: 1, limit: 25 });
       const items = sortNewestFirst(response.items || []);
+      const hasMalformedCoreResult = items.some((item) =>
+        item.integration_type === "core" && [
+          item.status, item.note, item.created_at, item.updated_at,
+          item.input?.url, item.input?.text,
+          item.output?.risk_level, item.output?.risk_score,
+          item.output?.confidence_score, item.output?.predicted_class,
+          item.output?.processed_at,
+        ].some((value) => value !== null && typeof value === "object"),
+      );
+      if (hasMalformedCoreResult) {
+        setIntegrations([]);
+        setIntegrationsError("empty");
+        return [];
+      }
       setIntegrations(items);
       return items;
-    } catch {
+    } catch (error) {
       setIntegrations([]);
+      setIntegrationsError(getApiErrorState(error));
       return [];
     } finally {
       setIsLoadingIntegrations(false);
     }
   };
+
+  useEffect(() => {
+    if (location.hash !== `#${CORE_INTEGRATION_RESULTS_ID}`) return;
+    coreResultsHeadingRef.current?.focus();
+    coreResultsHeadingRef.current?.scrollIntoView({ block: "start" });
+  }, [location.hash, location.key]);
 
   useEffect(() => {
     let isActive = true;
@@ -621,7 +657,13 @@ function ReportsPage() {
       <section className="core-results-card">
         <div className="generated-reports-header">
           <div>
-            <h2>Last Core Model Test</h2>
+            <h2
+              id={CORE_INTEGRATION_RESULTS_ID}
+              ref={coreResultsHeadingRef}
+              tabIndex={-1}
+            >
+              Last Core Model Test
+            </h2>
             <p>Newest backend core model integration record.</p>
           </div>
         </div>
@@ -636,7 +678,36 @@ function ReportsPage() {
             <span>Processed</span>
           </div>
 
-          {displayedIntegrations.length > 0 ? (
+          {isLoadingIntegrations ? (
+            <LoadingState
+              title="Loading core model results…"
+              description="Fetching the latest integration results from the Phoenix API."
+            />
+          ) : integrationsError === "auth" ? (
+            <AuthenticationState
+              title="Sign in required"
+              description="Please sign in before loading integration results."
+              onAction={() => navigate("/login")}
+            />
+          ) : integrationsError === "forbidden" ? (
+            <ErrorState
+              title="Access denied"
+              description="Your account cannot access these integration results."
+            />
+          ) : integrationsError === "notfound" || integrationsError === "empty" ? (
+            <EmptyState
+              title="Core model results unavailable"
+              description="The Phoenix API did not return usable integration results."
+              actionLabel="Retry"
+              onAction={handleRefreshResults}
+            />
+          ) : integrationsError ? (
+            <ErrorState
+              title="Could not load core model results"
+              description="Integration results could not be loaded. Please try again."
+              onRetry={handleRefreshResults}
+            />
+          ) : displayedIntegrations.length > 0 ? (
             displayedIntegrations.map((integration) => (
               <div
                 className="core-results-row"
@@ -645,6 +716,13 @@ function ReportsPage() {
                 <div className="core-input-cell">
                   <strong>{integration.input?.url || "Text only"}</strong>
                   <small>{integration.input?.text || "No text supplied"}</small>
+                  {safeTrim(integration.integration_event_id) ? (
+                    <Link to={integrationPath(integration.integration_event_id)}>
+                      View integration details
+                    </Link>
+                  ) : (
+                    <small>Details unavailable: no integration record ID.</small>
+                  )}
                 </div>
                 <span
                   className={`risk-badge ${getRiskClass(
@@ -664,11 +742,10 @@ function ReportsPage() {
               </div>
             ))
           ) : (
-            <div className="core-results-empty">
-              {isLoadingIntegrations
-                ? "Loading core model results..."
-                : "No core model test returned yet."}
-            </div>
+            <EmptyState
+              title="No core model results"
+              description="No core model test returned yet."
+            />
           )}
         </div>
       </section>

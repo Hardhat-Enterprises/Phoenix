@@ -49,6 +49,7 @@ const IntegrationHealthPanel = lazy(
   () => import("./components/IntegrationHealthPanel"),
 );
 const ThreatDetails = lazy(() => import("./ThreatDetails"));
+const IntegrationDetails = lazy(() => import("./IntegrationDetails"));
 const HazardDetails = lazy(() => import("./HazardDetails"));
 
 function RouteLoadingState() {
@@ -97,7 +98,8 @@ function App() {
   const isAdmin = authSession?.user?.role?.toLowerCase() === "admin";
   const showChrome =
     MAIN_PATHS.includes(location.pathname) ||
-    location.pathname.startsWith("/threats/");
+    location.pathname.startsWith("/threats/") ||
+    location.pathname.startsWith("/integrations/");
 
   const updateUnsavedSettings = useCallback((hasUnsavedChanges) => {
     const nextValue = Boolean(hasUnsavedChanges);
@@ -586,6 +588,11 @@ function App() {
           <Route
             path="/reports"
             element={withShell(<ReportsPage />)}
+          />
+
+          <Route
+            path="/integrations/:integrationId"
+            element={withShell(<IntegrationDetails />)}
           />
 
           <Route

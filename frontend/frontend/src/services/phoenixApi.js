@@ -76,6 +76,33 @@ const normalizeIntegration = (integration) => ({
   output: parseJsonField(integration.output),
 });
 
+const invalidDetailResponse = () => {
+  const error = new Error("The requested record is unavailable or malformed.");
+  error.code = "INVALID_DETAIL_RESPONSE";
+  return error;
+};
+
+const validateDetailId = (id) => {
+  if (typeof id !== "string" || !id.trim()) {
+    throw invalidDetailResponse();
+  }
+};
+
+const readDetailRecord = (record, id, idKey) => {
+  if (record === undefined || record === null) return null;
+
+  if (
+    typeof record !== "object" ||
+    Array.isArray(record) ||
+    typeof record[idKey] !== "string" ||
+    record[idKey].toLowerCase() !== id.toLowerCase()
+  ) {
+    throw invalidDetailResponse();
+  }
+
+  return record;
+};
+
 export const getDashboardOverview = async () => {
   const payload = await apiRequest("/api/users/dashboard/overview", {
     requiresAuth: true,
@@ -145,6 +172,8 @@ export const getThreats = async (params = {}) => {
 };
 
 export const getThreat = async (threatId, { signal } = {}) => {
+  validateDetailId(threatId);
+
   const payload = await apiRequest(
     `/api/users/threats/${encodeURIComponent(threatId)}`,
     {
@@ -153,8 +182,10 @@ export const getThreat = async (threatId, { signal } = {}) => {
     },
   );
 
-  return payload?.threat || null;
+  return readDetailRecord(payload?.threat, threatId, "threat_id");
 };
+
+export const getThreatById = getThreat;
 
 export const getHazards = async (params = {}) => {
   const payload = await apiRequest(`/api/users/hazards${toQueryString(params)}`, {
@@ -235,6 +266,26 @@ export const getIntegrations = async (params = {}) => {
     ...meta,
     items: meta.items.map(normalizeIntegration),
   };
+};
+
+export const getIntegrationById = async (integrationId, { signal } = {}) => {
+  validateDetailId(integrationId);
+
+  const payload = await apiRequest(
+    `/api/users/integration/${encodeURIComponent(integrationId)}`,
+    {
+      requiresAuth: true,
+      signal,
+    },
+  );
+
+  const integration = readDetailRecord(
+    payload?.integration,
+    integrationId,
+    "integration_event_id",
+  );
+
+  return integration ? normalizeIntegration(integration) : null;
 };
 
 

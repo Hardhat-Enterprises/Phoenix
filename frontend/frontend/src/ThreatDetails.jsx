@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getThreat } from "./services/phoenixApi";
+import { getThreatById } from "./services/phoenixApi";
+import { getApiErrorState } from "./utils/apiErrorUtils";
+import { safeTrim } from "./utils/textUtils";
+import {
+  AuthenticationState,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "./components/States";
 import { HOME_PATH } from "./config/routes";
 import "./ThreatDetails.css";
 import "./components/design.css";
@@ -17,12 +25,14 @@ const hasValue = (value) =>
   value !== undefined && value !== null && String(value).trim() !== "";
 
 const formatLabel = (value) =>
-  String(value || "")
+  safeTrim(value)
     .replace(/[_-]/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const formatConfidence = (value) => {
-  const number = Number(value);
+  const number = typeof value === "number" || typeof value === "string"
+    ? Number(value)
+    : NaN;
 
   if (!Number.isFinite(number)) {
     return "";
@@ -30,10 +40,6 @@ const formatConfidence = (value) => {
 
   return number <= 1 ? `${Math.round(number * 100)}%` : `${number}%`;
 };
-
-const needsSignIn = (error) =>
-  error?.status === 401 ||
-  String(error?.message || "").toLowerCase().includes("sign in");
 
 const readBackendThreat = (selectedThreat) =>
   selectedThreat?.raw?.raw ||
@@ -60,7 +66,7 @@ function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
 
     const controller = new AbortController();
 
-    getThreat(threatId, { signal: controller.signal })
+    getThreatById(threatId, { signal: controller.signal })
       .then((threat) => {
         if (controller.signal.aborted) return;
 
@@ -73,17 +79,9 @@ function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
       .catch((error) => {
         if (controller.signal.aborted) return;
 
-        let nextStatus = "error";
-
-        if (needsSignIn(error)) {
-          nextStatus = "auth";
-        } else if (error?.status === 404) {
-          nextStatus = "notfound";
-        }
-
         setRequestState({
           threatId,
-          status: nextStatus,
+          status: getApiErrorState(error),
           threat: null,
         });
       });
@@ -105,21 +103,21 @@ function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
 
   const backendThreat = readBackendThreat(selectedThreat);
   const threatName =
-    selectedThreat?.name ||
+    safeTrim(selectedThreat?.name) ||
     formatLabel(backendThreat.threat_type) ||
     "Selected Threat";
   const threatSeverity =
-    selectedThreat?.vulnerability ||
+    safeTrim(selectedThreat?.vulnerability) ||
     formatLabel(backendThreat.severity) ||
     "Not provided";
-  const threatStatus = selectedThreat?.status || "Not provided";
+  const threatStatus = safeTrim(selectedThreat?.status) || "Not provided";
   const threatSource =
-    backendThreat.source || selectedThreat?.source || "Not provided";
+    safeTrim(backendThreat.source) || safeTrim(selectedThreat?.source) || "Not provided";
   const eventType = hasValue(backendThreat.event_type)
-    ? formatLabel(backendThreat.event_type)
+    ? formatLabel(backendThreat.event_type) || "Not provided"
     : "Not provided";
   const confidence = hasValue(backendThreat.confidence_score)
-    ? formatConfidence(backendThreat.confidence_score)
+    ? formatConfidence(backendThreat.confidence_score) || "Not provided"
     : "Not provided";
   const backendDetails = threatId ? backendThreat.details : null;
   let threatDescription = "Not provided";
@@ -163,56 +161,59 @@ function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
   const renderBody = () => {
     if (status === "loading") {
       return (
-        <div className="no-threat-selected-box" aria-live="polite">
-          <h2>Loading threat…</h2> <br />
-          <p>Fetching this threat record from the Phoenix API.</p>
-        </div>
+        <LoadingState
+          title="Loading threat…"
+          description="Fetching this threat record from the Phoenix API."
+        />
       );
     }
 
     if (status === "auth") {
       return (
-        <div className="no-threat-selected-box" role="alert">
-          <h2>Sign in required</h2> <br />
-          <p>Please sign in before loading threat details.</p>
-        </div>
+        <AuthenticationState
+          title="Sign in required"
+          description="Please sign in before loading threat details."
+          onAction={() => navigate("/login")}
+        />
       );
     }
 
     if (status === "notfound") {
       return (
-        <div className="no-threat-selected-box" role="alert">
-          <h2>Threat not found</h2> <br />
-          <p>
-            No threat matches the id <strong>{threatId}</strong>. It may have
-            been removed, or the link may be incorrect.
-          </p>
-        </div>
+        <EmptyState
+          title="Threat not found"
+          description="This threat may have been removed, or the link may be incorrect."
+        />
       );
     }
 
     if (status === "empty") {
       return (
-        <div className="no-threat-selected-box" role="alert">
-          <h2>Threat data unavailable</h2> <br />
-          <p>The Phoenix API returned no threat record for this request.</p>
-        </div>
+        <EmptyState
+          title="Threat data unavailable"
+          description="The Phoenix API did not return a usable matching threat record."
+          actionLabel="Retry"
+          onAction={retryThreat}
+        />
+      );
+    }
+
+    if (status === "forbidden") {
+      return (
+        <ErrorState
+          title="Access denied"
+          description="Your account cannot access this threat."
+        />
       );
     }
 
     if (status === "error") {
       return (
-        <div className="no-threat-selected-box" role="alert">
-          <h2>Could not load this threat</h2> <br />
-          <p>Threat details could not be loaded. Please try again.</p>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={retryThreat}
-          >
-            Retry
-          </button>
-        </div>
+        <ErrorState
+          title="Could not load this threat"
+          description="Threat details could not be loaded. Please try again."
+          onRetry={retryThreat}
+        />
       );
     }
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { threatPath } from "./config/routes";
+import { Link, useNavigate } from "react-router-dom";
+import { integrationPath, threatPath } from "./config/routes";
+import { safeTrim } from "./utils/textUtils";
 import {
 
   getApiHealth,
@@ -675,6 +676,7 @@ const normalizeAnomalyResult = (result, fallbackRegion) => {
 
   return {
     integrationId: data.integration_id || data.integration_event_id,
+    integrationEventId: safeTrim(data.integration_event_id),
     status: data.status || "completed",
     message: data.message || "",
     regionId: input.region_id || data.region_id || fallbackRegion?.id,
@@ -741,6 +743,7 @@ const normalizeThreatRow = (threat, index, dateFormat) => {
   threat.event_id ??
   threat.uuid ??
   `threat-${index}`,
+    backendId: safeTrim(threat.threat_id),
     name: threat.title || threatType,
     vulnerability,
     status: formatLabel(threat.status || "In Review"),
@@ -1271,8 +1274,9 @@ if (
   );
 
   const openThreatDetails = (threat) => {
+    if (!threat.backendId) return;
     setSelectedThreat(threat);
-    navigate(threatPath(threat.id));
+    navigate(threatPath(threat.backendId));
   };
 
   // Location and Risk Map Controls derived values
@@ -1818,6 +1822,15 @@ const handleResetMapControls = () => {
                     </div>
                   </div>
 
+                  {displayedDetection.integrationEventId && (
+                    <Link
+                      className="btn btn-secondary"
+                      to={integrationPath(displayedDetection.integrationEventId)}
+                    >
+                      View integration details
+                    </Link>
+                  )}
+
                   {displayedDetection.drivers?.length > 0 && (
                     <div className="anomaly-driver-list">
                       <span>Main drivers</span>
@@ -2271,7 +2284,8 @@ const handleResetMapControls = () => {
                     key={item.id}
                     onClick={() => openThreatDetails(item)}
                     role="button"
-                    tabIndex={0}
+                    tabIndex={item.backendId ? 0 : -1}
+                    aria-disabled={!item.backendId}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
@@ -2285,7 +2299,7 @@ const handleResetMapControls = () => {
     aria-hidden="true"
   />
 
-  <strong>{item.name}</strong>
+  <strong>{item.name}{!item.backendId && " (details unavailable)"}</strong>
 </div>
 
 <span>{item.location}</span>

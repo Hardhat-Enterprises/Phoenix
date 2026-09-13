@@ -24,6 +24,15 @@ export const STORAGE_API_URL =
   cleanEnvironmentUrl(import.meta.env.VITE_STORAGE_API_URL) ||
   API_GATEWAY_URL;
 
+// Which notification provider the panel runs on. "mock" serves notification
+// records from memory, so the panel can be developed and demonstrated without
+// the gateway; anything else uses the real API gateway.
+export const NOTIFICATION_PROVIDER = (
+  import.meta.env.VITE_NOTIFICATION_PROVIDER?.trim() || "api"
+).toLowerCase();
+
+export const NOTIFICATION_USE_MOCK = NOTIFICATION_PROVIDER === "mock";
+
 // --- Sprint 2: Risk and Anomaly Feature Control (Varun) --------------------
 //
 // The supplied backend does not currently provide the risk-assessment or

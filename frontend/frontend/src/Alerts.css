@@ -622,4 +622,29 @@
 :root[data-theme="dark"] .hazard-evidence-panel a {
   color: var(--color-interactive);
 }
+/* Hazard rows open the backend detail page. */
+.hazard-row-clickable {
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.hazard-row-clickable:hover {
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+.hazard-row-clickable:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hazard-row-clickable {
+    transition: none;
+  }
+
+  .hazard-row-clickable:hover {
+    transform: none;
+  }
+}
 

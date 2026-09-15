@@ -46,21 +46,6 @@ const DEFAULT_MAP_BOUNDS = {
 const DEFAULT_MAP_ZOOM = 4;
 const OSM_TILE_URL = "https://tile.openstreetmap.org";
 
-const STATE_LOCATION_FALLBACKS = {
-  ACT: {
-    label: "Australian Capital Territory",
-    latitude: -35.2809,
-    longitude: 149.13,
-  },
-  NSW: { label: "New South Wales", latitude: -33.8688, longitude: 151.2093 },
-  NT: { label: "Northern Territory", latitude: -12.4634, longitude: 130.8456 },
-  QLD: { label: "Queensland", latitude: -27.4698, longitude: 153.0251 },
-  SA: { label: "South Australia", latitude: -34.9285, longitude: 138.6007 },
-  TAS: { label: "Tasmania", latitude: -42.8821, longitude: 147.3272 },
-  VIC: { label: "Victoria", latitude: -37.8136, longitude: 144.9631 },
-  WA: { label: "Western Australia", latitude: -31.9523, longitude: 115.8613 },
-};
-
 const STATE_ALIASES = {
   ACT: ["act", "australian capital territory", "canberra"],
   NSW: ["nsw", "new south wales", "sydney"],
@@ -323,30 +308,24 @@ const findHazardCoordinates = (hazard, locations) => {
     hazard.state_region ||
     hazard.suburb ||
     "";
+
   const matchedLocation = locations.find((location) =>
     locationMatchesHazard(location, hazardLocation, hazard),
   );
 
   if (matchedLocation) {
-    return {
-      latitude: readNumber(matchedLocation.latitude),
-      longitude: readNumber(matchedLocation.longitude),
-      label: getLocationLabel(matchedLocation) || hazardLocation,
-      source: "Backend location",
-      isApproximate: false,
-    };
-  }
+    const latitude = readNumber(matchedLocation.latitude);
+    const longitude = readNumber(matchedLocation.longitude);
 
-  const fallback = STATE_LOCATION_FALLBACKS[stateCodeFor(hazardLocation)];
-
-  if (fallback) {
-    return {
-      latitude: fallback.latitude,
-      longitude: fallback.longitude,
-      label: hazardLocation || fallback.label,
-      source: "Approximate from backend location",
-      isApproximate: true,
-    };
+    if (latitude !== null && longitude !== null) {
+      return {
+        latitude,
+        longitude,
+        label: getLocationLabel(matchedLocation) || hazardLocation,
+        source: "Backend location",
+        isApproximate: false,
+      };
+    }
   }
 
   return null;
@@ -840,6 +819,24 @@ const normalizeHazardRow = (hazard, index) => ({
   ),
 });
 
+const getHazardSeverity = (hazard) =>
+  hazard.severity_level ||
+  hazard.hazard_severity ||
+  hazard.alert_level ||
+  hazard.risk_level ||
+  "";
+
+const getHazardStatus = (hazard) =>
+  hazard.event_status || hazard.hazard_status || hazard.status || "";
+
+const getHazardDate = (hazard) =>
+  hazard.hazard_timestamp ||
+  hazard.event_timestamp ||
+  hazard.detected_at ||
+  hazard.created_at ||
+  hazard.updated_at ||
+  "";
+
 // --- Location and Risk Map Controls helpers --------------------------------
 
 const ALL_SUBURBS_VALUE = "__ALL__";
@@ -910,7 +907,8 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
   const [apiStatus, setApiStatus] = useState("Checking");
   const [threats, setThreats] = useState([]);
   const [threatsByRiskLevel, setThreatsByRiskLevel] = useState({});
-  const [hazards, setHazards] = useState([]);
+  const [, setHazards] = useState([]);
+  const [riskMapHazards, setRiskMapHazards] = useState([]);
   const [locations, setLocations] = useState([]);
   const [integrations, setIntegrations] = useState([]);
   const [riskTotal, setRiskTotal] = useState("Checking");
@@ -929,6 +927,11 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
   const [selectedState, setSelectedState] = useState("");
   const [selectedLga, setSelectedLga] = useState("");
   const [selectedSuburb, setSelectedSuburb] = useState(ALL_SUBURBS_VALUE);
+  const [selectedSeverity, setSelectedSeverity] = useState("");
+  const [selectedHazardType, setSelectedHazardType] = useState("");
+  const [selectedHazardStatus, setSelectedHazardStatus] = useState("");
+  const [mapStartDate, setMapStartDate] = useState("");
+  const [mapEndDate, setMapEndDate] = useState("");
   const [selectedMapPointId, setSelectedMapPointId] = useState("");
 
   // Anomaly detection state
@@ -1201,6 +1204,56 @@ if (
     };
   }, [isLoggedIn]);
 
+  useEffect(() => {
+    let isActive = true;
+
+    const loadRiskMapHazards = async () => {
+      if (!isLoggedIn) {
+        setRiskMapHazards([]);
+        return;
+      }
+
+      try {
+        const allHazards = [];
+        let page = 1;
+
+        while (isActive) {
+          const response = await getHazards({ page, limit: 100 });
+          const items = response.items || [];
+
+          allHazards.push(...items);
+
+          if (
+            items.length === 0 ||
+            items.length < 100 ||
+            (Number.isFinite(Number(response.total)) &&
+              allHazards.length >= Number(response.total))
+          ) {
+            break;
+          }
+
+          page += 1;
+        }
+
+        if (isActive) {
+          setRiskMapHazards(allHazards);
+        }
+      } catch (error) {
+        console.error("Failed to load Risk Map hazards:", error);
+
+        if (isActive) {
+          setRiskMapHazards([]);
+        }
+      }
+    };
+
+    loadRiskMapHazards();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isLoggedIn]);
+
   const overviewCards = useMemo(
     () => [
       { label: "API Status", value: apiStatus },
@@ -1249,18 +1302,99 @@ if (
       .sort((a, b) => (a.suburb || "").localeCompare(b.suburb || ""));
   }, [locationOptions, selectedState, selectedLga]);
 
-  const filteredHazards = useMemo(() => {
-    if (!selectedState) return hazards;
+    const severityOptions = useMemo(
+    () =>
+      [...new Set(riskMapHazards.map(getHazardSeverity).filter(Boolean))].sort(),
+    [riskMapHazards],
+  );
 
-    return hazards.filter((hazard) =>
-      hazardMatchesSelection(hazard, locations, {
-        state: selectedState,
-        lga: selectedLga,
-        suburb:
-          selectedSuburb === ALL_SUBURBS_VALUE ? "" : selectedSuburb,
+  const hazardTypeOptions = useMemo(
+    () =>
+      [
+        ...new Set(
+          riskMapHazards.map((hazard) => hazard.hazard_type).filter(Boolean),
+        ),
+      ].sort(),
+    [riskMapHazards],
+  );
+
+  const hazardStatusOptions = useMemo(
+    () =>
+      [...new Set(riskMapHazards.map(getHazardStatus).filter(Boolean))].sort(),
+    [riskMapHazards],
+  );
+
+  const filteredHazards = useMemo(
+    () =>
+      riskMapHazards.filter((hazard) => {
+        if (
+          !hazardMatchesSelection(hazard, locations, {
+            state: selectedState,
+            lga: selectedLga,
+            suburb:
+              selectedSuburb === ALL_SUBURBS_VALUE ? "" : selectedSuburb,
+          })
+        ) {
+          return false;
+        }
+
+        if (
+          selectedSeverity &&
+          normalizeLookupText(getHazardSeverity(hazard)) !==
+            normalizeLookupText(selectedSeverity)
+        ) {
+          return false;
+        }
+
+        if (
+          selectedHazardType &&
+          normalizeLookupText(hazard.hazard_type) !==
+            normalizeLookupText(selectedHazardType)
+        ) {
+          return false;
+        }
+
+        if (
+          selectedHazardStatus &&
+          normalizeLookupText(getHazardStatus(hazard)) !==
+            normalizeLookupText(selectedHazardStatus)
+        ) {
+          return false;
+        }
+
+        const hazardDate = getHazardDate(hazard);
+
+        if (
+          mapStartDate &&
+          (!hazardDate ||
+            new Date(hazardDate) < new Date(`${mapStartDate}T00:00:00`))
+        ) {
+          return false;
+        }
+
+        if (
+          mapEndDate &&
+          (!hazardDate ||
+            new Date(hazardDate) > new Date(`${mapEndDate}T23:59:59`))
+        ) {
+          return false;
+        }
+
+        return true;
       }),
-    );
-  }, [hazards, locations, selectedState, selectedLga, selectedSuburb]);
+    [
+      riskMapHazards,
+      locations,
+      selectedState,
+      selectedLga,
+      selectedSuburb,
+      selectedSeverity,
+      selectedHazardType,
+      selectedHazardStatus,
+      mapStartDate,
+      mapEndDate,
+    ],
+  );
 
   const unresolvedHazardCount = useMemo(
     () =>
@@ -1281,12 +1415,17 @@ if (
     setSelectedSuburb(ALL_SUBURBS_VALUE);
   };
 
-  const handleResetMapControls = () => {
-    setSelectedState("");
-    setSelectedLga("");
-    setSelectedSuburb(ALL_SUBURBS_VALUE);
-    setSelectedMapPointId("");
-  };
+const handleResetMapControls = () => {
+  setSelectedState("");
+  setSelectedLga("");
+  setSelectedSuburb(ALL_SUBURBS_VALUE);
+  setSelectedSeverity("");
+  setSelectedHazardType("");
+  setSelectedHazardStatus("");
+  setMapStartDate("");
+  setMapEndDate("");
+  setSelectedMapPointId("");
+};
 
   const hazardRows = useMemo(
     () => filteredHazards.map(normalizeHazardRow),
@@ -1699,84 +1838,170 @@ if (
               <div>
                 <span className="map-eyebrow">Regional overview</span>
                 <h2>Risk Map</h2>
-                <p>Explore backend hazard records by state, local government area, and suburb.</p>
+                <p>
+  Explore backend hazard records by location, severity, hazard type, status,
+  and date.
+</p>
               </div>
               <span className="map-result-badge">
                 {filteredHazards.length} hazard{filteredHazards.length === 1 ? "" : "s"}
               </span>
             </div>
 
-            {/* Location and Risk Map Controls */}
-            <div className="map-controls">
-              <label>
-                <div>State / Region</div>
-                <select value={selectedState} onChange={handleStateChange}>
-                  <option value="">All states</option>
-                  {stateOptions.map((state) => (
-                    <option key={state} value={state}>
-                      {state}
-                    </option>
-                  ))}
-                </select>
-              </label>
+{/* Location and Risk Map Controls */}
+<div className="map-controls">
+  <label>
+    <div>State / Region</div>
+    <select value={selectedState} onChange={handleStateChange}>
+      <option value="">All states</option>
+      {stateOptions.map((state) => (
+        <option key={state} value={state}>
+          {state}
+        </option>
+      ))}
+    </select>
+  </label>
 
-              <label>
-                <div>Local Government Area</div>
-                <select
-                  value={selectedLga}
-                  onChange={handleLgaChange}
-                  disabled={!selectedState}
-                >
-                  <option value="">All LGAs</option>
-                  {lgaOptions.map((lga) => (
-                    <option key={lga} value={lga}>
-                      {lga}
-                    </option>
-                  ))}
-                </select>
-              </label>
+  <label>
+    <div>Local Government Area</div>
+    <select
+      value={selectedLga}
+      onChange={handleLgaChange}
+      disabled={!selectedState}
+    >
+      <option value="">All LGAs</option>
+      {lgaOptions.map((lga) => (
+        <option key={lga} value={lga}>
+          {lga}
+        </option>
+      ))}
+    </select>
+  </label>
 
-              <label>
-                <div>Suburb</div>
-                <select
-                  value={selectedSuburb}
-                  onChange={(event) => setSelectedSuburb(event.target.value)}
-                  disabled={!selectedLga}
-                >
-                  <option value={ALL_SUBURBS_VALUE}>All locations</option>
-                  {suburbOptions.map((location) => (
-                    <option key={locationKeyFor(location)} value={location.suburb}>
-                      {location.suburb}
-                      {readNumber(location.latitude) === null ? " (no coordinates)" : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
+  <label>
+    <div>Suburb</div>
+    <select
+      value={selectedSuburb}
+      onChange={(event) => setSelectedSuburb(event.target.value)}
+      disabled={!selectedLga}
+    >
+      <option value={ALL_SUBURBS_VALUE}>All locations</option>
+      {suburbOptions.map((location) => (
+        <option key={locationKeyFor(location)} value={location.suburb}>
+          {location.suburb}
+          {readNumber(location.latitude) === null
+            ? " (no coordinates)"
+            : ""}
+        </option>
+      ))}
+    </select>
+  </label>
 
-              <button className="map-reset-button" type="button" onClick={handleResetMapControls}>
-                Reset map
-              </button>
-            </div>
+  <label>
+    <div>Severity</div>
+    <select
+      value={selectedSeverity}
+      onChange={(event) => setSelectedSeverity(event.target.value)}
+    >
+      <option value="">All severities</option>
+      {severityOptions.map((severity) => (
+        <option key={severity} value={severity}>
+          {formatLabel(severity)}
+        </option>
+      ))}
+    </select>
+  </label>
 
-            <div className="map-selection-summary" role="status">
-              <strong>Selected location:</strong>{" "}
-              {selectedState || "All states"} / {selectedLga || "All LGAs"} /{" "}
-              {selectedSuburb === ALL_SUBURBS_VALUE ? "All locations" : selectedSuburb}
-              {" | "}
-              <strong>{filteredHazards.length}</strong> matching hazard
-              {filteredHazards.length === 1 ? "" : "s"}
-              {locationOptions.stats.duplicateCount > 0 &&
-                ` | ${locationOptions.stats.duplicateCount} duplicate locations removed`}
-              {locationOptions.stats.missingCoordCount > 0 &&
-                ` | ${locationOptions.stats.missingCoordCount} locations missing coordinates`}
-              {unresolvedHazardCount > 0 && (
-                <span className="map-selection-warning">
-                  {" · "}
-                  {unresolvedHazardCount} hazard{unresolvedHazardCount === 1 ? "" : "s"} shown as
-                  demonstration data (location not reliably linked)
-                </span>
-              )}
-            </div>
+  <label>
+    <div>Hazard Type</div>
+    <select
+      value={selectedHazardType}
+      onChange={(event) => setSelectedHazardType(event.target.value)}
+    >
+      <option value="">All hazard types</option>
+      {hazardTypeOptions.map((hazardType) => (
+        <option key={hazardType} value={hazardType}>
+          {formatLabel(hazardType)}
+        </option>
+      ))}
+    </select>
+  </label>
+
+  <label>
+    <div>Status</div>
+    <select
+      value={selectedHazardStatus}
+      onChange={(event) => setSelectedHazardStatus(event.target.value)}
+    >
+      <option value="">All statuses</option>
+      {hazardStatusOptions.map((status) => (
+        <option key={status} value={status}>
+          {formatLabel(status)}
+        </option>
+      ))}
+    </select>
+  </label>
+
+  <label>
+    <div>Start Date</div>
+    <input
+      type="date"
+      value={mapStartDate}
+      max={mapEndDate || undefined}
+      onChange={(event) => setMapStartDate(event.target.value)}
+    />
+  </label>
+
+  <label>
+    <div>End Date</div>
+    <input
+      type="date"
+      value={mapEndDate}
+      min={mapStartDate || undefined}
+      onChange={(event) => setMapEndDate(event.target.value)}
+    />
+  </label>
+
+  <button
+    className="map-reset-button"
+    type="button"
+    onClick={handleResetMapControls}
+  >
+    Reset map
+  </button>
+</div>
+
+<div className="map-selection-summary" role="status">
+  <strong>Active filters:</strong>{" "}
+  {[
+    selectedState || "All states",
+    selectedLga || "All LGAs",
+    selectedSuburb === ALL_SUBURBS_VALUE
+      ? "All locations"
+      : selectedSuburb,
+    selectedSeverity && `Severity: ${formatLabel(selectedSeverity)}`,
+    selectedHazardType && `Type: ${formatLabel(selectedHazardType)}`,
+    selectedHazardStatus && `Status: ${formatLabel(selectedHazardStatus)}`,
+    mapStartDate && `From: ${mapStartDate}`,
+    mapEndDate && `To: ${mapEndDate}`,
+  ]
+    .filter(Boolean)
+    .join(" | ")}
+  {" | "}
+  <strong>{filteredHazards.length}</strong> matching hazard
+  {filteredHazards.length === 1 ? "" : "s"}
+
+  {locationOptions.stats.duplicateCount > 0 &&
+    ` | ${locationOptions.stats.duplicateCount} duplicate locations removed`}
+
+  {locationOptions.stats.missingCoordCount > 0 &&
+    ` | ${locationOptions.stats.missingCoordCount} locations missing coordinates`}
+
+  {unresolvedHazardCount > 0 &&
+    ` | ${unresolvedHazardCount} hazard${
+      unresolvedHazardCount === 1 ? "" : "s"
+    } not mapped because backend coordinates are unavailable`}
+</div>
 
             <div className="risk-map-layout">
               <div className="risk-map-canvas">
@@ -2041,7 +2266,7 @@ if (
 
               {itemRows.length > 0 ? (
                 itemRows.map((item) => (
-                <div 
+                <div
                     className="item-list-row"
                     key={item.id}
                     onClick={() => openThreatDetails(item)}
@@ -2077,7 +2302,7 @@ if (
   {item.status}
 </div>
 
-                  </div> 
+                  </div>
                 ))
               ) : (
                 <div className="item-list-empty">

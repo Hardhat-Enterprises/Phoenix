@@ -181,9 +181,20 @@ const readCreatedAt = (raw) => {
   return { iso: date.toISOString(), date };
 };
 
-const MINUTE = 60_000;
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
+const WEEK = 7 * DAY;
+
+// A month name instead of a numeric month, so the same string cannot be read as
+// either day/month or month/day depending on the reader's locale.
+const DATE_FORMAT = { day: "numeric", month: "short", year: "numeric" };
+const DATE_TIME_FORMAT = { ...DATE_FORMAT, hour: "2-digit", minute: "2-digit" };
+
+// Clocks between the browser and the producer disagree by a little, so a
+// timestamp slightly in the future is treated as "now" rather than as pending.
+const CLOCK_SKEW_ALLOWANCE = MINUTE;
 
 export const formatRelativeTime = (date, now = new Date()) => {
   if (!date) {
@@ -192,8 +203,8 @@ export const formatRelativeTime = (date, now = new Date()) => {
 
   const difference = now.getTime() - date.getTime();
 
-  if (difference < 0) {
-    return "Scheduled";
+  if (difference < -CLOCK_SKEW_ALLOWANCE) {
+    return `Scheduled for ${date.toLocaleString(undefined, DATE_TIME_FORMAT)}`;
   }
 
   if (difference < MINUTE) return "Just now";
@@ -208,19 +219,17 @@ export const formatRelativeTime = (date, now = new Date()) => {
     return `${hours} hour${hours === 1 ? "" : "s"} ago`;
   }
 
-  if (difference < 2 * DAY) return "Yesterday";
-
-  const days = Math.floor(difference / DAY);
-
-  if (days < 7) {
-    return `${days} days ago`;
+  if (difference < WEEK) {
+    const days = Math.floor(difference / DAY);
+    return days === 1 ? "Yesterday" : `${days} days ago`;
   }
 
-  return date.toLocaleDateString();
+  // Past a week a relative label stops being informative, so show the date.
+  return date.toLocaleDateString(undefined, DATE_FORMAT);
 };
 
 export const formatAbsoluteTime = (date) =>
-  date ? date.toLocaleString() : "";
+  date ? date.toLocaleString(undefined, DATE_TIME_FORMAT) : "";
 
 // Falls back to a content-derived key so IDs stay stable across refetches when
 // the backend omits one. Index is the last resort.
@@ -264,14 +273,40 @@ export const adaptNotification = (raw, index = 0) => {
     severityTone: severity.tone,
     createdAtIso: created.iso,
     createdAtDate: created.date,
-    createdAtLabel: created.date
-      ? formatRelativeTime(created.date)
-      : created.raw || "",
+    // The relative label is deliberately not stored here: it would freeze at
+    // the moment of adaptation and still read "Just now" an hour later. The
+    // panel formats createdAtDate at render time instead.
+    createdAtRaw: created.raw || "",
     createdAtExact: formatAbsoluteTime(created.date),
     read: read === true,
     hasReadState: read !== null,
+    // Position in the backend response, used as the ordering tie-break.
+    sourceIndex: index,
   };
 };
 
+// Newest first, with an explicit tie-break so the order never depends on the
+// engine's sort stability and never changes between two identical responses.
+export const sortNotifications = (items = []) =>
+  [...items].sort((a, b) => {
+    const aTime = a.createdAtDate ? a.createdAtDate.getTime() : null;
+    const bTime = b.createdAtDate ? b.createdAtDate.getTime() : null;
+
+    if (aTime !== null && bTime !== null && aTime !== bTime) {
+      return bTime - aTime;
+    }
+
+    // A dated record outranks an undated one, so undated records gather at the
+    // bottom instead of drifting through the list.
+    if (aTime !== null && bTime === null) return -1;
+    if (aTime === null && bTime !== null) return 1;
+
+    // Same instant, or neither dated: keep the order the backend sent. Every
+    // record is undated under the current contract, so this is the live path.
+    return a.sourceIndex - b.sourceIndex;
+  });
+
 export const adaptNotifications = (items = []) =>
-  (Array.isArray(items) ? items : []).map(adaptNotification);
+  sortNotifications(
+    (Array.isArray(items) ? items : []).map(adaptNotification),
+  );

@@ -48,6 +48,30 @@ export interface GetNotificationsResponse {
   ];
 }
 
+export interface CreateNotificationRequest {
+  event_id: string;
+  threat_type: string;
+  severity: string;
+  risk_score: number;
+  confidence_score: number;
+  recommended_action: string;
+  notification_required: boolean;
+  status: string;
+  recipient?: string;
+}
+export interface CreateNotificationResponse {
+  status: number;
+  message: string;
+  notification?: {
+    id: number;
+    title: string;
+    body: string;
+    recipient: string;
+    severity: string;
+    sent: boolean;
+  };
+}
+
 export interface NotificationServiceClient {
   GetNotificationHealth(
     request: GetNotificationHealthRequest,
@@ -61,6 +85,13 @@ export interface NotificationServiceClient {
     callback: (
       error: grpc.ServiceError | null,
       response: GetNotificationsResponse,
+    ) => void,
+  ): void;
+  CreateNotification(
+    request: CreateNotificationRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: CreateNotificationResponse,
     ) => void,
   ): void;
 }

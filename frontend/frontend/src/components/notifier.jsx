@@ -157,11 +157,6 @@ const mockNotifications = Array.from({ length: 50 }, (_, i) => ({
   recipient: `user${i % 5}@example.com`,
 }));
 
-export default function NotificationPanel({
-  onClose,
-  notificationLoader,
-  useMockData,
-}) {
 const readTimeLabel = (item, now) => {
   if (item.createdAtDate) {
     return formatRelativeTime(item.createdAtDate, now);
@@ -172,7 +167,11 @@ const readTimeLabel = (item, now) => {
   return item.createdAtRaw || "Time not provided";
 };
 
-export default function NotificationPanel({ onClose }) {
+export default function NotificationPanel({
+  onClose,
+  notificationLoader,
+  useMockData,
+}) {
   const [notifications, setNotifications] = useState([]);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState(null);
@@ -194,15 +193,10 @@ export default function NotificationPanel({ onClose }) {
   // Debounce and request management
   const searchTimerRef = useRef(null);
   const requestSequenceRef = useRef(0);
-  const abortControllerRef = useRef(null);
 
   const panelRef = useRef(null);
   const modalCloseRef = useRef(null);
   const toastTimerRef = useRef(null);
-  // Guards against an earlier slow response overwriting a later one, and
-  // against a response arriving after the panel has closed.
-  const requestIdRef = useRef(0);
-  const mountedRef = useRef(true);
 
   const unreadCount = notifications.filter(
     (item) => item.hasReadState && !item.read,
@@ -211,33 +205,26 @@ export default function NotificationPanel({ onClose }) {
   const loadNotifications = useCallback(
     async (signal, params) => {
       const currentSequence = ++requestSequenceRef.current;
-      // Cancel previous request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-
-      abortControllerRef.current = signal;
 
       setStatus("loading");
       setError(null);
 
       try {
-        let response;
+        const response =
+          useMockData && notificationLoader
+            ? await notificationLoader(params, signal)
+            : await getNotifications(params);
 
-        if (useMockData && notificationLoader) {
-          response = await notificationLoader(params, signal);
-        } else {
-          response = await getNotifications(params);
-        }
-        // GET /api/notifications takes no parameters in the current contract.
-        //const response = await getNotifications();
-
-        if (signal?.aborted) {
+        if (
+          signal?.aborted ||
+          currentSequence !== requestSequenceRef.current
+        ) {
           return;
         }
 
         const items = adaptNotifications(response.items);
         setNotifications(items);
+        setClearedLocally(false);
         setTotalPages(
           response.totalPages ||
             Math.ceil(
@@ -247,39 +234,16 @@ export default function NotificationPanel({ onClose }) {
         setTotalResults(response.total || items.length);
         setStatus(items.length === 0 ? "empty" : "ready");
       } catch (requestError) {
-        if (requestError.name === "AbortError" || signal?.aborted) {
-          return;
-        }
-
-        if (currentSequence !== requestSequenceRef.current) {
+        if (
+          requestError.name === "AbortError" ||
+          signal?.aborted ||
+          currentSequence !== requestSequenceRef.current
+        ) {
           return;
         }
 
         setError(requestError);
         setStatus("error");
-  const loadNotifications = useCallback(async () => {
-    const requestId = requestIdRef.current + 1;
-    requestIdRef.current = requestId;
-
-    setStatus("loading");
-    setError(null);
-
-    try {
-      // GET /api/notifications takes no parameters in the current contract.
-      const response = await getNotifications();
-
-      if (!mountedRef.current || requestId !== requestIdRef.current) {
-        return;
-      }
-
-      // adaptNotifications sorts newest first with a stable tie-break.
-      const items = adaptNotifications(response.items);
-      setNotifications(items);
-      setClearedLocally(false);
-      setStatus(items.length === 0 ? "empty" : "ready");
-    } catch (requestError) {
-      if (!mountedRef.current || requestId !== requestIdRef.current) {
-        return;
       }
     },
     [limit, useMockData, notificationLoader],
@@ -314,9 +278,7 @@ export default function NotificationPanel({ onClose }) {
 
     fetchNotifications();
 
-    return () => {
-      mountedRef.current = false;
-    };
+    return () => controller.abort();
   }, [loadNotifications]);
 
   // Handle browser back/forward navigation
@@ -700,7 +662,15 @@ export default function NotificationPanel({ onClose }) {
           <button
             type="button"
             className="notif-retry"
-            onClick={loadNotifications}
+            onClick={() => {
+              const controller = new AbortController();
+              loadNotifications(controller.signal, {
+                search,
+                read: readFilter,
+                page,
+                limit,
+              });
+            }}
             disabled={isLoading}
           >
             {isLoading ? "Retrying..." : "Retry"}

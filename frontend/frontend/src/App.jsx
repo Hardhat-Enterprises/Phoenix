@@ -20,7 +20,17 @@ import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer";
 import ForgotPassword from "./ForgotPassword";
-import { getAuthSession, logoutUser } from "./services/authApi";
+import SettingsPage from "./SettingsPage";
+import Alerts from "./Alerts";
+import ReportsPage from "./ReportsPage";
+import ThreatDetails from "./ThreatDetails";
+import RiskAssessmentPage from "./RiskAssessmentPage";
+import HelpSupportPage from "./HelpSupportPage";
+import {
+  getAuthSession,
+  logoutUser,
+  restoreAuthSession,
+} from "./services/authApi";
 import NotificationPanel from "./components/notifier";
 import GlobalSearch from "./components/GlobalSearch";
 import { usePreferences } from "./PreferencesContext";
@@ -83,7 +93,8 @@ function App() {
   const location = useLocation();
   const { preferences } = usePreferences();
 
-  const [authSession, setAuthSession] = useState(() => getAuthSession());
+  const [authSession, setAuthSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [selectedThreat, setSelectedThreat] = useState(null);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
@@ -93,6 +104,35 @@ function App() {
   const notifBellRef = useRef(null);
   const menuButtonRef = useRef(null);
   const hasUnsavedSettingsRef = useRef(false);
+  useEffect(() => {
+  let mounted = true;
+
+  const restoreSession = async () => {
+    const storedSession = getAuthSession();
+
+    if (!storedSession) {
+      if (mounted) {
+        setAuthLoading(false);
+      }
+      return;
+    }
+
+    const restoredSession = await restoreAuthSession();
+
+    if (!mounted) {
+      return;
+    }
+
+    setAuthSession(restoredSession);
+    setAuthLoading(false);
+  };
+
+  restoreSession();
+
+  return () => {
+    mounted = false;
+  };
+ }, []);
 
   const isLoggedIn = Boolean(authSession?.accessToken);
   const isAdmin = authSession?.user?.role?.toLowerCase() === "admin";
@@ -290,9 +330,27 @@ function App() {
     </div>
   );
 
-  // Admin-only routes redirect anyone else to the dashboard.
-  const adminOnly = (content) =>
-    isAdmin ? content : <Navigate to={HOME_PATH} replace />;
+
+  const protectedPage = (content) =>
+  isLoggedIn ? content : <Navigate to="/login" replace />;
+
+  if (authLoading) {
+   return (
+    <div className="login-page">
+      <main
+        id="main-content"
+        className="page-content"
+        style={{
+          display: "grid",
+          placeItems: "center",
+          minHeight: "100vh",
+        }}
+      >
+        Restoring your session...
+      </main>
+    </div>
+   );
+  }
 
   return (
     <div className="login-page">
@@ -539,55 +597,84 @@ function App() {
 
           <Route
             path="/admin/create-user"
-            element={adminOnly(<CreateUser setPage={goToPage} />)}
-          />
-
-          <Route
-            path="/admin/component-showcase"
-            element={adminOnly(withShell(<ComponentShowcase />))}
-          />
-
-          {/* Admin-only backend integration diagnostics */}
-          <Route
-            path="/admin/integration-health"
             element={
-              isAdmin ? (
-                withShell(<IntegrationHealthPanel />)
-              ) : (
-                <Navigate to={HOME_PATH} replace />
-              )
+             isLoggedIn && isAdmin ? (
+               <CreateUser setPage={goToPage} />
+             ) : (
+               <Navigate
+                  to={isLoggedIn ? HOME_PATH : "/login"}
+                  replace
+               />
+             )
             }
           />
 
           <Route
-            path="/dashboard"
-            element={withShell(
-              <Dashboard
-                setPage={goToPage}
-                setSelectedThreat={setSelectedThreat}
-                isLoggedIn={isLoggedIn}
-              />,
-            )}
+            path="/admin/component-showcase"
+            element={
+              isLoggedIn && isAdmin ? (
+                withShell(<ComponentShowcase />)
+              ) : (
+                <Navigate
+                   to={isLoggedIn ? HOME_PATH : "/login"}
+                   replace
+                />
+              )
+            }
           />
 
+          {/* Admin-only backend integration diagnostics */}
           <Route
-            path="/alerts"
-            element={withShell(
-              <Alerts
-                setPage={goToPage}
-                setSelectedThreat={setSelectedThreat}
-              />,
-            )}
+             path="/admin/integration-health"
+             element={
+               isLoggedIn && isAdmin ? (
+                  withShell(<IntegrationHealthPanel />)
+               ) : (
+                 <Navigate
+                    to={isLoggedIn ? HOME_PATH : "/login"}
+                    replace
+                 />
+               )
+             }
           />
+
+        <Route
+            path="/dashboard"
+            element={protectedPage(
+              withShell(
+               <Dashboard
+                   setPage={goToPage}
+                   setSelectedThreat={setSelectedThreat}
+                   isLoggedIn={isLoggedIn}
+               />,
+              ),
+            )}
+        />
+
+         <Route
+           path="/alerts"
+           element={protectedPage(
+             withShell(
+               <Alerts
+                  setPage={goToPage}
+                  setSelectedThreat={setSelectedThreat}
+               />,
+             ),
+          )}
+         />
 
           <Route
             path="/about"
-            element={withShell(<AboutUs />)}
+            element={protectedPage(
+                withShell(<AboutUs />),
+            )}
           />
 
           <Route
             path="/reports"
-            element={withShell(<ReportsPage />)}
+            element={protectedPage(
+                 withShell(<ReportsPage />),
+            )}
           />
 
           <Route
@@ -601,22 +688,26 @@ function App() {
           />
 
           <Route
-            path="/threats"
-            element={withShell(
-              <ThreatDetails
-                selectedThreat={selectedThreat}
-                onBack={handleBackFromThreatDetails}
-              />,
-            )}
+              path="/threats"
+              element={protectedPage(
+                 withShell(
+                   <ThreatDetails
+                     selectedThreat={selectedThreat}
+                     onBack={handleBackFromThreatDetails}
+                   />,
+                 ),
+              )}
           />
 
-          <Route
+         <Route
             path="/threats/:threatId"
-            element={withShell(
-              <ThreatDetails
-                selectedThreat={selectedThreat}
-                onBack={handleBackFromThreatDetails}
-              />,
+            element={protectedPage(
+               withShell(
+                 <ThreatDetails
+                    selectedThreat={selectedThreat}
+                    onBack={handleBackFromThreatDetails}
+                 />,
+               ),
             )}
           />
                     <Route
@@ -626,20 +717,24 @@ function App() {
 
           <Route
             path="/settings"
-            element={withShell(
-              <SettingsPage
-                setPage={goToPage}
-                authSession={authSession}
-                onLogout={handleLogout}
-                onUnsavedChanges={updateUnsavedSettings}
-              />,
+            element={protectedPage(
+               withShell(
+                <SettingsPage
+                   setPage={goToPage}
+                   authSession={authSession}
+                   onLogout={handleLogout}
+                   onUnsavedChanges={updateUnsavedSettings}
+                />,
+               ),
             )}
           />
 
           <Route
             path="/help"
-            element={withShell(
-              <HelpSupportPage setPage={goToPage} />,
+            element={protectedPage(
+               withShell(
+                 <HelpSupportPage setPage={goToPage} />,
+               ),
             )}
           />
 

@@ -75,9 +75,41 @@ Supported environment variables are documented using `.env.example`.
 
 `.env.local` must not be committed to the repository.
 
+## Notifications
+
+The notification panel is split so that presentation, data and transport are
+separate concerns:
+
+- `src/components/NotificationList.jsx` renders everything. It takes records and
+  callbacks as props and imports no API module, so it can be developed and
+  tested before any backend or control it depends on exists.
+- `src/components/useNotificationFeed.js` turns a *provider* into those records
+  and callbacks, and owns the difference between a first load and a background
+  refresh.
+- `src/components/notifier.jsx` is wiring only: it picks a provider and hands it
+  to the list.
+- `src/services/notificationAdapter.js` maps a backend record onto the shape the
+  list renders, reading each field from a list of accepted aliases.
+- `src/services/notificationMetadata.js` parses the metadata field, which may
+  arrive as a JSON string, an object, empty, or malformed.
+- `src/services/notificationListState.js` holds the list transformations as pure
+  functions, which is what makes the optimistic path and its rollback testable
+  without a DOM.
+
+A provider is any object shaped like
+`{ list(), markRead(id), markAllRead(), remove(id), persists, isMock, label }`.
+Two exist: `mockNotificationProvider.js` (in memory, `persists: false`) and
+`notificationApiProvider.js` (the gateway). Set
+`VITE_NOTIFICATION_PROVIDER=mock` to run the panel without a backend.
+
+`persists` is what the panel's wording follows: while it is false, no
+confirmation says a change was saved, and the footer says so too.
+
 ## Quality Checks
 
 Before frontend changes are committed, run:
 
 ```bash
 npm run lint
+npm test
+```

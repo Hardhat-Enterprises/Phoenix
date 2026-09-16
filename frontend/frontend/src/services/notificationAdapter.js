@@ -6,6 +6,8 @@
 // file only.
 // ---------------------------------------------------------------------------
 
+import { readNotificationMetadata } from "./notificationMetadata";
+
 const hasValue = (value) =>
   value !== undefined && value !== null && String(value).trim() !== "";
 
@@ -49,6 +51,16 @@ const SEVERITY_KEYS = [
   "alertLevel",
   "priority",
   "urgency",
+];
+
+const EVENT_TYPE_KEYS = [
+  "event_type",
+  "eventType",
+  "eventName",
+  "event_name",
+  "type",
+  "category",
+  "kind",
 ];
 
 const RECIPIENT_KEYS = ["recipient", "recipient_email", "recipientEmail", "to"];
@@ -106,6 +118,33 @@ const severityFromNumber = (number) => {
 
   return "Info";
 };
+
+// Producers send event types as machine tokens ("threat_detected",
+// "THREAT.DETECTED"). A token is turned into words for display; anything that
+// already reads as prose is left exactly as sent.
+const formatEventType = (value) => {
+  const text = String(value).trim();
+
+  if (!text) {
+    return "";
+  }
+
+  if (/\s/.test(text) && !/[_]/.test(text)) {
+    return text;
+  }
+
+  return text
+    .split(/[\s_\-.]+/)
+    .filter(Boolean)
+    .map((word) =>
+      word.toUpperCase() === word && word.length <= 4
+        ? word
+        : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+    )
+    .join(" ");
+};
+
+const readEventType = (raw) => formatEventType(firstValue(raw, EVENT_TYPE_KEYS));
 
 const readSeverity = (raw) => {
   const value = firstValue(raw, SEVERITY_KEYS);
@@ -266,6 +305,9 @@ export const adaptNotification = (raw, index = 0) => {
   return {
     id: readId(source, index, rawTitle, created.iso),
     title,
+    // The classification of the event behind the notification, shown as its own
+    // field rather than folded into the title.
+    eventType: readEventType(source),
     // Avoid repeating the message when it was promoted into the title.
     message: !rawTitle && message === title ? "" : message,
     recipient: String(firstValue(source, RECIPIENT_KEYS) || ""),
@@ -280,6 +322,9 @@ export const adaptNotification = (raw, index = 0) => {
     createdAtExact: formatAbsoluteTime(created.date),
     read: read === true,
     hasReadState: read !== null,
+    // Always a parse result, never a raw value: malformed metadata is reported
+    // as unreadable instead of reaching the renderer as an arbitrary string.
+    metadata: readNotificationMetadata(source),
     // Position in the backend response, used as the ordering tie-break.
     sourceIndex: index,
   };

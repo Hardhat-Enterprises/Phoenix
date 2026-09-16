@@ -254,6 +254,16 @@ function App() {
     notifBellRef.current?.focus();
   };
 
+  // The notification panel reports an expired session. There is nothing to
+  // confirm — the session is already gone — so this clears it and goes
+  // straight to the sign-in form.
+  const handleNotificationSignIn = async () => {
+    setShowNotifPanel(false);
+    await logoutUser();
+    setAuthSession(null);
+    navigate(pathForKey("login"));
+  };
+
   const handleBackFromThreatDetails = () => {
     setSelectedThreat(null);
 
@@ -561,7 +571,10 @@ function App() {
       </div>
 
       {showNotifPanel && (
-        <NotificationPanel onClose={closeNotificationPanel} />
+        <NotificationPanel
+          onClose={closeNotificationPanel}
+          onSignIn={handleNotificationSignIn}
+        />
       )}
 
       <div className="page-content">

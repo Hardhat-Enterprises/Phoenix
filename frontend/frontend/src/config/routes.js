@@ -26,6 +26,12 @@ export const ROUTES = [
     inSidebar: true,
   },
   {
+    key: "integrationDetails",
+    path: "/integrations/:integrationId",
+    label: "Integration Details",
+    title: "Integration Details",
+  },
+  {
     key: "about",
     path: "/about",
     label: "About Us",
@@ -60,6 +66,22 @@ export const ROUTES = [
     title: "Help and Support",
     inSidebar: true,
   },
+
+  // Parameterised routes. Not in the Sidebar and not searchable, but listed
+  // here so page titles resolve on /threats/abc123 and /hazards/abc123.
+  {
+    key: "threatDetails",
+    path: "/threats/:threatId",
+    label: "Threat Details",
+    title: "Threat Details",
+  },
+  {
+    key: "hazardDetails",
+    path: "/hazards/:hazardId",
+    label: "Hazard Details",
+    title: "Hazard Details",
+  },
+
   {
     key: "login",
     path: "/login",
@@ -96,6 +118,8 @@ export const ROUTES = [
 ];
 
 export const HOME_PATH = "/dashboard";
+export const CORE_INTEGRATION_RESULTS_ID = "core-integration-results";
+export const CORE_INTEGRATION_RESULTS_PATH = `/reports#${CORE_INTEGRATION_RESULTS_ID}`;
 
 // Pages the Threat Details Back action must never return to.
 export const NON_RETURNABLE_PATHS = [
@@ -126,6 +150,15 @@ export function pathForKey(key) {
 // Build the URL for a single threat.
 export function threatPath(threatId) {
   return `/threats/${encodeURIComponent(threatId)}`;
+}
+
+// Build the URL for a single hazard.
+export function hazardPath(hazardId) {
+  return `/hazards/${encodeURIComponent(hazardId)}`;
+}
+
+export function integrationPath(integrationId) {
+  return `/integrations/${encodeURIComponent(integrationId)}`;
 }
 
 // Find the route entry for a browser path.

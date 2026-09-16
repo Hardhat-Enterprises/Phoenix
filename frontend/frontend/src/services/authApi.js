@@ -6,8 +6,9 @@ import { DEFAULT_USER_ROLE } from "../config/roles";
 
 export const AUTH_STORAGE_KEY = "phoenixAuth";
 
-// Re-exported to avoid breaking any existing imports elsewhere in the frontend.
 export { API_GATEWAY_URL };
+
+let refreshPromise = null;
 
 const readJson = async (response) => {
   const text = await response.text();
@@ -66,9 +67,135 @@ const unwrapAuthPayload = (payload) => {
   return payload;
 };
 
-export const apiRequest = async (
+const getAuthError = (message = "Your session has expired. Please sign in again.") => {
+  const error = new Error(message);
+  error.status = 401;
+  error.code = "AUTH_SESSION_EXPIRED";
+  return error;
+};
+
+const saveRefreshedSession = (payload) => {
+  const authPayload = unwrapAuthPayload(payload);
+
+  const accessToken =
+    authPayload.access_token ||
+    authPayload.accessToken ||
+    authPayload.token;
+
+  const refreshToken =
+    authPayload.refresh_token ||
+    authPayload.refreshToken ||
+    getAuthSession()?.refreshToken;
+
+  if (!accessToken) {
+    throw getAuthError();
+  }
+
+  const currentSession = getAuthSession();
+
+  const refreshedSession = {
+    ...currentSession,
+    accessToken,
+    refreshToken,
+    user: currentSession?.user,
+    authenticatedAt:
+      currentSession?.authenticatedAt || new Date().toISOString(),
+  };
+
+  localStorage.setItem(
+    AUTH_STORAGE_KEY,
+    JSON.stringify(refreshedSession),
+  );
+
+  return refreshedSession;
+};
+
+export const refreshAccessToken = async () => {
+  const currentSession = getAuthSession();
+  const refreshToken = currentSession?.refreshToken;
+
+  if (!refreshToken) {
+    clearAuthSession();
+    throw getAuthError();
+  }
+
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(
+        buildApiUrl(API_GATEWAY_URL, "/api/users/auth/refresh"),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            refresh_token: refreshToken,
+          }),
+        },
+      );
+
+      const data = await readJson(response);
+
+      if (!response.ok || Number(data.status) >= 400) {
+        clearAuthSession();
+        throw getAuthError(
+          data.message || "Your session could not be refreshed. Please sign in again.",
+        );
+      }
+
+      return saveRefreshedSession(data);
+    } catch (error) {
+      clearAuthSession();
+
+      if (error?.code === "AUTH_SESSION_EXPIRED") {
+        throw error;
+      }
+
+      throw getAuthError(
+        "Your session could not be refreshed. Please sign in again.",
+      );
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+};
+
+export const restoreAuthSession = async () => {
+  const session = getAuthSession();
+
+  if (!session) {
+    return null;
+  }
+
+  if (!session.refreshToken) {
+    clearAuthSession();
+    return null;
+  }
+
+  try {
+    return await refreshAccessToken();
+  } catch {
+    clearAuthSession();
+    return null;
+  }
+};
+
+const performApiRequest = async (
   path,
-  { method = "GET", body, headers = {}, requiresAuth = false, signal } = {},
+  {
+    method = "GET",
+    body,
+    headers = {},
+    requiresAuth = false,
+    signal,
+  } = {},
 ) => {
   const requestHeaders = {
     ...headers,
@@ -81,7 +208,7 @@ export const apiRequest = async (
   const accessToken = getAccessToken();
 
   if (requiresAuth && !accessToken) {
-    throw new Error("Please sign in before loading backend data.");
+    throw getAuthError("Please sign in before loading backend data.");
   }
 
   if (requiresAuth && accessToken) {
@@ -106,7 +233,51 @@ export const apiRequest = async (
 
   const data = await readJson(response);
 
+  return { response, data };
+};
+
+export const apiRequest = async (
+  path,
+  {
+    method = "GET",
+    body,
+    headers = {},
+    requiresAuth = false,
+    signal,
+    retryOnAuthFailure = true,
+  } = {},
+) => {
+  const { response, data } = await performApiRequest(path, {
+    method,
+    body,
+    headers,
+    requiresAuth,
+    signal,
+  });
+
   if (!response.ok) {
+    if (
+      requiresAuth &&
+      response.status === 401 &&
+      retryOnAuthFailure
+    ) {
+      try {
+        await refreshAccessToken();
+
+        return await apiRequest(path, {
+          method,
+          body,
+          headers,
+          requiresAuth,
+          signal,
+          retryOnAuthFailure: false,
+        });
+      } catch {
+        clearAuthSession();
+        throw getAuthError();
+      }
+    }
+
     if (
       response.status === 401 &&
       ["Invalid token", "Logged out"].includes(data.message)
@@ -121,7 +292,7 @@ export const apiRequest = async (
     throw error;
   }
 
-  if (data.status >= 400) {
+  if (Number(data.status) >= 400) {
     const error = new Error(getApiErrorMessage(data, response));
     error.status = data.status;
     error.data = data;
@@ -143,8 +314,11 @@ export const loginUser = async ({ username, password }) => {
   });
 
   const authPayload = unwrapAuthPayload(data);
+
   const accessToken =
-    authPayload.access_token || authPayload.accessToken || authPayload.token;
+    authPayload.access_token ||
+    authPayload.accessToken ||
+    authPayload.token;
 
   if (!accessToken) {
     throw new Error(
@@ -174,12 +348,20 @@ export const saveAuthSession = (session) => {
     authenticatedAt: new Date().toISOString(),
   };
 
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authSession));
+  localStorage.setItem(
+    AUTH_STORAGE_KEY,
+    JSON.stringify(authSession),
+  );
 
   return authSession;
 };
 
-export const registerUser = async ({ username, email, password, role }) => {
+export const registerUser = async ({
+  username,
+  email,
+  password,
+  role,
+}) => {
   const response = await apiRequest("/api/users/auth/register", {
     method: "POST",
     body: {
@@ -208,16 +390,15 @@ export const registerUser = async ({ username, email, password, role }) => {
 export const logoutUser = async () => {
   const userId = getAuthSession()?.user?.id;
 
-  if (!userId) {
-    clearAuthSession();
-    return;
-  }
-
   try {
-    await apiRequest(`/api/users/auth/logout/${userId}`, {
-      method: "POST",
-      requiresAuth: true,
-    });
+    if (userId) {
+      await apiRequest(`/api/users/auth/logout/${userId}`, {
+        method: "POST",
+        requiresAuth: true,
+      });
+    }
+  } catch {
+    // Session cleanup must still happen even when the backend logout fails.
   } finally {
     clearAuthSession();
   }

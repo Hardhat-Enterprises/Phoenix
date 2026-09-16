@@ -13,6 +13,7 @@ service UserService {
     rpc GetReferenceTimes(GetReferenceTimesRequest) returns (GetReferenceTimesResponse);
 
     rpc RegisterUser(RegisterUserRequest) returns (AuthResponse);
+    rpc CreateAdmin(CreateAdminRequest) returns (AuthResponse);
     rpc LoginUser(LoginUserRequest) returns (AuthResponse);
     rpc RefreshToken(RefreshTokenRequest) returns (AuthResponse);
     rpc LogoutUser(LogoutUserRequest) returns (AuthResponse);
@@ -162,6 +163,11 @@ message RegisterUserRequest {
     string username = 1;
     string password = 2;
     string role = 3;
+}
+
+message CreateAdminRequest {
+    string username = 1;
+    string password = 2;
 }
 
 message LoginUserRequest {

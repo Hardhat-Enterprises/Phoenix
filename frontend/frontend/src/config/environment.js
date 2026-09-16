@@ -42,6 +42,11 @@ export const RISK_ASSESSMENT_DEMO_MODE =
 export const ANOMALY_DETECTION_ENABLED =
   import.meta.env.VITE_ANOMALY_DETECTION_ENABLED?.trim() === "true";
 
+// Defaults to false. Live correlation integration remains disabled until the
+// backend correlation provider and endpoint contract are ready for frontend use.
+export const CORRELATION_LIVE_ENABLED =
+  import.meta.env.VITE_CORRELATION_LIVE_ENABLED?.trim() === "true";
+
 export const buildApiUrl = (baseUrl, path = "") => {
   if (!baseUrl) {
     return path;

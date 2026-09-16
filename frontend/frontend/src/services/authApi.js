@@ -46,7 +46,7 @@ export const clearAuthSession = () => {
 export const getAccessToken = () => getAuthSession()?.accessToken || "";
 
 const getApiErrorMessage = (data, response) =>
-  data.message ||
+  data?.message ||
   `Backend request failed (${response.status} ${response.statusText}). Check the configured PHOENIX API gateway and try again.`;
 
 const unwrapAuthPayload = (payload) => {
@@ -231,7 +231,17 @@ const performApiRequest = async (
     );
   }
 
-  const data = await readJson(response);
+  let data;
+
+  try {
+    data = await readJson(response);
+  } catch (error) {
+    if (signal?.aborted || response.ok) {
+      throw error;
+    }
+
+    data = {};
+  }
 
   return { response, data };
 };
@@ -280,7 +290,7 @@ export const apiRequest = async (
 
     if (
       response.status === 401 &&
-      ["Invalid token", "Logged out"].includes(data.message)
+      ["Invalid token", "Logged out"].includes(data?.message)
     ) {
       clearAuthSession();
     }
@@ -292,7 +302,7 @@ export const apiRequest = async (
     throw error;
   }
 
-  if (Number(data.status) >= 400) {
+  if (data?.status >= 400) {
     const error = new Error(getApiErrorMessage(data, response));
     error.status = data.status;
     error.data = data;

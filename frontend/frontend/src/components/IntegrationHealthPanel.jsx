@@ -4,6 +4,8 @@ import {
   useRef,
   useState,
 } from "react";
+import { Link } from "react-router-dom";
+import { CORE_INTEGRATION_RESULTS_PATH } from "../config/routes";
 import {
   HEALTH_POLL_INTERVAL_MS,
   INTEGRATION_SERVICES,
@@ -245,6 +247,12 @@ function IntegrationHealthPanel() {
         </div>
 
         <div className="integration-health__actions">
+          <Link
+            className="integration-health__button integration-health__button--secondary"
+            to={CORE_INTEGRATION_RESULTS_PATH}
+          >
+            View core integration results
+          </Link>
           <button
             type="button"
             className="integration-health__button"

@@ -22,7 +22,16 @@ message UploadFileRequest {
   int32 size = 4;
 }
 
+// Sprint 2 Week 3 (Varun) — the response previously carried only status and
+// message, so a successful upload gave the frontend no way to reference the
+// stored file afterwards (no ID, no way to attach it to a report). These
+// fields mirror what StoredFile.create() already returns from the database;
+// the service layer just wasn't passing them back.
 message UploadFileResponse {
   int32 status = 1;
   string message = 2;
+  string file_id = 3;
+  string original_name = 4;
+  string mime_type = 5;
+  int32 size = 6;
 }

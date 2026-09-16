@@ -20,12 +20,6 @@ import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer";
 import ForgotPassword from "./ForgotPassword";
-import SettingsPage from "./SettingsPage";
-import Alerts from "./Alerts";
-import ReportsPage from "./ReportsPage";
-import ThreatDetails from "./ThreatDetails";
-import RiskAssessmentPage from "./RiskAssessmentPage";
-import HelpSupportPage from "./HelpSupportPage";
 import {
   getAuthSession,
   logoutUser,
@@ -638,15 +632,13 @@ function App() {
 
         <Route
             path="/dashboard"
-            element={protectedPage(
-              withShell(
-               <Dashboard
-                   setPage={goToPage}
-                   setSelectedThreat={setSelectedThreat}
-                   isLoggedIn={isLoggedIn}
-               />,
-              ),
-            )}
+            element={withShell(
+                <Dashboard
+                    setPage={goToPage}
+                    setSelectedThreat={setSelectedThreat}
+                    isLoggedIn={isLoggedIn}
+                />,
+              )}
         />
 
          <Route

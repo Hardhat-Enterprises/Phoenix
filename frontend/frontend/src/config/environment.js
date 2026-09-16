@@ -24,6 +24,15 @@ export const STORAGE_API_URL =
   cleanEnvironmentUrl(import.meta.env.VITE_STORAGE_API_URL) ||
   API_GATEWAY_URL;
 
+// Which notification provider the panel runs on. "mock" serves notification
+// records from memory, so the panel can be developed and demonstrated without
+// the gateway; anything else uses the real API gateway.
+export const NOTIFICATION_PROVIDER = (
+  import.meta.env.VITE_NOTIFICATION_PROVIDER?.trim() || "api"
+).toLowerCase();
+
+export const NOTIFICATION_USE_MOCK = NOTIFICATION_PROVIDER === "mock";
+
 // --- Sprint 2: Risk and Anomaly Feature Control (Varun) --------------------
 //
 // The supplied backend does not currently provide the risk-assessment or
@@ -41,6 +50,11 @@ export const RISK_ASSESSMENT_DEMO_MODE =
 // Defaults to false (disabled/hidden) unless explicitly set to "true".
 export const ANOMALY_DETECTION_ENABLED =
   import.meta.env.VITE_ANOMALY_DETECTION_ENABLED?.trim() === "true";
+
+// Defaults to false. Live correlation integration remains disabled until the
+// backend correlation provider and endpoint contract are ready for frontend use.
+export const CORRELATION_LIVE_ENABLED =
+  import.meta.env.VITE_CORRELATION_LIVE_ENABLED?.trim() === "true";
 
 export const buildApiUrl = (baseUrl, path = "") => {
   if (!baseUrl) {

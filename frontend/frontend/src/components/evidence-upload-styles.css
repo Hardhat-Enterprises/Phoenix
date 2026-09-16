@@ -1,0 +1,74 @@
+/* Sprint 2 Week 3 — Evidence upload and backend integrity (Varun)
+   Appended to the existing EvidenceEntry.css. New class names only —
+   doesn't touch any existing rule in this file. */
+
+.evidence-upload-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.evidence-upload-progress-track {
+  flex: 1;
+  min-width: 80px;
+  height: 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.evidence-upload-progress-fill {
+  height: 100%;
+  background: #2563eb;
+  transition: width 150ms ease;
+}
+
+.evidence-upload-status span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.evidence-upload-success {
+  color: #166534 !important;
+}
+
+.evidence-upload-error {
+  color: #b91c1c !important;
+}
+
+.evidence-upload-cancel,
+.evidence-upload-retry {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #334155;
+}
+
+.evidence-upload-cancel:hover {
+  background: #f1f5f9;
+}
+
+.evidence-upload-retry {
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+.evidence-upload-retry:hover {
+  background: #fef2f2;
+}
+
+.evidence-upload-status--error > div,
+.evidence-upload-status--cancelled > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}

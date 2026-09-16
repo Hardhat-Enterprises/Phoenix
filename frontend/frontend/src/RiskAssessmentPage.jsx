@@ -1,13 +1,8 @@
 import RiskAssessmentInterface from "./components/RiskAssessmentInterface";
+import CorrelationResult from "./components/CorrelationResult";
+import { CORRELATION_FIXTURES } from "./services/correlationResultFixtures";
+import { CORRELATION_LIVE_ENABLED } from "./config/environment";
 import "./RiskAssessmentPage.css";
-
-// RiskAssessmentPage.jsx
-//
-// Sprint 1 deliverable — Varun Reddy Maligireddy
-// Standalone page for the Risk Assessment prototype, following the same
-// page-level pattern as ReportsPage.jsx / ThreatDetails.jsx: a page wrapper
-// with the site's standard title-section, with the actual list/detail logic
-// living in components/RiskAssessmentInterface.jsx.
 
 function RiskAssessmentPage() {
   return (
@@ -22,6 +17,32 @@ function RiskAssessmentPage() {
 
       <div className="risk-assessment-card">
         <RiskAssessmentInterface />
+      </div>
+
+      <div className="risk-assessment-card">
+        <section aria-labelledby="correlation-demo-heading">
+          <h2 id="correlation-demo-heading">
+            Hazard Correlation Result
+          </h2>
+
+          <p>
+            This section demonstrates the standalone correlation-result
+            presentation using a frozen fixture. It does not call a live
+            correlation endpoint.
+          </p>
+
+          {!CORRELATION_LIVE_ENABLED && (
+            <p role="status">
+              Live correlation integration is currently disabled.
+              Demonstration data is shown below.
+            </p>
+          )}
+
+          <CorrelationResult
+            result={CORRELATION_FIXTURES.related}
+            source="demonstration"
+          />
+        </section>
       </div>
     </div>
   );

@@ -455,25 +455,155 @@
   color: var(--color-on-interactive);
 }
 
-/* Dark-theme cover for the states this panel adds: a failed refresh reported
-   beside the list, records without a usable timestamp, and the note admitting
-   that dismiss and clear are local. */
-:root[data-theme="dark"] .notif-error-inline {
-  background: var(--color-error-bg);
-  border-color: var(--color-error-border);
+/* Notification search, read filter and pagination ------------------------ */
+
+.notif-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: var(--border-width) solid var(--color-border);
+  background: var(--color-surface-subtle);
 }
 
-:root[data-theme="dark"] .notif-error-inline .notif-error-text,
-:root[data-theme="dark"] .notif-error .notif-error-text {
-  color: var(--color-error-text);
+.notif-search-control {
+  display: flex;
+  flex: 1 1 100%;
+  flex-direction: column;
+  gap: var(--space-xxs);
 }
 
-:root[data-theme="dark"] .notif-time-unknown {
+.notif-filter-control,
+.notif-limit-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.notif-control-label {
   color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-:root[data-theme="dark"] .notif-local-note {
-  color: var(--color-warning-text);
+.notif-search-input,
+.notif-limit-select {
+  box-sizing: border-box;
+  border: var(--border-width) solid var(--color-control-border);
+  border-radius: var(--radius-xs);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.notif-search-input {
+  width: 100%;
+  padding: 6px var(--space-xs);
+}
+
+.notif-search-input::placeholder {
+  color: var(--color-placeholder);
+}
+
+.notif-limit-select {
+  min-height: 30px;
+  padding: 4px var(--space-xs);
+  cursor: pointer;
+}
+
+.notif-filter-buttons,
+.notif-pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xxs);
+}
+
+.notif-filter-btn,
+.notif-page-btn {
+  border: var(--border-width) solid var(--color-control-border);
+  border-radius: var(--radius-xs);
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.notif-filter-btn {
+  padding: 5px var(--space-xs);
+}
+
+.notif-page-btn {
+  padding: 5px 9px;
+}
+
+.notif-filter-btn:hover:not(.active),
+.notif-page-btn:hover:not(:disabled) {
+  border-color: var(--color-interactive);
+  background: var(--color-interactive-surface-hover);
+}
+
+.notif-filter-btn:active:not(.active),
+.notif-page-btn:active:not(:disabled) {
+  background: var(--color-interactive-surface-active);
+}
+
+.notif-filter-btn.active {
+  border-color: var(--color-interactive);
+  background: var(--color-interactive);
+  color: var(--color-on-interactive);
+}
+
+.notif-page-btn:disabled {
+  border-color: var(--color-disabled-border);
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+  cursor: not-allowed;
+}
+
+.notif-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-top: var(--border-width) solid var(--color-border);
+  background: var(--color-surface-subtle);
+}
+
+.notif-pagination-info,
+.notif-page-indicator {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.notif-pagination-buttons {
+  margin-left: auto;
+}
+
+/* Prevent the controls from overflowing the notification panel on phones. */
+@media (max-width: 420px) {
+  .notif-panel {
+    right: var(--space-sm);
+    width: calc(100vw - (var(--space-sm) * 2));
+  }
+
+  .notif-filter-control,
+  .notif-limit-control {
+    flex-wrap: wrap;
+  }
+
+  .notif-pagination-buttons {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
 }
 
 /* Injected-data panel: the states and fields added when the list became a

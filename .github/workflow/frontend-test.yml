@@ -1,0 +1,148 @@
+name: Frontend Test Workflow
+
+on:
+  push:
+    branches: [main, develop, master]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-test.yml"
+  pull_request:
+    branches: [main, develop, master]
+    paths:
+      - "frontend/**"
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Install dependencies
+        working-directory: frontend/frontend
+        run: npm ci
+
+      - name: Run linter
+        working-directory: frontend/frontend
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: frontend/frontend
+        run: npm run test:ci
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.node-version }}
+          path: frontend/frontend/test-results.json
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ matrix.node-version }}
+          path: frontend/frontend/coverage/
+
+      - name: Comment on PR with test summary
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const testResults = fs.readFileSync('frontend/frontend/test-results.json', 'utf8');
+            const results = JSON.parse(testResults);
+
+            const summary = `## Test Results
+
+            **Node Version:** ${{ matrix.node-version }}
+
+            - **Total Tests:** ${results.numTotalTests || 'N/A'}
+            - **Passed:** ${results.numPassedTests || 0}
+            - **Failed:** ${results.numFailedTests || 0}
+            - **Skipped:** ${results.numPendingTests || 0}
+            - **Duration:** ${(results.testResults[0]?.perfStats?.duration / 1000).toFixed(2)}s
+
+            [View full report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Install dependencies
+        working-directory: frontend/frontend
+        run: npm ci
+
+      - name: Generate coverage report
+        working-directory: frontend/frontend
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./frontend/frontend/coverage/coverage-final.json
+          flags: frontend
+          name: frontend-coverage
+          fail_ci_if_error: false
+
+  build:
+    name: Build Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Install dependencies
+        working-directory: frontend/frontend
+        run: npm ci
+
+      - name: Build application
+        working-directory: frontend/frontend
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-dist
+          path: frontend/frontend/dist/

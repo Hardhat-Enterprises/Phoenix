@@ -5,6 +5,7 @@ package notification;
 service NotificationService {
     rpc GetNotificationHealth(GetNotificationHealthRequest) returns (GetNotificationHealthResponse);
     rpc GetNotifications(GetNotificationsRequest) returns (GetNotificationsResponse);
+    rpc CreateNotification(CreateNotificationRequest) returns (CreateNotificationResponse);
 }
 
 message GetNotificationHealthRequest {
@@ -29,4 +30,28 @@ message Notification {
     string title = 2;
     string body = 3;
     string recipient = 4;
+    string severity = 5;
+    bool sent = 6;
+}
+
+// Input to CreateNotification is the final, combined output of the Response
+// Decision Manager (see backend/libs/common/src/helper/response-decision.ts),
+// not a raw threat event - this is the Output Layer of the Threat Analysis
+// Integration pipeline described in the team's Workflow and Sequence Diagrams.
+message CreateNotificationRequest {
+    string event_id = 1;
+    string threat_type = 2;
+    string severity = 3;
+    double risk_score = 4;
+    double confidence_score = 5;
+    string recommended_action = 6;
+    bool notification_required = 7;
+    string status = 8;
+    string recipient = 9;
+}
+
+message CreateNotificationResponse {
+    int32 status = 1;
+    string message = 2;
+    Notification notification = 3;
 }

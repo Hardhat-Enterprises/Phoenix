@@ -15,3 +15,16 @@ export class GetNotificationsEntity {
     },
   ];
 }
+
+export class CreateNotificationEntity {
+  status: number;
+  message: string;
+  notification?: {
+    id: number;
+    title: string;
+    body: string;
+    recipient: string;
+    severity: string;
+    sent: boolean;
+  };
+}

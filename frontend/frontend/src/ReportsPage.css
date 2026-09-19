@@ -595,3 +595,6 @@
   border-color: var(--color-success-border);
   color: var(--color-success-text);
 }
+.reports-pdf-message {
+  margin: 16px 28px;
+}

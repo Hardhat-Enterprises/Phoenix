@@ -12,8 +12,7 @@ import {
 import EvidenceEntry from "./components/EvidenceEntry";
 import "./ReportsPage.css";
 import "./components/design.css";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import ReportPDF from "./components/ReportPDF";
+import { downloadReportPdf } from "./utils/downloadReportPdf";
 import { usePreferences } from "./PreferencesContext";
 import { formatDisplayDate } from "./displayDate";
 import {
@@ -277,6 +276,8 @@ function ReportsPage() {
   const [modelMessage, setModelMessage] = useState("");
   const [modelError, setModelError] = useState("");
   const [selectedResult, setSelectedResult] = useState(null);
+    const [downloadingId, setDownloadingId] = useState(null);
+  const [pdfError, setPdfError] = useState("");
 
   const displayedIntegrations = useMemo(
     () => latestCoreIntegration(integrations),
@@ -432,6 +433,21 @@ function ReportsPage() {
       setModelError(error.message);
     } finally {
       setIsRunningModel(false);
+    }
+  };
+
+    const handleDownloadPdf = async (report) => {
+    if (downloadingId !== null) return;
+
+    setPdfError("");
+    setDownloadingId(report.id);
+
+    try {
+      await downloadReportPdf(report);
+    } catch {
+      setPdfError("The PDF could not be generated. Please try again.");
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -761,6 +777,12 @@ function ReportsPage() {
           </div>
         </div>
 
+        {pdfError && (
+          <p className="ingestion-message error reports-pdf-message" role="alert">
+            {pdfError}
+          </p>
+        )}
+        
         <div className="reports-table">
           <div className="reports-table-head">
             <span>Evidence</span>
@@ -788,13 +810,14 @@ function ReportsPage() {
                 <span>{report.status}</span>
                 <span>{report.displayDate}</span>
 
-                <PDFDownloadLink
-                  document={<ReportPDF report={report} />}
-                  fileName={report.fileName}
+                <button
+                  type="button"
                   className="btn btn-primary"
+                  disabled={downloadingId !== null}
+                  onClick={() => handleDownloadPdf(report)}
                 >
-                  {({ loading }) => (loading ? "Generating PDF" : "Download")}
-                </PDFDownloadLink>
+                  {downloadingId === report.id ? "Generating PDF" : "Download"}
+                </button>
               </div>
             ))
           ) : (

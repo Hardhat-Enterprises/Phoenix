@@ -614,3 +614,33 @@
   font-weight: 700;
   margin: 16px 28px 0;
 }
+.field-error {
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.url-form-group input[aria-invalid="true"],
+.url-form-group textarea[aria-invalid="true"] {
+  border-color: #dc2626;
+}
+
+:root[data-theme="dark"] .field-error {
+  color: var(--color-error-text);
+}
+.field-error {
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.url-form-group input[aria-invalid="true"],
+.url-form-group textarea[aria-invalid="true"] {
+  border-color: #dc2626;
+}
+
+:root[data-theme="dark"] .field-error {
+  color: var(--color-error-text);
+}

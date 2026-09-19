@@ -13,6 +13,7 @@ import EvidenceEntry from "./components/EvidenceEntry";
 import "./ReportsPage.css";
 import "./components/design.css";
 import { downloadReportPdf } from "./utils/downloadReportPdf";
+import { validateReportForm } from "./utils/reportFormValidation";
 import { usePreferences } from "./PreferencesContext";
 import { formatDisplayDate } from "./displayDate";
 import {
@@ -281,6 +282,17 @@ const getRiskClass = (riskLevel, status) => {
     .replace(/\s+/g, "-");
 };
 
+// Field errors are checked in the order the fields appear on the page.
+const FIELD_ORDER = ["evidence", "url", "hazardSeverity", "hazardLocation"];
+const FIELD_IDS = {
+  evidence: "reports-url-input",
+  url: "reports-url-input",
+  hazardSeverity: "reports-hazard-severity-input",
+  hazardLocation: "reports-hazard-location-input",
+};
+
+const describedBy = (...ids) => ids.filter(Boolean).join(" ") || undefined;
+
 function ReportsPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -301,6 +313,8 @@ function ReportsPage() {
   const [selectedResult, setSelectedResult] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
   const [pdfError, setPdfError] = useState("");
+    const [fieldErrors, setFieldErrors] = useState({});
+  const hasFieldErrors = Object.keys(fieldErrors).length > 0;
   const [pdfProgress, setPdfProgress] = useState("");
   const [failedPdfReport, setFailedPdfReport] = useState(null);
   const pdfBusyRef = useRef(false);
@@ -391,13 +405,21 @@ function ReportsPage() {
     };
   }, []);
 
-  const updateField = (field) => (event) => {
+    const updateField = (field) => (event) => {
     setForm((currentForm) => ({
       ...currentForm,
       [field]: event.target.value,
     }));
-  };
 
+    setFieldErrors((currentErrors) => {
+      if (Object.keys(currentErrors).length === 0) return currentErrors;
+
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[field];
+      if (field === "url" || field === "text") delete nextErrors.evidence;
+      return nextErrors;
+    });
+  };
   const pollForResult = async (payload, submittedAt) => {
     for (let attempt = 0; attempt < 8; attempt += 1) {
       await pause(attempt === 0 ? 1000 : 1500);
@@ -425,8 +447,12 @@ function ReportsPage() {
     setModelMessage("");
     setSelectedResult(null);
 
-    if (!form.url.trim() && !form.text.trim()) {
-      setModelError("Enter a URL, text, or both before running the model.");
+        const errors = validateReportForm(form);
+    setFieldErrors(errors);
+
+    const firstInvalid = FIELD_ORDER.find((key) => errors[key]);
+    if (firstInvalid) {
+      document.getElementById(FIELD_IDS[firstInvalid])?.focus();
       return;
     }
 
@@ -525,35 +551,67 @@ function ReportsPage() {
           </span>
         </div>
 
-        <form className="url-ingestion-form" onSubmit={handleRunModel}>
+              <form
+          className="url-ingestion-form"
+          onSubmit={handleRunModel}
+          noValidate
+        >
+          {hasFieldErrors && (
+            <p className="ingestion-message error" role="alert">
+              Some details need attention. Fix the highlighted fields and try
+              again.
+            </p>
+          )}
+
           <div className="url-form-grid">
             <div className="url-form-group wide">
-              <label>URL</label>
+              <label htmlFor="reports-url-input">URL</label>
               <input
                 id="reports-url-input"
                 type="url"
                 placeholder="https://example.com/donate-now"
                 value={form.url}
                 onChange={updateField("url")}
-                aria-describedby={
-                  modelError ? "reports-model-error" : undefined
+                aria-invalid={
+                  fieldErrors.url || fieldErrors.evidence ? "true" : undefined
                 }
+                aria-describedby={describedBy(
+                  fieldErrors.url && "reports-url-error",
+                  fieldErrors.evidence && "reports-evidence-error",
+                  modelError && "reports-model-error",
+                )}
               />
+              {fieldErrors.url && (
+                <p id="reports-url-error" className="field-error">
+                  {fieldErrors.url}
+                </p>
+              )}
             </div>
 
             <div className="url-form-group wide">
-              <label>Text</label>
+              <label htmlFor="reports-text-input">Text</label>
               <textarea
+                id="reports-text-input"
                 placeholder="Urgent flood relief donation needed."
                 value={form.text}
                 onChange={updateField("text")}
                 rows={4}
+                aria-invalid={fieldErrors.evidence ? "true" : undefined}
+                aria-describedby={describedBy(
+                  fieldErrors.evidence && "reports-evidence-error",
+                )}
               />
+              {fieldErrors.evidence && (
+                <p id="reports-evidence-error" className="field-error">
+                  {fieldErrors.evidence}
+                </p>
+              )}
             </div>
 
             <div className="url-form-group">
-              <label>Timestamp</label>
+              <label htmlFor="reports-timestamp-input">Timestamp</label>
               <input
+                id="reports-timestamp-input"
                 type="datetime-local"
                 value={form.timestamp}
                 onChange={updateField("timestamp")}
@@ -561,8 +619,9 @@ function ReportsPage() {
             </div>
 
             <div className="url-form-group">
-              <label>Source</label>
+              <label htmlFor="reports-source-input">Source</label>
               <input
+                id="reports-source-input"
                 type="text"
                 value={form.source}
                 onChange={updateField("source")}
@@ -578,8 +637,9 @@ function ReportsPage() {
 
             <div className="url-form-grid">
               <div className="url-form-group">
-                <label>Hazard Type</label>
+                <label htmlFor="reports-hazard-type-input">Hazard Type</label>
                 <input
+                  id="reports-hazard-type-input"
                   type="text"
                   value={form.hazardType}
                   onChange={updateField("hazardType")}
@@ -587,20 +647,35 @@ function ReportsPage() {
               </div>
 
               <div className="url-form-group">
-                <label>Hazard Severity</label>
+                <label htmlFor="reports-hazard-severity-input">
+                  Hazard Severity
+                </label>
                 <input
+                  id="reports-hazard-severity-input"
                   type="number"
                   min="0"
                   max="1"
                   step="0.01"
                   value={form.hazardSeverity}
                   onChange={updateField("hazardSeverity")}
+                  aria-invalid={fieldErrors.hazardSeverity ? "true" : undefined}
+                  aria-describedby={describedBy(
+                    fieldErrors.hazardSeverity && "reports-severity-error",
+                  )}
                 />
+                {fieldErrors.hazardSeverity && (
+                  <p id="reports-severity-error" className="field-error">
+                    {fieldErrors.hazardSeverity}
+                  </p>
+                )}
               </div>
 
               <div className="url-form-group">
-                <label>Hazard Timestamp</label>
+                <label htmlFor="reports-hazard-timestamp-input">
+                  Hazard Timestamp
+                </label>
                 <input
+                  id="reports-hazard-timestamp-input"
                   type="datetime-local"
                   value={form.hazardTimestamp}
                   onChange={updateField("hazardTimestamp")}
@@ -608,21 +683,37 @@ function ReportsPage() {
               </div>
 
               <div className="url-form-group">
-                <label className="label-required">Hazard Location</label>
+                <label
+                  className="label-required"
+                  htmlFor="reports-hazard-location-input"
+                >
+                  Hazard Location
+                </label>
                 <input
+                  id="reports-hazard-location-input"
                   type="text"
                   value={form.hazardLocation}
                   onChange={updateField("hazardLocation")}
                   aria-required="true"
-                  aria-describedby={
-                    modelError ? "reports-model-error" : undefined
-                  }
+                  aria-invalid={fieldErrors.hazardLocation ? "true" : undefined}
+                  aria-describedby={describedBy(
+                    fieldErrors.hazardLocation && "reports-location-error",
+                    modelError && "reports-model-error",
+                  )}
                 />
+                {fieldErrors.hazardLocation && (
+                  <p id="reports-location-error" className="field-error">
+                    {fieldErrors.hazardLocation}
+                  </p>
+                )}
               </div>
 
               <div className="url-form-group">
-                <label>Hazard Status</label>
+                <label htmlFor="reports-hazard-status-input">
+                  Hazard Status
+                </label>
                 <input
+                  id="reports-hazard-status-input"
                   type="text"
                   value={form.hazardStatus}
                   onChange={updateField("hazardStatus")}
@@ -630,8 +721,9 @@ function ReportsPage() {
               </div>
 
               <div className="url-form-group">
-                <label>Alert Level</label>
+                <label htmlFor="reports-alert-level-input">Alert Level</label>
                 <select
+                  id="reports-alert-level-input"
                   value={form.alertLevel}
                   onChange={updateField("alertLevel")}
                 >
@@ -656,7 +748,9 @@ function ReportsPage() {
           )}
 
           {modelMessage && (
-            <p className="ingestion-message success">{modelMessage}</p>
+            <p className="ingestion-message success" role="status">
+              {modelMessage}
+            </p>
           )}
 
           <div className="url-action-row">
@@ -678,7 +772,7 @@ function ReportsPage() {
             </button>
           </div>
         </form>
-      </section>
+         </section>
 
       {latestResult && (
         <section className="model-output-card">

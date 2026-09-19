@@ -152,3 +152,27 @@ because no endpoint sends anything and the button implied otherwise. If
 outbound alerting is wanted, it needs its own endpoint — recipient, channel,
 body, and a delivery status — and `NOTIFICATION_SEND_SUPPORTED` exists to gate
 the UI on it.
+
+## Frontend notification API
+
+This section documents the Sprint 3 frontend contract. Backend availability has not been verified.
+
+| Function                     | Request                                         | Authentication |
+| ---------------------------- | ----------------------------------------------- | -------------- |
+| `getNotificationHealth`      | `GET /api/notifications/health`                 | None           |
+| `getNotifications`           | `GET /api/notifications`                        | Bearer token   |
+| `getNotificationUnreadCount` | `GET /api/notifications/unread-count`           | Bearer token   |
+| `markNotificationRead`       | `PATCH /api/notifications/:notificationId/read` | Bearer token   |
+| `markAllNotificationsRead`   | `PATCH /api/notifications/read-all`             | Bearer token   |
+| `deleteNotification`         | `DELETE /api/notifications/:notificationId`     | Bearer token   |
+
+The list request supports `page`, `limit`, and `read`. The All view omits `read`. Search remains disabled until its parameter name is confirmed.
+
+List responses expose `notifications` and `pagination` containing `total`, `page`, `limit`, and `totalPages`. Temporary compatibility fields are `items`, `total`, and `totalPages`.
+
+Requests support an optional abort signal. HTTP errors keep the backend status, message, and data. If token refresh fails, the existing session-expired handling is used.
+
+Run the notification contract tests from `frontend/frontend`:
+```bash
+npm test -- src/tests/services/NotificationApi.test.jsx
+```

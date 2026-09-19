@@ -1,4 +1,4 @@
-import { apiRequest, getAccessToken } from "./authApi";
+import { apiRequest } from "./authApi";
 
 const toQueryString = (params = {}) => {
   const query = new URLSearchParams();
@@ -144,48 +144,119 @@ export const NOTIFICATION_MUTATIONS_SUPPORTED = false;
 // of the UI may offer to forward or deliver a notification.
 export const NOTIFICATION_SEND_SUPPORTED = false;
 
-export const getNotifications = async (params = {}) => {
-  const accessToken = getAccessToken();
+const toNotificationQueryString = (params = {}, searchOption = {}) => {
+  const query = new URLSearchParams();
 
-  // The endpoint sits outside /api/users, so its auth requirement is not known
-  // here. Send the token when we have one and let the gateway decide.
-  const payload = await apiRequest(
-    `/api/notifications${toQueryString(params)}`,
+  for (const key of ["page", "limit", "read"]) {
+    const value = params[key];
+
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, value);
+    }
+  }
+
+  const searchParameter = searchOption.parameterName?.trim();
+
+  if (
+    searchOption.enabled === true &&
+    searchParameter &&
+    params.search !== undefined &&
+    params.search !== null &&
+    params.search !== ""
+  ) {
+    query.set(searchParameter, params.search);
+  }
+
+  const queryString = query.toString();
+  return queryString ? `?${queryString}` : "";
+};
+
+const normalizeNotificationList = (payload) => {
+  const notifications = payload?.data?.notifications;
+  const pagination = payload?.data?.pagination;
+  const hasValidPagination =
+    pagination &&
+    ["total", "page", "limit", "totalPages"].every((key) =>
+      Number.isFinite(pagination[key]),
+    );
+
+  if (!Array.isArray(notifications) || !hasValidPagination) {
+    throw new Error("Notification list response is malformed.");
+  }
+
+  const normalizedPagination = {
+    total: pagination.total,
+    page: pagination.page,
+    limit: pagination.limit,
+    totalPages: pagination.totalPages,
+  };
+
+  return {
+    notifications,
+    pagination: normalizedPagination,
+    // Compatibility fields used by the current notifier.
+    items: notifications,
+    total: normalizedPagination.total,
+    totalPages: normalizedPagination.totalPages,
+  };
+};
+
+const notificationRequest = (path, options = {}) =>
+  apiRequest(path, {
+    ...options,
+    requiresAuth: true,
+  });
+
+export const getNotificationHealth = async ({ signal } = {}) =>
+  apiRequest("/api/notifications/health", {
+    requiresAuth: false,
+    signal,
+  });
+
+export const getNotifications = async (
+  params = {},
+  {
+    signal,
+    search: searchOption = { enabled: false, parameterName: null },
+  } = {},
+) => {
+  const payload = await notificationRequest(
+    `/api/notifications${toNotificationQueryString(params, searchOption)}`,
+    { signal },
+  );
+
+  return normalizeNotificationList(payload);
+};
+
+export const getNotificationUnreadCount = async ({ signal } = {}) => {
+  const payload = await notificationRequest(
+    "/api/notifications/unread-count",
+    { signal },
+  );
+
+  return payload?.data?.unreadCount;
+};
+
+export const markNotificationRead = async (notificationId, { signal } = {}) =>
+  notificationRequest(
+    `/api/notifications/${encodeURIComponent(notificationId)}/read`,
+    { method: "PATCH", signal },
+  );
+
+export const markAllNotificationsRead = async ({ signal } = {}) =>
+  notificationRequest("/api/notifications/read-all", {
+    method: "PATCH",
+    signal,
+  });
+
+export const deleteNotification = async (notificationId, { signal } = {}) =>
+  notificationRequest(
+    `/api/notifications/${encodeURIComponent(notificationId)}`,
     {
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      method: "DELETE",
+      signal,
     },
   );
-
-  return withListMeta(payload, ["notifications", "alerts", "items", "data"]);
-};
-
-// The mutation endpoints the notification backend requirements document
-// proposes. They are wired and ready, but nothing calls them while
-// NOTIFICATION_MUTATIONS_SUPPORTED is false: the notification provider
-// substitutes a local no-op, so the panel keeps working and keeps saying that
-// its changes are not saved. Flipping that flag is the whole switch-on.
-const notificationRequest = (path, options = {}) => {
-  const accessToken = getAccessToken();
-
-  return apiRequest(path, {
-    ...options,
-    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-  });
-};
-
-export const markNotificationRead = async (id) =>
-  notificationRequest(
-    `/api/notifications/${encodeURIComponent(id)}/read`,
-    { method: "PATCH" },
-  );
-
-export const markAllNotificationsRead = async () =>
-  notificationRequest("/api/notifications/read-all", { method: "POST" });
-
-export const deleteNotification = async (id) =>
-  notificationRequest(`/api/notifications/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-  });
 
 export const getApiHealth = async () => {
   return apiRequest("/api/users/health", {

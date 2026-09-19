@@ -11,6 +11,7 @@ import {
   IntegrationType,
   IntegrationStatus,
   CyberThreat,
+  isRabbitMQConnected,
 } from "@phoenix/common";
 import {
   HazardEvent,
@@ -23,9 +24,18 @@ import { GetHealthEntity } from "../entity/ingestion.entity";
 import { DataIngestionStreamingLog } from "@phoenix/common";
 
 export const getHealth = (_getHealthDto: GetHealthDto): GetHealthEntity => {
+  if (!isRabbitMQConnected()) {
+    logger.error("Data ingestion health check failed: RabbitMQ is unavailable");
+
+    return {
+      status: HttpStatusCode.HTTP_STATUS_SERVICE_UNAVAILABLE,
+      message: "Data ingestion service is unhealthy: RabbitMQ is unavailable",
+    };
+  }
+
   return {
     status: HttpStatusCode.HTTP_STATUS_OK,
-    message: "Data ingestion service is running",
+    message: "Data ingestion service is healthy",
   };
 };
 

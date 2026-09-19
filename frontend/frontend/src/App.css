@@ -217,7 +217,7 @@ body {
   gap: 8px;
 }
 
-.login-field > span {
+.login-field > label {
   font-size: 14px;
   font-weight: 700;
   color: var(--text, #111111);
@@ -243,13 +243,21 @@ body {
   border-color: var(--primary, #2563eb);
 }
 
-.login-field input:focus {
+.login-field input:focus-visible {
   border-color: var(--primary, #2563eb);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary, #2563eb) 14%, transparent);
+  box-shadow: var(--focus-ring);
 }
 
 .login-field input[aria-invalid="true"] {
   border-color: var(--error-text, #dc2626);
+}
+
+.login-field-error {
+  color: var(--error-text, #991b1b);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 0;
 }
 
 .login-submit {
@@ -284,6 +292,12 @@ body {
   color: var(--success-text, #166534);
 }
 
+.login-loading {
+  background: var(--color-info-bg, #eff6ff);
+  border: 1px solid var(--color-info-border, #bfdbfe);
+  color: var(--color-info-text, #1e40af);
+}
+
 .login-extra {
   display: flex;
   justify-content: space-between;
@@ -310,7 +324,7 @@ body {
   text-decoration: underline;
 }
 
-.remember {
+.password-visibility {
   color: var(--text, #334155);
   font-size: 13px;
   display: flex;
@@ -319,39 +333,11 @@ body {
   cursor: pointer;
 }
 
-.remember input {
+.password-visibility input {
   accent-color: var(--primary, #2563eb);
   height: 16px;
   margin: 0;
   width: 16px;
-}
-
-.login-footer {
-  align-items: center;
-  border-top: 1px solid var(--border-color, #e2e8f0);
-  color: var(--muted, #64748b);
-  display: flex;
-  font-size: 13px;
-  gap: 5px;
-  justify-content: center;
-  margin-top: 26px;
-  padding-top: 20px;
-  text-align: center;
-}
-
-.login-footer button {
-  background: transparent;
-  border: 0;
-  color: var(--primary, #2563eb);
-  cursor: pointer;
-  font: inherit;
-  font-weight: 800;
-  padding: 2px;
-}
-
-.login-footer button:hover,
-.login-footer button:focus-visible {
-  text-decoration: underline;
 }
 
 .forgot-page-wrapper {
@@ -1081,8 +1067,7 @@ body {
   .header-role { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .login-main { align-items: flex-start; padding: 24px 12px; }
   .login-card { border-radius: 16px; padding: 26px 20px; }
-  .login-extra, .login-footer { align-items: flex-start; flex-direction: column; }
-  .login-footer { align-items: center; }
+  .login-extra { align-items: flex-start; flex-direction: column; }
 }
 
 :root[data-theme="dark"] body,
@@ -1105,8 +1090,7 @@ body {
 
 :root[data-theme="dark"] .login-heading h1 { color: var(--color-heading); }
 
-:root[data-theme="dark"] .login-heading p,
-:root[data-theme="dark"] .login-footer { color: var(--color-text-muted); }
+:root[data-theme="dark"] .login-heading p { color: var(--color-text-muted); }
 
 :root[data-theme="dark"] .temp-search,
 :root[data-theme="dark"] .header-auth-button,
@@ -1131,7 +1115,7 @@ body {
 
 :root[data-theme="dark"] .login-form label,
 :root[data-theme="dark"] .forgot,
-:root[data-theme="dark"] .remember,
+:root[data-theme="dark"] .password-visibility,
 :root[data-theme="dark"] .forgot-password-card label,
 :root[data-theme="dark"] .create-user-form label {
   color: var(--color-text);

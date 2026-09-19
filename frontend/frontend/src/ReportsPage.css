@@ -596,5 +596,21 @@
   color: var(--color-success-text);
 }
 .reports-pdf-message {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
   margin: 16px 28px;
+}
+
+.reports-pdf-status {
+  margin: 0;
+}
+
+.reports-pdf-status:not(:empty) {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  margin: 16px 28px 0;
 }

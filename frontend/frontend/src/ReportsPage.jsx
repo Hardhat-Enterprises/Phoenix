@@ -276,8 +276,12 @@ function ReportsPage() {
   const [modelMessage, setModelMessage] = useState("");
   const [modelError, setModelError] = useState("");
   const [selectedResult, setSelectedResult] = useState(null);
-    const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
   const [pdfError, setPdfError] = useState("");
+  const [pdfProgress, setPdfProgress] = useState("");
+  const [failedPdfReport, setFailedPdfReport] = useState(null);
+  const pdfBusyRef = useRef(false);
+  const pdfAbortRef = useRef(null);
 
   const displayedIntegrations = useMemo(
     () => latestCoreIntegration(integrations),
@@ -436,18 +440,44 @@ function ReportsPage() {
     }
   };
 
-    const handleDownloadPdf = async (report) => {
-    if (downloadingId !== null) return;
+      useEffect(() => {
+    return () => {
+      pdfAbortRef.current?.abort();
+    };
+  }, []);
+
+  const handleDownloadPdf = async (report) => {
+    if (pdfBusyRef.current) return;
+    pdfBusyRef.current = true;
+
+    const controller = new AbortController();
+    pdfAbortRef.current = controller;
 
     setPdfError("");
+    setFailedPdfReport(null);
+    setPdfProgress("Preparing the PDF…");
     setDownloadingId(report.id);
 
     try {
-      await downloadReportPdf(report);
-    } catch {
-      setPdfError("The PDF could not be generated. Please try again.");
+      await downloadReportPdf(report, {
+        signal: controller.signal,
+        onProgress: (message) => {
+          if (!controller.signal.aborted) setPdfProgress(message);
+        },
+      });
+
+      if (!controller.signal.aborted) setPdfProgress("PDF downloaded.");
+    } catch (error) {
+      if (controller.signal.aborted || error?.name === "AbortError") return;
+
+      setPdfProgress("");
+      setPdfError(
+        "The PDF could not be generated. Your report details are unchanged, so you can try again.",
+      );
+      setFailedPdfReport(report);
     } finally {
-      setDownloadingId(null);
+      pdfBusyRef.current = false;
+      if (!controller.signal.aborted) setDownloadingId(null);
     }
   };
 
@@ -777,10 +807,24 @@ function ReportsPage() {
           </div>
         </div>
 
+                <p className="reports-pdf-status" role="status">
+          {pdfProgress}
+        </p>
+
         {pdfError && (
-          <p className="ingestion-message error reports-pdf-message" role="alert">
-            {pdfError}
-          </p>
+          <div className="ingestion-message error reports-pdf-message" role="alert">
+            <span>{pdfError}</span>
+            {failedPdfReport && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={downloadingId !== null}
+                onClick={() => handleDownloadPdf(failedPdfReport)}
+              >
+                Retry download
+              </button>
+            )}
+          </div>
         )}
         
         <div className="reports-table">

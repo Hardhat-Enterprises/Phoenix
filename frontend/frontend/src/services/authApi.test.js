@@ -135,6 +135,70 @@ describe("PHOENIX authentication", () => {
     );
   });
 
+  it("preserves an HTTP error returned after a successful refresh", async () => {
+    const finalResponse = {
+      message: "The refreshed session cannot access this resource",
+      errors: ["notification access denied"],
+    };
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: "Invalid token" }), {
+          status: 401,
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            status: 200,
+            access_token: "new-access-token",
+          }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(finalResponse), { status: 403 }),
+      );
+
+    const { saveAuthSession, apiRequest } = await loadAuthApi();
+
+    saveAuthSession({
+      access_token: "expired-access-token",
+      refresh_token: "refresh-token",
+      user_id: 7,
+      username: "aayan",
+      role: "admin",
+    });
+
+    await expect(
+      apiRequest("/api/protected", { requiresAuth: true }),
+    ).rejects.toMatchObject({
+      message: finalResponse.message,
+      status: 403,
+      data: finalResponse,
+      path: "/api/protected",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not classify an unrelated fetch failure as an abort", async () => {
+    const controller = new AbortController();
+    controller.abort(new Error("Synthetic cancellation reason"));
+    vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
+      new TypeError("Synthetic network failure"),
+    );
+
+    const { apiRequest } = await loadAuthApi();
+
+    await expect(
+      apiRequest("/api/public", { signal: controller.signal }),
+    ).rejects.toMatchObject({
+      name: "Error",
+      message:
+        "Could not reach the PHOENIX API gateway. Check the configured API gateway and try again.",
+    });
+  });
+
   it("clears the session when refresh fails", async () => {
     vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(

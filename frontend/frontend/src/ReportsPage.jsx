@@ -21,6 +21,18 @@ import {
   postIngestionCore,
 } from "./services/phoenixApi";
 
+const UNAVAILABLE = "Unavailable";
+
+// Missing (null/undefined/object) is "Unavailable". An empty string the
+// backend really sent is "(empty)". A real 0 stays "0".
+const displayText = (value) => {
+  if (value === null || value === undefined || typeof value === "object") {
+    return UNAVAILABLE;
+  }
+
+  const text = String(value);
+  return text.trim() === "" ? "(empty)" : text;
+};
 const defaultForm = {
   url: "https://example.com/donate-now",
   text: "Urgent flood relief donation needed.",
@@ -45,9 +57,9 @@ const pause = (delayMs) =>
     window.setTimeout(resolve, delayMs);
   });
 
-const formatDateTime = (value) => {
-  if (!value) {
-    return "-";
+  const formatDateTime = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return UNAVAILABLE;
   }
 
   const date = new Date(value);
@@ -58,14 +70,25 @@ const formatUserDateTime = (value, dateFormat) => formatDisplayDate(
   value,
   dateFormat,
   {
-    fallback: value || "-",
+      fallback: value || UNAVAILABLE,
     includeTime: true,
   },
 );
 
 const formatScore = (value) => {
+  // Number(null) and Number("") are 0, so check for missing values first.
+  if (
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    typeof value === "object" ||
+    typeof value === "boolean"
+  ) {
+    return UNAVAILABLE;
+  }
+
   const number = Number(value);
-  return Number.isFinite(number) ? number.toFixed(4) : "-";
+  return Number.isFinite(number) ? number.toFixed(4) : UNAVAILABLE;
 };
 
 const getProcessedTime = (integration) =>
@@ -100,7 +123,7 @@ const getEvidenceType = (input = {}) => {
     return "Text";
   }
 
-  return "-";
+    return UNAVAILABLE;
 };
 
 const sanitizeFileName = (value) => {
@@ -115,7 +138,7 @@ const sanitizeFileName = (value) => {
 const buildIntegrationReport = (integration, dateFormat) => {
   const input = integration.input || {};
   const output = integration.output || {};
-  const status = integration.status || "-";
+   const status = integration.status || UNAVAILABLE;
   const risk = output.risk_level || (status === "error" ? "Error" : "Pending");
   const title = getEvidenceTitle(input);
   const processedTime = getProcessedTime(integration);
@@ -681,12 +704,12 @@ function ReportsPage() {
 
             <div className="score-tile">
               <span>Predicted Class</span>
-              <strong>{output.predicted_class ?? "-"}</strong>
+              <strong>{displayText(output.predicted_class)}</strong>
             </div>
 
             <div className="score-tile">
               <span>Status</span>
-              <strong>{latestResult.status || "-"}</strong>
+              <strong>{displayText(latestResult.status)}</strong>
             </div>
           </div>
 
@@ -781,7 +804,7 @@ function ReportsPage() {
                 </span>
                 <span>{formatScore(integration.output?.risk_score)}</span>
                 <span>{formatScore(integration.output?.confidence_score)}</span>
-                <span>{integration.status || "-"}</span>
+                <span>{displayText(integration.status)}</span>
                 <span>
                   {formatUserDateTime(integration.output?.processed_at, dateFormat)}
                 </span>

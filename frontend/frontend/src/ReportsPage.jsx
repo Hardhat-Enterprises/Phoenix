@@ -34,6 +34,7 @@ const displayText = (value) => {
   const text = String(value);
   return text.trim() === "" ? "(empty)" : text;
 };
+
 const defaultForm = {
   url: "https://example.com/donate-now",
   text: "Urgent flood relief donation needed.",
@@ -53,12 +54,25 @@ const getCurrentDateTimeLocal = () => {
   return localDate.toISOString().slice(0, 16);
 };
 
-const pause = (delayMs) =>
+// How many times the page checks for the model output after submitting.
+const MAX_POLLS = 9;
+
+// Resolves after delayMs, or straight away if the signal is aborted.
+const pause = (delayMs, signal) =>
   new Promise((resolve) => {
-    window.setTimeout(resolve, delayMs);
+    const timer = window.setTimeout(resolve, delayMs);
+
+    signal?.addEventListener(
+      "abort",
+      () => {
+        window.clearTimeout(timer);
+        resolve();
+      },
+      { once: true },
+    );
   });
 
-  const formatDateTime = (value) => {
+const formatDateTime = (value) => {
   if (value === null || value === undefined || value === "") {
     return UNAVAILABLE;
   }
@@ -71,7 +85,7 @@ const formatUserDateTime = (value, dateFormat) => formatDisplayDate(
   value,
   dateFormat,
   {
-      fallback: value || UNAVAILABLE,
+    fallback: value || UNAVAILABLE,
     includeTime: true,
   },
 );
@@ -313,12 +327,17 @@ function ReportsPage() {
   const [selectedResult, setSelectedResult] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
   const [pdfError, setPdfError] = useState("");
-    const [fieldErrors, setFieldErrors] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const hasFieldErrors = Object.keys(fieldErrors).length > 0;
   const [pdfProgress, setPdfProgress] = useState("");
   const [failedPdfReport, setFailedPdfReport] = useState(null);
+  const [runFailed, setRunFailed] = useState(false);
   const pdfBusyRef = useRef(false);
   const pdfAbortRef = useRef(null);
+  const isMountedRef = useRef(true);
+  const loadSeqRef = useRef(0);
+  const runBusyRef = useRef(false);
+  const runAbortRef = useRef(null);
 
   const displayedIntegrations = useMemo(
     () => latestCoreIntegration(integrations),
@@ -342,13 +361,26 @@ function ReportsPage() {
     [integrations, selectedResult],
   );
 
-  const loadIntegrations = async () => {
-    setIsLoadingIntegrations(true);
-    setIntegrationsError(null);
+  // silent: used while polling, so the results table does not flash back to
+  // its loading state on every check.
+  const loadIntegrations = async ({ silent = false } = {}) => {
+    // A newer load supersedes this one: its result is ignored.
+    loadSeqRef.current += 1;
+    const requestId = loadSeqRef.current;
+    const isCurrent = () =>
+      isMountedRef.current && requestId === loadSeqRef.current;
+
+    if (!silent) {
+      setIsLoadingIntegrations(true);
+      setIntegrationsError(null);
+    }
 
     try {
       const response = await getIntegrations({ page: 1, limit: 25 });
       const items = sortNewestFirst(response.items || []);
+
+      if (!isCurrent()) return items;
+
       const hasMalformedCoreResult = items.some((item) =>
         item.integration_type === "core" && [
           item.status, item.note, item.created_at, item.updated_at,
@@ -364,15 +396,27 @@ function ReportsPage() {
         return [];
       }
       setIntegrations(items);
+      setIntegrationsError(null);
       return items;
     } catch (error) {
-      setIntegrations([]);
-      setIntegrationsError(getApiErrorState(error));
+      if (isCurrent()) {
+        setIntegrations([]);
+        setIntegrationsError(getApiErrorState(error));
+      }
       return [];
     } finally {
-      setIsLoadingIntegrations(false);
+      if (isCurrent()) setIsLoadingIntegrations(false);
     }
   };
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      runAbortRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (location.hash !== `#${CORE_INTEGRATION_RESULTS_ID}`) return;
@@ -405,7 +449,7 @@ function ReportsPage() {
     };
   }, []);
 
-    const updateField = (field) => (event) => {
+  const updateField = (field) => (event) => {
     setForm((currentForm) => ({
       ...currentForm,
       [field]: event.target.value,
@@ -420,11 +464,16 @@ function ReportsPage() {
       return nextErrors;
     });
   };
-  const pollForResult = async (payload, submittedAt) => {
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      await pause(attempt === 0 ? 1000 : 1500);
 
-      const items = await loadIntegrations();
+  const pollForResult = async (payload, submittedAt, signal, onAttempt) => {
+    for (let attempt = 1; attempt <= MAX_POLLS; attempt += 1) {
+      await pause(attempt === 1 ? 1000 : 1500, signal);
+      if (signal.aborted) return null;
+
+      onAttempt?.(attempt);
+      const items = await loadIntegrations({ silent: true });
+      if (signal.aborted) return null;
+
       const match = findIntegrationForPayload(items, payload, submittedAt);
 
       if (match && (hasModelOutput(match) || match.status === "error")) {
@@ -432,8 +481,7 @@ function ReportsPage() {
       }
     }
 
-    const items = await loadIntegrations();
-    return findIntegrationForPayload(items, payload, submittedAt) || null;
+    return null;
   };
 
   const handleRefreshResults = async () => {
@@ -441,13 +489,15 @@ function ReportsPage() {
     await loadIntegrations();
   };
 
-  const handleRunModel = async (event) => {
-    event.preventDefault();
+  const runModel = async () => {
+    // A ref, not state: a fast double click cannot start a second request.
+    if (runBusyRef.current) return;
+
     setModelError("");
     setModelMessage("");
-    setSelectedResult(null);
+    setRunFailed(false);
 
-        const errors = validateReportForm(form);
+    const errors = validateReportForm(form);
     setFieldErrors(errors);
 
     const firstInvalid = FIELD_ORDER.find((key) => errors[key]);
@@ -456,15 +506,36 @@ function ReportsPage() {
       return;
     }
 
+    runBusyRef.current = true;
+    const controller = new AbortController();
+    runAbortRef.current = controller;
+    const { signal } = controller;
+
     const payload = buildModelPayload(form);
     const submittedAt = new Date();
+    setSelectedResult(null);
     setIsRunningModel(true);
+    setModelMessage("Submitting the request…");
 
     try {
       await postIngestionCore(payload);
-      setModelMessage("Core model request submitted. Waiting for output...");
+      if (signal.aborted) return;
 
-      const result = await pollForResult(payload, submittedAt);
+      setModelMessage("Request submitted. Waiting for the model output…");
+
+      const result = await pollForResult(
+        payload,
+        submittedAt,
+        signal,
+        (attempt) => {
+          if (!signal.aborted) {
+            setModelMessage(
+              `Waiting for the model output… (check ${attempt} of ${MAX_POLLS})`,
+            );
+          }
+        },
+      );
+      if (signal.aborted) return;
 
       if (!result) {
         setModelMessage(
@@ -478,18 +549,29 @@ function ReportsPage() {
       if (result.status === "error") {
         setModelError(result.note || "Core model returned an error.");
         setModelMessage("");
+        setRunFailed(true);
         return;
       }
 
       setModelMessage("Core model output received.");
     } catch (error) {
-      setModelError(error.message);
+      if (signal.aborted) return;
+
+      setModelMessage("");
+      setModelError(error?.message || "The request could not be completed.");
+      setRunFailed(true);
     } finally {
-      setIsRunningModel(false);
+      runBusyRef.current = false;
+      if (!signal.aborted) setIsRunningModel(false);
     }
   };
 
-      useEffect(() => {
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    runModel();
+  };
+
+  useEffect(() => {
     return () => {
       pdfAbortRef.current?.abort();
     };
@@ -551,9 +633,9 @@ function ReportsPage() {
           </span>
         </div>
 
-              <form
+        <form
           className="url-ingestion-form"
-          onSubmit={handleRunModel}
+          onSubmit={handleSubmit}
           noValidate
         >
           {hasFieldErrors && (
@@ -738,13 +820,23 @@ function ReportsPage() {
           </div>
 
           {modelError && (
-            <p
+            <div
               id="reports-model-error"
-              className="ingestion-message error"
+              className="ingestion-message error reports-run-error"
               role="alert"
             >
-              {modelError}
-            </p>
+              <span>{modelError}</span>
+              {runFailed && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={isRunningModel}
+                  onClick={runModel}
+                >
+                  Retry
+                </button>
+              )}
+            </div>
           )}
 
           {modelMessage && (
@@ -871,10 +963,10 @@ function ReportsPage() {
               onRetry={handleRefreshResults}
             />
           ) : displayedIntegrations.length > 0 ? (
-            displayedIntegrations.map((integration) => (
+            displayedIntegrations.map((integration, index) => (
               <div
                 className="core-results-row"
-                key={integration.integration_event_id}
+                key={integration.integration_event_id || `core-result-${index}`}
               >
                 <div className="core-input-cell">
                   <strong>{integration.input?.url || "Text only"}</strong>

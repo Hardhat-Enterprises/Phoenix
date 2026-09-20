@@ -644,3 +644,10 @@
 :root[data-theme="dark"] .field-error {
   color: var(--color-error-text);
 }
+.reports-run-error {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}

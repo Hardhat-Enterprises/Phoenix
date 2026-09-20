@@ -5,6 +5,10 @@ package notification;
 service NotificationService {
     rpc GetNotificationHealth(GetNotificationHealthRequest) returns (GetNotificationHealthResponse);
     rpc GetNotifications(GetNotificationsRequest) returns (GetNotificationsResponse);
+    rpc GetUnreadNotificationCount(GetUnreadNotificationCountRequest) returns (GetUnreadNotificationCountResponse);
+    rpc MarkNotificationAsRead(MarkNotificationAsReadRequest) returns (MarkNotificationAsReadResponse);
+    rpc MarkAllNotificationsAsRead(MarkAllNotificationsAsReadRequest) returns (MarkAllNotificationsAsReadResponse);
+    rpc DeleteNotification(DeleteNotificationRequest) returns (DeleteNotificationResponse);
 }
 
 message GetNotificationHealthRequest {
@@ -16,17 +20,75 @@ message GetNotificationHealthResponse {
 }
 
 message GetNotificationsRequest {
+    string user_id = 1;
+    int32 page = 2;
+    int32 limit = 3;
+    bool has_is_read = 4;
+    bool is_read = 5;
 }
 
 message GetNotificationsResponse {
     int32 status = 1;
     string message = 2;
     repeated Notification notifications = 3;
+    int32 total = 4;
+    int32 page = 5;
+    int32 limit = 6;
+    int32 total_pages = 7;
 }
 
 message Notification {
-    int32 id = 1;
-    string title = 2;
-    string body = 3;
-    string recipient = 4;
+    string id = 1;
+    string user_id = 2;
+    string event_id = 3;
+    string event_type = 4;
+    string title = 5;
+    string message = 6;
+    string metadata = 7;
+    bool is_read = 8;
+    string read_at = 9;
+    string created_at = 10;
+    string updated_at = 11;
+    string deleted_at = 12;
+}
+
+message GetUnreadNotificationCountRequest {
+    string user_id = 1;
+}
+
+message GetUnreadNotificationCountResponse {
+    int32 status = 1;
+    string message = 2;
+    int32 unread_count = 3;
+}
+
+message MarkNotificationAsReadRequest {
+    string notification_id = 1;
+    string user_id = 2;
+}
+
+message MarkNotificationAsReadResponse {
+    int32 status = 1;
+    string message = 2;
+    Notification notification = 3;
+}
+
+message MarkAllNotificationsAsReadRequest {
+    string user_id = 1;
+}
+
+message MarkAllNotificationsAsReadResponse {
+    int32 status = 1;
+    string message = 2;
+    int32 updated_count = 3;
+}
+
+message DeleteNotificationRequest {
+    string notification_id = 1;
+    string user_id = 2;
+}
+
+message DeleteNotificationResponse {
+    int32 status = 1;
+    string message = 2;
 }

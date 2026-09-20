@@ -1,7 +1,28 @@
-import { GetHealthDto, GetNotificationsDto } from "../dto/notification.dto";
+import {
+  DeleteNotificationDto,
+  GetHealthDto,
+  GetNotificationsDto,
+  GetUnreadNotificationCountDto,
+  MarkAllNotificationsAsReadDto,
+  MarkNotificationAsReadDto,
+} from "../dto/notification.dto";
 import { ServerUnaryCall, sendUnaryData } from "@grpc/grpc-js";
-import { getHealth, getNotifications } from "../services/notification.service";
-import { GetHealthEntity, GetNotificationsEntity } from "../entity/notification.entity";
+import {
+  deleteNotification,
+  getHealth,
+  getNotifications,
+  getUnreadNotificationCount,
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
+} from "../services/notification.service";
+import {
+  DeleteNotificationEntity,
+  GetHealthEntity,
+  GetNotificationsEntity,
+  GetUnreadNotificationCountEntity,
+  MarkAllNotificationsAsReadEntity,
+  MarkNotificationAsReadEntity,
+} from "../entity/notification.entity";
 import { logger } from "@phoenix/common";
 
 export const notificationHandler = {
@@ -20,19 +41,57 @@ export const notificationHandler = {
       });
     }
   },
-  GetNotifications: (
+  GetNotifications: async (
     call: ServerUnaryCall<GetNotificationsDto, GetNotificationsEntity>,
     callback: sendUnaryData<GetNotificationsEntity>,
   ) => {
     try {
-      const response = getNotifications(call.request);
-      logger.info(`Notification service GetNotifications response:${response}`);
-      callback(null, response);
+      callback(null, await getNotifications(call.request));
     } catch (error) {
       callback({
         code: 13,
         message: `${error}` || "Internal server error",
       });
+    }
+  },
+  GetUnreadNotificationCount: async (
+    call: ServerUnaryCall<GetUnreadNotificationCountDto, GetUnreadNotificationCountEntity>,
+    callback: sendUnaryData<GetUnreadNotificationCountEntity>,
+  ) => {
+    try {
+      callback(null, await getUnreadNotificationCount(call.request));
+    } catch (error) {
+      callback({ code: 13, message: `${error}` || "Internal server error" });
+    }
+  },
+  MarkNotificationAsRead: async (
+    call: ServerUnaryCall<MarkNotificationAsReadDto, MarkNotificationAsReadEntity>,
+    callback: sendUnaryData<MarkNotificationAsReadEntity>,
+  ) => {
+    try {
+      callback(null, await markNotificationAsRead(call.request));
+    } catch (error) {
+      callback({ code: 13, message: `${error}` || "Internal server error" });
+    }
+  },
+  MarkAllNotificationsAsRead: async (
+    call: ServerUnaryCall<MarkAllNotificationsAsReadDto, MarkAllNotificationsAsReadEntity>,
+    callback: sendUnaryData<MarkAllNotificationsAsReadEntity>,
+  ) => {
+    try {
+      callback(null, await markAllNotificationsAsRead(call.request));
+    } catch (error) {
+      callback({ code: 13, message: `${error}` || "Internal server error" });
+    }
+  },
+  DeleteNotification: async (
+    call: ServerUnaryCall<DeleteNotificationDto, DeleteNotificationEntity>,
+    callback: sendUnaryData<DeleteNotificationEntity>,
+  ) => {
+    try {
+      callback(null, await deleteNotification(call.request));
+    } catch (error) {
+      callback({ code: 13, message: `${error}` || "Internal server error" });
     }
   },
 };

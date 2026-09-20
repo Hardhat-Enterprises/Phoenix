@@ -10,6 +10,15 @@ const options: swaggerJSDoc.Options = {
       version: "1.0.0",
       description: "API documentation for Phoenix backend",
     },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
     servers: [
       {
         url: process.env.SWAGGER_SERVER_URL,

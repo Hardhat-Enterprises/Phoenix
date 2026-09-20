@@ -8,6 +8,25 @@ if (!JWT_SECRET) {
   throw new Error("JWT secret is not defined");
 }
 
+export interface AuthenticatedUser {
+  user_id: string;
+  role?: string;
+}
+
+export const getAuthenticatedUserFromToken = async (
+  token: string,
+): Promise<AuthenticatedUser | undefined> => {
+  const decoded = jwt.verify(token, JWT_SECRET);
+  if (typeof decoded === "string" || typeof decoded.user_id !== "string") {
+    throw new Error("Invalid token payload");
+  }
+
+  const user = await UserAccount.findByPk(decoded.user_id);
+  if (!user || user.access_token !== token) return undefined;
+
+  return decoded as AuthenticatedUser;
+};
+
 export const authenticate = async (
   req: Request,
   res: Response,
@@ -25,15 +44,14 @@ export const authenticate = async (
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded: any = jwt.verify(token, JWT_SECRET);
-    const user = await UserAccount.findByPk(decoded.user_id);
-    if (!user || user.access_token !== token) {
+    const user = await getAuthenticatedUserFromToken(token);
+    if (!user) {
       return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
         status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
         message: "Logged out",
       });
     }
-    (req as any).user = decoded;
+    (req as any).user = user;
 
     next();
   } catch (error) {

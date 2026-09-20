@@ -17,6 +17,8 @@ import {
   ReferenceTime,
   UserRole,
   logTokenInvalid,
+  logAuthFailure,
+  type GrpcLogContext,
 } from "@phoenix/common";
 
 import {
@@ -348,7 +350,10 @@ export const registerUser = async (
   }
 };
 
-export const loginUser = async (dto: LoginUserDto): Promise<AuthEntity> => {
+export const loginUser = async (
+  dto: LoginUserDto,
+  requestContext: GrpcLogContext,
+): Promise<AuthEntity> => {
   try {
     if (!dto.username || !dto.password) {
       return {
@@ -362,6 +367,14 @@ export const loginUser = async (dto: LoginUserDto): Promise<AuthEntity> => {
     });
 
     if (!user) {
+      logAuthFailure({
+        ...requestContext,
+        reason: "unknown_user",
+        details: {
+          attempted_username: dto.username,
+        },
+      });
+
       return {
         status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
         message: "Invalid username or password",
@@ -374,6 +387,16 @@ export const loginUser = async (dto: LoginUserDto): Promise<AuthEntity> => {
     );
 
     if (!isPasswordValid) {
+      logAuthFailure({
+        ...requestContext,
+        user_id: user.user_id,
+        role: user.role,
+        reason: "bad_password",
+        details: {
+          attempted_username: dto.username,
+        },
+      });
+
       return {
         status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
         message: "Invalid username or password",

@@ -34,6 +34,11 @@ class RedisCacheService implements CacheService {
         return null;
       }
 
+      if (typeof raw !== "string") {
+        logger.error(`Cache: unsupported value type for key "${key}"`);
+        return null;
+      }
+
       try {
         return JSON.parse(raw) as T;
       } catch (parseErr) {
@@ -59,7 +64,7 @@ class RedisCacheService implements CacheService {
   async set<T>(key: string, value: T, ttlSeconds: number): Promise<void> {
     try {
       const serialized = JSON.stringify(value);
-      await redisClient.set(key, serialized, "EX", ttlSeconds);
+      await redisClient.setEx(key, ttlSeconds, serialized);
     } catch (err) {
       logger.error(
         `Cache: set failed for key "${key}" - ${err instanceof Error ? err.message : String(err)}`,
@@ -83,7 +88,7 @@ class RedisCacheService implements CacheService {
     }
 
     try {
-      await redisClient.del(...keys);
+      await redisClient.del(keys);
     } catch (err) {
       logger.error(
         `Cache: deleteMany failed for ${keys.length} key(s) - ${

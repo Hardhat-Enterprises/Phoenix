@@ -8,7 +8,7 @@ import { cacheService } from "./cache.service";
 jest.mock("../redis", () => ({
   redisClient: {
     get: jest.fn(),
-    set: jest.fn(),
+    setEx: jest.fn(),
     del: jest.fn(),
     exists: jest.fn(),
   },
@@ -63,21 +63,20 @@ describe("CacheService", () => {
 
   describe("set", () => {
     it("serializes the value and sets it with the given TTL", async () => {
-      (mockedRedis.set as jest.Mock).mockResolvedValue("OK");
+      (mockedRedis.setEx as jest.Mock).mockResolvedValue("OK");
       const value = { id: "1", name: "Melbourne" };
 
       await cacheService.set("phoenix:test:locations:1", value, 300);
 
-      expect(mockedRedis.set).toHaveBeenCalledWith(
+      expect(mockedRedis.setEx).toHaveBeenCalledWith(
         "phoenix:test:locations:1",
-        JSON.stringify(value),
-        "EX",
         300,
+        JSON.stringify(value),
       );
     });
 
     it("swallows Redis errors rather than throwing", async () => {
-      (mockedRedis.set as jest.Mock).mockRejectedValue(
+      (mockedRedis.setEx as jest.Mock).mockRejectedValue(
         new Error("connection refused"),
       );
 
@@ -106,10 +105,10 @@ describe("CacheService", () => {
         "phoenix:test:locations:2",
       ]);
 
-      expect(mockedRedis.del).toHaveBeenCalledWith(
+      expect(mockedRedis.del).toHaveBeenCalledWith([
         "phoenix:test:locations:1",
         "phoenix:test:locations:2",
-      );
+      ]);
     });
 
     it("does not call Redis when given an empty array", async () => {

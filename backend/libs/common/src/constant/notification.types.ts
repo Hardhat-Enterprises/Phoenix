@@ -34,4 +34,3 @@ export interface NotificationQueryOptions {
   //If true, only return notifications where isRead === false.
   unreadOnly?: boolean;
 }
-

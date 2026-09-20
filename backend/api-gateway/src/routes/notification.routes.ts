@@ -92,29 +92,37 @@ router.get("/health", getHealth);
  *                       items:
  *                         type: object
  *                         properties:
- *                           notification_id:
+ *                           id:
  *                             type: string
  *                             format: uuid
  *                           user_id:
  *                             type: string
  *                             format: uuid
+ *                           event_id:
+ *                             type: string
+ *                           event_type:
+ *                             type: string
  *                           title:
  *                             type: string
  *                           message:
  *                             type: string
- *                           type:
+ *                           metadata:
  *                             type: string
- *                             enum: [hazard_alert, cyber_threat, system, info, warning, error]
+ *                             description: JSON-encoded event metadata. Parse this value to access event-specific fields.
  *                           is_read:
  *                             type: boolean
- *                           data:
- *                             type: object
+ *                           read_at:
+ *                             type: string
+ *                             description: ISO 8601 timestamp, or an empty string when the notification has not been read.
  *                           created_at:
  *                             type: string
  *                             format: date-time
  *                           updated_at:
  *                             type: string
  *                             format: date-time
+ *                           deleted_at:
+ *                             type: string
+ *                             description: ISO 8601 timestamp, or an empty string when the notification has not been deleted.
  *                     pagination:
  *                       type: object
  *                       properties:

@@ -216,4 +216,3 @@ export const getHealth = (req: Request, res: Response) => {
     });
   });
 };
-

@@ -356,61 +356,151 @@ body {
 
 .forgot-page-wrapper {
   width: 100%;
+  min-height: calc(100svh - 106px);
   display: flex;
+  align-items: center;
   justify-content: center;
-  padding-top: 30px;
+  padding: 48px 20px;
+  background: var(--bg, #f4f7fb);
 }
 
 .forgot-password-card {
-  width: 360px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: var(--bg, #ffffff);
-  border: 1px solid var(--border-color, #d9d9d9);
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  width: 480px;
+  max-width: 100%;
+  padding: 36px;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #dce5f0);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(15, 35, 70, 0.13);
 }
 
-.forgot-password-card h2 {
-  margin: 0;
-  font-size: 24px;
-  color: var(--text, #071633);
+.forgot-password-card h1 {
+  margin: 0 0 12px;
+  color: var(--heading-color, #102a4c);
+  font-size: clamp(26px, 4vw, 32px);
+  line-height: 1.15;
 }
 
 .forgot-subtext {
+  margin: 0 0 28px;
+  color: var(--muted, #64748b);
   font-size: 14px;
-  color: var(--text, #5f6b7a);
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+.forgot-password-card form { width: 100%; }
+.forgot-field { margin-bottom: 20px; }
+
+.forgot-field label {
+  display: block;
   margin-bottom: 8px;
-}
-
-.forgot-password-card label {
-  font-size: 14px;
-  font-weight: 600;
   color: var(--text, #111111);
+  font-size: 14px;
+  font-weight: 700;
 }
 
-.forgot-password-card input {
-  padding: 12px 14px;
-  border: 1px solid var(--border-color, #d9d9d9);
-  border-radius: 6px;
+.forgot-field input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 10px;
+  outline: none;
   background: var(--bg, #ffffff);
+  color: var(--text, #0f172a);
+  font: inherit;
   font-size: 14px;
+}
+
+.forgot-field input:focus-visible {
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+}
+
+.forgot-field input[aria-invalid="true"] { border-color: var(--error-text, #dc2626); }
+.forgot-field input:disabled { cursor: not-allowed; opacity: 0.7; }
+
+.forgot-field-help {
+  margin: 7px 0 0;
+  color: var(--muted, #64748b);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.forgot-message {
+  margin: 12px 0 18px;
+  padding: 11px 13px;
+  border: 1px solid;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.forgot-message--error {
+  background: var(--error-bg, #fef2f2);
+  border-color: var(--error-border, #fecaca);
+  color: var(--error-text, #991b1b);
+}
+
+.forgot-message--success {
+  background: var(--success-bg, #ecfdf3);
+  border-color: var(--success-border, #bbf7d0);
+  color: var(--success-text, #166534);
+}
+
+.forgot-message--warning {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  color: #854d0e;
+}
+
+.forgot-btn,
+.back-login-btn {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.forgot-btn {
+  border: 0;
+  background: var(--primary, #2563eb);
+  color: #ffffff;
 }
 
 .back-login-btn {
-  margin-top: 8px;
-  padding: 12px;
-  background: var(--bg, #000000);
-  color: var(--text, #ffffff);
-  border: none;
-  border-radius: 6px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
+  margin-top: 12px;
+  border: 1px solid var(--border-color, #cbd5e1);
+  background: transparent;
+  color: var(--primary, #2563eb);
 }
+
+.forgot-btn:focus-visible,
+.back-login-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, 0.3));
+}
+
+.forgot-btn:disabled,
+.back-login-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+@media (max-width: 1199px) {
+  .forgot-page-wrapper { min-height: calc(100svh - 88px); }
+}
+
+@media (max-width: 600px) {
+  .forgot-page-wrapper { align-items: flex-start; padding: 24px 16px; }
+  .forgot-password-card { padding: 26px 20px; border-radius: 16px; }
+  .forgot-password-card h1 { font-size: 26px; }
+}
+
 
 .about-box {
   position: absolute;
@@ -1145,7 +1235,7 @@ body {
   border-color: var(--color-border);
 }
 
-:root[data-theme="dark"] .forgot-password-card h2,
+:root[data-theme="dark"] .forgot-password-card h1,
 :root[data-theme="dark"] .create-user-heading h1,
 :root[data-theme="dark"] .admin-menu button {
   color: var(--color-heading);

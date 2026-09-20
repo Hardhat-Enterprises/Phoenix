@@ -1258,15 +1258,30 @@ if (
   }, [isLoggedIn]);
 
   const overviewCards = useMemo(
-    () => [
-      { label: "API Status", value: apiStatus },
-      { label: "Total Hazards", value: hazardTotal },
-      { label: "Total Threats", value: threatTotal },
-      { label: "Total Risks", value: riskTotal },
-    ],
-
-    [apiStatus, hazardTotal, riskTotal, threatTotal],
-  );
+  () => [
+    {
+      label: "API Status",
+      value: apiStatus,
+      description: "Current PHOENIX service connection",
+    },
+    {
+      label: "Total Hazards",
+      value: hazardTotal,
+      description: "Hazard records currently monitored",
+    },
+    {
+      label: "Total Threats",
+      value: threatTotal,
+      description: "Threat signals currently tracked",
+    },
+    {
+      label: "Total Risks",
+      value: riskTotal,
+      description: "Risk records currently available",
+    },
+  ],
+  [apiStatus, hazardTotal, riskTotal, threatTotal],
+ );
 
   const itemRows = useMemo(
     () => threats.map((threat, index) => normalizeThreatRow(threat, index, dateFormat)),
@@ -1615,9 +1630,33 @@ const handleResetMapControls = () => {
   const displayedDetection = apiResult || latestAnomalyResult;
 
   return (
-    <div className="dashboard-page">
-      <main className="dashboard-content">
-        <div className="dashboard-main-area">
+  <div className="dashboard-page">
+    <main className="dashboard-content">
+      <div className="dashboard-main-area">
+        <header className="dashboard-page-header">
+          <div className="dashboard-page-heading">
+            <span className="dashboard-eyebrow">
+              PHOENIX Risk Monitoring
+            </span>
+
+            <h1>Dashboard</h1>
+
+            <p>
+              Monitor current disaster, hazard, threat, and risk activity
+              across PHOENIX.
+            </p>
+          </div>
+
+          <div
+            className={`dashboard-status-badge ${apiStatus.toLowerCase()}`}
+            aria-live="polite"
+          >
+            <span className="dashboard-status-dot" aria-hidden="true" />
+            <span>
+              System status: {isLoading ? "Checking" : apiStatus}
+            </span>
+          </div>
+        </header>
           {/* {loadError && (
             <div className="backend-status-message" role="alert">
               {loadError}
@@ -1648,29 +1687,67 @@ const handleResetMapControls = () => {
             />
           )}
 
-          <section className="overview-grid" aria-label="Dashboard overview">
-            {overviewCards.map((card) => {
-              const cardValue =
-                isLoading && card.value === undefined
-                  ? "..."
-                  : (card.value ?? "-");
-              const isLongValue = String(cardValue).length > 8;
+ <section className="overview-grid" aria-label="Dashboard overview">
+  {overviewCards.map((card) => {
+    const cardValue =
+      isLoading && card.value === undefined
+        ? "..."
+        : (card.value ?? "-");
 
-              return (
-                <div className="overview-card" key={card.label}>
-                  <span className="overview-label">{card.label}</span>
+    const isLongValue = String(cardValue).length > 8;
 
-                  <strong
-                    className={`overview-value ${
-                      isLongValue ? "long-value" : ""
-                    }`}
-                  >
-                    {cardValue}
-                  </strong>
-                </div>
-              );
-            })}
-          </section>
+    return (
+      <article
+        className="overview-card"
+        key={card.label}
+      >
+        <span className="overview-label">
+          {card.label}
+        </span>
+
+        <strong
+          className={`overview-value ${
+            isLongValue ? "long-value" : ""
+          }`}
+        >
+          {cardValue}
+        </strong>
+
+        <span className="overview-description">
+          {card.description}
+        </span>
+      </article>
+     );
+    })}
+ </section>
+
+<nav
+  className="dashboard-quick-links"
+  aria-label="Dashboard related pages"
+>
+  <div>
+    <strong>Continue monitoring</strong>
+    <span>
+      Open detailed views for current threats and alerts.
+    </span>
+  </div>
+
+  <div className="dashboard-quick-link-actions">
+    <Link
+      to="/threats"
+      className="dashboard-link-button"
+   >
+      View threats
+    </Link>
+
+    <Link
+      to="/alerts"
+      className="dashboard-link-button secondary"
+    >
+      View alerts
+    </Link>
+  </div>
+</nav>
 
           {/* Regional Anomaly Detection Section (Jack) - Sprint 2: gated behind
               ANOMALY_DETECTION_ENABLED per "Risk and Anomaly Feature Control"
@@ -2280,12 +2357,17 @@ const handleResetMapControls = () => {
               {itemRows.length > 0 ? (
                 itemRows.map((item) => (
                 <div
-                    className="item-list-row"
-                    key={item.id}
-                    onClick={() => openThreatDetails(item)}
-                    role="button"
-                    tabIndex={item.backendId ? 0 : -1}
-                    aria-disabled={!item.backendId}
+                   className="item-list-row"
+                   key={item.id}
+                   onClick={() => openThreatDetails(item)}
+                   role="button"
+                   tabIndex={item.backendId ? 0 : -1}
+                   aria-disabled={!item.backendId}
+                   aria-label={
+                     item.backendId
+                        ? `Open details for ${item.name}`
+                        : `${item.name}; threat details unavailable`
+                   }
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();

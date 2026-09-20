@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { UserRole } from "@phoenix/common";
 import {
   getHealth,
   getUser,
@@ -24,6 +25,10 @@ import {
   getIntegrations,
   getIntegration,
 } from "../controllers/integration.controller";
+import {
+  getRiskAssessment,
+  getRiskAssessments,
+} from "../controllers/risk-assessment.controller";
 
 import {
   authenticate,
@@ -185,7 +190,12 @@ router.get("/meta/reference-times", authenticate, getReferenceTimes);
  *       500:
  *         description: Internal server error
  */
-router.get("/integration", authenticate, getIntegrations);
+router.get(
+  "/integration",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.ANALYST]),
+  getIntegrations,
+);
 
 /**
  * @swagger
@@ -214,7 +224,80 @@ router.get("/integration", authenticate, getIntegrations);
  *       500:
  *         description: Internal server error
  */
-router.get("/integration/:integrationId", authenticate, getIntegration);
+router.get(
+  "/integration/:integrationId",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.ANALYST]),
+  getIntegration,
+);
+
+/**
+ * @swagger
+ * /api/users/risk-assessments:
+ *   get:
+ *     summary: Get TEAVS-ADCRS risk assessments
+ *     tags: [Risk Assessments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: risk_level
+ *         schema:
+ *           type: string
+ *           enum: [low, medium, high, critical]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *     responses:
+ *       200:
+ *         description: Risk assessments retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get(
+  "/risk-assessments",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.ANALYST]),
+  getRiskAssessments,
+);
+
+/**
+ * @swagger
+ * /api/users/risk-assessments/{assessmentId}:
+ *   get:
+ *     summary: Get a TEAVS-ADCRS risk assessment by ID
+ *     tags: [Risk Assessments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: assessmentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Risk assessment retrieved successfully
+ *       404:
+ *         description: Risk assessment not found
+ */
+router.get(
+  "/risk-assessments/:assessmentId",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.ANALYST]),
+  getRiskAssessment,
+);
 
 /**
  * @swagger
@@ -465,7 +548,12 @@ router.get("/user", authenticate, authorize(["admin"]), getUser);
  *       500:
  *         description: Internal server error
  */
-router.get("/dashboard/overview", authenticate, getUserDashboard);
+router.get(
+  "/dashboard/overview",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.ANALYST]),
+  getUserDashboard,
+);
 
 /**
  * @swagger
@@ -485,7 +573,12 @@ router.get("/dashboard/overview", authenticate, getUserDashboard);
  *       500:
  *         description: Internal server error
  */
-router.get("/dashboard/charts", authenticate, getUserDashboardCharts);
+router.get(
+  "/dashboard/charts",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.ANALYST]),
+  getUserDashboardCharts,
+);
 
 /**
  * @swagger
@@ -505,7 +598,12 @@ router.get("/dashboard/charts", authenticate, getUserDashboardCharts);
  *       500:
  *         description: Internal server error
  */
-router.get("/dashboard/activity", authenticate, getUserDashboardActivity);
+router.get(
+  "/dashboard/activity",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.ANALYST]),
+  getUserDashboardActivity,
+);
 
 /**
  * @swagger
@@ -525,7 +623,12 @@ router.get("/dashboard/activity", authenticate, getUserDashboardActivity);
  *       500:
  *         description: Internal server error
  */
-router.get("/hazards", authenticate, getHazards);
+router.get(
+  "/hazards",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.ANALYST]),
+  getHazards,
+);
 
 /**
  * @swagger
@@ -554,6 +657,11 @@ router.get("/hazards", authenticate, getHazards);
  *       500:
  *         description: Internal server error
  */
-router.get("/hazards/:hazardId", authenticate, getHazard);
+router.get(
+  "/hazards/:hazardId",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.ANALYST]),
+  getHazard,
+);
 
 export default router;

@@ -10,3 +10,10 @@ export interface CoreModelIntegrationPayload {
   alert_level: string;
   source: string;
 }
+
+export interface CoreModelIntegrationEnvelope {
+  integration_event_id: string;
+  payload: CoreModelIntegrationPayload;
+  requested_at: string;
+  requested_by: string;
+}

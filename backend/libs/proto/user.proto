@@ -30,6 +30,8 @@ service UserService {
     rpc GetOneTrainingModel(GetOneTrainingModelRequest) returns (GetOneTrainingModelResponse);
     rpc GetIntegrations(GetIntegrationsRequest) returns (GetIntegrationsResponse);
     rpc GetIntegration(GetIntegrationRequest) returns (GetIntegrationResponse);
+    rpc GetRiskAssessments(GetRiskAssessmentsRequest) returns (GetRiskAssessmentsResponse);
+    rpc GetRiskAssessment(GetRiskAssessmentRequest) returns (GetRiskAssessmentResponse);
 
 }
 
@@ -201,6 +203,8 @@ message GetUserDashboardResponse {
     int32 active_threats = 6;
     int32 total_ingestions = 7;
     string last_updated = 8;
+    int32 total_risk_assessments = 9;
+    int32 critical_risk_assessments = 10;
 }
 
 message GetUserDashboardChartsRequest {
@@ -212,6 +216,7 @@ message GetUserDashboardChartsResponse {
     string hazards_by_severity = 3;
     string threats_by_risk_level = 4;
     string last_updated = 5;
+    string risk_assessments_by_level = 6;
 }
 
 message GetUserDashboardActivityRequest {
@@ -223,6 +228,7 @@ message GetUserDashboardActivityResponse {
     string recent_hazards = 3;
     string recent_threats = 4;
     string last_updated = 5;
+    string recent_risk_assessments = 6;
 }
 
 // ─── Threats ───────────────────────────────────────────────────────────────
@@ -351,6 +357,50 @@ message Integration {
     string note = 6;
     string created_at = 7;
     string updated_at = 8;
+}
+
+// ─── TEAVS-ADCRS risk assessments ──────────────────────────────────────────
+
+message GetRiskAssessmentsRequest {
+    string risk_level = 1;
+    string status = 2;
+    int32 page = 3;
+    int32 limit = 4;
+}
+
+message GetRiskAssessmentsResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated RiskAssessment risk_assessments = 3;
+    int32 total = 4;
+    int32 page = 5;
+    int32 limit = 6;
+}
+
+message GetRiskAssessmentRequest {
+    string risk_assessment_id = 1;
+}
+
+message GetRiskAssessmentResponse {
+    int32 status = 1;
+    string message = 2;
+    RiskAssessment risk_assessment = 3;
+}
+
+message RiskAssessment {
+    string risk_assessment_id = 1;
+    string source_integration_id = 2;
+    string integration_type = 3;
+    double risk_score = 4;
+    double confidence_score = 5;
+    int32 predicted_class = 6;
+    string risk_level = 7;
+    string input = 8;
+    string teavs_alert = 9;
+    string status = 10;
+    string note = 11;
+    string created_at = 12;
+    string updated_at = 13;
 }
 
 // ─── Training Models ───────────────────────────────────────────────────────────────

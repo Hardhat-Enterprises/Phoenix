@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
+import crypto from "crypto";
 import { ingestionGrpcClient } from "../grpc/ingestion.grpc";
 import {
+  CoreModelIntegrationEnvelope,
   CoreModelIntegrationPayload,
   getChannel,
   HttpStatusCode,
@@ -93,22 +95,36 @@ export const coreModelIntegration = async (req: Request, res: Response) => {
   try {
     const channel = getChannel();
     const body = req.body as CoreModelIntegrationPayload;
+    const integrationEventId = crypto.randomUUID();
+    const authenticatedUser = (req as any).user;
+    const envelope: CoreModelIntegrationEnvelope = {
+      integration_event_id: integrationEventId,
+      payload: body,
+      requested_at: new Date().toISOString(),
+      requested_by: authenticatedUser?.user_id || "service",
+    };
+
     logger.info(
-      "Received core model integration request:",
-      body || "No body provided",
+      `Accepted ADCRS integration request ${integrationEventId} from ${envelope.requested_by}`,
     );
 
-    await channel.assertQueue(RabbitMQQueueType.CORE_MODEL_INTEGRATION_QUEUE);
+    await channel.assertQueue(RabbitMQQueueType.CORE_MODEL_INTEGRATION_QUEUE, {
+      durable: true,
+    });
     channel.sendToQueue(
       RabbitMQQueueType.CORE_MODEL_INTEGRATION_QUEUE,
-      Buffer.from(JSON.stringify(body)),
+      Buffer.from(JSON.stringify(envelope)),
       {
         persistent: true,
+        contentType: "application/json",
+        messageId: integrationEventId,
+        timestamp: Date.now(),
       },
     );
     res.status(HttpStatusCode.HTTP_STATUS_ACCEPTED).json({
       status: HttpStatusCode.HTTP_STATUS_ACCEPTED,
-      message: "Core model integration data sent successfully",
+      message: "ADCRS assessment accepted for secure TEAVS processing",
+      integration_event_id: integrationEventId,
     });
   } catch (error) {
     logger.error(`Error integrating core model: ${error}`);

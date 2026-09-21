@@ -1,5 +1,41 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import "./AboutUs.css";
+
+// Where the "Help and Support" link goes. It must match the route in src/config/routes.js.
+const HELP_PATH = "/help";
+
+const glance = [
+  {
+    label: "What it is",
+    text: "A working prototype dashboard that shows hazard information, such as bushfire and flood signals, alongside related cyber risk signals.",
+  },
+  {
+    label: "The problem",
+    text: "During bushfires and floods, cyber threats such as fraudulent donation sites and misinformation can spread when a community is most vulnerable.",
+  },
+  {
+    label: "Who it is for",
+    text: "Emergency services and local councils first, then Victorian communities and residents, and operators of critical services such as health services.",
+  },
+  {
+    label: "What it gives them",
+    text: "Hazard and cyber risk signals in one place, to help response teams spot areas of concern, and a prototype for exploring how official alerts could be verified.",
+  },
+];
+
+const components = [
+  {
+    title: "Hazard-to-cyber risk modelling (inspired by ADCRS).",
+    description:
+      "An AI-assisted module that looks at hazard data together with cyber threat indicators to highlight areas of concern.",
+  },
+  {
+    title: "Secure alert verification (inspired by TEAVS).",
+    description:
+      "A workflow that explores how official alerts and communications could be verified, so that communities can trust them.",
+  },
+];
 
 const roles = [
   {
@@ -58,7 +94,6 @@ const processSteps = [
 const capabilities = [
   "Secure sign-in with role-based session handling.",
   "Central dashboard showing live hazard, threat and risk totals.",
-  "Regional anomaly detection panel that submits a request to the backend AI model and displays the result.",
   "Threat chart summarising recent threat signals by severity.",
   "Recent threat signal list with a detailed drill-down view for each item.",
   "Risk map displaying hazard markers with severity colour-coding.",
@@ -69,100 +104,119 @@ const capabilities = [
 const inDevelopment = [
   "Location data: the backend does not yet have location records loaded, so the state / LGA / suburb filters have no options to choose from yet.",
   "Precise hazard-to-suburb linking: hazard records currently store only a state code, so hazards can only be matched to a location at state level for now.",
-  "Full alert verification (TEAVS-inspired): the current build does not yet include a working cryptographic verification workflow — this remains a proof-of-concept goal.",
+  "Regional anomaly detection: the panel is built, but its form is disabled wherever the backend anomaly-detection endpoint is not available.",
+  "Full alert verification (TEAVS-inspired): the current build does not yet include a working cryptographic verification workflow. This remains a proof-of-concept goal.",
   "Broader hazard-to-cyber correlation pipeline: wider data sources beyond the current prototype feeds are still being integrated.",
-  "A dedicated Help Center page has not been built yet — for now, support questions go through the contact details below.",
   "Live delivery of real-time notifications to external systems is still being finalised.",
 ];
 
-export default function AboutUs({ setPage }) {
-  const goTo = (target) => {
-    if (typeof setPage === "function") {
-      setPage(target);
-    }
-  };
-
+export default function AboutUs() {
   return (
     <div className="about-page">
       <div className="about-content">
-        <h1 className="about-page-title">About PHOENIX</h1>
-        <p className="about-page-subtitle">
-          Safeguarding Community Trust and Critical Services from Cyber
-          Threats in Bushfire and Flood Disasters
-        </p>
+        <div className="about-hero">
+          <h1 className="about-page-title">About PHOENIX</h1>
+          <p className="about-lead">
+            PHOENIX is a prototype dashboard that helps emergency services and
+            councils see disaster hazards and related cyber risks in one place.
+          </p>
+
+          <div className="about-cta-row">
+            <Link to="/dashboard" className="about-cta primary">
+              Open the dashboard
+            </Link>
+            <Link to="/reports" className="about-cta">
+              View reports
+            </Link>
+          </div>
+        </div>
 
         <section className="about-card" aria-labelledby="about-what-is">
           <h2 className="about-card-title" id="about-what-is">
-            What is PHOENIX?
+            What PHOENIX is
           </h2>
 
-          <img
-            src="/about-banner.png"
-            alt="PHOENIX disaster and cyber risk monitoring dashboard banner"
-            className="about-banner"
-          />
-
-          <p className="about-body-text">
-            PHOENIX is a Deakin University Capstone project run with the
-            Cyber Security &amp; Disaster Resilience research team. It
-            explores how AI-assisted risk modelling and secure alert
-            verification can help protect communities and emergency
-            services from cyber threats that emerge during bushfire and
-            flood events — for example, fraudulent donation sites and
-            misinformation that can spread when a community is most
-            vulnerable.
-          </p>
-
-          <p className="about-body-text" style={{ marginTop: "10px" }}>
-            The project prototypes a system that correlates real-time
-            hazard signals (such as weather and emergency feeds) with
-            cyber threat indicators (such as scam patterns and threat
-            intelligence), and presents the resulting insights through
-            this dashboard. This site is the working prototype produced by
-            a multidisciplinary student Capstone team across Frontend,
-            Backend, AI/ML and Cybersecurity streams, developed within a
-            12-week trimester.
-          </p>
+          <dl className="about-glance">
+            {glance.map((item) => (
+              <div className="about-glance-item" key={item.label}>
+                <dt>{item.label}</dt>
+                <dd>{item.text}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
 
         <section className="about-card" aria-labelledby="about-purpose">
           <h2 className="about-card-title" id="about-purpose">
-            System Purpose
+            What PHOENIX does
           </h2>
 
+          <img
+            src="/about-banner.png"
+            alt="Illustration of a central PHOENIX hub connected to satellites, servers and a dashboard of charts, on a dark blue background"
+            className="about-banner"
+          />
+
+          <p className="about-body-text">
+            PHOENIX brings real-time hazard signals (such as weather and
+            emergency feeds) and cyber threat indicators (such as scam
+            patterns and threat intelligence) into one dashboard. Together, the
+            aim is to improve awareness of physical and digital risks during
+            disaster events, and to help build community trust in official
+            alerts and communications.
+          </p>
+
           <div className="purpose-row">
-            <img
-              src="/system-purpose.png"
-              alt="Illustration representing PHOENIX's goal of improving situational awareness"
-              className="purpose-icon"
-            />
+            {/* Decorative: the heading and list beside it carry the meaning. */}
+            <img src="/system-purpose.png" alt="" className="purpose-icon" />
 
             <div className="purpose-content">
               <h3 className="purpose-heading">
-                Two Components, One Prototype
+                Two proof-of-concept components
               </h3>
-              <p className="about-body-text">
-                PHOENIX focuses on two proof-of-concept components: an
-                AI-assisted hazard-to-cyber risk modelling module (inspired
-                by ADCRS), and a secure alert verification workflow
-                (inspired by TEAVS). Together, the goal is to improve
-                awareness of physical and digital risks during disaster
-                events, and to help build community trust in official
-                alerts and communications.
-              </p>
+              <ul className="about-list">
+                {components.map((item) => (
+                  <li key={item.title}>
+                    <strong>{item.title}</strong> {item.description}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </section>
 
+        <section className="about-card" aria-labelledby="about-how-it-works">
+          <h2 className="about-card-title" id="about-how-it-works">
+            How PHOENIX works
+          </h2>
+
+          <ol className="process-list">
+            {processSteps.map((step) => (
+              <li className="process-step" key={step.title}>
+                <div className="process-icon" aria-hidden="true">
+                  {step.icon}
+                </div>
+                <div>
+                  <h3 className="process-title">{step.title}</h3>
+                  <p className="process-desc">{step.description}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
         <section className="about-card" aria-labelledby="about-who-uses">
           <h2 className="about-card-title" id="about-who-uses">
-            Who Uses This System?
+            Who it is for
           </h2>
 
           <div className="role-grid">
             {roles.map((role) => (
               <div className="role-card" key={role.kicker}>
-                <div className={`role-card-icon ${role.iconClass}`} aria-hidden="true">
+                <div
+                  className={`role-card-icon ${role.iconClass}`}
+                  aria-hidden="true"
+                >
                   {role.icon}
                 </div>
                 <div className="role-card-body">
@@ -175,29 +229,9 @@ export default function AboutUs({ setPage }) {
           </div>
         </section>
 
-        <section className="about-card" aria-labelledby="about-how-it-works">
-          <h2 className="about-card-title" id="about-how-it-works">
-            How PHOENIX Works
-          </h2>
-
-          <div className="process-list">
-            {processSteps.map((step) => (
-              <div className="process-step" key={step.title}>
-                <div className="process-icon" aria-hidden="true">
-                  {step.icon}
-                </div>
-                <div>
-                  <h3 className="process-title">{step.title}</h3>
-                  <p className="process-desc">{step.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
         <section className="about-card" aria-labelledby="about-capabilities">
           <h2 className="about-card-title" id="about-capabilities">
-            Current Capabilities
+            What you can do today
             <span className="status-badge done">Available now</span>
           </h2>
 
@@ -210,14 +244,14 @@ export default function AboutUs({ setPage }) {
 
         <section className="about-card" aria-labelledby="about-in-development">
           <h2 className="about-card-title" id="about-in-development">
-            Features in Development
+            Still in development
             <span className="status-badge progress">In progress</span>
           </h2>
 
-          <p className="about-body-text" style={{ marginBottom: "10px" }}>
-            PHOENIX is a prototype under active development. The items
-            below are known gaps that have not been completed yet, so
-            results in these areas should not be treated as final:
+          <p className="about-body-text about-note">
+            PHOENIX is a prototype under active development. The items below
+            are known gaps that have not been completed yet, so results in
+            these areas should not be treated as final:
           </p>
 
           <ul className="about-list">
@@ -225,6 +259,24 @@ export default function AboutUs({ setPage }) {
               <li key={item}>{item}</li>
             ))}
           </ul>
+        </section>
+
+        <section className="about-card" aria-labelledby="about-project">
+          <h2 className="about-card-title" id="about-project">
+            About this project
+          </h2>
+
+          <p className="about-body-text">
+            PHOENIX is a Deakin University Capstone project run with the Cyber
+            Security &amp; Disaster Resilience research team. This site is the
+            working prototype built by a multidisciplinary student team across
+            Frontend, Backend, AI/ML and Cybersecurity streams, within a
+            12-week trimester.
+          </p>
+          <p className="about-body-text">
+            Project title: Safeguarding Community Trust and Critical Services
+            from Cyber Threats in Bushfire and Flood Disasters.
+          </p>
         </section>
 
         <section
@@ -237,38 +289,23 @@ export default function AboutUs({ setPage }) {
           </h2>
 
           <p className="about-body-text">
-            For assistance, reach out to{" "}
-            <a href="mailto:support@phoenixdashboard.com" className="support-link">
+            For assistance, email{" "}
+            <a
+              href="mailto:support@phoenixdashboard.com"
+              className="support-link"
+            >
               support@phoenixdashboard.com
-            </a>
-            . A dedicated Help Center page is planned but not built yet —
-            see Features in Development above.
+            </a>{" "}
+            or open the Help and Support page.
           </p>
 
           <div className="quick-links">
-            <button
-              type="button"
-              className="quick-link-button"
-              onClick={() => goTo("dashboard")}
-            >
-              Go to Dashboard
-            </button>
-
-            <button
-              type="button"
-              className="quick-link-button"
-              onClick={() => goTo("reports")}
-            >
-              Go to Reports
-            </button>
-
-            <a href="#support-contact" className="quick-link-button">
-              Help &amp; Support
-            </a>
+            <Link to={HELP_PATH} className="quick-link-button">
+              Open Help and Support
+            </Link>
           </div>
         </section>
       </div>
     </div>
   );
 }
-

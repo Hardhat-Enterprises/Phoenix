@@ -4,71 +4,181 @@
   width: 100%;
   box-sizing: border-box;
   flex: 1;
+  text-align: left;
 }
 
-.about-content {
-  padding: 24px;
+.about-page .about-content {
+  padding: 32px 24px 40px;
   max-width: 980px;
   margin: 0 auto;
 }
 
-.about-card {
-  background-color: #ffffff;
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  margin-bottom: 22px;
-  border: 1px solid #e8edf5;
-}
-
-.about-card-title {
-  margin: 0 0 14px 0;
+/* The app shell centres p and h1 directly, which beats inheriting left alignment. */
+.about-page .about-content h1,
+.about-page .about-content h2,
+.about-page .about-content h3,
+.about-page .about-content p,
+.about-page .about-content dt,
+.about-page .about-content dd,
+.about-page .about-content li {
   text-align: left;
-  font-size: 18px;
-  font-weight: 800;
-  color: #11264d;
 }
 
-.about-page-title {
-  margin: 0 0 4px 0;
-  font-size: 28px;
+/* Page introduction */
+
+.about-page .about-hero {
+  margin-bottom: 28px;
+}
+
+.about-page .about-page-title {
+  margin: 0 0 8px 0;
+  font-size: 32px;
+  line-height: 1.2;
   font-weight: 900;
   color: #11264d;
 }
 
-.about-page-subtitle {
+.about-page .about-lead {
+  margin: 0 0 18px 0;
+  max-width: 62ch;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #33476b;
+}
+
+.about-page .about-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.about-page .about-cta {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid #11264d;
+  background: #ffffff;
+  color: #11264d;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.about-page .about-cta.primary {
+  background: #11264d;
+  color: #ffffff;
+}
+
+.about-page .about-cta:hover {
+  background: #e8eef9;
+}
+
+.about-page .about-cta.primary:hover {
+  background: #1d3a73;
+}
+
+.about-page .about-cta:focus-visible,
+.about-page .quick-link-button:focus-visible,
+.about-page .support-link:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Cards */
+
+.about-page .about-card {
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+  border: 1px solid #e8edf5;
+}
+
+.about-page .about-card-title {
+  margin: 0 0 16px 0;
+  text-align: left;
+  font-size: 20px;
+  line-height: 1.3;
+  font-weight: 800;
+  color: #11264d;
+}
+
+.about-page .about-page-subtitle {
   margin: 0 0 20px 0;
   font-size: 14px;
   color: #4b5d7a;
 }
 
-.about-banner {
+.about-page .about-banner {
   width: 100%;
   height: 220px;
   border-radius: 16px;
   object-fit: cover;
   display: block;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   background-color: #0d2e5c;
 }
 
-.about-body-text {
+.about-page .about-body-text {
   margin: 0;
+  max-width: 75ch;
   color: #4b5d7a;
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.about-page .about-body-text + .about-body-text {
+  margin-top: 12px;
+}
+
+.about-page .about-note {
+  margin-bottom: 12px;
+}
+
+/* At a glance (what it is, the problem, who it is for, what it gives) */
+
+.about-page .about-glance {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+
+.about-page .about-glance-item {
+  background: #f8fafc;
+  border: 1px solid #e8edf5;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.about-page .about-glance-item dt {
+  margin: 0 0 6px 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #5b6b82;
+}
+
+.about-page .about-glance-item dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #2c3e5c;
 }
 
 /* Purpose section */
 
-.purpose-row {
+.about-page .purpose-row {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 20px;
   flex-wrap: wrap;
+  margin-top: 20px;
 }
 
-.purpose-icon {
+.about-page .purpose-icon {
   width: 140px;
   height: 120px;
   border-radius: 14px;
@@ -78,12 +188,12 @@
   flex-shrink: 0;
 }
 
-.purpose-content {
+.about-page .purpose-content {
   flex: 1;
   min-width: 250px;
 }
 
-.purpose-heading {
+.about-page .purpose-heading {
   margin: 0 0 8px 0;
   font-size: 16px;
   font-weight: 800;
@@ -92,14 +202,14 @@
 
 /* Who Uses This System cards */
 
-.role-grid {
+.about-page .role-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   margin-bottom: 10px;
 }
 
-.role-card {
+.about-page .role-card {
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid #e8edf5;
@@ -107,7 +217,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.role-card-icon {
+.about-page .role-card-icon {
   height: 110px;
   display: flex;
   align-items: center;
@@ -115,59 +225,64 @@
   font-size: 3rem;
 }
 
-.role-card-icon.emergency {
+.about-page .role-card-icon.emergency {
   background: #1a1a2e;
 }
 
-.role-card-icon.stakeholders {
+.about-page .role-card-icon.stakeholders {
   background: #0d1b2a;
 }
 
-.role-card-icon.analysts {
+.about-page .role-card-icon.analysts {
   background: #16213e;
 }
 
-.role-card-body {
-  padding: 12px;
+.about-page .role-card-body {
+  padding: 14px;
 }
 
-.role-kicker {
-  font-size: 0.7rem;
-  color: #888;
+.about-page .role-kicker {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #5b6b82;
   text-transform: uppercase;
   margin: 0 0 4px 0;
   letter-spacing: 0.04em;
 }
 
-.role-title {
+.about-page .role-title {
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  line-height: 1.35;
   color: #11264d;
   margin: 0 0 6px 0;
 }
 
-.role-desc {
-  font-size: 0.8rem;
+.about-page .role-desc {
+  font-size: 0.9rem;
   color: #4b5d7a;
-  line-height: 1.5;
+  line-height: 1.55;
   margin: 0;
 }
 
 /* Process section (How PHOENIX Works) */
 
-.process-list {
+.about-page .process-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-.process-step {
+.about-page .process-step {
   display: flex;
   align-items: flex-start;
   gap: 12px;
 }
 
-.process-icon {
+.about-page .process-icon {
   width: 36px;
   height: 36px;
   border-radius: 8px;
@@ -179,34 +294,45 @@
   flex-shrink: 0;
 }
 
-.process-title {
-  font-weight: 600;
-  font-size: 0.88rem;
-  color: #11264d;
-  margin: 0;
+.about-page .process-step > div:last-child {
+  flex: 1;
+  min-width: 0;
 }
 
-.process-desc {
-  font-size: 0.78rem;
+.about-page .process-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: #11264d;
+  margin: 0 0 2px 0;
+}
+
+.about-page .process-desc {
+  font-size: 0.9rem;
+  line-height: 1.55;
   color: #4b5d7a;
   margin: 0;
 }
 
 /* Simple bullet lists (Scope, Capabilities, Features in Development) */
 
-.about-list {
+.about-page .about-list {
   margin: 0;
   padding-left: 20px;
   color: #4b5d7a;
-  font-size: 14px;
-  line-height: 1.8;
+  font-size: 15px;
+  line-height: 1.65;
 }
 
-.about-list li {
-  margin-bottom: 6px;
+.about-page .about-list li {
+  margin-bottom: 8px;
 }
 
-.status-badge {
+.about-page .about-list li strong {
+  color: #11264d;
+}
+
+.about-page .status-badge {
   display: inline-block;
   font-size: 0.68rem;
   font-weight: 700;
@@ -218,25 +344,25 @@
   vertical-align: middle;
 }
 
-.status-badge.done {
+.about-page .status-badge.done {
   background: #e2efda;
   color: #1e5b2f;
 }
 
-.status-badge.progress {
+.about-page .status-badge.progress {
   background: #fff3cd;
   color: #7a5c00;
 }
 
 /* Project Team */
 
-.team-grid {
+.about-page .team-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 16px;
 }
 
-.team-card {
+.about-page .team-card {
   text-align: center;
   padding: 16px 10px;
   border-radius: 14px;
@@ -244,7 +370,7 @@
   background: #f8fafc;
 }
 
-.team-avatar {
+.about-page .team-avatar {
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -258,14 +384,14 @@
   margin: 0 auto 10px auto;
 }
 
-.team-name {
+.about-page .team-name {
   margin: 0 0 4px 0;
   font-size: 0.92rem;
   font-weight: 700;
   color: #11264d;
 }
 
-.team-role {
+.about-page .team-role {
   margin: 0;
   font-size: 0.76rem;
   color: #4b5d7a;
@@ -274,42 +400,43 @@
 
 /* Support / Contact */
 
-.about-support-card {
+.about-page .about-support-card {
   background: #f0f2f8;
   border: 1px solid #d8dce8;
 }
 
-.support-link {
+.about-page .support-link {
   color: #3b5bdb;
   text-decoration: none;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
-.support-link:hover,
-.support-link:focus-visible {
+.about-page .support-link:hover,
+.about-page .support-link:focus-visible {
   text-decoration: underline;
 }
 
-.quick-links {
+.about-page .quick-links {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
-.quick-link-button {
+.about-page .quick-link-button {
   background: #ffffff;
   border: 1px solid #c7d2e6;
   color: #11264d;
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   padding: 8px 14px;
   border-radius: 999px;
   cursor: pointer;
 }
 
-.quick-link-button:hover,
-.quick-link-button:focus-visible {
+.about-page .quick-link-button:hover,
+.about-page .quick-link-button:focus-visible {
   background: #11264d;
   color: #ffffff;
 }
@@ -317,38 +444,65 @@
 /* Responsiveness */
 
 @media (max-width: 640px) {
-  .about-content {
-    padding: 14px;
+  .about-page .about-content {
+    padding: 20px 14px 28px;
   }
 
-  .about-page-title {
-    font-size: 22px;
+  .about-page .about-page-title {
+    font-size: 26px;
   }
 
-  .about-banner {
+  .about-page .about-lead {
+    font-size: 16px;
+  }
+
+  .about-page .about-cta-row {
+    flex-direction: column;
+  }
+
+  .about-page .about-cta {
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .about-page .about-card {
+    padding: 16px;
+    margin-bottom: 18px;
+  }
+
+  .about-page .about-card-title {
+    font-size: 18px;
+  }
+
+  .about-page .about-glance {
+    grid-template-columns: 1fr;
+  }
+
+  .about-page .about-banner {
     height: 150px;
   }
 
-  .purpose-row {
+  .about-page .purpose-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .purpose-icon {
+  .about-page .purpose-icon {
     width: 100%;
-    height: 140px;
+    height: 100px;
   }
 
-  .role-grid,
-  .team-grid {
+  .about-page .role-grid,
+.about-page .team-grid {
     grid-template-columns: 1fr;
   }
 
-  .quick-links {
+  .about-page .quick-links {
     flex-direction: column;
   }
 
-  .quick-link-button {
+  .about-page .quick-link-button {
     width: 100%;
     text-align: center;
   }
@@ -356,7 +510,7 @@
 
 /* Scope subheadings */
 
-.scope-subheading {
+.about-page .scope-subheading {
   margin: 14px 0 8px 0;
   font-size: 0.85rem;
   font-weight: 700;
@@ -365,26 +519,26 @@
   letter-spacing: 0.03em;
 }
 
-.scope-subheading:first-of-type {
+.about-page .scope-subheading:first-of-type {
   margin-top: 0;
 }
 
 /* Project Team - stream columns */
 
-.team-columns {
+.about-page .team-columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
 }
 
-.team-column {
+.about-page .team-column {
   background: #f8fafc;
   border: 1px solid #e8edf5;
   border-radius: 14px;
   padding: 14px 16px;
 }
 
-.team-column-heading {
+.about-page .team-column-heading {
   margin: 0 0 10px 0;
   font-size: 0.85rem;
   font-weight: 800;
@@ -395,7 +549,7 @@
   border-bottom: 1px solid #dde6f3;
 }
 
-.team-list {
+.about-page .team-list {
   margin: 0;
   padding-left: 18px;
   color: #4b5d7a;
@@ -404,87 +558,115 @@
 }
 
 @media (max-width: 640px) {
-  .team-columns {
+  .about-page .team-columns {
     grid-template-columns: 1fr;
   }
 }
 
-a.quick-link-button {
+.about-page a.quick-link-button {
   text-decoration: none;
   display: inline-block;
 }
 
-a.quick-link-button:hover,
-a.quick-link-button:focus-visible {
+.about-page a.quick-link-button:hover,
+.about-page a.quick-link-button:focus-visible {
   text-decoration: none;
 }
+
+/* Dark theme */
 
 :root[data-theme="dark"] .about-page {
   background: var(--color-page-bg);
   color: var(--color-text);
 }
 
-:root[data-theme="dark"] .about-card,
-:root[data-theme="dark"] .role-card {
+:root[data-theme="dark"] .about-page .about-card,
+:root[data-theme="dark"] .about-page .role-card {
   background: var(--color-surface);
   border-color: var(--color-border);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
 }
 
-:root[data-theme="dark"] .team-card,
-:root[data-theme="dark"] .team-column,
-:root[data-theme="dark"] .about-support-card {
+:root[data-theme="dark"] .about-page .team-card,
+:root[data-theme="dark"] .about-page .team-column,
+:root[data-theme="dark"] .about-page .about-glance-item,
+:root[data-theme="dark"] .about-page .about-support-card {
   background: var(--color-surface-subtle);
   border-color: var(--color-border);
 }
 
-:root[data-theme="dark"] .purpose-icon {
+:root[data-theme="dark"] .about-page .purpose-icon {
   background-color: var(--color-surface-subtle);
   border-color: var(--color-border);
 }
 
-:root[data-theme="dark"] .process-icon {
+:root[data-theme="dark"] .about-page .process-icon {
   background: var(--color-selected-bg);
 }
 
-:root[data-theme="dark"] .about-page-title,
-:root[data-theme="dark"] .about-card-title,
-:root[data-theme="dark"] .purpose-heading,
-:root[data-theme="dark"] .role-title,
-:root[data-theme="dark"] .process-title,
-:root[data-theme="dark"] .team-name,
-:root[data-theme="dark"] .scope-subheading,
-:root[data-theme="dark"] .team-column-heading {
+:root[data-theme="dark"] .about-page .about-page-title,
+:root[data-theme="dark"] .about-page .about-card-title,
+:root[data-theme="dark"] .about-page .purpose-heading,
+:root[data-theme="dark"] .about-page .role-title,
+:root[data-theme="dark"] .about-page .process-title,
+:root[data-theme="dark"] .about-page .team-name,
+:root[data-theme="dark"] .about-page .scope-subheading,
+:root[data-theme="dark"] .about-page .team-column-heading,
+:root[data-theme="dark"] .about-page .about-list li strong,
+:root[data-theme="dark"] .about-page .about-glance-item dd {
   color: var(--color-heading);
 }
 
-:root[data-theme="dark"] .about-page-subtitle,
-:root[data-theme="dark"] .about-body-text,
-:root[data-theme="dark"] .role-kicker,
-:root[data-theme="dark"] .role-desc,
-:root[data-theme="dark"] .process-desc,
-:root[data-theme="dark"] .about-list,
-:root[data-theme="dark"] .team-role,
-:root[data-theme="dark"] .team-list {
+:root[data-theme="dark"] .about-page .about-page-subtitle,
+:root[data-theme="dark"] .about-page .about-lead,
+:root[data-theme="dark"] .about-page .about-body-text,
+:root[data-theme="dark"] .about-page .role-kicker,
+:root[data-theme="dark"] .about-page .role-desc,
+:root[data-theme="dark"] .about-page .process-desc,
+:root[data-theme="dark"] .about-page .about-list,
+:root[data-theme="dark"] .about-page .about-glance-item dt,
+:root[data-theme="dark"] .about-page .team-role,
+:root[data-theme="dark"] .about-page .team-list {
   color: var(--color-text-muted);
 }
 
-:root[data-theme="dark"] .team-column-heading {
+:root[data-theme="dark"] .about-page .team-column-heading {
   border-bottom-color: var(--color-border);
 }
 
-:root[data-theme="dark"] .support-link {
+:root[data-theme="dark"] .about-page .support-link {
   color: var(--color-interactive);
 }
 
-:root[data-theme="dark"] .quick-link-button {
+:root[data-theme="dark"] .about-page .about-cta {
   background: var(--color-input-bg);
   border-color: var(--color-control-border);
   color: var(--color-text);
 }
 
-:root[data-theme="dark"] .quick-link-button:hover,
-:root[data-theme="dark"] .quick-link-button:focus-visible {
+:root[data-theme="dark"] .about-page .about-cta.primary {
+  background: var(--color-interactive);
+  border-color: var(--color-interactive);
+  color: var(--color-on-interactive);
+}
+
+:root[data-theme="dark"] .about-page .about-cta:hover {
+  background: var(--color-interactive-surface-hover);
+}
+
+:root[data-theme="dark"] .about-page .about-cta.primary:hover {
+  background: var(--color-interactive);
+  color: var(--color-on-interactive);
+}
+
+:root[data-theme="dark"] .about-page .quick-link-button {
+  background: var(--color-input-bg);
+  border-color: var(--color-control-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .about-page .quick-link-button:hover,
+:root[data-theme="dark"] .about-page .quick-link-button:focus-visible {
   background: var(--color-interactive);
   color: var(--color-on-interactive);
 }

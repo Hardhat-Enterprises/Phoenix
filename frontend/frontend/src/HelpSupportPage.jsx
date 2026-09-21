@@ -55,7 +55,7 @@ const HELP_CATEGORIES = [
       },
       {
         q: "Is the notification bell live?",
-        a: "The notification bell in the header currently shows demonstration content to illustrate the interface. It is not connected to a live alerting service.",
+        a: "Yes. The bell reads live records from the Phoenix API gateway (GET /api/notifications), so what you see comes from the backend rather than sample content. The notification service is still being built, so the list is often empty. Dismissing a notification, clearing the list or marking one as read changes your view on this device only \u2014 the backend has no endpoint to save those changes yet, so a refresh restores the full list.",
       },
     ],
   },

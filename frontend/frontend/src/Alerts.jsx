@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { threatPath } from "./config/routes";
 import AlertSidebar from "./components/AlertSidebar";
 import { getHazards } from "./services/phoenixApi";
+import { hazardPath } from "./config/routes";
 import "./Alerts.css";
 
 //converts backend values into readable labels
@@ -171,9 +172,7 @@ const mapHazardToAlert = (hazard, index) => {
   const evidenceUrl = hazard.url || "";
 
   const title = location ? `${hazardType} - ${location}` : hazardType;
-  //
-  const backendId =
-    hazard.hazard_event_id || hazard.hazard_id || hazard.id || "";
+
   const fields = [
     {
       label: "Hazard type",
@@ -201,7 +200,14 @@ const mapHazardToAlert = (hazard, index) => {
     },
   ].filter((field) => hasValue(field.value));
 
+  // Only a real backend identifier can open the detail endpoint. The
+  // positional fallback below is for React keys, not for navigation.
+  const backendId =
+    hazard.hazard_event_id || hazard.hazard_id || hazard.id || "";
+
   return {
+    id: backendId || `hazard-alert-${index}`,
+    backendId,
     id: backendId || `hazard-alert-${index}`,
     backendId,
     title,
@@ -278,6 +284,8 @@ const groupHazards = (hazards) => {
     groups.set(key, {
       ...hazard,
       id: key,
+      // The grouped row's id becomes a composite key, so hold on to the first
+      // underlying record's backend id for opening its detail page.
       firstHazardId: hazard.backendId,
       count: 1,
       latestTimestamp: hazard.timestamp,

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./EvidenceEntry.css";
+import "./evidence-upload-styles.css";
+import { uploadEvidenceFile } from "../services/storageApi";
 
 /*
  * ============================================================
@@ -250,6 +252,30 @@ export default function EvidenceEntry({
    */
   const [evidenceItems, setEvidenceItems] = useState([]);
 
+  /*
+   * Sprint 2 Week 3 (Varun) — "Evidence upload and backend integrity".
+   *
+   * Upload state per file evidence item, keyed by item id:
+   *   {
+   *     status: "uploading" | "uploaded" | "error" | "cancelled",
+   *     progress: 0-100,
+   *     error: string,
+   *     meta: { fileId, originalName, mimeType, size } // once uploaded
+   *   }
+   *
+   * URL evidence items never appear here — only "file" kind items are
+   * actually uploaded to the backend.
+   */
+  const [uploadState, setUploadState] = useState({});
+
+  /*
+   * AbortControllers for in-flight uploads, keyed by item id, so a single
+   * upload can be cancelled (Cancel button) or the whole set can be
+   * aborted on unmount/clear without leaving requests running in the
+   * background.
+   */
+  const uploadControllersRef = useRef(new Map());
+
   const [errors, setErrors] = useState({});
 
   const [generalError, setGeneralError] = useState("");
@@ -279,8 +305,105 @@ export default function EvidenceEntry({
       });
 
       previewUrlsRef.current.clear();
+
+      /*
+       * Abort any uploads still in flight when the component unmounts,
+       * rather than leaving requests running for a page the user has
+       * already left.
+       */
+      uploadControllersRef.current.forEach((controller) => {
+        controller.abort();
+      });
+
+      uploadControllersRef.current.clear();
     };
   }, []);
+
+  /*
+   * ------------------------------------------------------------
+   * UPLOAD (Sprint 2 Week 3 — connects evidence files to the real
+   * POST /api/storage/upload backend endpoint)
+   * ------------------------------------------------------------
+   *
+   * Starts automatically once a file passes validation, so the person
+   * sees real upload progress rather than a form that silently does
+   * nothing until "Prepare Report" is clicked.
+   */
+  function uploadFileItem(item) {
+    const controller = new AbortController();
+    uploadControllersRef.current.set(item.id, controller);
+
+    setUploadState((previous) => ({
+      ...previous,
+      [item.id]: { status: "uploading", progress: 0, error: "" },
+    }));
+
+    uploadEvidenceFile(item.file, {
+      signal: controller.signal,
+      onProgress: (percent) => {
+        setUploadState((previous) => {
+          // Don't resurrect progress updates for an upload that was
+          // cancelled or removed while a progress event was in flight.
+          if (!previous[item.id] || previous[item.id].status !== "uploading") {
+            return previous;
+          }
+
+          return {
+            ...previous,
+            [item.id]: { ...previous[item.id], progress: percent },
+          };
+        });
+      },
+    })
+      .then((meta) => {
+        uploadControllersRef.current.delete(item.id);
+
+        setUploadState((previous) => ({
+          ...previous,
+          [item.id]: { status: "uploaded", progress: 100, error: "", meta },
+        }));
+      })
+      .catch((error) => {
+        uploadControllersRef.current.delete(item.id);
+
+        // A cancellation isn't a failure — cancelUpload() already set the
+        // "cancelled" status itself, so don't overwrite it with an error.
+        if (error.code === "UPLOAD_CANCELLED") {
+          return;
+        }
+
+        setUploadState((previous) => ({
+          ...previous,
+          [item.id]: {
+            status: "error",
+            progress: 0,
+            error: error.message || "Upload failed.",
+          },
+        }));
+      });
+  }
+
+  function cancelUpload(id) {
+    const controller = uploadControllersRef.current.get(id);
+
+    if (controller) {
+      controller.abort();
+      uploadControllersRef.current.delete(id);
+    }
+
+    setUploadState((previous) => ({
+      ...previous,
+      [id]: { status: "cancelled", progress: 0, error: "" },
+    }));
+  }
+
+  function retryUpload(id) {
+    const item = evidenceItems.find((evidenceItem) => evidenceItem.id === id);
+
+    if (item) {
+      uploadFileItem(item);
+    }
+  }
 
   function updateField(field, value) {
     setForm((previous) => ({
@@ -441,6 +564,12 @@ export default function EvidenceEntry({
         ...newItems,
       ]);
 
+      // Sprint 2 Week 3 (Varun) — start each valid file uploading right
+      // away, rather than waiting for "Prepare Report", so upload
+      // progress/failure is visible while the person is still filling in
+      // the rest of the form.
+      newItems.forEach((item) => uploadFileItem(item));
+
       if (Object.keys(newErrors).length > 0) {
         setErrors((previous) => ({
           ...previous,
@@ -486,6 +615,21 @@ export default function EvidenceEntry({
    */
 
   function removeEvidence(id) {
+    // Cancel the upload if it's still in flight, rather than letting a
+    // removed item's request keep running in the background.
+    const controller = uploadControllersRef.current.get(id);
+
+    if (controller) {
+      controller.abort();
+      uploadControllersRef.current.delete(id);
+    }
+
+    setUploadState((previous) => {
+      const next = { ...previous };
+      delete next[id];
+      return next;
+    });
+
     setEvidenceItems((previous) => {
       const itemToRemove = previous.find(
         (item) => item.id === id
@@ -627,6 +771,21 @@ export default function EvidenceEntry({
     if (evidenceItems.length === 0) {
       validationErrors.evidence =
         "Add at least one URL or file as evidence.";
+    } else {
+      // Sprint 2 Week 3 (Varun) — the report is only meaningful once every
+      // file it references actually exists in backend storage. A file
+      // still uploading, cancelled, or failed means the report would
+      // reference evidence the backend doesn't actually have.
+      const unfinishedFile = evidenceItems.find(
+        (item) =>
+          item.kind === "file" &&
+          uploadState[item.id]?.status !== "uploaded"
+      );
+
+      if (unfinishedFile) {
+        validationErrors.evidence =
+          "Wait for every file to finish uploading (or remove/retry it) before preparing the report.";
+      }
     }
 
     setErrors(validationErrors);
@@ -677,13 +836,20 @@ export default function EvidenceEntry({
           };
         }
 
+        // Sprint 2 Week 3 (Varun) — include the backend-issued file ID and
+        // confirmed metadata (not just the local File object), since this
+        // is the "usable backend metadata" the report is meant to persist.
+        // validateForm() already guarantees every file item has finished
+        // uploading before this point is reached.
+        const uploaded = uploadState[item.id]?.meta;
+
         return {
           id: item.id,
           kind: "file",
-          file: item.file,
-          name: item.name,
-          type: item.type,
-          size: item.size,
+          fileId: uploaded?.fileId,
+          name: uploaded?.originalName || item.name,
+          type: uploaded?.mimeType || item.type,
+          size: uploaded?.size ?? item.size,
         };
       }),
     };
@@ -727,9 +893,17 @@ export default function EvidenceEntry({
 
     previewUrlsRef.current.clear();
 
+    uploadControllersRef.current.forEach((controller) => {
+      controller.abort();
+    });
+
+    uploadControllersRef.current.clear();
+
     setForm(INITIAL_FORM);
 
     setEvidenceItems([]);
+
+    setUploadState({});
 
     setErrors({});
 
@@ -777,12 +951,15 @@ export default function EvidenceEntry({
         role="status"
       >
         <strong>
-          Submission service not connected
+          Files are uploaded to backend storage
         </strong>
 
         <p>
-          Evidence is currently kept in this browser
-          only. Nothing is uploaded or verified.
+          Each file is uploaded to the storage service as soon as it's
+          added, and its backend file ID is kept with the form. The
+          incident report itself (title, description, and evidence list
+          together) is not yet submitted anywhere — "Prepare Report" only
+          assembles it for now.
         </p>
       </div>
 
@@ -1211,7 +1388,7 @@ export default function EvidenceEntry({
                   className="evidence-item-drag"
                   aria-hidden="true"
                 >
-                  ⋮⋮
+                  ⣿⣿
                 </div>
 
                 {/* Thumbnail/type icon */}
@@ -1248,6 +1425,68 @@ export default function EvidenceEntry({
                           item.size
                         )}`}
                   </span>
+
+                  {/* Sprint 2 Week 3 (Varun) — per-file upload status */}
+                  {item.kind === "file" && (
+                    <div
+                      className={`evidence-upload-status evidence-upload-status--${
+                        uploadState[item.id]?.status || "uploading"
+                      }`}
+                    >
+                      {uploadState[item.id]?.status === "uploading" && (
+                        <>
+                          <div
+                            className="evidence-upload-progress-track"
+                            role="progressbar"
+                            aria-valuenow={uploadState[item.id]?.progress || 0}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          >
+                            <div
+                              className="evidence-upload-progress-fill"
+                              style={{
+                                width: `${uploadState[item.id]?.progress || 0}%`,
+                              }}
+                            />
+                          </div>
+                          <span>
+                            Uploading… {uploadState[item.id]?.progress || 0}%
+                          </span>
+                          <button
+                            type="button"
+                            className="evidence-upload-cancel"
+                            onClick={() => cancelUpload(item.id)}
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      )}
+
+                      {uploadState[item.id]?.status === "uploaded" && (
+                        <span className="evidence-upload-success">
+                          Uploaded to storage
+                        </span>
+                      )}
+
+                      {(uploadState[item.id]?.status === "error" ||
+                        uploadState[item.id]?.status === "cancelled") && (
+                        <div role="alert">
+                          <span className="evidence-upload-error">
+                            {uploadState[item.id]?.status === "cancelled"
+                              ? "Upload cancelled."
+                              : uploadState[item.id]?.error || "Upload failed."}
+                          </span>
+                          <button
+                            type="button"
+                            className="evidence-upload-retry"
+                            onClick={() => retryUpload(item.id)}
+                          >
+                            Retry upload
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Position */}
@@ -1328,9 +1567,10 @@ export default function EvidenceEntry({
           <strong>Report ready for submission</strong>
 
           <p>
-            The required fields are complete. Nothing
-            has been uploaded or verified because the
-            submission service is not connected.
+            The required fields are complete and every file has finished
+            uploading to backend storage. The full incident report is not
+            yet submitted anywhere — no report-submission endpoint exists
+            yet.
           </p>
         </div>
       )}
@@ -1362,10 +1602,11 @@ export default function EvidenceEntry({
           ====================================================== */}
 
       <p className="evidence-security-note">
-        <strong>Browser-only evidence handling:</strong>{" "}
-        selected files remain in browser memory. This page
-        does not upload files to an external service and does
-        not claim that evidence has been verified.
+        <strong>Uploaded, not yet verified:</strong>{" "}
+        files are sent to the backend storage service and stored there.
+        Uploading a file does not mean its contents have been scanned,
+        verified, or confirmed as genuine evidence — that review still
+        happens separately.
       </p>
     </section>
   );

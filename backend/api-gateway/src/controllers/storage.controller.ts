@@ -34,8 +34,12 @@ export const uploadFile = (req: Request, res: Response) => {
       {
         file_path: filePath,
         original_name: req.file.originalname,
-        mime_type:
-          req.file.originalname.split(".").pop() || "application/octet-stream",
+        // Sprint 2 Week 3 (Varun) — this previously read
+        // req.file.originalname.split(".").pop(), which stores the file
+        // EXTENSION (e.g. "pdf") as the mime_type instead of the real MIME
+        // type (e.g. "application/pdf"). multer already parses the real
+        // MIME type onto req.file.mimetype — use that instead.
+        mime_type: req.file.mimetype || "application/octet-stream",
         size: req.file.size,
       },
       (error: any, response: any) => {
@@ -49,12 +53,20 @@ export const uploadFile = (req: Request, res: Response) => {
             });
         }
 
+        // Sprint 2 Week 3 (Varun) — pass the new metadata fields through so
+        // the frontend receives something it can actually store/reference,
+        // instead of only { status, message }.
         return res
           .status(response?.status || HttpStatusCode.HTTP_STATUS_CREATED)
           .json({
             status: response?.status,
             message: response?.message,
-            data: response?.data,
+            data: {
+              file_id: response?.file_id,
+              original_name: response?.original_name,
+              mime_type: response?.mime_type,
+              size: response?.size,
+            },
           });
       },
     );

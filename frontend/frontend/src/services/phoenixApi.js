@@ -76,6 +76,33 @@ const normalizeIntegration = (integration) => ({
   output: parseJsonField(integration.output),
 });
 
+const invalidDetailResponse = () => {
+  const error = new Error("The requested record is unavailable or malformed.");
+  error.code = "INVALID_DETAIL_RESPONSE";
+  return error;
+};
+
+const validateDetailId = (id) => {
+  if (typeof id !== "string" || !id.trim()) {
+    throw invalidDetailResponse();
+  }
+};
+
+const readDetailRecord = (record, id, idKey) => {
+  if (record === undefined || record === null) return null;
+
+  if (
+    typeof record !== "object" ||
+    Array.isArray(record) ||
+    typeof record[idKey] !== "string" ||
+    record[idKey].toLowerCase() !== id.toLowerCase()
+  ) {
+    throw invalidDetailResponse();
+  }
+
+  return record;
+};
+
 export const getDashboardOverview = async () => {
   const payload = await apiRequest("/api/users/dashboard/overview", {
     requiresAuth: true,
@@ -107,13 +134,14 @@ export const getDashboardActivity = async () => {
   return unwrapData(payload);
 };
 
-// The gateway exposes GET /api/notifications only. Until it also exposes
-// mutation endpoints, dismiss / clear / mark-read stay client-side and the UI
-// must say so rather than implying the change was saved.
+// The gateway exposes GET /api/notifications only. While this is false the
+// notification provider substitutes a local no-op for every mutation and the
+// panel words its confirmations accordingly, so nothing claims to have been
+// saved. See src/services/notificationApiProvider.js.
 export const NOTIFICATION_MUTATIONS_SUPPORTED = false;
 
-// Sending an alert needs a backend send endpoint. None exists yet, so the
-// confirmation modal must not claim an alert was delivered.
+// Sending an alert needs a backend send endpoint. None exists yet, so no part
+// of the UI may offer to forward or deliver a notification.
 export const NOTIFICATION_SEND_SUPPORTED = false;
 
 export const getNotifications = async (params = {}) => {
@@ -130,6 +158,34 @@ export const getNotifications = async (params = {}) => {
 
   return withListMeta(payload, ["notifications", "alerts", "items", "data"]);
 };
+
+// The mutation endpoints the notification backend requirements document
+// proposes. They are wired and ready, but nothing calls them while
+// NOTIFICATION_MUTATIONS_SUPPORTED is false: the notification provider
+// substitutes a local no-op, so the panel keeps working and keeps saying that
+// its changes are not saved. Flipping that flag is the whole switch-on.
+const notificationRequest = (path, options = {}) => {
+  const accessToken = getAccessToken();
+
+  return apiRequest(path, {
+    ...options,
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+  });
+};
+
+export const markNotificationRead = async (id) =>
+  notificationRequest(
+    `/api/notifications/${encodeURIComponent(id)}/read`,
+    { method: "PATCH" },
+  );
+
+export const markAllNotificationsRead = async () =>
+  notificationRequest("/api/notifications/read-all", { method: "POST" });
+
+export const deleteNotification = async (id) =>
+  notificationRequest(`/api/notifications/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
 
 export const getApiHealth = async () => {
   return apiRequest("/api/users/health", {
@@ -152,6 +208,8 @@ export const getThreats = async (params = {}) => {
 };
 
 export const getThreat = async (threatId, { signal } = {}) => {
+  validateDetailId(threatId);
+
   const payload = await apiRequest(
     `/api/users/threats/${encodeURIComponent(threatId)}`,
     {
@@ -160,8 +218,10 @@ export const getThreat = async (threatId, { signal } = {}) => {
     },
   );
 
-  return payload?.threat || null;
+  return readDetailRecord(payload?.threat, threatId, "threat_id");
 };
+
+export const getThreatById = getThreat;
 
 export const getHazards = async (params = {}) => {
   const payload = await apiRequest(`/api/users/hazards${toQueryString(params)}`, {
@@ -169,6 +229,19 @@ export const getHazards = async (params = {}) => {
   });
 
   return withListMeta(payload, ["hazards"]);
+};
+
+// Fetch a single hazard by id.
+// Path assumed to follow the list route — confirm with the backend team.
+export const getHazardById = async (hazardId) => {
+  const payload = await apiRequest(
+    `/api/users/hazards/${encodeURIComponent(hazardId)}`,
+    {
+      requiresAuth: true,
+    },
+  );
+
+  return unwrapData(payload);
 };
 
 export const getLocations = async () => {
@@ -229,6 +302,26 @@ export const getIntegrations = async (params = {}) => {
     ...meta,
     items: meta.items.map(normalizeIntegration),
   };
+};
+
+export const getIntegrationById = async (integrationId, { signal } = {}) => {
+  validateDetailId(integrationId);
+
+  const payload = await apiRequest(
+    `/api/users/integration/${encodeURIComponent(integrationId)}`,
+    {
+      requiresAuth: true,
+      signal,
+    },
+  );
+
+  const integration = readDetailRecord(
+    payload?.integration,
+    integrationId,
+    "integration_event_id",
+  );
+
+  return integration ? normalizeIntegration(integration) : null;
 };
 
 

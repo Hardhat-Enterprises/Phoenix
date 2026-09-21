@@ -24,7 +24,11 @@ export const uploadFile = async (
 
     const fileBuffer = await fs.readFile(file_path);
 
-    await StoredFile.create({
+    // Sprint 2 Week 3 (Varun) — StoredFile.create() already returns the
+    // created row (with its generated file_id), but that return value was
+    // being discarded, so callers had no way to reference the file they'd
+    // just uploaded. Capturing it here and returning the metadata below.
+    const storedFile = await StoredFile.create({
       original_name,
       mime_type,
       size,
@@ -36,6 +40,10 @@ export const uploadFile = async (
     return {
       status: HttpStatusCode.HTTP_STATUS_CREATED,
       message: "File uploaded successfully",
+      file_id: storedFile.file_id,
+      original_name: storedFile.original_name,
+      mime_type: storedFile.mime_type,
+      size: storedFile.size,
     };
   } catch (error) {
     logger.error(`Error occurred while uploading file: ${error}`);

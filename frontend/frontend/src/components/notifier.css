@@ -269,22 +269,6 @@
   background: #f8fafc;
 }
 
-.notif-clear {
-  display: block;
-  width: 100%;
-  padding: 10px;
-  border: none;
-  background: none;
-  color: #1e3a8a;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.notif-clear:hover {
-  background: #f1f5f9;
-}
-
 .notif-local-note {
   margin: 0;
   padding: 0 14px 12px;
@@ -400,10 +384,43 @@
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
   z-index: 300;
 }
+/* A refresh that fails while notifications are already on screen reports the
+   failure above the list instead of replacing it. */
+.notif-error-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  text-align: left;
+  background: #fef2f2;
+  border-bottom: 1px solid #fecaca;
+}
+
+.notif-error-inline .notif-error-text {
+  margin: 0;
+  flex: 1;
+  font-size: 12px;
+}
+
+.notif-error-inline .notif-retry {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.notif-retry:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Records the backend sent without a usable timestamp. */
+.notif-time-unknown {
+  color: #94a3b8;
+  font-style: italic;
+}
 
 :root[data-theme="dark"] .notif-header,
-:root[data-theme="dark"] .notif-item,
-:root[data-theme="dark"] .notif-clear {
+:root[data-theme="dark"] .notif-item {
   border-color: var(--color-border);
 }
 
@@ -413,8 +430,7 @@
   color: var(--color-heading);
 }
 
-:root[data-theme="dark"] .notif-item.unread,
-:root[data-theme="dark"] .notif-clear:hover {
+:root[data-theme="dark"] .notif-item.unread {
   background: var(--color-interactive-surface-hover);
 }
 
@@ -588,4 +604,156 @@
     justify-content: space-between;
     margin-left: 0;
   }
+}
+
+/* Injected-data panel: the states and fields added when the list became a
+   presentational component driven by a provider ------------------------------ */
+
+/* A background refresh, which must be quieter than a first load because the
+   previous list is still readable underneath it. */
+.notif-refreshing {
+  margin: 0;
+  padding: 6px 14px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.notif-markall {
+  padding: 4px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.notif-markall:disabled,
+.notif-refresh:disabled,
+.notif-dismiss:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* The event classification behind the notification. */
+.notif-eventtype {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+}
+
+.notif-error-title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* A mutation that was rolled back. It sits above the list because the record it
+   refers to is still there, unchanged. */
+.notif-mutation-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  text-align: left;
+  background: #fef2f2;
+  border-bottom: 1px solid #fecaca;
+}
+
+.notif-mutation-error .notif-error-text {
+  margin: 0;
+  flex: 1;
+  font-size: 12px;
+}
+
+/* Filtered everything out, which is a different message from having nothing. */
+.notif-no-matches {
+  padding: 22px 14px;
+}
+
+/* A row with a mutation in flight stays legible but cannot be mistaken for
+   settled. */
+.notif-item-pending {
+  opacity: 0.65;
+}
+
+.notif-modal-subtitle {
+  margin: 14px 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.notif-metadata .notif-metadata-row {
+  display: contents;
+}
+
+.notif-metadata dd {
+  word-break: break-word;
+}
+
+/* Metadata that could not be parsed. Shown verbatim and labelled, rather than
+   dropped silently or allowed to reach the renderer as an arbitrary value. */
+.notif-metadata-warning {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #92400e;
+}
+
+.notif-metadata-raw {
+  display: block;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 11px;
+  word-break: break-all;
+  color: #475569;
+}
+
+:root[data-theme="dark"] .notif-refreshing {
+  background: var(--color-surface-raised, var(--card-bg));
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] .notif-markall {
+  background: var(--color-input-bg);
+  border-color: var(--color-control-border);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .notif-eventtype {
+  background: var(--color-interactive-surface-hover);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] .notif-mutation-error {
+  background: var(--color-error-bg);
+  border-color: var(--color-error-border);
+}
+
+:root[data-theme="dark"] .notif-mutation-error .notif-error-text {
+  color: var(--color-error-text);
+}
+
+:root[data-theme="dark"] .notif-metadata-warning {
+  color: var(--color-warning-text);
+}
+
+:root[data-theme="dark"] .notif-metadata-raw {
+  background: var(--color-input-bg);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
 }

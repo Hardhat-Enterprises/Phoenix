@@ -8,6 +8,14 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    // Unit tests run in jsdom so the notification panel's focus and keyboard
+    // behaviour can be exercised the way a reader would.
+    test: {
+      environment: "jsdom",
+      globals: true,
+      include: ["src/**/*.test.{js,jsx}"],
+      restoreMocks: true,
+    },
     server: {
       proxy: {
         "/api": {

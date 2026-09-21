@@ -137,6 +137,15 @@
   width: 100%;
 }
 
+.alert-filter-button:hover {
+  filter: brightness(0.96);
+}
+
+.alert-filter-button:focus-visible {
+  outline: 3px solid var(--interactive);
+  outline-offset: 2px;
+}
+
 .alerts-list-card {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -170,6 +179,18 @@
   font-size: 13px;
   line-height: 1.4;
   margin: 5px 0 0;
+}
+
+.alerts-result-count {
+  align-self: flex-start;
+  background: var(--color-selected-bg, #eef4fb);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--color-selected-text, #35516f);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 10px;
+  white-space: nowrap;
 }
 
 .alert-row {
@@ -414,6 +435,25 @@
   border-bottom: none;
 }
 
+.hazard-row-clickable {
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.hazard-row-clickable:hover {
+  background: var(--color-interactive-surface-hover, #f8fbff);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+.hazard-row-clickable:focus-visible {
+  outline: 3px solid var(--interactive);
+  outline-offset: -3px;
+}
+
 .hazard-row-top {
   align-items: flex-start;
   display: flex;
@@ -494,12 +534,170 @@
   text-underline-offset: 2px;
 }
 
+/*
+ * Severity marker and text label provide non-colour cues.
+ */
+
+.severity-marker {
+  border-radius: 50%;
+  flex: 0 0 auto;
+  height: 12px;
+  margin-top: 5px;
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  width: 12px;
+}
+
+.severity-marker.emergency {
+  background: #b91c1c;
+  color: #b91c1c;
+}
+
+.severity-marker.high {
+  background: #c2410c;
+  color: #c2410c;
+}
+
+.severity-marker.medium {
+  background: #b45309;
+  color: #b45309;
+}
+
+.severity-marker.low {
+  background: #166534;
+  color: #166534;
+}
+
+.severity-label {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 10px;
+}
+
+.severity-label.emergency {
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+.severity-label.high {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.severity-label.medium {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.severity-label.low {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+/*
+ * Timestamp and explicit Threat Details action.
+ */
+
+.hazard-row-actions {
+  align-items: center;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding-top: 12px;
+}
+
+.hazard-timestamp {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.hazard-open-action {
+  color: var(--interactive);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.hazard-open-action.disabled {
+  color: var(--muted);
+}
+
 .alerts-empty-state {
-  color: #64748b;
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  justify-content: center;
+  min-height: 180px;
   font-size: 14px;
   font-weight: 700;
   padding: 24px;
   text-align: center;
+}
+.alerts-empty-state strong {
+  color: var(--heading-color);
+  font-size: 16px;
+}
+
+.alerts-empty-state p {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.alerts-state-icon {
+  align-items: center;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 18px;
+  font-weight: 900;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.alerts-error-state {
+  background: var(--color-surface-subtle, #fffafa);
+}
+
+.alerts-error-state .alerts-state-icon {
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+/*
+ * ADDED:
+ * Reuses the existing interactive tokens for Retry and Clear filters buttons.
+ */
+
+.alerts-retry-button {
+  background: var(--interactive);
+  border: none;
+  border-radius: 8px;
+  color: var(--text-h);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  margin-top: 6px;
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+.alerts-retry-button:hover {
+  filter: brightness(0.96);
+}
+
+.alerts-retry-button:focus-visible {
+  outline: 3px solid var(--interactive);
+  outline-offset: 2px;
 }
 
 .alerts-side-panel {
@@ -564,6 +762,20 @@
   .hazard-chart-row strong {
     text-align: left;
   }
+
+  .alerts-result-count {
+    align-self: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hazard-row-clickable {
+    transition: none;
+  }
+
+  .hazard-row-clickable:hover {
+    transform: none;
+  }
 }
 
 :root[data-theme="dark"] .alerts-page-header p,
@@ -622,4 +834,3 @@
 :root[data-theme="dark"] .hazard-evidence-panel a {
   color: var(--color-interactive);
 }
-

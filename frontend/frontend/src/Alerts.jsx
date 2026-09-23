@@ -70,7 +70,7 @@ const formatHazardSeverity = (value) => {
 };
 
 //Reads the timestamp field used by the Phoenix hazard response
-const getHazardTimeStamp = (hazard) =>
+const getHazardTimestamp = (hazard) =>
   hazard.created_at ||
   hazard.updated_at ||
   hazard.timestamp ||
@@ -208,8 +208,6 @@ const mapHazardToAlert = (hazard, index) => {
   return {
     id: backendId || `hazard-alert-${index}`,
     backendId,
-    id: backendId || `hazard-alert-${index}`,
-    backendId,
     title,
     description: evidenceText,
     evidenceText,
@@ -220,7 +218,7 @@ const mapHazardToAlert = (hazard, index) => {
     rawAlertLevel: String(hazard.alert_level || "").toLowerCase(),
     status,
     rawStatus: String(hazard.hazard_status || "").toLowerCase(),
-    severity: severity || severityValue,
+    severity,
     severityLabel,
     timestamp,
     formattedTimestamp: formatTimestamp(timestamp),

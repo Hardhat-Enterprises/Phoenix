@@ -1,7 +1,7 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import { sequelize } from "../sequelize-connection-handler";
 
-type IntegrationType = "core" | "anomaly" | "time-series" | "correlation";
+type IntegrationType = "core" | "anomaly" | "time-series";
 type IntegrationStatus = "created" | "processing" | "completed" | "error";
 
 interface IntegrationLogAttributes {
@@ -50,7 +50,7 @@ IntegrationLog.init(
       type: DataTypes.TEXT,
       allowNull: false,
       validate: {
-        isIn: [["core", "anomaly", "time-series", "correlation"]],
+        isIn: [["core", "anomaly", "time-series"]],
       },
     },
     input: {

@@ -39,7 +39,7 @@ import {
   AuthEntity,
 } from "../entity/user.entity";
 
-import { logger } from "@phoenix/common";
+import { fromGrpcMetadata, logger } from "@phoenix/common";
 
 export const userHandler = {
   GetUserHealth: (
@@ -120,12 +120,17 @@ export const userHandler = {
       });
     }
   },
-  LoginUser: async (
+
+    LoginUser: async (
     call: ServerUnaryCall<LoginUserDto, AuthEntity>,
     callback: sendUnaryData<AuthEntity>,
   ) => {
     try {
-      const response = await loginUser(call.request);
+      const requestContext = fromGrpcMetadata(call.metadata, {
+        fallbackEndpoint: "grpc:LoginUser",
+      });
+
+      const response = await loginUser(call.request, requestContext);
       logger.info(`LoginUser response:${JSON.stringify(response)}`);
       callback(null, response);
     } catch (error) {

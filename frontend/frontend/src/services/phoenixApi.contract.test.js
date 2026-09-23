@@ -221,7 +221,7 @@ test("shared detail API contracts", { concurrency: false }, async (t) => {
         });
       });
 
-      await t.test(`${name}: cancellation reaches fetch and keeps the current transport error`, async () => {
+      await t.test(`${name}: cancellation reaches fetch and remains identifiable`, async () => {
         const controller = new AbortController();
         fetchResponse = (_path, { signal }) => new Promise((_resolve, reject) => {
           signal.addEventListener("abort", () => reject(signal.reason), { once: true });
@@ -229,16 +229,19 @@ test("shared detail API contracts", { concurrency: false }, async (t) => {
         const pending = method(id, { signal: controller.signal });
         controller.abort();
 
-        await assert.rejects(pending, /Could not reach the PHOENIX API gateway/);
+        await assert.rejects(pending, { name: "AbortError" });
         assert.equal(requests[0].options.signal, controller.signal);
         assert.equal(controller.signal.aborted, true);
       });
 
-      await t.test(`${name}: a pre-aborted signal is forwarded unchanged`, async () => {
+      await t.test(`${name}: a custom pre-abort reason is normalized`, async () => {
         const controller = new AbortController();
-        controller.abort();
+        controller.abort(new Error("Synthetic custom abort reason"));
         fetchResponse = async (_path, { signal }) => { throw signal.reason; };
-        await assert.rejects(method(id, { signal: controller.signal }), /Could not reach/);
+        await assert.rejects(method(id, { signal: controller.signal }), {
+          name: "AbortError",
+          message: "The request was aborted.",
+        });
         assert.equal(requests[0].options.signal, controller.signal);
       });
 

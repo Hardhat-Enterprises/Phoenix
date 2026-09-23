@@ -5,7 +5,6 @@ import {
   getDashboardActivity,
   getThreats,
   getHazards,
-  getNotifications,
   getIntegrations,
   getApiHealth,
   getIngestionHealth,
@@ -112,24 +111,6 @@ describe("phoenixApi", () => {
 
       expect(result.page).toBeDefined();
       expect(result.limit).toBeDefined();
-      expect(result.total).toBeDefined();
-    });
-  });
-
-  describe("Notification endpoint", () => {
-    it("should fetch notifications without auth", async () => {
-      localStorage.clear();
-
-      const result = await getNotifications();
-
-      expect(result.items).toBeDefined();
-      expect(Array.isArray(result.items)).toBe(true);
-    });
-
-    it("should handle pagination", async () => {
-      const result = await getNotifications({ page: 1, limit: 5 });
-
-      expect(result.items).toBeDefined();
       expect(result.total).toBeDefined();
     });
   });

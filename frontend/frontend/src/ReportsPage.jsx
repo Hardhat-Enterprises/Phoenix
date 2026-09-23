@@ -11,6 +11,7 @@ import {
 } from "./components/States";
 import EvidenceEntry from "./components/EvidenceEntry";
 import "./ReportsPage.css";
+import "./reports-toolbar-styles.css";
 import "./components/design.css";
 import { downloadReportPdf } from "./utils/downloadReportPdf";
 import { validateReportForm } from "./utils/reportFormValidation";
@@ -160,6 +161,7 @@ const buildIntegrationReport = (integration, dateFormat) => {
 
   return {
     id: integration.integration_event_id || title,
+    integrationId: integration.integration_event_id,
     title,
     description: input.text || input.url || "No evidence text returned.",
     evidenceType: getEvidenceType(input),
@@ -168,6 +170,7 @@ const buildIntegrationReport = (integration, dateFormat) => {
     status,
     date: formatDateTime(processedTime),
     displayDate: formatUserDateTime(processedTime, dateFormat),
+    processedAt: processedTime,
     fileName: `${sanitizeFileName(title)}_verification_report.pdf`,
     input,
     output,
@@ -268,7 +271,7 @@ const getInputSignature = (integration) => {
   });
 };
 
-const latestCoreIntegration = (items) => {
+const dedupedCoreIntegrations = (items) => {
   const seenInputs = new Set();
 
   return sortNewestFirst(items)
@@ -282,9 +285,10 @@ const latestCoreIntegration = (items) => {
 
       seenInputs.add(signature);
       return true;
-    })
-    .slice(0, 1);
+    });
 };
+
+const latestCoreIntegration = (items) => dedupedCoreIntegrations(items).slice(0, 1);
 
 const getRiskClass = (riskLevel, status) => {
   if (status === "error") {
@@ -339,17 +343,56 @@ function ReportsPage() {
   const runBusyRef = useRef(false);
   const runAbortRef = useRef(null);
 
+  // Report library controls (Sprint 3 Week 2 — Reports page ownership, Varun)
+  const [reportSearch, setReportSearch] = useState("");
+  const [reportRiskFilter, setReportRiskFilter] = useState("all");
+  const [reportSort, setReportSort] = useState("newest");
+
   const displayedIntegrations = useMemo(
     () => latestCoreIntegration(integrations),
     [integrations],
   );
 
-  const generatedReports = useMemo(
-    () => displayedIntegrations.map((integration) => (
+  // Sprint 3 Week 2: the report library shows every distinct core-model
+  // result, not just the single latest one — "Last Core Model Test" below
+  // is intentionally kept as a single-record view and is unaffected.
+  const allReports = useMemo(
+    () => dedupedCoreIntegrations(integrations).map((integration) => (
       buildIntegrationReport(integration, dateFormat)
     )),
-    [dateFormat, displayedIntegrations],
+    [dateFormat, integrations],
   );
+
+  const generatedReports = useMemo(() => {
+    const query = reportSearch.trim().toLowerCase();
+
+    let list = allReports;
+
+    if (query) {
+      list = list.filter(
+        (report) =>
+          report.title.toLowerCase().includes(query) ||
+          report.description.toLowerCase().includes(query),
+      );
+    }
+
+    if (reportRiskFilter !== "all") {
+      list = list.filter((report) => report.riskClass === reportRiskFilter);
+    }
+
+    return [...list].sort((a, b) => {
+      const aTime = new Date(a.processedAt || 0).getTime() || 0;
+      const bTime = new Date(b.processedAt || 0).getTime() || 0;
+      return reportSort === "newest" ? bTime - aTime : aTime - bTime;
+    });
+  }, [allReports, reportSearch, reportRiskFilter, reportSort]);
+
+  const hasActiveReportFilters = Boolean(reportSearch.trim()) || reportRiskFilter !== "all";
+
+  const clearReportFilters = () => {
+    setReportSearch("");
+    setReportRiskFilter("all");
+  };
 
   const latestResult = useMemo(
     () =>
@@ -1010,8 +1053,8 @@ function ReportsPage() {
           <div>
             <h2>Generated Verification Reports</h2>
             <p>
-              Downloadable report generated from the latest backend core model
-              record.
+              Browse every distinct core model result. View a summary here,
+              open the full record, or export it as a PDF report.
             </p>
           </div>
         </div>
@@ -1039,14 +1082,43 @@ function ReportsPage() {
         <div className="reports-table">
           <div className="reports-table-head">
             <span>Evidence</span>
-            <span>Input Type</span>
+            <span>Category</span>
             <span>Risk Level</span>
             <span>Status</span>
             <span>Processed</span>
             <span>Action</span>
           </div>
 
-          {generatedReports.length > 0 ? (
+          {isLoadingIntegrations ? (
+            <LoadingState
+              title="Loading reports…"
+              description="Fetching backend core model records from the Phoenix API."
+            />
+          ) : integrationsError === "auth" ? (
+            <AuthenticationState
+              title="Sign in required"
+              description="Please sign in before loading reports."
+              onAction={() => navigate("/login")}
+            />
+          ) : integrationsError === "forbidden" ? (
+            <ErrorState
+              title="Access denied"
+              description="Your account cannot access these reports."
+            />
+          ) : integrationsError === "notfound" || integrationsError === "empty" ? (
+            <EmptyState
+              title="Reports unavailable"
+              description="The Phoenix API did not return usable report records."
+              actionLabel="Retry"
+              onAction={handleRefreshResults}
+            />
+          ) : integrationsError ? (
+            <ErrorState
+              title="Could not load reports"
+              description="Reports could not be loaded. Please try again."
+              onRetry={handleRefreshResults}
+            />
+          ) : generatedReports.length > 0 ? (
             generatedReports.map((report) => (
               <div className="reports-row" key={report.id}>
                 <div className="report-title-cell">
@@ -1073,12 +1145,18 @@ function ReportsPage() {
                 </button>
               </div>
             ))
+          ) : allReports.length > 0 ? (
+            <EmptyState
+              title="No reports match your filters"
+              description="Try a different search term or risk level."
+              actionLabel="Clear filters"
+              onAction={clearReportFilters}
+            />
           ) : (
-            <div className="reports-empty">
-              {isLoadingIntegrations
-                ? "Loading backend core model records..."
-                : "No core model records returned yet."}
-            </div>
+            <EmptyState
+              title="No reports yet"
+              description="Run the URL/Text Risk Check above to generate your first report."
+            />
           )}
         </div>
       </section>

@@ -24,6 +24,20 @@ const readJson = async (response) => {
   }
 };
 
+const getAbortError = (error, signal) => {
+  if (error?.name === "AbortError") {
+    return error;
+  }
+
+  if (signal?.aborted && error === signal.reason) {
+    const abortError = new Error("The request was aborted.");
+    abortError.name = "AbortError";
+    return abortError;
+  }
+
+  return null;
+};
+
 export const getAuthSession = () => {
   const storedSession = localStorage.getItem(AUTH_STORAGE_KEY);
 
@@ -225,7 +239,13 @@ const performApiRequest = async (
       body: body === undefined ? undefined : JSON.stringify(body),
       signal,
     });
-  } catch {
+  } catch (error) {
+    const abortError = getAbortError(error, signal);
+
+    if (abortError) {
+      throw abortError;
+    }
+
     throw new Error(
       "Could not reach the PHOENIX API gateway. Check the configured API gateway and try again.",
     );
@@ -236,6 +256,12 @@ const performApiRequest = async (
   try {
     data = await readJson(response);
   } catch (error) {
+    const abortError = getAbortError(error, signal);
+
+    if (abortError) {
+      throw abortError;
+    }
+
     if (signal?.aborted || response.ok) {
       throw error;
     }
@@ -273,19 +299,19 @@ export const apiRequest = async (
     ) {
       try {
         await refreshAccessToken();
-
-        return await apiRequest(path, {
-          method,
-          body,
-          headers,
-          requiresAuth,
-          signal,
-          retryOnAuthFailure: false,
-        });
       } catch {
         clearAuthSession();
         throw getAuthError();
       }
+
+      return await apiRequest(path, {
+        method,
+        body,
+        headers,
+        requiresAuth,
+        signal,
+        retryOnAuthFailure: false,
+      });
     }
 
     if (

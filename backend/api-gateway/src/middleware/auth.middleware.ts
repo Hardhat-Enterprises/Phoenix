@@ -9,6 +9,7 @@ import {
 } from "@phoenix/common";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { sendSecurityNotification } from "../notifications/notificationService";
 
 const JWT_SECRET = process.env.AUTH_JWT_SECRET || process.env.JWT_SECRET;
 
@@ -38,15 +39,26 @@ export const authenticate = async (
 ) => {
   const authHeader = req.headers.authorization;
 
-  // Access restricted: no Authorization header was provided.
-  if (!authHeader) {
+  // No Authorization header, or not a Bearer token
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     logAccessRestricted({
       ...fromRequest(req),
       reason: "authentication_failure",
       details: {
-        cause: "missing_authorization_header",
+        cause: authHeader
+          ? "non_bearer_authorization_scheme"
+          : "missing_authorization_header",
       },
     });
+
+    sendSecurityNotification(
+      "UNAUTHORIZED_ACCESS",
+      "HIGH",
+      "Authentication token was not provided.",
+      req.originalUrl,
+      req.method,
+      req.ip,
+    );
 
     return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
       status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
@@ -58,19 +70,31 @@ export const authenticate = async (
 
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
+
     const user = await UserAccount.findByPk(decoded.user_id);
 
-    // User does not exist.
-    if (!user) {
-      logAccessRestricted({
+    // Token is no longer valid / user has logged out
+    if (!user || user.access_token !== token) {
+        logAccessRestricted({
         ...fromRequest(req),
         user_id: decoded.user_id?.toString(),
         role: decoded.role,
         reason: "authentication_failure",
+        severity: user ? "high" : undefined,
         details: {
-          cause: "user_not_found",
+          cause: user ? "token_no_longer_matches_account" : "user_not_found",
         },
       });
+
+      sendSecurityNotification(
+        "INVALID_JWT",
+        "HIGH",
+        "Authenticated token is invalid or has been revoked.",
+        req.originalUrl,
+        req.method,
+        req.ip,
+        decoded.user_id,
+      );
 
       return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
         status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
@@ -78,26 +102,7 @@ export const authenticate = async (
       });
     }
 
-    // The JWT itself has already been verified, but it is no longer the
-    // token stored on the account.
-    if (user.access_token !== token) {
-      logAccessRestricted({
-        ...fromRequest(req),
-        user_id: decoded.user_id?.toString(),
-        role: decoded.role,
-        reason: "authentication_failure",
-        severity: "high",
-        details: {
-          cause: "token_no_longer_matches_account",
-        },
-      });
-
-      return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
-        status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
-        message: "Logged out",
-      });
-    }
-
+    // Attach authenticated user
     (req as any).user = decoded;
 
     next();
@@ -107,6 +112,15 @@ export const authenticate = async (
       ...fromRequest(req),
       reason: toTokenInvalidReason(error),
     });
+
+    sendSecurityNotification(
+      "INVALID_JWT",
+      "HIGH",
+      "Invalid or expired JWT detected.",
+      req.originalUrl,
+      req.method,
+      req.ip,
+    );
 
     return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
       status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
@@ -131,6 +145,16 @@ export const authorize = (roles: string[]) => {
         },
       });
 
+      sendSecurityNotification(
+        "FORBIDDEN_ACCESS",
+        "HIGH",
+        `User with role '${user?.role ?? "unknown"}' attempted to access a restricted resource.`,
+        req.originalUrl,
+        req.method,
+        req.ip,
+        user?.user_id,
+      );
+
       return res.status(HttpStatusCode.HTTP_STATUS_FORBIDDEN).json({
         status: HttpStatusCode.HTTP_STATUS_FORBIDDEN,
         message: "Access denied",
@@ -151,6 +175,15 @@ export const authorizeSelfOrRoles = (
     const requestedUserId = req.params[paramName];
 
     if (!user) {
+      sendSecurityNotification(
+        "UNAUTHORIZED_ACCESS",
+        "HIGH",
+        "Unauthenticated request attempted to access a protected user resource.",
+        req.originalUrl,
+        req.method,
+        req.ip,
+      );
+
       return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
         status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
         message: "Unauthorized",
@@ -172,6 +205,16 @@ export const authorizeSelfOrRoles = (
         requested_user_id: requestedUserId,
       },
     });
+
+    sendSecurityNotification(
+      "FORBIDDEN_ACCESS",
+      "HIGH",
+      "User attempted to access another user's protected resource.",
+      req.originalUrl,
+      req.method,
+      req.ip,
+      user.user_id,
+    );
 
     return res.status(HttpStatusCode.HTTP_STATUS_FORBIDDEN).json({
       status: HttpStatusCode.HTTP_STATUS_FORBIDDEN,

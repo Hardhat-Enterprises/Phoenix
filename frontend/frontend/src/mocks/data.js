@@ -74,10 +74,15 @@ export const mockThreatList = {
 export const mockHazard = {
   id: "hazard-1",
   hazard_id: "hazard-1",
-  title: "Fire Risk",
-  description: "Elevated fire risk in region",
-  severity: "medium",
-  location: "NSW",
+  hazard_event_id: "hazard-1",
+  hazard_type: "Fire Risk",
+  hazard_location: "NSW",
+  hazard_severity: "medium",
+  alert_level: "medium",
+  hazard_status: "active",
+  source: "fire-service",
+  text: "Elevated fire risk in region",
+  timestamp: "2024-01-15T10:30:00Z",
 };
 
 export const mockHazardList = {

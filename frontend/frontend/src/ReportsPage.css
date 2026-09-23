@@ -595,3 +595,59 @@
   border-color: var(--color-success-border);
   color: var(--color-success-text);
 }
+.reports-pdf-message {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 16px 28px;
+}
+
+.reports-pdf-status {
+  margin: 0;
+}
+
+.reports-pdf-status:not(:empty) {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  margin: 16px 28px 0;
+}
+.field-error {
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.url-form-group input[aria-invalid="true"],
+.url-form-group textarea[aria-invalid="true"] {
+  border-color: #dc2626;
+}
+
+:root[data-theme="dark"] .field-error {
+  color: var(--color-error-text);
+}
+.field-error {
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.url-form-group input[aria-invalid="true"],
+.url-form-group textarea[aria-invalid="true"] {
+  border-color: #dc2626;
+}
+
+:root[data-theme="dark"] .field-error {
+  color: var(--color-error-text);
+}
+.reports-run-error {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}

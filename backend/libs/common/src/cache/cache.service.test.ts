@@ -1,5 +1,6 @@
 import { redisClient } from "../redis";
 import { cacheService } from "./cache.service";
+import { describe, it, expect, jest } from "@jest/globals";
 
 // Mock the shared redis client so these tests run without a real
 // Redis instance — this is a unit test of CacheService's own logic

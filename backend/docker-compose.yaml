@@ -7,7 +7,7 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-    
+
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 5s

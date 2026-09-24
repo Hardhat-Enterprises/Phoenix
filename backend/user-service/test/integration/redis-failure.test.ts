@@ -18,9 +18,9 @@ describe("Redis Failure Fallback", () => {
 
 it("should fallback to database when Redis is unavailable", async () => {
     const findAllSpy = jest.spyOn(UserAccount, "findAll");
-  
+
     jest.spyOn(cache, "getCache").mockRejectedValue(new Error("Redis unavailable"));
-  
+
     const result = await getUsers({} as any);
 
     expect(result).toBeDefined();

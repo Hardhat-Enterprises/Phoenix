@@ -388,7 +388,7 @@ export const registerUser = async (
     } catch (error) {
       logger.error(`Failed to invalidate users cache: ${error}`);
     }
-    
+
     return {
       status: HttpStatusCode.HTTP_STATUS_CREATED,
       message: "User registered successfully",

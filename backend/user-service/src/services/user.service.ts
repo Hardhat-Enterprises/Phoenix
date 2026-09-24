@@ -3,6 +3,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import {
+  cacheService,
+  createCacheKey,
   CyberThreat,
   HazardEvent,
   HttpStatusCode,
@@ -16,6 +18,7 @@ import {
   ReferenceDay,
   ReferenceTime,
   UserRole,
+
 } from "@phoenix/common";
 
 import {
@@ -139,12 +142,37 @@ export const getLocations = async () => {
   };
 };
 
+const EVENT_STATUSES_CACHE_KEY = createCacheKey(
+  "user-service",
+  "event-statuses",
+  "all",
+);
+const EVENT_STATUSES_TTL_SECONDS = 3600; // 1 hour — static reference data
+
 export const getEventStatuses = async () => {
+    const cached = await cacheService.get<
+    Array<{ event_status_id: number; event_status_description: string }>
+  >(EVENT_STATUSES_CACHE_KEY);
+  if (cached) {
+    logger.info("Event statuses served from cache");
+    return {
+      status: HttpStatusCode.HTTP_STATUS_OK,
+      message: "Event statuses fetched successfully",
+      eventStatuses: cached,
+    };
+  }
+
   logger.info("Fetching event statuses from database...");
 
   const eventStatuses = await EventStatus.findAll({
     attributes: ["event_status_id", "event_status_description"],
   });
+
+  await cacheService.set(
+    EVENT_STATUSES_CACHE_KEY,
+    eventStatuses,
+    EVENT_STATUSES_TTL_SECONDS,
+  );
 
   return {
     status: HttpStatusCode.HTTP_STATUS_OK,
@@ -232,9 +260,7 @@ export const getUserDashboard = async (
       HazardEvent.count(),
       HazardEvent.count({ where: { hazard_severity: { [Op.gte]: 0.8 } } }),
       CyberThreat.count(),
-      CyberThreat.count({
-        where: { severity: { [Op.in]: ["high", "critical"] } },
-      }),
+      CyberThreat.count({ where: { severity: { [Op.gte]: 0.8 } } }),
       IntegrationLog.count(),
     ]);
 

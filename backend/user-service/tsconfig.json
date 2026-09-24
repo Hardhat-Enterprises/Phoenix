@@ -5,10 +5,7 @@
     "target": "ES2020",
     "module": "CommonJS",
 
-    "types": [
-      "node",
-      "jest"
-    ],
+    "types": ["node", "jest"],
 
     "rootDir": ".",
     "outDir": "../dist/user-service",
@@ -16,12 +13,8 @@
     "baseUrl": ".",
 
     "paths": {
-      "@phoenix/common": [
-        "../libs/common/src/index.ts"
-      ],
-      "@phoenix/common/*": [
-        "../libs/common/src/*"
-      ]
+      "@phoenix/common": ["../libs/common/src/index.ts"],
+      "@phoenix/common/*": ["../libs/common/src/*"]
     },
 
     "composite": true,

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   countUnread,
+  derivePage,
   deriveListView,
   filterNotifications,
   hasMarkAllReadWork,
@@ -82,10 +83,16 @@ export default function NotificationList({
   // Injected mutations. A null action hides the control it belongs to instead
   // of offering something that cannot work.
   actions = {},
+  // Optional. { page, limit, onPageChange } turns the filtered list into pages
+  // and renders the pager below it; absent means show everything.
+  pagination = null,
   onRefresh,
   onRetry,
   onSignIn,
   onClose,
+  // Rendered between the header and the list. The panel's search and filter
+  // controls arrive this way, so this component stays unaware of them.
+  controls = null,
   heading = "Notifications",
   // Injectable clock, so timestamp rendering is deterministic under test.
   now: nowOverride,
@@ -129,6 +136,19 @@ export default function NotificationList({
   );
   const unreadCount = countUnread(items);
   const view = deriveListView({ status, items, visibleItems, filters });
+
+  // Paging is applied after filtering, so the empty-versus-no-matches decision
+  // above is made on the whole filtered list rather than on one page of it.
+  const pageState = pagination
+    ? derivePage({
+        page: pagination.page,
+        limit: pagination.limit,
+        total: visibleItems.length,
+      })
+    : null;
+  const pagedItems = pageState
+    ? visibleItems.slice(pageState.startIndex, pageState.startIndex + pageState.limit)
+    : visibleItems;
 
   // Fresh data from the provider always wins over a local overlay.
   useEffect(() => {
@@ -274,7 +294,7 @@ export default function NotificationList({
       }
 
       // Where the keyboard goes once the row it was on is gone.
-      const order = visibleItems.map((entry) => String(entry.id));
+      const order = pagedItems.map((entry) => String(entry.id));
       const position = order.indexOf(String(item.id));
       const nextFocusId =
         order[position + 1] || order[position - 1] || null;
@@ -291,7 +311,7 @@ export default function NotificationList({
         setSelectedId(null);
       }
     },
-    [deleteAction, runMutation, selectedId, visibleItems],
+    [deleteAction, runMutation, selectedId, pagedItems],
   );
 
   const handleSelect = useCallback(
@@ -395,7 +415,7 @@ export default function NotificationList({
       return;
     }
 
-    const order = visibleItems.map((item) => String(item.id));
+    const order = pagedItems.map((item) => String(item.id));
 
     if (order.length === 0) {
       return;
@@ -527,6 +547,8 @@ export default function NotificationList({
         {anyPending ? "Working..." : announcement}
       </p>
 
+      {controls}
+
       {isInitialLoading && (
         <p className="notif-loading" role="status">
           Loading notifications...
@@ -584,7 +606,7 @@ export default function NotificationList({
           onKeyDown={handleListKeyDown}
           aria-label={`${visibleItems.length} notifications`}
         >
-          {visibleItems.map((item) => {
+          {pagedItems.map((item) => {
             const readPending = isPending(mutationKey("markRead", item.id));
             const deletePending = isPending(mutationKey("delete", item.id));
             const rowPending = readPending || deletePending;
@@ -663,6 +685,42 @@ export default function NotificationList({
             );
           })}
         </ul>
+      )}
+
+      {view === LIST_VIEWS.ITEMS && pageState && pageState.total > 0 && (
+        <div className="notif-pagination">
+          <span className="notif-pagination-info">
+            Showing {pageState.startIndex + 1} to {pageState.endIndex} of{" "}
+            {pageState.total} results
+          </span>
+          <div
+            className="notif-pagination-buttons"
+            role="group"
+            aria-label="Pagination"
+          >
+            <button
+              type="button"
+              className="notif-page-btn"
+              onClick={() => pagination.onPageChange?.(pageState.page - 1)}
+              disabled={pageState.page <= 1}
+              aria-label="Previous page"
+            >
+              Previous
+            </button>
+            <span className="notif-page-indicator">
+              Page {pageState.page} of {pageState.totalPages}
+            </span>
+            <button
+              type="button"
+              className="notif-page-btn"
+              onClick={() => pagination.onPageChange?.(pageState.page + 1)}
+              disabled={pageState.page >= pageState.totalPages}
+              aria-label="Next page"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       )}
 
       {items.length > 0 && persistenceMode !== "confirmed" && (

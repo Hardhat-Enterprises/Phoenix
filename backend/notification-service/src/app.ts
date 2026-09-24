@@ -1,20 +1,35 @@
 import path from "path";
+import fs from "fs";
 
 import * as grpc from "@grpc/grpc-js";
-
 import * as protoLoader from "@grpc/proto-loader";
 
 import dotenv from "dotenv";
 
 import { notificationHandler } from "./grpc/notification.handler";
 
-import { config, logger } from "@phoenix/common";
+import { config, initDatabase, logger } from "@phoenix/common";
+
+import { connectNotificationRabbitMQ } from "./rabbitmq/notification-connection";
+import { startNotificationConsumer } from "./rabbitmq/notification-consumer";
+import { processNotificationEvent } from "./services/notification.service";
 
 dotenv.config();
 
-const PROTO_PATH = path.resolve(
-  `${process.env.NOTIFICATION_PROTO_PATH}`,
+const distProtoPath = path.resolve(
+  process.cwd(),
+  "dist/libs/proto/notification.proto",
 );
+
+const devProtoPath = path.resolve(
+  process.cwd(),
+  "libs/proto/notification.proto",
+);
+
+const PROTO_PATH =
+  process.env.NODE_ENV === "production" && fs.existsSync(distProtoPath)
+    ? distProtoPath
+    : devProtoPath;
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
@@ -24,31 +39,25 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   oneofs: true,
 });
 
-const grpcObject = grpc.loadPackageDefinition(
-  packageDefinition,
-) as any;
-
+const grpcObject = grpc.loadPackageDefinition(packageDefinition) as any;
 const notificationPackage = grpcObject.notification;
 
-const server = new grpc.Server();
+const startGrpcServer = (): grpc.Server => {
+  const server = new grpc.Server();
 
-server.addService(
-  notificationPackage.NotificationService.service,
-  notificationHandler,
-);
+  server.addService(
+    notificationPackage.NotificationService.service,
+    notificationHandler,
+  );
 
-const startGrpcServer = () => {
   server.bindAsync(
     `0.0.0.0:${config.NOTIFICATION_SERVICE_PORT}`,
     grpc.ServerCredentials.createInsecure(),
     (error, boundPort) => {
       if (error) {
         logger.error(
-          `Failed to start notification-service: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
+          `Failed to start notification-service: ${error}`,
         );
-
         return;
       }
 
@@ -57,31 +66,36 @@ const startGrpcServer = () => {
       );
     },
   );
+
+  return server;
 };
 
-const shutdown = (signal: string) => {
-  logger.info(
-    `Notification service shutting down due to ${signal}`,
-  );
+const startNotificationService = async (): Promise<void> => {
+  try {
+    const rabbitMQUrl = process.env.RABBITMQ_URL;
 
-  server.tryShutdown((error) => {
-    if (error) {
-      logger.error(
-        `Notification service graceful shutdown failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-
-      server.forceShutdown();
-      return;
+    if (!rabbitMQUrl) {
+      throw new Error("RABBITMQ_URL is required");
     }
 
-    logger.info("Notification service shut down successfully");
-  });
+    await initDatabase();
+
+    const { channel } =
+      await connectNotificationRabbitMQ(rabbitMQUrl);
+
+    await startNotificationConsumer(
+      channel,
+      processNotificationEvent,
+    );
+
+    startGrpcServer();
+  } catch (error) {
+    logger.error(
+      `Notification service startup failed: ${error}`,
+    );
+
+    process.exitCode = 1;
+  }
 };
 
-process.on("SIGINT", () => shutdown("SIGINT"));
-
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-
-startGrpcServer();
+void startNotificationService();

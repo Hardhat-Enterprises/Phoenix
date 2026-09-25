@@ -1,6 +1,15 @@
 import { Request, Response } from "express";
 import { HttpStatusCode, logger } from "@phoenix/common";
 import { notificationGrpcClient } from "../grpc/notification.grpc";
+import { NotificationWebSocketGateway } from "../realtime/notification-websocket";
+
+let notificationWebSocketGateway: NotificationWebSocketGateway | undefined;
+
+export const setNotificationWebSocketGateway = (
+  gateway: NotificationWebSocketGateway,
+): void => {
+  notificationWebSocketGateway = gateway;
+};
 
 const getAuthenticatedUserId = (req: Request): string | undefined =>
   (req as any).user?.user_id;
@@ -122,6 +131,9 @@ export const markAsRead = async (
       user_id: userId,
     }, (error, response) => {
       if (error) return sendGrpcError(res, "Error marking notification as read", error);
+      if (response.notification) {
+        notificationWebSocketGateway?.broadcastUpdated(userId, response.notification);
+      }
       return res.status(response.status).json({
         status: response.status,
         message: response.message,
@@ -151,6 +163,9 @@ export const markAllAsRead = async (
 
     notificationGrpcClient.MarkAllNotificationsAsRead({ user_id: userId }, (error, response) => {
       if (error) return sendGrpcError(res, "Error marking all notifications as read", error);
+      if (response.updated_count > 0) {
+        notificationWebSocketGateway?.broadcastAllRead(userId, response.updated_count);
+      }
       return res.status(response.status).json({
         status: response.status,
         message: response.message,
@@ -194,6 +209,9 @@ export const deleteNotification = async (
       user_id: userId,
     }, (error, response) => {
       if (error) return sendGrpcError(res, "Error deleting notification", error);
+      if (response.status === HttpStatusCode.HTTP_STATUS_OK) {
+        notificationWebSocketGateway?.broadcastDeleted(userId, notificationId);
+      }
       return res.status(response.status).json({
         status: response.status,
         message: response.message,

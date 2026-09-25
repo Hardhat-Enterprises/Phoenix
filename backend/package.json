@@ -48,7 +48,8 @@
     "sequelize": "^6.37.8",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.8",
@@ -63,6 +64,7 @@
     "@types/supertest": "^7.2.1",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "@types/ws": "^8.18.1",
     "autocannon": "^8.0.0",
     "copyfiles": "^2.4.1",
     "cpy-cli": "^7.0.0",

@@ -32,6 +32,25 @@ const toTokenInvalidReason = (error: unknown): TokenInvalidReason => {
   return "malformed";
 };
 
+export interface AuthenticatedUser {
+  user_id: string;
+  role?: string;
+}
+
+export const getAuthenticatedUserFromToken = async (
+  token: string,
+): Promise<AuthenticatedUser | undefined> => {
+  const decoded = jwt.verify(token, JWT_SECRET);
+  if (typeof decoded === "string" || typeof decoded.user_id !== "string") {
+    throw new Error("Invalid token payload");
+  }
+
+  const user = await UserAccount.findByPk(decoded.user_id);
+  if (!user || user.access_token !== token) return undefined;
+
+  return decoded as AuthenticatedUser;
+};
+
 export const authenticate = async (
   req: Request,
   res: Response,
@@ -69,20 +88,26 @@ export const authenticate = async (
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded: any = jwt.verify(token, JWT_SECRET);
+    const user = await getAuthenticatedUserFromToken(token);
 
-    const user = await UserAccount.findByPk(decoded.user_id);
+    if (!user) {
+      // CY017: the shared helper returns undefined both when the account no
+      // longer exists and when the token has been superseded (logout or a
+      // newer login). The helper has already verified signature and expiry,
+      // so the claims are decoded here only to record which case it was.
+      const claims = jwt.decode(token) as { user_id?: string; role?: string } | null;
+      const account = claims?.user_id
+        ? await UserAccount.findByPk(claims.user_id)
+        : null;
 
-    // Token is no longer valid / user has logged out
-    if (!user || user.access_token !== token) {
-        logAccessRestricted({
+      logAccessRestricted({
         ...fromRequest(req),
-        user_id: decoded.user_id?.toString(),
-        role: decoded.role,
+        user_id: claims?.user_id?.toString(),
+        role: claims?.role,
         reason: "authentication_failure",
-        severity: user ? "high" : undefined,
+        severity: account ? "high" : undefined,
         details: {
-          cause: user ? "token_no_longer_matches_account" : "user_not_found",
+          cause: account ? "token_no_longer_matches_account" : "user_not_found",
         },
       });
 
@@ -93,7 +118,6 @@ export const authenticate = async (
         req.originalUrl,
         req.method,
         req.ip,
-        decoded.user_id,
       );
 
       return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
@@ -102,8 +126,7 @@ export const authenticate = async (
       });
     }
 
-    // Attach authenticated user
-    (req as any).user = decoded;
+    (req as any).user = user;
 
     next();
   } catch (error) {
@@ -165,10 +188,7 @@ export const authorize = (roles: string[]) => {
   };
 };
 
-export const authorizeSelfOrRoles = (
-  roles: string[],
-  paramName = "userId",
-) => {
+export const authorizeSelfOrRoles = (roles: string[], paramName = "userId") => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
 

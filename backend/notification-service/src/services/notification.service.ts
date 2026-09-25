@@ -1,4 +1,7 @@
+import { ConfirmChannel } from "amqplib";
 import { HttpStatusCode, logger, Notification } from "@phoenix/common";
+import { NotificationEvent } from "@phoenix/common/rabbitmq/notification-event";
+import { NotificationRealtimePayload } from "@phoenix/common/rabbitmq/notification-realtime-event";
 import {
   DeleteNotificationDto,
   GetHealthDto,
@@ -18,6 +21,7 @@ import {
 } from "../entity/notification.entity";
 import type { NotificationEventProcessor } from "../rabbitmq/notification-consumer";
 import { getNotificationRecipientIds } from "../grpc/user.grpc";
+import { publishRealtimeNotificationEvents } from "../rabbitmq/notification-realtime-publisher";
 
 const toIsoString = (value: Date | null | undefined): string =>
   value ? value.toISOString() : "";
@@ -127,15 +131,17 @@ export const deleteNotification = async (
   return { status: HttpStatusCode.HTTP_STATUS_OK, message: "Notification deleted successfully" };
 };
 
-export const processNotificationEvent: NotificationEventProcessor = async (event) => {
+export const processNotificationEvent = async (
+  event: NotificationEvent,
+): Promise<NotificationRealtimePayload[]> => {
   try {
     const recipientUserIds = await getNotificationRecipientIds();
     if (recipientUserIds.length === 0) {
       logger.warn(`No recipients found for notification event ${event.eventId}`);
-      return;
+      return [];
     }
 
-    await Notification.bulkCreate(
+    const notifications = await Notification.bulkCreate(
       recipientUserIds.map((user_id) => ({
         event_id: event.eventId,
         user_id,
@@ -149,8 +155,23 @@ export const processNotificationEvent: NotificationEventProcessor = async (event
     logger.info(
       `Processed global notification event ${event.eventId} for ${recipientUserIds.length} users`,
     );
+    return notifications.map(toNotificationEntity);
   } catch (error) {
     logger.error(`Notification event processing failed: ${error}`);
     throw error;
+  }
+};
+
+export const createNotificationEventProcessor = (
+  channel: ConfirmChannel,
+): NotificationEventProcessor => async (event) => {
+  const notifications = await processNotificationEvent(event);
+
+  try {
+    await publishRealtimeNotificationEvents(channel, notifications);
+  } catch (error) {
+    logger.warn(
+      `Notification ${event.eventId} was persisted but could not be published for real-time delivery: ${error}`,
+    );
   }
 };

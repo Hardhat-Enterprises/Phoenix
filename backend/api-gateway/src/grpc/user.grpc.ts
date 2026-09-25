@@ -375,6 +375,7 @@ export interface UserServiceClient {
 
   LoginUser(
     request: LoginUserRequest,
+    metadata: grpc.Metadata,
     callback: (error: grpc.ServiceError | null, response: AuthResponse) => void,
   ): void;
 

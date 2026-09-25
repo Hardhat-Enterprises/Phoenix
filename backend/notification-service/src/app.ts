@@ -4,13 +4,23 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import dotenv from "dotenv";
 import { notificationHandler } from "./grpc/notification.handler";
-import { config, initDatabase } from "@phoenix/common";
+import {
+  config,
+  initDatabase,
+  setDefaultComponent,
+  setLogTransport,
+  WinstonTransport,
+} from "@phoenix/common";
 import { logger } from "@phoenix/common";
 import { connectNotificationRabbitMQ } from "./rabbitmq/notification-connection";
 import { startNotificationConsumer } from "./rabbitmq/notification-consumer";
 import { createNotificationEventProcessor } from "./services/notification.service";
 
 dotenv.config();
+
+// CY017: name this service in every security log record it emits.
+setDefaultComponent("notification-service");
+setLogTransport(new WinstonTransport());
 
 const distProtoPath = path.resolve(
   process.cwd(),

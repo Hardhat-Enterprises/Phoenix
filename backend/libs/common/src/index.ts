@@ -6,6 +6,7 @@ export * from "./rabbitmq";
 export * from "./redis";
 export * from "./databases";
 export * from "./helper";
+export * from "./security-logging";
 export {
   redisClient,
   connectRedis,

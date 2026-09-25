@@ -14,7 +14,7 @@ import {
 import { logger } from "@phoenix/common";
 import { connectNotificationRabbitMQ } from "./rabbitmq/notification-connection";
 import { startNotificationConsumer } from "./rabbitmq/notification-consumer";
-import { processNotificationEvent } from "./services/notification.service";
+import { createNotificationEventProcessor } from "./services/notification.service";
 
 dotenv.config();
 
@@ -76,7 +76,10 @@ const startNotificationService = async (): Promise<void> => {
 
     await initDatabase();
     const { channel } = await connectNotificationRabbitMQ(rabbitMQUrl);
-    await startNotificationConsumer(channel, processNotificationEvent);
+    await startNotificationConsumer(
+      channel,
+      createNotificationEventProcessor(channel),
+    );
     startGrpcServer();
   } catch (error) {
     logger.error(`Notification service startup failed: ${error}`);

@@ -90,6 +90,38 @@ export const register = (req: Request, res: Response) => {
   );
 };
 
+export const createAdmin = (req: Request, res: Response) => {
+  const { username, password } = req.body;
+
+  userGrpcClient.CreateAdmin(
+    { username, password },
+    (error, response) => {
+      if (error) {
+        logger.error(`Error calling CreateAdmin: ${error}`);
+
+        return res
+          .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+          .json({ message: "Error creating admin account" });
+      }
+      if (response?.status === HttpStatusCode.HTTP_STATUS_CREATED) {
+        return res
+          .status(response?.status || HttpStatusCode.HTTP_STATUS_CREATED)
+          .json({
+            status: response?.status,
+            message: response?.message,
+            user_id: response?.user_id,
+            username: response?.username,
+            role: response?.role,
+          });
+      } else {
+        return res
+          .status(response?.status || HttpStatusCode.HTTP_STATUS_BAD_REQUEST)
+          .json({ status: response?.status, message: response?.message });
+      }
+    },
+  );
+};
+
 export const login = (req: Request, res: Response) => {
   const { username, password } = req.body;
   const requestContext = fromRequest(req);

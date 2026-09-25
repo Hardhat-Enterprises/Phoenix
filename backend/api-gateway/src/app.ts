@@ -1,6 +1,7 @@
 // app.ts
 
 import express from "express";
+import { createServer } from "http";
 import cors from "cors";
 import dotenv from "dotenv";
 import {
@@ -22,6 +23,9 @@ import { attachRequestId } from "./middleware/request-id.middleware";
 
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "@phoenix/common";
+import { setNotificationWebSocketGateway } from "./controllers/notification.controller";
+import { startNotificationRealtimeConsumer } from "./realtime/notification-realtime-consumer";
+import { NotificationWebSocketGateway } from "./realtime/notification-websocket";
 
 // import authRoutes from "./routes/auth.routes";
 
@@ -32,6 +36,9 @@ setDefaultComponent("api-gateway");
 setLogTransport(new WinstonTransport());
 
 const app = express();
+const server = createServer(app);
+const notificationWebSocketGateway = new NotificationWebSocketGateway(server);
+setNotificationWebSocketGateway(notificationWebSocketGateway);
 
 // CY017: assign a correlation ID before anything else, so every security log
 // record produced by this request carries the same identifier.
@@ -59,7 +66,11 @@ app.use("/api/storage", storageRoutes);
 const startServer = async () => {
   try {
     // Required dependency
-    await connectRabbitMQ(process.env.RABBITMQ_URL!);
+    const channel = await connectRabbitMQ(process.env.RABBITMQ_URL!);
+    await startNotificationRealtimeConsumer(
+      channel,
+      (notification) => notificationWebSocketGateway.broadcastCreated(notification),
+    );
 
     // Optional dependency
     const redisAvailable = await connectRedis();
@@ -72,7 +83,7 @@ const startServer = async () => {
       );
     }
 
-    app.listen(config.PORT, () => {
+    server.listen(config.PORT, () => {
       logger.info(
         `${config.SERVICE_NAME} running on port ${config.PORT}`,
       );

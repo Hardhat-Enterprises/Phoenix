@@ -9,6 +9,25 @@ if (!JWT_SECRET) {
   throw new Error("JWT secret is not defined");
 }
 
+export interface AuthenticatedUser {
+  user_id: string;
+  role?: string;
+}
+
+export const getAuthenticatedUserFromToken = async (
+  token: string,
+): Promise<AuthenticatedUser | undefined> => {
+  const decoded = jwt.verify(token, JWT_SECRET);
+  if (typeof decoded === "string" || typeof decoded.user_id !== "string") {
+    throw new Error("Invalid token payload");
+  }
+
+  const user = await UserAccount.findByPk(decoded.user_id);
+  if (!user || user.access_token !== token) return undefined;
+
+  return decoded as AuthenticatedUser;
+};
+
 export const authenticate = async (
   req: Request,
   res: Response,
@@ -36,12 +55,9 @@ export const authenticate = async (
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded: any = jwt.verify(token, JWT_SECRET);
+    const user = await getAuthenticatedUserFromToken(token);
 
-    const user = await UserAccount.findByPk(decoded.user_id);
-
-    // Token is no longer valid / user has logged out
-    if (!user || user.access_token !== token) {
+    if (!user) {
       sendSecurityNotification(
         "INVALID_JWT",
         "HIGH",
@@ -49,7 +65,6 @@ export const authenticate = async (
         req.originalUrl,
         req.method,
         req.ip,
-        decoded.user_id,
       );
 
       return res.status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED).json({
@@ -58,8 +73,7 @@ export const authenticate = async (
       });
     }
 
-    // Attach authenticated user
-    (req as any).user = decoded;
+    (req as any).user = user;
 
     next();
   } catch (_error) {
@@ -104,10 +118,7 @@ export const authorize = (roles: string[]) => {
   };
 };
 
-export const authorizeSelfOrRoles = (
-  roles: string[],
-  paramName = "userId",
-) => {
+export const authorizeSelfOrRoles = (roles: string[], paramName = "userId") => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
 

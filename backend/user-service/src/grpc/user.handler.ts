@@ -5,6 +5,7 @@ import {
   GetUserDashboardChartsDto,
   GetUserDashboardActivityDto,
   RegisterUserDto,
+  CreateAdminDto,
   LoginUserDto,
   RefreshTokenDto,
   LogoutUserDto,
@@ -25,6 +26,7 @@ import {
   getUserDashboardCharts,
   getUserDashboardActivity,
   registerUser,
+  createAdmin,
   loginUser,
   refreshToken,
   logoutUser,
@@ -97,6 +99,22 @@ export const userHandler = {
     try {
       const response = await registerUser(call.request);
       logger.info(`RegisterUser response:${JSON.stringify(response)}`);
+      callback(null, response);
+    } catch (error) {
+      callback({
+        code: 13,
+        message: `${error}` || "Internal server error",
+      });
+    }
+  },
+
+    CreateAdmin: async (
+    call: ServerUnaryCall<CreateAdminDto, AuthEntity>,
+    callback: sendUnaryData<AuthEntity>,
+  ) => {
+    try {
+      const response = await createAdmin(call.request);
+      logger.info(`CreateAdmin response:${JSON.stringify(response)}`);
       callback(null, response);
     } catch (error) {
       callback({

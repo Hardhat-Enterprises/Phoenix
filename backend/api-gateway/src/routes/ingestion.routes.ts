@@ -1,3 +1,4 @@
+import { UserRole } from "@phoenix/common";
 import { Router } from "express";
 import {
   coreModelIntegration,
@@ -150,7 +151,7 @@ router.get("/health", getHealth);
 router.post(
   "/hazard",
   authenticate,
-  authorize(["ingestion service"]),
+  authorize([UserRole.INGESTION_SERVICE]),
   ingestHazardData,
 );
 
@@ -257,7 +258,7 @@ router.post(
 router.post(
   "/cyber",
   authenticate,
-  authorize(["ingestion service"]),
+  authorize([UserRole.INGESTION_SERVICE]),
   ingestCyberData,
 );
 
@@ -352,6 +353,11 @@ router.post(
  *       500:
  *         description: Internal server error
  */
-router.post("/core", authenticate, coreModelIntegration);
+router.post(
+  "/core",
+  authenticate,
+  authorize([UserRole.INGESTION_SERVICE]),
+  coreModelIntegration,
+);
 
 export default router;

@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import {
   config,
   connectRabbitMQ,
+  connectRedis,
   logger,
   setDefaultComponent,
   setLogTransport,
@@ -47,6 +48,7 @@ app.get("/health", (_, res) => {
 });
 
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use("/api/users", userRoutes);
 app.use("/api/users/threats", threatRoutes);
@@ -56,12 +58,24 @@ app.use("/api/storage", storageRoutes);
 
 const startServer = async () => {
   try {
-    // Connect to RabbitMQ first
+    // Required dependency
     await connectRabbitMQ(process.env.RABBITMQ_URL!);
 
-    // Start the Express server
+    // Optional dependency
+    const redisAvailable = await connectRedis();
+
+    if (redisAvailable) {
+      logger.info("Redis connected successfully.");
+    } else {
+      logger.warn(
+        "Redis unavailable. Continuing without cache.",
+      );
+    }
+
     app.listen(config.PORT, () => {
-      logger.info(`${config.SERVICE_NAME} running on port ${config.PORT}`);
+      logger.info(
+        `${config.SERVICE_NAME} running on port ${config.PORT}`,
+      );
     });
   } catch (error) {
     logger.error(`Error starting server: ${error}`);

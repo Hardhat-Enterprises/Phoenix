@@ -2,12 +2,24 @@ import pandas as pd
 import numpy as np
 import json
 import logging
+import math
+import ipaddress
+from urllib.parse import urlparse
 from pathlib import Path
 
 try:
     import yaml  # type: ignore
 except ModuleNotFoundError:
     yaml = None
+
+try:
+    import tldextract  # type: ignore
+    # suffix_list_urls=() skips the network fetch of the public suffix list
+    # Extraction is offline (no HTTP call per row).
+    _tld_extract = tldextract.TLDExtract(suffix_list_urls=())
+except ModuleNotFoundError:
+    tldextract = None
+    _tld_extract = None
 
 from data_cleaning_pipeline import run_cleaning_pipeline
 
@@ -54,7 +66,100 @@ class FeatureEngineer:
 
    
     # 2. FEATURE ENGINEERING
-   
+
+    # URL Parser
+    # Runs once per URL
+    @staticmethod
+    def _parse_url(url):
+        if url is None or not isinstance(url, str) or url.strip() == "" \
+                or url.strip().lower() in {"not_available", "nan", "none", "n/a"}:
+            return None  # caller fills in default/missing feature values
+
+        url = url.strip()
+        parsed = urlparse(url if "://" in url else "http://" + url)
+        host = (parsed.netloc.split(":")[0] if parsed.netloc else "") or ""
+
+        if _tld_extract is not None:
+            ext = _tld_extract(url)
+            subdomain, domain, suffix = ext.subdomain, ext.domain, ext.suffix
+        else:
+            # Gets simple domains right but mis-splits two-part suffixes
+            # like .co.uk / .com.au (would read "co" as the domain).
+            labels = host.split(".")
+            if len(labels) >= 3:
+                subdomain, domain, suffix = labels[0], labels[-2], labels[-1]
+            elif len(labels) == 2:
+                subdomain, domain, suffix = "", labels[0], labels[1]
+            else:
+                subdomain, domain, suffix = "", host, ""
+
+        try:
+            is_ip = bool(host) and bool(ipaddress.ip_address(host))
+        except ValueError:
+            is_ip = False
+
+        return {
+            "scheme": parsed.scheme,
+            "host": host,
+            "subdomain": subdomain,
+            "domain": domain,
+            "suffix": suffix,
+            "path": parsed.path or "",
+            "query": parsed.query or "",
+            "is_ip": is_ip,
+            "has_port": parsed.port is not None if parsed.netloc else False,
+        }
+
+    # For missing/unparseable URLs. -1 is used instead of 0
+    # This is because we can't use real NaN here
+    # because validate() asserts no nulls anywhere in the dataframe.
+    _MISSING = -1
+
+    def create_url_features(self):
+        # Parse each URL once; 
+        parsed = self.df["url"].apply(self._parse_url)
+
+        # Missing/placeholder URLs (None from _parse_url) get flagged here
+        self.df["url_is_missing"] = parsed.isna().astype(int)
+
+        # Length-based features
+        self.df["url_length"] = np.where(
+            self.df["url_is_missing"] == 1,
+            self._MISSING,
+            self.df["url"].fillna("").astype(str).str.len(),
+        )
+        self.df["hostname_length"] = parsed.apply(
+            lambda p: len(p["host"]) if p else self._MISSING
+        )
+        self.df["path_length"] = parsed.apply(
+            lambda p: len(p["path"]) if p else self._MISSING
+        )
+
+        # Character counts
+        self.df["num_dots"] = np.where(
+            self.df["url_is_missing"] == 1,
+            self._MISSING,
+            self.df["url"].fillna("").astype(str).str.count(r"\."),
+        )
+        self.df["num_hyphens"] = np.where(
+            self.df["url_is_missing"] == 1,
+            self._MISSING,
+            self.df["url"].fillna("").astype(str).str.count("-"),
+        )
+        self.df["num_at_symbols"] = np.where(
+            self.df["url_is_missing"] == 1,
+            self._MISSING,
+            self.df["url"].fillna("").astype(str).str.count("@"),
+        )
+
+        self.df["num_digits"] = np.where(
+            self.df["url_is_missing"] == 1,
+            self._MISSING,
+            self.df["url"].fillna("").astype(str).str.count(r"\d"),
+        )
+
+        return self.df
+
     def create_hazard_features(self):
         self.df["disaster_severity_score"] = self.df["severity"] * 1.5
         self.df["event_intensity_index"] = self.df["severity"] * self.df["duration_hours"]
@@ -242,6 +347,7 @@ class FeatureEngineer:
         self.df = self.create_geo_features()
         self.df = self.create_risk_features()
         self.df = self.create_anomaly_features()
+        self.df = self.create_url_features()
 
           # 4. VALIDATION
         self.validate()
@@ -267,7 +373,13 @@ if __name__ == "__main__":
         "location": ["VIC", "VIC", "NSW", "VIC"],
         "severity": [3, 5, 8, 6],
         "duration_hours": [2, 4, 6, 3],
-        "cyber_incidents": [10, 15, 30, 20]
+        "cyber_incidents": [10, 15, 30, 20],
+        "url": [
+            "https://www.google.com/search?q=test",
+            "http://paypal-secure-login.verify-account.co.uk/login.php?id=8834",
+            "https://bit.ly/3xF9kLp",
+            "not_available",
+        ],
     })
 
     fe = FeatureEngineer(df)

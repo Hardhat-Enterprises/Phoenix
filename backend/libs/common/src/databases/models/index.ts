@@ -8,3 +8,4 @@ export * from "./status-event.model";
 export * from "./user-account.model";
 export * from "./stored-file.model";
 export * from "./data-ingestion-streaming-log.model";
+export * from "./notification.model";

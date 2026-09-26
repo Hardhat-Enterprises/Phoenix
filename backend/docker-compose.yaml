@@ -68,6 +68,17 @@ services:
       - .env.docker
     ports:
       - "50053:50053"
+    environment:
+      - SERVICE=data-ingestion-service
+      - INGESTION_PROTO_PATH=dist/libs/proto/ingestion.proto
+      - INGESTION_SERVICE_PORT=50053
+      - SUPABASE_CONNECTION_STRING=${SUPABASE_CONNECTION_STRING}
+      - RABBITMQ_URL=amqp://phoenix:phoenix_123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+      - PYTHON_BIN=/app/.venv/bin/python
+      - CORE_MODEL_SCRIPT_PATH=/app/libs/common/src/helper/core_model_integration.py
+       - CORE_MODEL_FILENAME=${CORE_MODEL_FILENAME:-m7_xgb_legacy_baseline.joblib}
     depends_on:
       rabbitmq:
         condition: service_healthy

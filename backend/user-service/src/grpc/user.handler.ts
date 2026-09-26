@@ -1,6 +1,8 @@
 import {
   GetHealthDto,
   GetUsersDto,
+  GetAdminUsersDto,
+  DisableAccountDto,
   GetUserDashboardDto,
   GetUserDashboardChartsDto,
   GetUserDashboardActivityDto,
@@ -16,6 +18,8 @@ import { ServerUnaryCall, sendUnaryData } from "@grpc/grpc-js";
 import {
   getHealth,
   getUsers,
+  getAdminUsers,
+  disableUser,
   getLocations,
   getEventStatuses,
   getLinkedEventTypes,
@@ -35,6 +39,8 @@ import {
 import {
   GetHealthEntity,
   GetUsersEntity,
+  GetAdminUsersEntity,
+  DisableUserEntity,
   GetUserDashboardEntity,
   GetUserDashboardChartsEntity,
   GetUserDashboardActivityEntity,
@@ -75,6 +81,28 @@ export const userHandler = {
         code: 13,
         message: `${error}` || "Internal server error",
       });
+    }
+  },
+
+  GetAdminUsers: async (
+    call: ServerUnaryCall<GetAdminUsersDto, GetAdminUsersEntity>,
+    callback: sendUnaryData<GetAdminUsersEntity>,
+  ) => {
+    try {
+      callback(null, await getAdminUsers(call.request));
+    } catch (error) {
+      callback({ code: 13, message: `${error}` || "Internal server error" });
+    }
+  },
+
+  DisableUser: async (
+    call: ServerUnaryCall<DisableAccountDto, DisableUserEntity>,
+    callback: sendUnaryData<DisableUserEntity>,
+  ) => {
+    try {
+      callback(null, await disableUser(call.request));
+    } catch (error) {
+      callback({ code: 13, message: `${error}` || "Internal server error" });
     }
   },
 

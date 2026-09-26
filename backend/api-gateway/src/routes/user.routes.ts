@@ -12,6 +12,8 @@ import {
   getTrainingModels,
   register,
   createAdmin,
+  getAdminUsers,
+  disableUser,
   login,
   refresh,
   logout,
@@ -354,6 +356,63 @@ router.post("/auth/register", authenticate, authorize(["admin"]), register);
  *         description: Internal server error
  */
 router.post("/admin", authenticate, authorize(["admin"]), createAdmin);
+
+/**
+ * @swagger
+ * /api/users/admin/users:
+ *   get:
+ *     summary: List user accounts for administration
+ *     description: Returns account identifiers, usernames, roles, and disable audit state. Passwords and authentication tokens are never included.
+ *     tags:
+ *       - Admin Users
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User accounts retrieved
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Administrator access required
+ */
+router.get("/admin/users", authenticate, authorize(["admin"]), getAdminUsers);
+
+/**
+ * @swagger
+ * /api/users/admin/users/{userId}/disable:
+ *   patch:
+ *     summary: Disable a user account
+ *     description: Disables the selected account, revokes its current tokens, and records the administrator and timestamp. Administrators cannot disable their own account.
+ *     tags:
+ *       - Admin Users
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: UUID of the account to disable
+ *     responses:
+ *       200:
+ *         description: Account disabled and audit fields returned
+ *       400:
+ *         description: Invalid UUID or attempt to disable the current administrator
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Administrator access required
+ *       404:
+ *         description: User account not found
+ */
+router.patch(
+  "/admin/users/:userId/disable",
+  authenticate,
+  authorize(["admin"]),
+  disableUser,
+);
 
 /**
  * @swagger

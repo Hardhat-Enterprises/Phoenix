@@ -1,7 +1,9 @@
 import swaggerJSDoc from "swagger-jsdoc";
 import * as dotenv from "dotenv";
 dotenv.config();
-const routesPath = process.cwd() + "/" + process.env.SWAGGER_ROUTES_PATH;
+const routesPath =
+  process.env.SWAGGER_ROUTES_PATH ||
+  process.cwd() + "/dist/api-gateway/src/routes/*.js";
 const options: swaggerJSDoc.Options = {
   definition: {
     openapi: "3.0.0",

@@ -18,6 +18,30 @@ export interface GetUsersEntity {
   users?: UserEntity[];
 }
 
+export interface AdminUserEntity {
+  user_id: string;
+  username: string;
+  role: string;
+  is_disabled: boolean;
+  disabled_by: string;
+  disabled_at: string;
+}
+
+export interface GetAdminUsersEntity {
+  status: number;
+  message: string;
+  users: AdminUserEntity[];
+}
+
+export interface DisableUserEntity {
+  status: number;
+  message: string;
+  user_id?: string;
+  is_disabled?: boolean;
+  disabled_by?: string;
+  disabled_at?: string;
+}
+
 export class AuthEntity {
   status: number;
   message: string;

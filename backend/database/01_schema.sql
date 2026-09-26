@@ -162,3 +162,17 @@ CREATE TABLE "user"(
 	,role						VARCHAR
 			--add check constraint once values are established
 	);
+
+CREATE TABLE IF NOT EXISTS user_account (
+  user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  username VARCHAR(255) NOT NULL UNIQUE,
+  password_hashed VARCHAR(255) NOT NULL,
+  access_token TEXT,
+  refresh_token TEXT,
+  role VARCHAR(50) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  is_disabled BOOLEAN NOT NULL DEFAULT FALSE,
+  disabled_by UUID REFERENCES user_account(user_id) ON DELETE SET NULL,
+  disabled_at TIMESTAMPTZ
+);

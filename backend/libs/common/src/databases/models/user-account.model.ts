@@ -5,11 +5,14 @@ interface UserAccountAttributes {
   user_id: string;
   username: string;
   password_hashed: string;
-  access_token?: string;
-  refresh_token?: string;
+  access_token?: string | null;
+  refresh_token?: string | null;
   created_at?: Date;
   updated_at?: Date;
   role: string;
+  is_disabled?: boolean;
+  disabled_by?: string | null;
+  disabled_at?: Date | null;
 }
 
 type UserCreationAttributes = Optional<
@@ -22,6 +25,9 @@ type UserCreationAttributes = Optional<
   | "created_at"
   | "updated_at"
   | "role"
+  | "is_disabled"
+  | "disabled_by"
+  | "disabled_at"
 >;
 
 export class UserAccount
@@ -31,11 +37,14 @@ export class UserAccount
   declare user_id: string;
   declare username: string;
   declare password_hashed: string;
-  declare access_token: string;
-  declare refresh_token: string;
+  declare access_token: string | null;
+  declare refresh_token: string | null;
   declare role: string;
   declare created_at: Date;
   declare updated_at: Date;
+  declare is_disabled: boolean;
+  declare disabled_by: string | null;
+  declare disabled_at: Date | null;
 }
 
 UserAccount.init(
@@ -65,6 +74,21 @@ UserAccount.init(
     role: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    is_disabled: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    disabled_by: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: { model: "user_account", key: "user_id" },
+      onDelete: "SET NULL",
+    },
+    disabled_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     created_at: {
       type: DataTypes.DATE,

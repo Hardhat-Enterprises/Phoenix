@@ -104,3 +104,19 @@ services:
       redis:
         condition: service_healthy
     command: sh -c "node -r tsconfig-paths/register dist/notification-service/src/app.js"
+
+  correlation-service:
+    build:
+      context: ./
+      dockerfile: correlation-service/Dockerfile
+    container_name: correlation-service
+    env_file:
+      - .env.docker
+    ports:
+      - "50055:50055"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: sh -c "node -r tsconfig-paths/register dist/correlation-service/src/app.js"

@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
+import { API_GATEWAY_URL, AUTH_STORAGE_KEY } from "../services/authApi";
+import { mockAuthSession } from "../mocks/data";
+import { server } from "../mocks/handler";
 import NotificationPanel from "./notifier";
 import { createMockNotificationProvider } from "../services/mockNotificationProvider";
 
@@ -164,5 +168,177 @@ describe("NotificationPanel on the mock provider", () => {
         screen.getByText(/No notifications match the current search or filters/),
       ).toBeTruthy(),
     );
+  });
+});
+
+const realId = "11111111-1111-4111-8111-111111111111";
+const apiUrl = `${API_GATEWAY_URL}/api/notifications`;
+const identified = () => ({
+  id: realId,
+  title: "Server notification",
+  message: "Saved notification",
+  is_read: false,
+});
+const withoutId = () => ({
+  title: "No ID notification",
+  message: "Cannot be changed on the server",
+  is_read: false,
+});
+const listResponse = (notifications) => ({
+  status: 200,
+  data: {
+    notifications,
+    pagination: {
+      total: notifications.length,
+      page: 1,
+      limit: 10,
+      totalPages: notifications.length ? 1 : 0,
+    },
+  },
+});
+
+const liveRow = (title) =>
+  screen.getAllByRole("listitem").find((item) => item.textContent.includes(title));
+
+const renderLivePanel = async () => {
+  const user = userEvent.setup();
+  render(<NotificationPanel onClose={() => {}} />);
+  await waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(2));
+  return user;
+};
+
+describe("live notification item actions with mocked HTTP", () => {
+  let records;
+  let patchCount;
+  let deleteCount;
+  let patchPath;
+  let deletePath;
+
+  beforeEach(() => {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(mockAuthSession));
+    records = [identified(), withoutId()];
+    patchCount = 0;
+    deleteCount = 0;
+    patchPath = undefined;
+    deletePath = undefined;
+
+    server.use(
+      http.get(apiUrl, () => HttpResponse.json(listResponse(records))),
+      http.patch(`${apiUrl}/:notificationId/read`, ({ params, request }) => {
+        patchCount += 1;
+        patchPath = new URL(request.url).pathname;
+        records = records.map((item) =>
+          String(item.id) === params.notificationId ? { ...item, is_read: true } : item,
+        );
+        return HttpResponse.json({
+          status: 200,
+          data: { notification: records.find((item) => String(item.id) === params.notificationId) },
+        });
+      }),
+      http.delete(`${apiUrl}/:notificationId`, ({ params, request }) => {
+        deleteCount += 1;
+        deletePath = new URL(request.url).pathname;
+        records = records.filter((item) => String(item.id) !== params.notificationId);
+        return HttpResponse.json({ status: 200, message: "Notification deleted" });
+      }),
+    );
+  });
+
+  it("uses a numeric server ID for mark-read and dismiss, but sends nothing for a missing ID", async () => {
+    records = [{ ...identified(), id: 7, title: "Numeric server notification" }, withoutId()];
+    const user = await renderLivePanel();
+
+    await user.click(liveRow("Numeric server notification").querySelector(".notif-item-main"));
+    await waitFor(() => expect(patchPath).toBe("/api/notifications/7/read"));
+    await waitFor(() => expect(liveRow("Numeric server notification").className).toContain("read"));
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await user.click(screen.getByRole("button", { name: "Dismiss Numeric server notification" }));
+    await waitFor(() => expect(deletePath).toBe("/api/notifications/7"));
+    await waitFor(() => expect(liveRow("Numeric server notification")).toBeUndefined());
+
+    await user.click(liveRow("No ID notification").querySelector(".notif-item-main"));
+    expect(patchCount).toBe(1);
+    expect(liveRow("No ID notification").className).toContain("unread");
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await user.click(screen.getByRole("button", { name: "Dismiss No ID notification" }));
+    expect(deleteCount).toBe(1);
+    expect(liveRow("No ID notification")).toBeTruthy();
+  });
+
+  it("marks a server-ID item read through the live handler and keeps it read after a mocked refresh", async () => {
+    const user = await renderLivePanel();
+
+    await user.click(liveRow("Server notification").querySelector(".notif-item-main"));
+    await waitFor(() => expect(patchCount).toBe(1));
+    await waitFor(() => expect(liveRow("Server notification").className).toContain("read"));
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await user.click(screen.getByRole("button", { name: "Refresh" }));
+    await waitFor(() => expect(liveRow("Server notification").className).toContain("read"));
+  });
+
+  it("dismisses a server-ID item through the live handler and keeps it absent after a mocked refresh", async () => {
+    const user = await renderLivePanel();
+
+    await user.click(screen.getByRole("button", { name: "Dismiss Server notification" }));
+    await waitFor(() => expect(deleteCount).toBe(1));
+    await waitFor(() => expect(liveRow("Server notification")).toBeUndefined());
+
+    await user.click(screen.getByRole("button", { name: "Refresh" }));
+    await waitFor(() => expect(liveRow("Server notification")).toBeUndefined());
+  });
+
+  it("leaves a server item without an ID unread and reports why mark-read failed", async () => {
+    const user = await renderLivePanel();
+
+    await user.click(liveRow("No ID notification").querySelector(".notif-item-main"));
+
+    expect(patchCount).toBe(0);
+    expect(liveRow("No ID notification").className).toContain("unread");
+    expect(screen.getByText(/no server ID was provided. Nothing changed./)).toBeTruthy();
+  });
+
+  it("leaves a server item without an ID visible and reports why dismiss failed", async () => {
+    const user = await renderLivePanel();
+
+    await user.click(screen.getByRole("button", { name: "Dismiss No ID notification" }));
+
+    expect(deleteCount).toBe(0);
+    expect(liveRow("No ID notification")).toBeTruthy();
+    expect(screen.getByText(/no server ID was provided. Nothing changed./)).toBeTruthy();
+  });
+
+  it("keeps a server item unchanged when mark-read or dismiss is rejected", async () => {
+    server.use(
+      http.patch(`${apiUrl}/:notificationId/read`, () =>
+        HttpResponse.json({ message: "Server failed" }, { status: 500 }),
+      ),
+      http.delete(`${apiUrl}/:notificationId`, () =>
+        HttpResponse.json({ message: "Server failed" }, { status: 500 }),
+      ),
+    );
+    const user = await renderLivePanel();
+
+    await user.click(liveRow("Server notification").querySelector(".notif-item-main"));
+    await waitFor(() => expect(screen.getByText(/Could not mark that notification as read/)).toBeTruthy());
+    expect(liveRow("Server notification").className).toContain("unread");
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await user.click(screen.getByRole("button", { name: "Dismiss Server notification" }));
+    await waitFor(() => expect(screen.getByText(/Could not dismiss that notification/)).toBeTruthy());
+    expect(liveRow("Server notification")).toBeTruthy();
+  });
+
+  it("keeps Clear all local and restores items on a mocked refresh", async () => {
+    const user = await renderLivePanel();
+
+    await user.click(screen.getByRole("button", { name: "Clear all (this device only)" }));
+    expect(patchCount).toBe(0);
+    expect(deleteCount).toBe(0);
+    expect(screen.getByText(/You cleared these on this device/)).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Refresh" }));
+    await waitFor(() => expect(screen.getAllByRole("listitem")).toHaveLength(2));
   });
 });

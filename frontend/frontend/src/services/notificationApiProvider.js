@@ -4,11 +4,8 @@
 // This is the only file that knows both the provider contract and the shared
 // API module, which is what keeps the list component free of either.
 //
-// The gateway exposes GET /api/notifications and nothing else yet. Until it
-// accepts mutations, each action here resolves without sending anything and
-// `persists` stays false, so the panel keeps working locally and keeps saying
-// that it did. When the endpoints land, NOTIFICATION_MUTATIONS_SUPPORTED flips
-// to true and both the requests and the wording follow from that one change.
+// Successful mutations are confirmed by the gateway before this provider
+// reports them as persisted.
 // ---------------------------------------------------------------------------
 
 import {
@@ -16,27 +13,28 @@ import {
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
-  NOTIFICATION_MUTATIONS_SUPPORTED,
 } from "./phoenixApi";
-
-const localOnly = () => Promise.resolve({ persisted: false });
-
-const whenSupported = (request) =>
-  NOTIFICATION_MUTATIONS_SUPPORTED && typeof request === "function"
-    ? request
-    : localOnly;
 
 export const createApiNotificationProvider = (overrides = {}) => ({
   id: "api",
   label: "Phoenix API gateway",
-  persists: Boolean(NOTIFICATION_MUTATIONS_SUPPORTED),
+  persists: true,
   isMock: false,
 
   list: () => getNotifications(),
 
-  markRead: whenSupported(markNotificationRead),
-  markAllRead: whenSupported(markAllNotificationsRead),
-  remove: whenSupported(deleteNotification),
+  markRead: async (id) => {
+    const response = await markNotificationRead(id);
+    return { persisted: true, notification: response.data.notification };
+  },
+  markAllRead: async () => {
+    const response = await markAllNotificationsRead();
+    return { persisted: true, updatedCount: response.data.updatedCount };
+  },
+  remove: async (id) => {
+    await deleteNotification(id);
+    return { persisted: true, notificationId: id };
+  },
 
   ...overrides,
 });

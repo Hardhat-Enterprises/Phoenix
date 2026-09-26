@@ -207,6 +207,19 @@ const notificationRequest = (path, options = {}) =>
     requiresAuth: true,
   });
 
+const notificationPath = (notificationId, suffix = "") => {
+  if (typeof notificationId !== "string" || !notificationId.trim()) {
+    const data = { message: "Notification ID is required" };
+    const error = new Error(data.message);
+    error.status = 400;
+    error.data = data;
+    error.path = "/api/notifications";
+    throw error;
+  }
+
+  return `/api/notifications/${encodeURIComponent(notificationId)}${suffix}`;
+};
+
 export const getNotificationHealth = async ({ signal } = {}) =>
   apiRequest("/api/notifications/health", {
     requiresAuth: false,
@@ -239,7 +252,7 @@ export const getNotificationUnreadCount = async ({ signal } = {}) => {
 
 export const markNotificationRead = async (notificationId, { signal } = {}) =>
   notificationRequest(
-    `/api/notifications/${encodeURIComponent(notificationId)}/read`,
+    notificationPath(notificationId, "/read"),
     { method: "PATCH", signal },
   );
 
@@ -251,7 +264,7 @@ export const markAllNotificationsRead = async ({ signal } = {}) =>
 
 export const deleteNotification = async (notificationId, { signal } = {}) =>
   notificationRequest(
-    `/api/notifications/${encodeURIComponent(notificationId)}`,
+    notificationPath(notificationId),
     {
       method: "DELETE",
       signal,

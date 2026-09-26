@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getNotifications,
-  NOTIFICATION_MUTATIONS_SUPPORTED,
   NOTIFICATION_SEND_SUPPORTED,
 } from "../services/phoenixApi";
+import { createApiNotificationProvider } from "../services/notificationApiProvider";
 import {
   adaptNotifications,
   formatRelativeTime,
@@ -15,6 +15,7 @@ const NOTIFICATION_SEARCH_ENABLED = false;
 // Relative labels are re-rendered on this interval so an open panel does not
 // keep claiming "Just now" long after the fact.
 const CLOCK_TICK_MS = 30_000;
+const apiNotificationProvider = createApiNotificationProvider();
 
 const needsSignIn = (error) =>
   error?.status === 401 ||
@@ -172,7 +173,9 @@ export default function NotificationPanel({
   notificationLoader,
   useMockData,
 }) {
+  const usingMockLoader = Boolean(useMockData && notificationLoader);
   const [notifications, setNotifications] = useState([]);
+  const notificationIdsRef = useRef([]);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -210,10 +213,9 @@ export default function NotificationPanel({
       setError(null);
 
       try {
-        const response =
-          useMockData && notificationLoader
-            ? await notificationLoader(params, signal)
-            : await getNotifications(params);
+        const response = usingMockLoader
+          ? await notificationLoader(params, signal)
+          : await getNotifications(params);
 
         if (
           signal?.aborted ||
@@ -222,7 +224,18 @@ export default function NotificationPanel({
           return;
         }
 
-        const items = adaptNotifications(response.items);
+        const items = adaptNotifications(response.items).map((item) => {
+          const rawId = response.items[item.sourceIndex]?.id;
+          return {
+            ...item,
+            hasServerId:
+              !usingMockLoader &&
+              ((typeof rawId === "string" && Boolean(rawId.trim())) ||
+                (typeof rawId === "number" && Number.isFinite(rawId))) &&
+              item.id === String(rawId),
+          };
+        });
+        notificationIdsRef.current = items.map((item) => item.id);
         setNotifications(items);
         setClearedLocally(false);
         setTotalPages(
@@ -246,7 +259,7 @@ export default function NotificationPanel({
         setStatus("error");
       }
     },
-    [limit, useMockData, notificationLoader],
+    [limit, usingMockLoader, notificationLoader],
   );
 
   useEffect(() => {
@@ -450,57 +463,85 @@ export default function NotificationPanel({
     [search, readFilter, loadNotifications],
   );
 
-  // Selecting a notification opens the detail modal. Marking it read is a
-  // client-side change only until the backend exposes a mutation endpoint.
-  function handleSelect(notification) {
+  // Selecting a notification opens the detail modal. Only records with a
+  // backend ID can have their read state saved.
+  async function handleSelect(notification) {
     const becomesRead = notification.hasReadState && !notification.read;
-    const opened = becomesRead ? { ...notification, read: true } : notification;
+    setSelected(notification);
 
-    if (becomesRead) {
-      setNotifications((current) =>
-        current.map((item) => (item.id === opened.id ? opened : item)),
-      );
+    if (!becomesRead) {
+      return;
+    }
 
-      if (!NOTIFICATION_MUTATIONS_SUPPORTED) {
-        showToast(
-          "Marked as read on this device only - not saved to the server",
-        );
+    if (!usingMockLoader) {
+      if (!notification.hasServerId) {
+        showToast("Could not mark that notification as read: no server ID was provided. Nothing changed.");
+        return;
+      }
+
+      try {
+        await apiNotificationProvider.markRead(notification.id);
+      } catch (actionError) {
+        showToast(`Could not mark that notification as read. ${describeError(actionError)} Nothing changed.`);
+        return;
       }
     }
 
-    setSelected(opened);
+    setNotifications((current) =>
+      current.map((item) =>
+        item.id === notification.id ? { ...item, read: true } : item,
+      ),
+    );
+    setSelected((current) =>
+      current?.id === notification.id ? { ...current, read: true } : current,
+    );
+    showToast(
+      usingMockLoader
+        ? "Marked as read on this device only - not saved to the server"
+        : "Marked as read.",
+    );
   }
 
-  function handleDismiss(notification) {
-    const remaining = notifications.filter(
-      (item) => item.id !== notification.id,
-    );
+  async function handleDismiss(notification) {
+    if (!usingMockLoader) {
+      if (!notification.hasServerId) {
+        showToast("Could not dismiss that notification: no server ID was provided. Nothing changed.");
+        return;
+      }
 
-    setNotifications(remaining);
-    setClearedLocally(true);
+      try {
+        await apiNotificationProvider.remove(notification.id);
+      } catch (actionError) {
+        showToast(`Could not dismiss that notification. ${describeError(actionError)} Nothing changed.`);
+        return;
+      }
+    }
+
     // Hiding one record locally says nothing about whether the last refresh
     // succeeded, so a failed one keeps reporting itself. An emptied list is the
     // exception: there the "you cleared these" note is the more useful message.
-    setStatus(
-      remaining.length === 0 ? "empty" : status === "error" ? "error" : "ready",
+    notificationIdsRef.current = notificationIdsRef.current.filter(
+      (id) => id !== notification.id,
     );
-
-    showToast(
-      NOTIFICATION_MUTATIONS_SUPPORTED
-        ? "Notification dismissed"
-        : "Hidden on this device only - not saved to the server",
+    setNotifications((current) =>
+      current.filter((item) => item.id !== notification.id),
     );
+    setClearedLocally((wasClearedLocally) => wasClearedLocally || usingMockLoader);
+    const isEmpty = notificationIdsRef.current.length === 0;
+    setStatus((currentStatus) =>
+      isEmpty ? "empty" : currentStatus === "error" ? "error" : "ready",
+    );
+    showToast(usingMockLoader
+      ? "Hidden on this device only - not saved to the server"
+      : "Notification dismissed");
   }
 
   function handleClearAll() {
+    notificationIdsRef.current = [];
     setNotifications([]);
     setClearedLocally(true);
     setStatus("empty");
-    showToast(
-      NOTIFICATION_MUTATIONS_SUPPORTED
-        ? "All notifications cleared"
-        : "Cleared on this device only - reload to see them again",
-    );
+    showToast("Cleared on this device only - reload to see them again");
   }
 
   const isLoading = status === "loading";
@@ -737,11 +778,9 @@ export default function NotificationPanel({
                   type="button"
                   className="notif-dismiss"
                   onClick={() => handleDismiss(item)}
-                  aria-label={
-                    NOTIFICATION_MUTATIONS_SUPPORTED
-                      ? `Dismiss ${item.title}`
-                      : `Hide ${item.title} on this device only`
-                  }
+                  aria-label={usingMockLoader
+                    ? `Hide ${item.title} on this device only`
+                    : `Dismiss ${item.title}`}
                 >
                   &times;
                 </button>
@@ -827,17 +866,13 @@ export default function NotificationPanel({
             onClick={handleClearAll}
             disabled={isLoading}
           >
-            {NOTIFICATION_MUTATIONS_SUPPORTED
-              ? "Clear all"
-              : "Clear all (this device only)"}
+            Clear all (this device only)
           </button>
-          {!NOTIFICATION_MUTATIONS_SUPPORTED && (
-            <p className="notif-local-note">
-              Dismiss, clear and mark-as-read change this view only. The backend
-              does not accept notification updates yet, so nothing is saved and
-              a refresh restores the full list.
-            </p>
-          )}
+          <p className="notif-local-note">
+            {usingMockLoader
+              ? "Dismiss, clear and mark-as-read change this view only. A refresh may restore the full list."
+              : "Mark-as-read and dismiss are saved when confirmed by the notification service. Clear all changes this view only."}
+          </p>
         </div>
       )}
 

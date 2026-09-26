@@ -371,6 +371,106 @@ describe("notification API", () => {
         fetchSpy.mockRestore();
       }
     });
+
+    it.each([
+      ["mark one", markNotificationRead],
+      ["delete", deleteNotification],
+    ])("rejects a missing, blank, or unsupported ID for %s without HTTP", async (_name, request) => {
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+      try {
+        for (const id of [undefined, null, "", "   ", Symbol("notification")]) {
+          await expect(request(id)).rejects.toMatchObject({
+            message: "Notification ID is required",
+            status: 400,
+            data: { message: "Notification ID is required" },
+          });
+        }
+        expect(fetchSpy).not.toHaveBeenCalled();
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
+
+    it.each([
+      ["mark one", "patch", "/invalid-id/read", markNotificationRead],
+      ["delete", "delete", "/invalid-id", deleteNotification],
+    ])("preserves backend 400 for %s", async (_name, method, path, request) => {
+      const response = { message: "Invalid notification ID" };
+      server.use(
+        http[method](notificationUrl(path), () =>
+          HttpResponse.json(response, { status: 400 }),
+        ),
+      );
+
+      await expect(request("invalid-id")).rejects.toMatchObject({
+        message: response.message,
+        status: 400,
+        data: response,
+        path: `/api/notifications${path}`,
+      });
+    });
+
+    it.each([
+      ["mark one", "patch", "/missing/read", markNotificationRead],
+      ["delete", "delete", "/missing", deleteNotification],
+    ])("preserves notification-not-found for %s", async (_name, method, path, request) => {
+      server.use(
+        http[method](notificationUrl(path), () =>
+          HttpResponse.json({ message: "Notification not found" }, { status: 404 }),
+        ),
+      );
+
+      await expect(request("missing")).rejects.toMatchObject({
+        message: "Notification not found",
+        status: 404,
+        path: `/api/notifications${path}`,
+      });
+    });
+
+    it("rejects mark-all when an expired session cannot be refreshed", async () => {
+      localStorage.setItem(
+        AUTH_STORAGE_KEY,
+        JSON.stringify({ accessToken: mockAuthSession.accessToken }),
+      );
+      server.use(
+        http.patch(notificationUrl("/read-all"), () =>
+          HttpResponse.json({ message: "Invalid token" }, { status: 401 }),
+        ),
+      );
+
+      await expect(markAllNotificationsRead()).rejects.toMatchObject({
+        status: 401,
+        code: "AUTH_SESSION_EXPIRED",
+      });
+      expect(localStorage.getItem(AUTH_STORAGE_KEY)).toBeNull();
+    });
+
+    it("preserves a server error from mark-all", async () => {
+      server.use(
+        http.patch(notificationUrl("/read-all"), () =>
+          HttpResponse.json({ message: "Notification service unavailable" }, { status: 503 }),
+        ),
+      );
+
+      await expect(markAllNotificationsRead()).rejects.toMatchObject({
+        message: "Notification service unavailable",
+        status: 503,
+        path: "/api/notifications/read-all",
+      });
+    });
+
+    it("rejects a network failure from delete", async () => {
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new TypeError("Offline"));
+
+      try {
+        await expect(deleteNotification("notification-1")).rejects.toThrow(
+          "Could not reach the PHOENIX API gateway",
+        );
+      } finally {
+        fetchSpy.mockRestore();
+      }
+    });
   });
 
   describe("signals and transport failures", () => {

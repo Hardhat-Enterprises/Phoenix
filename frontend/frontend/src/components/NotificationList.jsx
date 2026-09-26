@@ -444,30 +444,36 @@ export default function NotificationList({
       ? "confirmed"
       : "unconfirmed";
 
-  const renderRecovery = (failure, { inline = false } = {}) => {
-    if (failure.needsSignIn) {
-      return onSignIn ? (
-        <button type="button" className="notif-retry" onClick={onSignIn}>
-          {failure.recoveryLabel}
-        </button>
-      ) : (
-        <p className="notif-error-text">{failure.recoveryLabel} to continue.</p>
-      );
-    }
-
-    const retry = inline ? onRefresh || onRetry : onRetry || onRefresh;
-
-    return retry ? (
-      <button
-        type="button"
-        className="notif-retry"
-        onClick={retry}
-        disabled={isRefreshing || isInitialLoading}
-      >
-        {retryLabel}
+const renderRecovery = (failure, { inline = false } = {}) => {
+  if (failure.needsSignIn) {
+    return onSignIn ? (
+      <button type="button" className="notif-retry" onClick={onSignIn}>
+        {failure.recoveryLabel}
       </button>
-    ) : null;
-  };
+    ) : (
+      <p className="notif-error-text">
+        {failure.recoveryLabel} to continue.
+      </p>
+    );
+  }
+
+  if (!failure.canRetry) {
+    return null;
+  }
+
+  const retry = inline ? onRefresh || onRetry : onRetry || onRefresh;
+
+  return retry ? (
+    <button
+      type="button"
+      className="notif-retry"
+      onClick={retry}
+      disabled={isRefreshing || isInitialLoading}
+    >
+      {retryLabel}
+    </button>
+  ) : null;
+};
 
   return (
     <div

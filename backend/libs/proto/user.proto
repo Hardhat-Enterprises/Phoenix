@@ -5,6 +5,8 @@ package user;
 service UserService {
     rpc GetUserHealth(GetUserHealthRequest) returns (GetUserHealthResponse);
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+    rpc GetAdminUsers(GetAdminUsersRequest) returns (GetAdminUsersResponse);
+    rpc DisableUser(DisableUserRequest) returns (DisableUserResponse);
     rpc GetLocations(GetLocationsRequest) returns (GetLocationsResponse);
     rpc GetEventStatuses(GetEventStatusesRequest) returns (GetEventStatusesResponse);
     rpc GetLinkedEventTypes(GetLinkedEventTypesRequest) returns (GetLinkedEventTypesResponse);
@@ -383,4 +385,37 @@ message GetOneTrainingModelResponse {
   int32 status = 1;
   string message = 2;
   TrainingModel model = 3;
+}
+
+message GetAdminUsersRequest {
+    string access_token = 1;
+}
+
+message GetAdminUsersResponse {
+    int32 status = 1;
+    string message = 2;
+    repeated AdminUser users = 3;
+}
+
+message AdminUser {
+    string user_id = 1;
+    string username = 2;
+    string role = 3;
+    bool is_disabled = 4;
+    string disabled_by = 5;
+    string disabled_at = 6;
+}
+
+message DisableUserRequest {
+    string user_id = 1;
+    string access_token = 2;
+}
+
+message DisableUserResponse {
+    int32 status = 1;
+    string message = 2;
+    string user_id = 3;
+    bool is_disabled = 4;
+    string disabled_by = 5;
+    string disabled_at = 6;
 }

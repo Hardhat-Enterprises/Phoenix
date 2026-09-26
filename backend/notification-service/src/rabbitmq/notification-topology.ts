@@ -3,7 +3,7 @@ import {
   NOTIFICATION_EXCHANGE,
   NOTIFICATION_QUEUE,
   NOTIFICATION_QUEUE_BINDING,
-} from "@phoenix/common/rabbitmq/notification-event";
+} from "@phoenix/common";
 
 export interface NotificationTopology {
   exchange: string;

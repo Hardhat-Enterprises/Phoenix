@@ -5,10 +5,13 @@ export const sequelize = new Sequelize(config.SUPABASE_CONNECTION_STRING, {
   dialect: "postgres",
   logging: false,
   dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
-    },
+    ssl:
+      process.env.DB_SSL === "false"
+        ? false
+        : {
+            require: true,
+            rejectUnauthorized: false,
+          },
   },
 });
 

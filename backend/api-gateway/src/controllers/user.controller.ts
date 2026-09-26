@@ -40,6 +40,49 @@ export const getUser = (req: Request, res: Response) => {
   });
 };
 
+export const getAdminUsers = (req: Request, res: Response) => {
+  const accessToken = String(req.headers.authorization?.split(" ")[1] || "");
+
+  userGrpcClient.GetAdminUsers({ access_token: accessToken }, (error, response) => {
+    if (error) {
+      return handleGrpcError(res, "Error fetching admin user list", error);
+    }
+
+    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
+      status: response?.status,
+      message: response?.message,
+      users: response?.users || [],
+    });
+  });
+};
+
+export const disableUser = (req: Request, res: Response) => {
+  const accessToken = String(req.headers.authorization?.split(" ")[1] || "");
+
+  userGrpcClient.DisableUser(
+    {
+      user_id: String(req.params.userId),
+      access_token: accessToken,
+    },
+    (error, response) => {
+      if (error) {
+        return handleGrpcError(res, "Error disabling user account", error);
+      }
+
+      return res
+        .status(response?.status || HttpStatusCode.HTTP_STATUS_OK)
+        .json({
+          status: response?.status,
+          message: response?.message,
+          user_id: response?.user_id,
+          is_disabled: response?.is_disabled,
+          disabled_by: response?.disabled_by,
+          disabled_at: response?.disabled_at,
+        });
+    },
+  );
+};
+
 export const getLocations = (req: Request, res: Response) => {
   userGrpcClient.GetLocations({}, (error: any, response: any) => {
     if (error) {

@@ -46,6 +46,35 @@ export interface GetUsersResponse {
   }[];
 }
 
+export interface AdminUser {
+  user_id: string;
+  username: string;
+  role: string;
+  is_disabled: boolean;
+  disabled_by: string;
+  disabled_at: string;
+}
+
+export interface GetAdminUsersResponse {
+  status: number;
+  message: string;
+  users: AdminUser[];
+}
+
+export interface DisableUserRequest {
+  user_id: string;
+  access_token: string;
+}
+
+export interface DisableUserResponse {
+  status: number;
+  message: string;
+  user_id?: string;
+  is_disabled?: boolean;
+  disabled_by?: string;
+  disabled_at?: string;
+}
+
 export interface RegisterUserRequest {
   username: string;
   password: string;
@@ -360,6 +389,22 @@ export interface UserServiceClient {
     callback: (
       error: grpc.ServiceError | null,
       response: GetUsersResponse,
+    ) => void,
+  ): void;
+
+  GetAdminUsers(
+    request: { access_token: string },
+    callback: (
+      error: grpc.ServiceError | null,
+      response: GetAdminUsersResponse,
+    ) => void,
+  ): void;
+
+  DisableUser(
+    request: DisableUserRequest,
+    callback: (
+      error: grpc.ServiceError | null,
+      response: DisableUserResponse,
     ) => void,
   ): void;
 

@@ -21,6 +21,8 @@ import {
 import {
   GetHealthDto,
   GetUsersDto,
+  GetAdminUsersDto,
+  DisableAccountDto,
   GetUserDashboardDto,
   GetUserDashboardChartsDto,
   GetUserDashboardActivityDto,
@@ -34,6 +36,8 @@ import {
 import {
   GetHealthEntity,
   GetUsersEntity,
+  GetAdminUsersEntity,
+  DisableUserEntity,
   GetUserDashboardEntity,
   GetUserDashboardChartsEntity,
   GetUserDashboardActivityEntity,
@@ -54,6 +58,137 @@ export const getHealth = (getHealthDto: GetHealthDto): GetHealthEntity => {
 };
 
 let usersCacheRequest: Promise<GetUsersEntity> | null = null;
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const getActiveAdminFromToken = async (
+  accessToken: string,
+): Promise<UserAccount | null> => {
+  if (!accessToken) return null;
+
+  try {
+    const decoded = jwt.verify(accessToken, JWT_SECRET!) as {
+      user_id?: string;
+    };
+    if (typeof decoded === "string" || !decoded.user_id) return null;
+
+    const admin = await UserAccount.findByPk(decoded.user_id);
+    if (
+      !admin ||
+      admin.is_disabled ||
+      admin.role !== UserRole.ADMIN ||
+      admin.access_token !== accessToken
+    ) {
+      return null;
+    }
+
+    return admin;
+  } catch {
+    return null;
+  }
+};
+
+export const getAdminUsers = async (
+  dto: GetAdminUsersDto,
+): Promise<GetAdminUsersEntity> => {
+  const admin = await getActiveAdminFromToken(dto.access_token);
+  if (!admin) {
+    return {
+      status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
+      message: "Administrator authentication required",
+      users: [],
+    };
+  }
+
+  const users = await UserAccount.findAll({
+    attributes: [
+      "user_id",
+      "username",
+      "role",
+      "is_disabled",
+      "disabled_by",
+      "disabled_at",
+    ],
+    order: [["created_at", "ASC"]],
+  });
+
+  return {
+    status: HttpStatusCode.HTTP_STATUS_OK,
+    message: "Users fetched successfully",
+    users: users.map((user) => ({
+      user_id: user.user_id,
+      username: user.username,
+      role: user.role,
+      is_disabled: user.is_disabled,
+      disabled_by: user.disabled_by || "",
+      disabled_at: user.disabled_at?.toISOString() || "",
+    })),
+  };
+};
+
+export const disableUser = async (
+  dto: DisableAccountDto,
+): Promise<DisableUserEntity> => {
+  if (!UUID_PATTERN.test(dto.user_id)) {
+    return {
+      status: HttpStatusCode.HTTP_STATUS_BAD_REQUEST,
+      message: "A valid user ID is required",
+    };
+  }
+
+  const admin = await getActiveAdminFromToken(dto.access_token);
+  if (!admin) {
+    return {
+      status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
+      message: "Administrator authentication required",
+    };
+  }
+
+  if (dto.user_id === admin.user_id) {
+    return {
+      status: HttpStatusCode.HTTP_STATUS_BAD_REQUEST,
+      message: "Administrators cannot disable their own accounts",
+    };
+  }
+
+  const user = await UserAccount.findByPk(dto.user_id);
+
+  if (!user) {
+    return {
+      status: HttpStatusCode.HTTP_STATUS_NOT_FOUND,
+      message: "User not found",
+    };
+  }
+
+  if (user.is_disabled) {
+    return {
+      status: HttpStatusCode.HTTP_STATUS_OK,
+      message: "User account is already disabled",
+      user_id: user.user_id,
+      is_disabled: true,
+      disabled_by: user.disabled_by || "",
+      disabled_at: user.disabled_at?.toISOString() || "",
+    };
+  }
+
+  const disabledAt = new Date();
+  await user.update({
+    is_disabled: true,
+    disabled_by: admin.user_id,
+    disabled_at: disabledAt,
+    access_token: null,
+    refresh_token: null,
+  });
+
+  return {
+    status: HttpStatusCode.HTTP_STATUS_OK,
+    message: "User account disabled successfully",
+    user_id: user.user_id,
+    is_disabled: true,
+    disabled_by: admin.user_id,
+    disabled_at: disabledAt.toISOString(),
+  };
+};
 
 export const getUsers = async (
   getUserDto: GetUsersDto,
@@ -468,6 +603,13 @@ export const loginUser = async (dto: LoginUserDto): Promise<AuthEntity> => {
       };
     }
 
+    if (user.is_disabled) {
+      return {
+        status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
+        message: "Invalid username or password",
+      };
+    }
+
     const isPasswordValid = await bcrypt.compare(
       dto.password,
       user.password_hashed,
@@ -533,7 +675,7 @@ export const refreshToken = async (
 
     const user = await UserAccount.findByPk(decoded.user_id);
 
-    if (!user || user.refresh_token !== dto.refresh_token) {
+    if (!user || user.is_disabled || user.refresh_token !== dto.refresh_token) {
       return {
         status: HttpStatusCode.HTTP_STATUS_UNAUTHORIZED,
         message: "Invalid refresh token",

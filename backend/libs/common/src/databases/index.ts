@@ -46,6 +46,30 @@ ReferenceDay.belongsTo(Season, {
 
 export async function initDatabase(): Promise<void> {
   await connectDatabase();
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS "user_account" (
+      "user_id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      "username" VARCHAR(255) NOT NULL UNIQUE,
+      "password_hashed" VARCHAR(255) NOT NULL,
+      "access_token" TEXT,
+      "refresh_token" TEXT,
+      "role" VARCHAR(50) NOT NULL,
+      "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      "is_disabled" BOOLEAN NOT NULL DEFAULT FALSE,
+      "disabled_by" UUID REFERENCES "user_account" ("user_id") ON DELETE SET NULL,
+      "disabled_at" TIMESTAMPTZ
+    )
+  `);
+  await sequelize.query(
+    'ALTER TABLE "user_account" ADD COLUMN IF NOT EXISTS "is_disabled" BOOLEAN NOT NULL DEFAULT FALSE',
+  );
+  await sequelize.query(
+    'ALTER TABLE "user_account" ADD COLUMN IF NOT EXISTS "disabled_by" UUID REFERENCES "user_account" ("user_id") ON DELETE SET NULL',
+  );
+  await sequelize.query(
+    'ALTER TABLE "user_account" ADD COLUMN IF NOT EXISTS "disabled_at" TIMESTAMPTZ',
+  );
   console.log("Database connected successfully.");
 }
 

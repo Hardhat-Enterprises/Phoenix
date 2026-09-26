@@ -4,6 +4,15 @@ export class GetHealthDto {}
 
 export class GetUsersDto {}
 
+export class GetAdminUsersDto {
+  access_token: string;
+}
+
+export class DisableAccountDto {
+  user_id: string;
+  access_token: string;
+}
+
 export class GetUserDashboardDto {}
 
 export class GetUserDashboardChartsDto {}

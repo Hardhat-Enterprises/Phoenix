@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: phoenix4-postgres
+    environment:
+      POSTGRES_DB: phoenix_db
+      POSTGRES_USER: phoenix_user
+      POSTGRES_PASSWORD: phoenix_pass
+    ports:
+      - "55432:5432"
+    volumes:
+      - ./database:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U phoenix_user -d phoenix_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rabbitmq:
+    container_name: phoenix4-rabbitmq
+  redis:
+    container_name: phoenix4-redis
+  api-gateway:
+    container_name: phoenix4-api-gateway
+  user-service:
+    container_name: phoenix4-user-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+  data-ingestion-service:
+    container_name: phoenix4-ingestion-service
+  storage-service:
+    container_name: phoenix4-storage-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+  notification-service:
+    container_name: phoenix4-notification-service
+    depends_on:
+      postgres:
+        condition: service_healthy

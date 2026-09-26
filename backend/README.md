@@ -87,10 +87,16 @@ Docker:
 
 ```
 USER_SERVICE_URL=user-service:50051
+TEAVS_ADCRS_SIGNING_SECRET=<random-secret-with-at-least-32-characters>
 ```
 
 Local:
 
 ```
 USER_SERVICE_URL=localhost:50051
+TEAVS_ADCRS_SIGNING_SECRET=<random-secret-with-at-least-32-characters>
 ```
+
+`TEAVS_ADCRS_SIGNING_SECRET` is used to create the HMAC-SHA256 signature on
+TEAVS alert payloads generated from ADCRS risk-scoring output. Keep the real
+value in `.env` or `.env.docker`; never commit it to source control.

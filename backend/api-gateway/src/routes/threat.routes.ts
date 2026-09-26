@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getThreats, getThreat } from "../controllers/threat.controller";
-import { authenticate } from "../middleware/auth.middleware";
+import { UserRole } from "@phoenix/common";
+import { authenticate, authorize } from "../middleware/auth.middleware";
 
 const router = Router();
 
@@ -152,7 +153,12 @@ const router = Router();
  *                   type: string
  *                   example: "Error fetching threats"
  */
-router.get("/", authenticate, getThreats);
+router.get(
+  "/",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.ANALYST]),
+  getThreats,
+);
 
 /**
  * @swagger
@@ -261,6 +267,11 @@ router.get("/", authenticate, getThreats);
  *                   type: string
  *                   example: "Error fetching threat"
  */
-router.get("/:threatId", authenticate, getThreat);
+router.get(
+  "/:threatId",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.ANALYST]),
+  getThreat,
+);
 
 export default router;

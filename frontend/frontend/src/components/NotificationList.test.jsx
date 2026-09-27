@@ -230,8 +230,11 @@ describe("load and refresh states", () => {
       }),
     });
 
-    expect(screen.getByText("That request was rejected")).toBeTruthy();
-    expect(screen.getByText("id must be an integer")).toBeTruthy();
+expect(screen.getByText("That request was rejected")).toBeTruthy();
+expect(
+  screen.getByText("Check the notification request and try again."),
+).toBeTruthy();
+expect(screen.queryByText("id must be an integer")).toBeNull();
   });
 
   it("offers an authentication recovery when the session has expired", async () => {
@@ -259,6 +262,23 @@ describe("load and refresh states", () => {
     });
 
     expect(screen.getByText("Sign in again to continue.")).toBeTruthy();
+  });
+
+  it("does not offer retry for a permanent forbidden failure", () => {
+    renderList({
+      notifications: [],
+      status: "error",
+      error: Object.assign(new Error("Forbidden"), { status: 403 }),
+      onRetry: vi.fn(),
+    });
+
+    expect(
+      screen.getByText("Notification access is not permitted"),
+    ).toBeTruthy();
+
+    expect(
+      screen.queryByRole("button", { name: "Retry" }),
+    ).toBeNull();
   });
 });
 

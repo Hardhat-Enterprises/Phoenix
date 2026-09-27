@@ -32,7 +32,7 @@ For each item I searched the code for the relevant control, read the implementat
 - **Fail** – implemented differently in a way that breaks the requirement
 - **Not implemented** – no implementation found on `dev`
 
-Limitations: apart from the automated SVC-03 test, this is a code review, not a runtime test of the deployed system. Deployment settings that are not in the repository (for example TLS at a load balancer) could not be checked. Work on unmerged branches is mentioned but not counted as implemented.
+Limitations: apart from the automated SVC-03 test, this is a code review, not a runtime test of the deployed system. Deployment settings that are not in the repository (for example TLS at a load balancer) could not be checked. Several gaps already have fixes in open, unmerged pull requests by other team members; these are listed under each item, but the results reflect what is on `dev`.
 
 ## 3. Summary
 
@@ -45,7 +45,7 @@ Limitations: apart from the automated SVC-03 test, this is a code review, not a 
 
 Most important findings:
 
-1. **RBAC role name mismatch blocks the ingestion endpoints (SVC-03).** The routes require the role `"ingestion service"` (with a space), but the only role that can be registered is `"ingestion_service"` (with an underscore). No account can pass that check, so `POST /api/ingestion/hazard` and `POST /api/ingestion/cyber` return 403 for every caller.
+1. **RBAC role name mismatch blocks the ingestion endpoints (SVC-03).** The routes require the role `"ingestion service"` (with a space), but the only role that can be registered is `"ingestion_service"` (with an underscore). No account can pass that check, so `POST /api/ingestion/hazard` and `POST /api/ingestion/cyber` return 403 for every caller. (Arshdeep first reported this and fixed it in PR #328; that PR is not merged yet.)
 2. **No request validation on ingestion, plus mass assignment (SVC-04).** Request bodies go straight to RabbitMQ and then into `CyberThreat.create({...parsedContent})`, so the sender controls every database column.
 3. **No rate limiting on `dev` (SVC-05)** and **no payload integrity/HMAC (SVC-07)**. Both exist only on unmerged branches.
 4. **Risk scale in my mapping document is wrong.** The real core model returns a 0–1 risk score with Critical at ≥ 0.75. My document used 0–100 with Critical at ≥ 85. For example, a score of 0.80 is *Critical* in the code but would be *High* under my document.
@@ -68,12 +68,12 @@ Most important findings:
 
 - **Requirement:** least-privilege roles, 403 on unauthorised actions.
 - **Found:**
-  1. **Role name mismatch.** `api-gateway/src/routes/ingestion.routes.ts` lines 153 and 260 use `authorize(["ingestion service"])`. The role enum (`libs/common/src/constant/user-role.ts` line 5) defines `ingestion_service`, and registration rejects any role not in the enum (`user-service/src/services/user.service.ts` line 360). No user can hold `"ingestion service"`, so the hazard and cyber ingestion endpoints return 403 to everyone. The controls fail closed, which is safe, but the endpoints are unusable.
-  2. **`POST /api/ingestion/core` checks authentication only** (`ingestion.routes.ts` line 355). Any logged-in user, including `end_user`, can trigger the core model. Arshdeep also found this; his fix on the unmerged branch `security/core-ingestion-rbac` uses `authorize([UserRole.INGESTION_SERVICE])`, which is the correct approach and should be applied to the hazard and cyber routes as well.
+  1. **Role name mismatch.** `api-gateway/src/routes/ingestion.routes.ts` lines 153 and 260 use `authorize(["ingestion service"])`. The role enum (`libs/common/src/constant/user-role.ts` line 5) defines `ingestion_service`, and registration rejects any role not in the enum (`user-service/src/services/user.service.ts` line 360). No user can hold `"ingestion service"`, so the hazard and cyber ingestion endpoints return 403 to everyone. The controls fail closed, which is safe, but the endpoints are unusable. Arshdeep identified this first and fixed all three ingestion routes in PR #328 (opened 3 Sep); Abdul's PR #412 changes the same strings. Neither is merged, so the bug is still on `dev`.
+  2. **`POST /api/ingestion/core` checks authentication only** (`ingestion.routes.ts` line 355). Any logged-in user, including `end_user`, can trigger the core model. Arshdeep's PR #328 and Abdul's PR #412 both add a role check here (both unmerged).
   3. **Default role not in the enum.** New users without a role get `"user"` (`user.service.ts` line 383), which is not a valid `UserRole` (`admin`, `analyst`, `end_user`, `ingestion_service`).
   4. The `analyst` role is defined but never used in any `authorize()` check. Most read routes only require authentication.
 - **Recommendation:** use `UserRole.INGESTION_SERVICE` instead of string literals, add `authorize` to `/api/ingestion/core`, change the default role to `UserRole.END_USER`, and decide which routes need `analyst`/`admin`.
-- **Confirmed by test and fixed (finding 1):** I wrote `api-gateway/src/routes/ingestion.routes.test.ts`, which starts the ingestion router with the real `authenticate`/`authorize` middleware and sends requests with different roles. On unmodified `dev` the test fails: a valid `ingestion_service` token receives **403** on both routes. After changing the two routes to `authorize([UserRole.INGESTION_SERVICE])`, all 10 tests pass (401 without a token, 403 for `end_user`/`analyst`, 202 for `ingestion_service`). Fix submitted in [PR #417](https://github.com/Hardhat-Enterprises/Phoenix/pull/417) (branch `vipul/fix-ingestion-rbac-role`). `/api/ingestion/core` is left to Arshdeep's branch so our changes do not overlap.
+- **Confirmed by test and fixed (finding 1):** I wrote `api-gateway/src/routes/ingestion.routes.test.ts`, which starts the ingestion router with the real `authenticate`/`authorize` middleware and sends requests with different roles. On unmodified `dev` the test fails: a valid `ingestion_service` token receives **403** on both routes. After changing the two routes to `authorize([UserRole.INGESTION_SERVICE])`, all 10 tests pass (401 without a token, 403 for `end_user`/`analyst`, 202 for `ingestion_service`). Submitted in [PR #417](https://github.com/Hardhat-Enterprises/Phoenix/pull/417). The route change is the same as Arshdeep's PR #328; the new part of #417 is the automated test, which covers the positive `ingestion_service` case that #328 notes could not be tested without service credentials. Whichever fix is merged first, the test prevents the bug from coming back.
 
 ### SVC-04 Input validation – Fail
 
@@ -82,13 +82,14 @@ Most important findings:
   - `ingestHazardData` and `ingestCyberData` (`api-gateway/src/controllers/ingestion.controller.ts` lines 38 and 67) forward `req.body` to RabbitMQ with no validation and return 202 regardless.
   - The consumer only checks the payload is not empty (`data-ingestion-service/src/services/ingestion.service.ts` line 112), then saves it with `CyberThreat.create({...parsedContent})` (line 133). This is a **mass-assignment** risk (OWASP API Top 10 2023, API3): the sender controls every column written to the database.
   - Zod schemas already exist in `cyber/Cyber(jessica)/src/schemas/ingestionSchemas.ts` but are not used by the backend.
+  - Open fixes: Arshdeep's PR #371 adds gateway validation for hazard/cyber payloads, and Abdul's PR #412 adds validation for `/api/ingestion/core` (both unmerged). Even with #371, the consumer still spreads `parsedContent` into the model, so an allow-list in `createCyberData` is still needed.
   - The notification routes do validate pagination and filters (`notification.validation.middleware.ts`), which is good.
 - **Recommendation:** validate request bodies at the gateway (reuse the Zod schemas), return 400 on failure, and copy only allowed fields into `CyberThreat.create`.
 
 ### SVC-05 Rate limiting – Not implemented
 
 - **Requirement:** limit requests per client/token, return 429 when exceeded.
-- **Found:** no rate limiting on `dev`. The event type `RATE_LIMIT_EXCEEDED` is defined (`api-gateway/src/notifications/notificationTypes.ts` line 6) but never used. Rate limiting exists on four unmerged branches: `security/login-rate-limiting`, `feature/rate-limit-redis-store`, `feature/rate-limit-integration-digraj` and `sprint-2-rate-limiting`.
+- **Found:** no rate limiting on `dev`. The event type `RATE_LIMIT_EXCEEDED` is defined (`api-gateway/src/notifications/notificationTypes.ts` line 6) but never used. Rate limiting exists only in unmerged work: Arshdeep's PR #329 (login), Abdul's PR #412 (`/api/ingestion/core`), and the branches `feature/rate-limit-redis-store`, `feature/rate-limit-integration-digraj` and `sprint-2-rate-limiting`.
 - **Recommendation:** agree on one implementation, preferably the Redis-backed one so limits work across instances, and merge it. Start with `/auth/login` and the ingestion routes.
 
 ### SVC-06 Secure error handling – Partial
@@ -112,6 +113,7 @@ Most important findings:
   - The auth middleware raises security events (`UNAUTHORIZED_ACCESS`, `INVALID_JWT`, forbidden access), added by Jessica in PR #343.
   - These are written with `console.log` only (`notificationLogger.ts` line 6). They are not stored, have no correlation ID and can be lost when a container restarts.
   - Ingestion is traceable through the `DataIngestionStreamingLog` table, which records status and failure reasons.
+  - Isa's CY017 structured audit logging (correlation IDs, persistent audit file; PRs #339 and #402) addresses most of this but is not merged yet.
 - **Recommendation:** send security events to the shared logger and store them (database or log service), with a request/correlation ID.
 
 ### SVC-09 Service isolation and resilience – Partial
@@ -176,11 +178,11 @@ Other differences:
 
 | # | Recommendation | Relates to | Suggested owner |
 |---|---|---|---|
-| 1 | Fix the `"ingestion service"` role string (use `UserRole.INGESTION_SERVICE`) and add `authorize` to `/api/ingestion/core` | SVC-03 | Vipul – hazard/cyber fixed with tests (PR #417); Arshdeep – `/core` |
-| 2 | Validate ingestion request bodies (reuse the Zod schemas) and remove the mass assignment | SVC-04 | Cyber + Backend |
-| 3 | Merge one rate-limiting implementation | SVC-05 | Cyber |
+| 1 | Fix the `"ingestion service"` role string (use `UserRole.INGESTION_SERVICE`) and add `authorize` to `/api/ingestion/core` | SVC-03 | Merge Arshdeep's PR #328 (or #412); regression tests in Vipul's PR #417 |
+| 2 | Validate ingestion request bodies and remove the mass assignment | SVC-04 | Merge PR #371 / #412; allow-list fields in `createCyberData` (Backend) |
+| 3 | Merge one rate-limiting implementation (PR #329 / #412, ideally Redis-backed) | SVC-05 | Cyber |
 | 4 | Merge TEAVS–ADCRS signing and verify signatures | SVC-07 | Cyber (TEAVS–ADCRS) |
-| 5 | Persist security events with correlation IDs | SVC-08 | Cyber |
+| 5 | Persist security events with correlation IDs (merge PRs #339 / #402) | SVC-08 | Cyber (Security Monitoring) |
 | 6 | Restrict CORS and stop returning raw error text | SVC-06, CORS | Backend |
 | 7 | Agree on one event schema and one risk scale (0–1) across gateway, ingestion and AI/ML | Sections 5–6 | Threat Analysis Integration |
 | 8 | Add the Response Decision Manager combination step, with authentication and tests | Section 6 | Vipul (PR in progress) |

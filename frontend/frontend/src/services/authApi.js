@@ -423,6 +423,23 @@ export const registerUser = async ({
   };
 };
 
+// Password recovery.
+//
+// The gateway exposes no reset endpoint: user.routes.ts has register, login,
+// refresh and logout only. The request below is written against the
+// conventional path so that switching recovery on is one flag, and the flag
+// keeps the UI from sending a request that can only 404 in the meantime.
+//
+// When the backend adds the endpoint: confirm the path, then set
+// PASSWORD_RESET_SUPPORTED to true. Nothing else needs to change.
+export const PASSWORD_RESET_SUPPORTED = false;
+
+export const requestPasswordReset = async (email) =>
+  apiRequest("/api/users/auth/forgot-password", {
+    method: "POST",
+    body: { email: String(email ?? "").trim() },
+  });
+
 export const logoutUser = async () => {
   const userId = getAuthSession()?.user?.id;
 

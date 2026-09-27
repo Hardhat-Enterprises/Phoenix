@@ -1,5 +1,5 @@
 import fs from "fs/promises";
-import { validateThreatPayload } from "./threat-validation.service";
+
 import {
   HazardDataStreamRequest,
   CyberDataStreamRequest,
@@ -22,68 +22,16 @@ import {
 import { GetHealthDto } from "../dto/ingestion.dto";
 import { GetHealthEntity } from "../entity/ingestion.entity";
 import { DataIngestionStreamingLog } from "@phoenix/common";
-
+import {
+  validateThreatPayload,
+  normaliseThreatPayload,
+  isHighRiskThreat,
+} from "./threat-validation.service";
 export const getHealth = (_getHealthDto: GetHealthDto): GetHealthEntity => {
   return {
     status: HttpStatusCode.HTTP_STATUS_OK,
     message: "Data ingestion service is running",
   };
-};
-
-export const createHazardData = async (content: any) => {
-  const ingestionLog = await DataIngestionStreamingLog.create({
-    ingestion_type: IngestionTypeEnum.HAZARD,
-    payload: content,
-    processing_status: ProcessingStatus.RECEIVED,
-    processed_at: new Date(),
-  });
-  try {
-    const parsedContent =
-      typeof content === "string"
-        ? (JSON.parse(content) as HazardDataStreamRequest)
-        : content;
-
-    if (!parsedContent || Object.keys(parsedContent).length === 0) {
-      logger.error("Hazard data validation failed: Empty payload");
-
-      await ingestionLog.update({
-        processing_status: ProcessingStatus.FAILED,
-        fail_reason: "Empty payload",
-      });
-      return;
-    }
-
-    const [source] = await DataSource.findOrCreate({
-      where: {
-        source_name: parsedContent.source,
-      },
-      defaults: {
-        source_name: parsedContent.source,
-        source_type: "ai_model",
-        access_method: "rabbitmq",
-      },
-    });
-
-    await HazardEvent.create(parsedContent);
-
-    await ingestionLog.update({
-      processing_status: ProcessingStatus.PROCESSED,
-      source_id: source.source_id,
-    });
-
-    console.log(
-      `Hazard data processed successfully with payload: ${parsedContent}`,
-    );
-    return;
-  } catch (error: any) {
-    logger.error(`Hazard data creation failed: ${error.message}`);
-
-    await ingestionLog.update({
-      processing_status: ProcessingStatus.FAILED,
-      fail_reason: error.message,
-    });
-    return;
-  }
 };
 
 export const createCyberData = async (content: any) => {
@@ -93,70 +41,119 @@ export const createCyberData = async (content: any) => {
     processing_status: ProcessingStatus.RECEIVED,
     processed_at: new Date(),
   });
+
   try {
+    // Step 1: Parse incoming cyber threat payload
     const parsedContent =
       typeof content === "string" ? JSON.parse(content) : content;
 
-    if (!parsedContent || Object.keys(parsedContent).length === 0) {
+    // Step 2: Reject empty or invalid payload objects
+    if (
+      !parsedContent ||
+      typeof parsedContent !== "object" ||
+      Object.keys(parsedContent).length === 0
+    ) {
       logger.error("Cyber data validation failed: Empty payload");
 
       await ingestionLog.update({
         processing_status: ProcessingStatus.FAILED,
         fail_reason: "Empty payload",
       });
+
       return;
     }
+
+    // Step 3: Validate threat-analysis fields
     const validation = validateThreatPayload(parsedContent);
-    if(!validation.valid) {
+
+    if (!validation.valid) {
+      const failureReason = validation.errors.join(", ");
+
       logger.error(
-        'Cyber threat Payload validation failed: $(validation.errors.join(", ")}',
-        );
+        `Cyber threat payload validation failed: ${failureReason}`,
+      );
+
       await ingestionLog.update({
         processing_status: ProcessingStatus.FAILED,
-        fail_reason: validation.errors.join(", "),
+        fail_reason: failureReason,
       });
 
       return;
     }
+
+    // Step 4: Log non-critical warnings
     if (validation.warnings.length > 0) {
       logger.warn(
-        'Cyber Threat payload validation warnings: ${validation.warnings.join(", ")}',
-        );
+        `Cyber threat payload validation warnings: ${validation.warnings.join(
+          ", ",
+        )}`,
+      );
     }
-    
 
+    // Step 5: Normalise validated data
+    const normalisedPayload = normaliseThreatPayload(parsedContent);
+
+    // Step 6: Risk-based threat classification
+    const highRisk = isHighRiskThreat(normalisedPayload);
+
+    if (highRisk) {
+      logger.warn(
+        `High-risk cyber threat detected: ` +
+          `${normalisedPayload.cyber_threat} | ` +
+          `severity=${normalisedPayload.severity} | ` +
+          `risk_score=${normalisedPayload.risk_score}`,
+      );
+    } else {
+      logger.info(
+        `Cyber threat accepted: ` +
+          `${normalisedPayload.cyber_threat} | ` +
+          `severity=${normalisedPayload.severity}`,
+      );
+    }
+
+    // Step 7: Register or retrieve the threat data source
     const [source] = await DataSource.findOrCreate({
       where: {
-        source_name: parsedContent.source,
+        source_name: normalisedPayload.source,
       },
       defaults: {
-        source_name: parsedContent.source,
+        source_name: normalisedPayload.source,
         source_type: "ai_model",
         access_method: "rabbitmq",
       },
     });
 
+    // Step 8: Store validated cyber threat
     await CyberThreat.create({
-      ...parsedContent,
-      details: JSON.stringify(parsedContent.details),
+      ...normalisedPayload,
+      details:
+        normalisedPayload.details !== undefined
+          ? JSON.stringify(normalisedPayload.details)
+          : undefined,
     });
 
+    // Step 9: Mark ingestion as successfully processed
     await ingestionLog.update({
       processing_status: ProcessingStatus.PROCESSED,
       source_id: source.source_id,
     });
 
-    console.log(
-      `Cyber data processed successfully with payload: ${parsedContent}`,
+    logger.info(
+      `Cyber threat processed successfully: ${normalisedPayload.cyber_threat}`,
     );
+
     return;
-  } catch (error: any) {
-    logger.error(`Cyber data creation failed: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
+
+    logger.error(`Cyber data creation failed: ${errorMessage}`);
 
     await ingestionLog.update({
       processing_status: ProcessingStatus.FAILED,
-      fail_reason: error.message,
+      fail_reason: errorMessage,
     });
+
     return;
   }
 };

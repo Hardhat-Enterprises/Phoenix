@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
+import crypto from "crypto";
 import { ingestionGrpcClient } from "../grpc/ingestion.grpc";
 import {
-  CoreModelIntegrationPayload,
+  
+CoreModelIntegrationPayload,
   getChannel,
   HttpStatusCode,
   logger,
@@ -65,6 +67,24 @@ export const ingestCyberData = async (req: Request, res: Response) => {
   try {
     const channel = getChannel();
     const body = req.body as any;
+    if (
+      !body.event_id ||
+      !body.timestamp ||
+      !body.event_type ||
+      !body.source ||
+      !body.location ||
+      !body.payload ||
+      body.payload.risk_score === undefined ||
+      !body.payload.severity ||
+      body.payload.confidence === undefined ||
+      !body.payload.cyber_threat ||
+      !body.payload.recommended_action
+    ) {
+      return res.status(HttpStatusCode.HTTP_STATUS_BAD_REQUEST).json({
+        status: HttpStatusCode.HTTP_STATUS_BAD_REQUEST,
+        message: "Invalid cyber ingestion payload",
+      });
+    }
 
     (await channel.assertQueue(RabbitMQQueueType.CYBER_CREATION_QUEUE, {
       durable: true,
@@ -92,7 +112,12 @@ export const ingestCyberData = async (req: Request, res: Response) => {
 export const coreModelIntegration = async (req: Request, res: Response) => {
   try {
     const channel = getChannel();
-    const body = req.body as CoreModelIntegrationPayload;
+    const integrationEventId = crypto.randomUUID();
+
+const body = {
+  ...req.body,
+  integration_event_id: integrationEventId,
+} as CoreModelIntegrationPayload;
     logger.info(
       "Received core model integration request:",
       body || "No body provided",
@@ -107,9 +132,10 @@ export const coreModelIntegration = async (req: Request, res: Response) => {
       },
     );
     res.status(HttpStatusCode.HTTP_STATUS_ACCEPTED).json({
-      status: HttpStatusCode.HTTP_STATUS_ACCEPTED,
-      message: "Core model integration data sent successfully",
-    });
+  status: HttpStatusCode.HTTP_STATUS_ACCEPTED,
+  message: "Core model integration data sent successfully",
+  integration_event_id: integrationEventId,
+});
   } catch (error) {
     logger.error(`Error integrating core model: ${error}`);
     res.status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR).json({

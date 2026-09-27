@@ -1,4 +1,5 @@
 export interface CoreModelIntegrationPayload {
+  integration_event_id: string;
   url: string;
   text: string;
   timestamp: string;

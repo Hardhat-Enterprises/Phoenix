@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import { notificationGrpcClient } from "../grpc/notification.grpc";
 import { HttpStatusCode, logger } from "@phoenix/common";
+import { notificationGrpcClient } from "../grpc/notification.grpc";
+import { NotificationWebSocketGateway } from "../realtime/notification-websocket";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;

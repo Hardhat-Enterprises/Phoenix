@@ -11,6 +11,7 @@ import {
   getOneTrainingModel,
   getTrainingModels,
   register,
+  createAdmin,
   login,
   refresh,
   logout,
@@ -312,6 +313,47 @@ router.get("/training-models/:file_id", authenticate, getOneTrainingModel);
  *         description: Internal server error
  */
 router.post("/auth/register", authenticate, authorize(["admin"]), register);
+
+/**
+ * @swagger
+ * /api/users/admin:
+ *   post:
+ *     summary: Create a new administrator account
+ *     description: Creates a new administrator account. Requires the caller to already be authenticated as an administrator. The role is always set to admin server-side and cannot be influenced by the request body.
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Username for the new admin account
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: Password for the new admin account
+ *     responses:
+ *       201:
+ *         description: Administrator account created successfully
+ *       400:
+ *         description: Bad request - invalid input or username already exists
+ *       401:
+ *         description: Unauthorized - no valid token provided
+ *       403:
+ *         description: Forbidden - caller is not an administrator
+ *       500:
+ *         description: Internal server error
+ */
+router.post("/admin", authenticate, authorize(["admin"]), createAdmin);
 
 /**
  * @swagger

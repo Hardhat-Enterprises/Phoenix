@@ -5,6 +5,10 @@ package notification;
 service NotificationService {
     rpc GetNotificationHealth(GetNotificationHealthRequest) returns (GetNotificationHealthResponse);
     rpc GetNotifications(GetNotificationsRequest) returns (GetNotificationsResponse);
+    rpc GetUnreadNotificationCount(GetUnreadNotificationCountRequest) returns (GetUnreadNotificationCountResponse);
+    rpc MarkNotificationAsRead(MarkNotificationAsReadRequest) returns (MarkNotificationAsReadResponse);
+    rpc MarkAllNotificationsAsRead(MarkAllNotificationsAsReadRequest) returns (MarkAllNotificationsAsReadResponse);
+    rpc DeleteNotification(DeleteNotificationRequest) returns (DeleteNotificationResponse);
 }
 
 message GetNotificationHealthRequest {

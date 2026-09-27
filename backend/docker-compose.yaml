@@ -2,11 +2,12 @@ services:
   rabbitmq:
     image: rabbitmq:4-management
     container_name: phoenix-rabbitmq
+    env_file:
+      - .env.docker
     ports:
       - "5672:5672"
       - "15672:15672"
-    env_file:
-      - .env.docker
+    
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 5s
@@ -16,6 +17,8 @@ services:
   redis:
     image: redis:7
     container_name: phoenix-redis
+    env_file:
+      - .env.docker
     ports:
       - "6379:6379"
     healthcheck:

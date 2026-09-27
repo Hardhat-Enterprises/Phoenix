@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import dotenv from "dotenv";
@@ -7,7 +8,15 @@ import { config, initDatabase, logger } from "@phoenix/common";
 
 dotenv.config();
 
-const PROTO_PATH = path.resolve(`${process.env.NOTIFICATION_PROTO_PATH}`);
+const distProtoPath = path.resolve(
+  process.cwd(),
+  "dist/libs/proto/notification.proto",
+);
+const devProtoPath = path.resolve(process.cwd(), "libs/proto/notification.proto");
+const PROTO_PATH =
+  process.env.NODE_ENV === "production" && fs.existsSync(distProtoPath)
+    ? distProtoPath
+    : devProtoPath;
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,

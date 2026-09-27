@@ -1,12 +1,40 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { CORE_INTEGRATION_RESULTS_ID, integrationPath } from "./config/routes";
+import { getApiErrorState } from "./utils/apiErrorUtils";
+import { safeTrim } from "./utils/textUtils";
+import {
+  AuthenticationState,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "./components/States";
+import EvidenceEntry from "./components/EvidenceEntry";
 import "./ReportsPage.css";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import ReportPDF from "./components/ReportPDF";
+import "./reports-toolbar-styles.css";
+import "./components/design.css";
+import { downloadReportPdf } from "./utils/downloadReportPdf";
+import { validateReportForm } from "./utils/reportFormValidation";
+import { usePreferences } from "./PreferencesContext";
+import { formatDisplayDate } from "./displayDate";
 import {
   getIngestionHealth,
   getIntegrations,
   postIngestionCore,
 } from "./services/phoenixApi";
+
+const UNAVAILABLE = "Unavailable";
+
+// Missing (null/undefined/object) is "Unavailable". An empty string the
+// backend really sent is "(empty)". A real 0 stays "0".
+const displayText = (value) => {
+  if (value === null || value === undefined || typeof value === "object") {
+    return UNAVAILABLE;
+  }
+
+  const text = String(value);
+  return text.trim() === "" ? "(empty)" : text;
+};
 
 const defaultForm = {
   url: "https://example.com/donate-now",
@@ -27,23 +55,56 @@ const getCurrentDateTimeLocal = () => {
   return localDate.toISOString().slice(0, 16);
 };
 
-const pause = (delayMs) =>
+// How many times the page checks for the model output after submitting.
+const MAX_POLLS = 9;
+
+// Resolves after delayMs, or straight away if the signal is aborted.
+const pause = (delayMs, signal) =>
   new Promise((resolve) => {
-    window.setTimeout(resolve, delayMs);
+    const timer = window.setTimeout(resolve, delayMs);
+
+    signal?.addEventListener(
+      "abort",
+      () => {
+        window.clearTimeout(timer);
+        resolve();
+      },
+      { once: true },
+    );
   });
 
 const formatDateTime = (value) => {
-  if (!value) {
-    return "-";
+  if (value === null || value === undefined || value === "") {
+    return UNAVAILABLE;
   }
 
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 };
 
+const formatUserDateTime = (value, dateFormat) => formatDisplayDate(
+  value,
+  dateFormat,
+  {
+    fallback: value || UNAVAILABLE,
+    includeTime: true,
+  },
+);
+
 const formatScore = (value) => {
+  // Number(null) and Number("") are 0, so check for missing values first.
+  if (
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    typeof value === "object" ||
+    typeof value === "boolean"
+  ) {
+    return UNAVAILABLE;
+  }
+
   const number = Number(value);
-  return Number.isFinite(number) ? number.toFixed(4) : "-";
+  return Number.isFinite(number) ? number.toFixed(4) : UNAVAILABLE;
 };
 
 const getProcessedTime = (integration) =>
@@ -57,7 +118,9 @@ const getEvidenceTitle = (input = {}) => {
   }
 
   if (input.text) {
-    return input.text.length > 70 ? `${input.text.slice(0, 70)}...` : input.text;
+    return input.text.length > 70
+      ? `${input.text.slice(0, 70)}...`
+      : input.text;
   }
 
   return "Core model output";
@@ -76,7 +139,7 @@ const getEvidenceType = (input = {}) => {
     return "Text";
   }
 
-  return "-";
+    return UNAVAILABLE;
 };
 
 const sanitizeFileName = (value) => {
@@ -88,23 +151,26 @@ const sanitizeFileName = (value) => {
   return cleaned || "core_model_report";
 };
 
-const buildIntegrationReport = (integration) => {
+const buildIntegrationReport = (integration, dateFormat) => {
   const input = integration.input || {};
   const output = integration.output || {};
-  const status = integration.status || "-";
-  const risk =
-    output.risk_level || (status === "error" ? "Error" : "Pending");
+   const status = integration.status || UNAVAILABLE;
+  const risk = output.risk_level || (status === "error" ? "Error" : "Pending");
   const title = getEvidenceTitle(input);
+  const processedTime = getProcessedTime(integration);
 
   return {
     id: integration.integration_event_id || title,
+    integrationId: integration.integration_event_id,
     title,
     description: input.text || input.url || "No evidence text returned.",
     evidenceType: getEvidenceType(input),
     risk,
     riskClass: getRiskClass(output.risk_level, status),
     status,
-    date: formatDateTime(getProcessedTime(integration)),
+    date: formatDateTime(processedTime),
+    displayDate: formatUserDateTime(processedTime, dateFormat),
+    processedAt: processedTime,
     fileName: `${sanitizeFileName(title)}_verification_report.pdf`,
     input,
     output,
@@ -205,7 +271,7 @@ const getInputSignature = (integration) => {
   });
 };
 
-const latestCoreIntegration = (items) => {
+const dedupedCoreIntegrations = (items) => {
   const seenInputs = new Set();
 
   return sortNewestFirst(items)
@@ -219,9 +285,10 @@ const latestCoreIntegration = (items) => {
 
       seenInputs.add(signature);
       return true;
-    })
-    .slice(0, 1);
+    });
 };
+
+const latestCoreIntegration = (items) => dedupedCoreIntegrations(items).slice(0, 1);
 
 const getRiskClass = (riskLevel, status) => {
   if (status === "error") {
@@ -233,28 +300,99 @@ const getRiskClass = (riskLevel, status) => {
     .replace(/\s+/g, "-");
 };
 
+// Field errors are checked in the order the fields appear on the page.
+const FIELD_ORDER = ["evidence", "url", "hazardSeverity", "hazardLocation"];
+const FIELD_IDS = {
+  evidence: "reports-url-input",
+  url: "reports-url-input",
+  hazardSeverity: "reports-hazard-severity-input",
+  hazardLocation: "reports-hazard-location-input",
+};
+
+const describedBy = (...ids) => ids.filter(Boolean).join(" ") || undefined;
+
 function ReportsPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const coreResultsHeadingRef = useRef(null);
+  const { preferences } = usePreferences();
+  const dateFormat = preferences.dateFormat;
   const [form, setForm] = useState(() => ({
     ...defaultForm,
     timestamp: getCurrentDateTimeLocal(),
   }));
   const [integrations, setIntegrations] = useState([]);
-  const [isLoadingIntegrations, setIsLoadingIntegrations] = useState(false);
+  const [isLoadingIntegrations, setIsLoadingIntegrations] = useState(true);
+  const [integrationsError, setIntegrationsError] = useState(null);
   const [isRunningModel, setIsRunningModel] = useState(false);
   const [ingestionStatus, setIngestionStatus] = useState("Checking");
   const [modelMessage, setModelMessage] = useState("");
   const [modelError, setModelError] = useState("");
   const [selectedResult, setSelectedResult] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [pdfError, setPdfError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const hasFieldErrors = Object.keys(fieldErrors).length > 0;
+  const [pdfProgress, setPdfProgress] = useState("");
+  const [failedPdfReport, setFailedPdfReport] = useState(null);
+  const [runFailed, setRunFailed] = useState(false);
+  const pdfBusyRef = useRef(false);
+  const pdfAbortRef = useRef(null);
+  const isMountedRef = useRef(true);
+  const loadSeqRef = useRef(0);
+  const runBusyRef = useRef(false);
+  const runAbortRef = useRef(null);
+
+  // Report library controls (Sprint 3 Week 2 — Reports page ownership, Varun)
+  const [reportSearch, setReportSearch] = useState("");
+  const [reportRiskFilter, setReportRiskFilter] = useState("all");
+  const [reportSort, setReportSort] = useState("newest");
 
   const displayedIntegrations = useMemo(
     () => latestCoreIntegration(integrations),
     [integrations],
   );
 
-  const generatedReports = useMemo(
-    () => displayedIntegrations.map(buildIntegrationReport),
-    [displayedIntegrations],
+  // Sprint 3 Week 2: the report library shows every distinct core-model
+  // result, not just the single latest one — "Last Core Model Test" below
+  // is intentionally kept as a single-record view and is unaffected.
+  const allReports = useMemo(
+    () => dedupedCoreIntegrations(integrations).map((integration) => (
+      buildIntegrationReport(integration, dateFormat)
+    )),
+    [dateFormat, integrations],
   );
+
+  const generatedReports = useMemo(() => {
+    const query = reportSearch.trim().toLowerCase();
+
+    let list = allReports;
+
+    if (query) {
+      list = list.filter(
+        (report) =>
+          report.title.toLowerCase().includes(query) ||
+          report.description.toLowerCase().includes(query),
+      );
+    }
+
+    if (reportRiskFilter !== "all") {
+      list = list.filter((report) => report.riskClass === reportRiskFilter);
+    }
+
+    return [...list].sort((a, b) => {
+      const aTime = new Date(a.processedAt || 0).getTime() || 0;
+      const bTime = new Date(b.processedAt || 0).getTime() || 0;
+      return reportSort === "newest" ? bTime - aTime : aTime - bTime;
+    });
+  }, [allReports, reportSearch, reportRiskFilter, reportSort]);
+
+  const hasActiveReportFilters = Boolean(reportSearch.trim()) || reportRiskFilter !== "all";
+
+  const clearReportFilters = () => {
+    setReportSearch("");
+    setReportRiskFilter("all");
+  };
 
   const latestResult = useMemo(
     () =>
@@ -266,21 +404,68 @@ function ReportsPage() {
     [integrations, selectedResult],
   );
 
-  const loadIntegrations = async () => {
-    setIsLoadingIntegrations(true);
+  // silent: used while polling, so the results table does not flash back to
+  // its loading state on every check.
+  const loadIntegrations = async ({ silent = false } = {}) => {
+    // A newer load supersedes this one: its result is ignored.
+    loadSeqRef.current += 1;
+    const requestId = loadSeqRef.current;
+    const isCurrent = () =>
+      isMountedRef.current && requestId === loadSeqRef.current;
+
+    if (!silent) {
+      setIsLoadingIntegrations(true);
+      setIntegrationsError(null);
+    }
 
     try {
       const response = await getIntegrations({ page: 1, limit: 25 });
       const items = sortNewestFirst(response.items || []);
+
+      if (!isCurrent()) return items;
+
+      const hasMalformedCoreResult = items.some((item) =>
+        item.integration_type === "core" && [
+          item.status, item.note, item.created_at, item.updated_at,
+          item.input?.url, item.input?.text,
+          item.output?.risk_level, item.output?.risk_score,
+          item.output?.confidence_score, item.output?.predicted_class,
+          item.output?.processed_at,
+        ].some((value) => value !== null && typeof value === "object"),
+      );
+      if (hasMalformedCoreResult) {
+        setIntegrations([]);
+        setIntegrationsError("empty");
+        return [];
+      }
       setIntegrations(items);
+      setIntegrationsError(null);
       return items;
-    } catch {
-      setIntegrations([]);
+    } catch (error) {
+      if (isCurrent()) {
+        setIntegrations([]);
+        setIntegrationsError(getApiErrorState(error));
+      }
       return [];
     } finally {
-      setIsLoadingIntegrations(false);
+      if (isCurrent()) setIsLoadingIntegrations(false);
     }
   };
+
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      runAbortRef.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (location.hash !== `#${CORE_INTEGRATION_RESULTS_ID}`) return;
+    coreResultsHeadingRef.current?.focus();
+    coreResultsHeadingRef.current?.scrollIntoView({ block: "start" });
+  }, [location.hash, location.key]);
 
   useEffect(() => {
     let isActive = true;
@@ -312,13 +497,26 @@ function ReportsPage() {
       ...currentForm,
       [field]: event.target.value,
     }));
+
+    setFieldErrors((currentErrors) => {
+      if (Object.keys(currentErrors).length === 0) return currentErrors;
+
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[field];
+      if (field === "url" || field === "text") delete nextErrors.evidence;
+      return nextErrors;
+    });
   };
 
-  const pollForResult = async (payload, submittedAt) => {
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      await pause(attempt === 0 ? 1000 : 1500);
+  const pollForResult = async (payload, submittedAt, signal, onAttempt) => {
+    for (let attempt = 1; attempt <= MAX_POLLS; attempt += 1) {
+      await pause(attempt === 1 ? 1000 : 1500, signal);
+      if (signal.aborted) return null;
 
-      const items = await loadIntegrations();
+      onAttempt?.(attempt);
+      const items = await loadIntegrations({ silent: true });
+      if (signal.aborted) return null;
+
       const match = findIntegrationForPayload(items, payload, submittedAt);
 
       if (match && (hasModelOutput(match) || match.status === "error")) {
@@ -326,8 +524,7 @@ function ReportsPage() {
       }
     }
 
-    const items = await loadIntegrations();
-    return findIntegrationForPayload(items, payload, submittedAt) || null;
+    return null;
   };
 
   const handleRefreshResults = async () => {
@@ -335,26 +532,53 @@ function ReportsPage() {
     await loadIntegrations();
   };
 
-  const handleRunModel = async (event) => {
-    event.preventDefault();
+  const runModel = async () => {
+    // A ref, not state: a fast double click cannot start a second request.
+    if (runBusyRef.current) return;
+
     setModelError("");
     setModelMessage("");
-    setSelectedResult(null);
+    setRunFailed(false);
 
-    if (!form.url.trim() && !form.text.trim()) {
-      setModelError("Enter a URL, text, or both before running the model.");
+    const errors = validateReportForm(form);
+    setFieldErrors(errors);
+
+    const firstInvalid = FIELD_ORDER.find((key) => errors[key]);
+    if (firstInvalid) {
+      document.getElementById(FIELD_IDS[firstInvalid])?.focus();
       return;
     }
 
+    runBusyRef.current = true;
+    const controller = new AbortController();
+    runAbortRef.current = controller;
+    const { signal } = controller;
+
     const payload = buildModelPayload(form);
     const submittedAt = new Date();
+    setSelectedResult(null);
     setIsRunningModel(true);
+    setModelMessage("Submitting the request…");
 
     try {
       await postIngestionCore(payload);
-      setModelMessage("Core model request submitted. Waiting for output...");
+      if (signal.aborted) return;
 
-      const result = await pollForResult(payload, submittedAt);
+      setModelMessage("Request submitted. Waiting for the model output…");
+
+      const result = await pollForResult(
+        payload,
+        submittedAt,
+        signal,
+        (attempt) => {
+          if (!signal.aborted) {
+            setModelMessage(
+              `Waiting for the model output… (check ${attempt} of ${MAX_POLLS})`,
+            );
+          }
+        },
+      );
+      if (signal.aborted) return;
 
       if (!result) {
         setModelMessage(
@@ -368,24 +592,78 @@ function ReportsPage() {
       if (result.status === "error") {
         setModelError(result.note || "Core model returned an error.");
         setModelMessage("");
+        setRunFailed(true);
         return;
       }
 
       setModelMessage("Core model output received.");
     } catch (error) {
-      setModelError(error.message);
+      if (signal.aborted) return;
+
+      setModelMessage("");
+      setModelError(error?.message || "The request could not be completed.");
+      setRunFailed(true);
     } finally {
-      setIsRunningModel(false);
+      runBusyRef.current = false;
+      if (!signal.aborted) setIsRunningModel(false);
+    }
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    runModel();
+  };
+
+  useEffect(() => {
+    return () => {
+      pdfAbortRef.current?.abort();
+    };
+  }, []);
+
+  const handleDownloadPdf = async (report) => {
+    if (pdfBusyRef.current) return;
+    pdfBusyRef.current = true;
+
+    const controller = new AbortController();
+    pdfAbortRef.current = controller;
+
+    setPdfError("");
+    setFailedPdfReport(null);
+    setPdfProgress("Preparing the PDF…");
+    setDownloadingId(report.id);
+
+    try {
+      await downloadReportPdf(report, {
+        signal: controller.signal,
+        onProgress: (message) => {
+          if (!controller.signal.aborted) setPdfProgress(message);
+        },
+      });
+
+      if (!controller.signal.aborted) setPdfProgress("PDF downloaded.");
+    } catch (error) {
+      if (controller.signal.aborted || error?.name === "AbortError") return;
+
+      setPdfProgress("");
+      setPdfError(
+        "The PDF could not be generated. Your report details are unchanged, so you can try again.",
+      );
+      setFailedPdfReport(report);
+    } finally {
+      pdfBusyRef.current = false;
+      if (!controller.signal.aborted) setDownloadingId(null);
     }
   };
 
   const output = latestResult?.output || {};
   const riskLevel =
-    output.risk_level || (latestResult?.status === "error" ? "Error" : "Pending");
+    output.risk_level ||
+    (latestResult?.status === "error" ? "Error" : "Pending");
   const riskClass = getRiskClass(output.risk_level, latestResult?.status);
 
   return (
     <main className="reports-content">
+      <EvidenceEntry />
       <section className="url-ingestion-card">
         <div className="url-ingestion-header">
           <div>
@@ -398,31 +676,67 @@ function ReportsPage() {
           </span>
         </div>
 
-        <form className="url-ingestion-form" onSubmit={handleRunModel}>
+        <form
+          className="url-ingestion-form"
+          onSubmit={handleSubmit}
+          noValidate
+        >
+          {hasFieldErrors && (
+            <p className="ingestion-message error" role="alert">
+              Some details need attention. Fix the highlighted fields and try
+              again.
+            </p>
+          )}
+
           <div className="url-form-grid">
             <div className="url-form-group wide">
-              <label>URL</label>
+              <label htmlFor="reports-url-input">URL</label>
               <input
+                id="reports-url-input"
                 type="url"
                 placeholder="https://example.com/donate-now"
                 value={form.url}
                 onChange={updateField("url")}
+                aria-invalid={
+                  fieldErrors.url || fieldErrors.evidence ? "true" : undefined
+                }
+                aria-describedby={describedBy(
+                  fieldErrors.url && "reports-url-error",
+                  fieldErrors.evidence && "reports-evidence-error",
+                  modelError && "reports-model-error",
+                )}
               />
+              {fieldErrors.url && (
+                <p id="reports-url-error" className="field-error">
+                  {fieldErrors.url}
+                </p>
+              )}
             </div>
 
             <div className="url-form-group wide">
-              <label>Text</label>
+              <label htmlFor="reports-text-input">Text</label>
               <textarea
+                id="reports-text-input"
                 placeholder="Urgent flood relief donation needed."
                 value={form.text}
                 onChange={updateField("text")}
                 rows={4}
+                aria-invalid={fieldErrors.evidence ? "true" : undefined}
+                aria-describedby={describedBy(
+                  fieldErrors.evidence && "reports-evidence-error",
+                )}
               />
+              {fieldErrors.evidence && (
+                <p id="reports-evidence-error" className="field-error">
+                  {fieldErrors.evidence}
+                </p>
+              )}
             </div>
 
             <div className="url-form-group">
-              <label>Timestamp</label>
+              <label htmlFor="reports-timestamp-input">Timestamp</label>
               <input
+                id="reports-timestamp-input"
                 type="datetime-local"
                 value={form.timestamp}
                 onChange={updateField("timestamp")}
@@ -430,8 +744,9 @@ function ReportsPage() {
             </div>
 
             <div className="url-form-group">
-              <label>Source</label>
+              <label htmlFor="reports-source-input">Source</label>
               <input
+                id="reports-source-input"
                 type="text"
                 value={form.source}
                 onChange={updateField("source")}
@@ -447,8 +762,9 @@ function ReportsPage() {
 
             <div className="url-form-grid">
               <div className="url-form-group">
-                <label>Hazard Type</label>
+                <label htmlFor="reports-hazard-type-input">Hazard Type</label>
                 <input
+                  id="reports-hazard-type-input"
                   type="text"
                   value={form.hazardType}
                   onChange={updateField("hazardType")}
@@ -456,20 +772,35 @@ function ReportsPage() {
               </div>
 
               <div className="url-form-group">
-                <label>Hazard Severity</label>
+                <label htmlFor="reports-hazard-severity-input">
+                  Hazard Severity
+                </label>
                 <input
+                  id="reports-hazard-severity-input"
                   type="number"
                   min="0"
                   max="1"
                   step="0.01"
                   value={form.hazardSeverity}
                   onChange={updateField("hazardSeverity")}
+                  aria-invalid={fieldErrors.hazardSeverity ? "true" : undefined}
+                  aria-describedby={describedBy(
+                    fieldErrors.hazardSeverity && "reports-severity-error",
+                  )}
                 />
+                {fieldErrors.hazardSeverity && (
+                  <p id="reports-severity-error" className="field-error">
+                    {fieldErrors.hazardSeverity}
+                  </p>
+                )}
               </div>
 
               <div className="url-form-group">
-                <label>Hazard Timestamp</label>
+                <label htmlFor="reports-hazard-timestamp-input">
+                  Hazard Timestamp
+                </label>
                 <input
+                  id="reports-hazard-timestamp-input"
                   type="datetime-local"
                   value={form.hazardTimestamp}
                   onChange={updateField("hazardTimestamp")}
@@ -477,17 +808,37 @@ function ReportsPage() {
               </div>
 
               <div className="url-form-group">
-                <label>Hazard Location</label>
+                <label
+                  className="label-required"
+                  htmlFor="reports-hazard-location-input"
+                >
+                  Hazard Location
+                </label>
                 <input
+                  id="reports-hazard-location-input"
                   type="text"
                   value={form.hazardLocation}
                   onChange={updateField("hazardLocation")}
+                  aria-required="true"
+                  aria-invalid={fieldErrors.hazardLocation ? "true" : undefined}
+                  aria-describedby={describedBy(
+                    fieldErrors.hazardLocation && "reports-location-error",
+                    modelError && "reports-model-error",
+                  )}
                 />
+                {fieldErrors.hazardLocation && (
+                  <p id="reports-location-error" className="field-error">
+                    {fieldErrors.hazardLocation}
+                  </p>
+                )}
               </div>
 
               <div className="url-form-group">
-                <label>Hazard Status</label>
+                <label htmlFor="reports-hazard-status-input">
+                  Hazard Status
+                </label>
                 <input
+                  id="reports-hazard-status-input"
                   type="text"
                   value={form.hazardStatus}
                   onChange={updateField("hazardStatus")}
@@ -495,8 +846,9 @@ function ReportsPage() {
               </div>
 
               <div className="url-form-group">
-                <label>Alert Level</label>
+                <label htmlFor="reports-alert-level-input">Alert Level</label>
                 <select
+                  id="reports-alert-level-input"
                   value={form.alertLevel}
                   onChange={updateField("alertLevel")}
                 >
@@ -510,19 +862,43 @@ function ReportsPage() {
             </div>
           </div>
 
-          {modelError && <p className="ingestion-message error">{modelError}</p>}
+          {modelError && (
+            <div
+              id="reports-model-error"
+              className="ingestion-message error reports-run-error"
+              role="alert"
+            >
+              <span>{modelError}</span>
+              {runFailed && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={isRunningModel}
+                  onClick={runModel}
+                >
+                  Retry
+                </button>
+              )}
+            </div>
+          )}
 
           {modelMessage && (
-            <p className="ingestion-message success">{modelMessage}</p>
+            <p className="ingestion-message success" role="status">
+              {modelMessage}
+            </p>
           )}
 
           <div className="url-action-row">
-            <button className="primary-btn" type="submit" disabled={isRunningModel}>
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={isRunningModel}
+            >
               {isRunningModel ? "Checking..." : "Check Risk"}
             </button>
 
             <button
-              className="secondary-btn"
+              className="btn btn-secondary"
               type="button"
               disabled={isLoadingIntegrations || isRunningModel}
               onClick={handleRefreshResults}
@@ -531,7 +907,7 @@ function ReportsPage() {
             </button>
           </div>
         </form>
-      </section>
+         </section>
 
       {latestResult && (
         <section className="model-output-card">
@@ -557,12 +933,12 @@ function ReportsPage() {
 
             <div className="score-tile">
               <span>Predicted Class</span>
-              <strong>{output.predicted_class ?? "-"}</strong>
+              <strong>{displayText(output.predicted_class)}</strong>
             </div>
 
             <div className="score-tile">
               <span>Status</span>
-              <strong>{latestResult.status || "-"}</strong>
+              <strong>{displayText(latestResult.status)}</strong>
             </div>
           </div>
 
@@ -579,7 +955,13 @@ function ReportsPage() {
       <section className="core-results-card">
         <div className="generated-reports-header">
           <div>
-            <h2>Last Core Model Test</h2>
+            <h2
+              id={CORE_INTEGRATION_RESULTS_ID}
+              ref={coreResultsHeadingRef}
+              tabIndex={-1}
+            >
+              Last Core Model Test
+            </h2>
             <p>Newest backend core model integration record.</p>
           </div>
         </div>
@@ -594,15 +976,51 @@ function ReportsPage() {
             <span>Processed</span>
           </div>
 
-          {displayedIntegrations.length > 0 ? (
-            displayedIntegrations.map((integration) => (
+          {isLoadingIntegrations ? (
+            <LoadingState
+              title="Loading core model results…"
+              description="Fetching the latest integration results from the Phoenix API."
+            />
+          ) : integrationsError === "auth" ? (
+            <AuthenticationState
+              title="Sign in required"
+              description="Please sign in before loading integration results."
+              onAction={() => navigate("/login")}
+            />
+          ) : integrationsError === "forbidden" ? (
+            <ErrorState
+              title="Access denied"
+              description="Your account cannot access these integration results."
+            />
+          ) : integrationsError === "notfound" || integrationsError === "empty" ? (
+            <EmptyState
+              title="Core model results unavailable"
+              description="The Phoenix API did not return usable integration results."
+              actionLabel="Retry"
+              onAction={handleRefreshResults}
+            />
+          ) : integrationsError ? (
+            <ErrorState
+              title="Could not load core model results"
+              description="Integration results could not be loaded. Please try again."
+              onRetry={handleRefreshResults}
+            />
+          ) : displayedIntegrations.length > 0 ? (
+            displayedIntegrations.map((integration, index) => (
               <div
                 className="core-results-row"
-                key={integration.integration_event_id}
+                key={integration.integration_event_id || `core-result-${index}`}
               >
                 <div className="core-input-cell">
                   <strong>{integration.input?.url || "Text only"}</strong>
                   <small>{integration.input?.text || "No text supplied"}</small>
+                  {safeTrim(integration.integration_event_id) ? (
+                    <Link to={integrationPath(integration.integration_event_id)}>
+                      View integration details
+                    </Link>
+                  ) : (
+                    <small>Details unavailable: no integration record ID.</small>
+                  )}
                 </div>
                 <span
                   className={`risk-badge ${getRiskClass(
@@ -615,16 +1033,17 @@ function ReportsPage() {
                 </span>
                 <span>{formatScore(integration.output?.risk_score)}</span>
                 <span>{formatScore(integration.output?.confidence_score)}</span>
-                <span>{integration.status || "-"}</span>
-                <span>{formatDateTime(integration.output?.processed_at)}</span>
+                <span>{displayText(integration.status)}</span>
+                <span>
+                  {formatUserDateTime(integration.output?.processed_at, dateFormat)}
+                </span>
               </div>
             ))
           ) : (
-            <div className="core-results-empty">
-              {isLoadingIntegrations
-                ? "Loading core model results..."
-                : "No core model test returned yet."}
-            </div>
+            <EmptyState
+              title="No core model results"
+              description="No core model test returned yet."
+            />
           )}
         </div>
       </section>
@@ -634,22 +1053,72 @@ function ReportsPage() {
           <div>
             <h2>Generated Verification Reports</h2>
             <p>
-              Downloadable report generated from the latest backend core model record.
+              Browse every distinct core model result. View a summary here,
+              open the full record, or export it as a PDF report.
             </p>
           </div>
         </div>
 
+                <p className="reports-pdf-status" role="status">
+          {pdfProgress}
+        </p>
+
+        {pdfError && (
+          <div className="ingestion-message error reports-pdf-message" role="alert">
+            <span>{pdfError}</span>
+            {failedPdfReport && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={downloadingId !== null}
+                onClick={() => handleDownloadPdf(failedPdfReport)}
+              >
+                Retry download
+              </button>
+            )}
+          </div>
+        )}
+        
         <div className="reports-table">
           <div className="reports-table-head">
             <span>Evidence</span>
-            <span>Input Type</span>
+            <span>Category</span>
             <span>Risk Level</span>
             <span>Status</span>
             <span>Processed</span>
             <span>Action</span>
           </div>
 
-          {generatedReports.length > 0 ? (
+          {isLoadingIntegrations ? (
+            <LoadingState
+              title="Loading reports…"
+              description="Fetching backend core model records from the Phoenix API."
+            />
+          ) : integrationsError === "auth" ? (
+            <AuthenticationState
+              title="Sign in required"
+              description="Please sign in before loading reports."
+              onAction={() => navigate("/login")}
+            />
+          ) : integrationsError === "forbidden" ? (
+            <ErrorState
+              title="Access denied"
+              description="Your account cannot access these reports."
+            />
+          ) : integrationsError === "notfound" || integrationsError === "empty" ? (
+            <EmptyState
+              title="Reports unavailable"
+              description="The Phoenix API did not return usable report records."
+              actionLabel="Retry"
+              onAction={handleRefreshResults}
+            />
+          ) : integrationsError ? (
+            <ErrorState
+              title="Could not load reports"
+              description="Reports could not be loaded. Please try again."
+              onRetry={handleRefreshResults}
+            />
+          ) : generatedReports.length > 0 ? (
             generatedReports.map((report) => (
               <div className="reports-row" key={report.id}>
                 <div className="report-title-cell">
@@ -664,23 +1133,30 @@ function ReportsPage() {
                 </span>
 
                 <span>{report.status}</span>
-                <span>{report.date}</span>
+                <span>{report.displayDate}</span>
 
-                <PDFDownloadLink
-                  document={<ReportPDF report={report} />}
-                  fileName={report.fileName}
-                  className="download-button"
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={downloadingId !== null}
+                  onClick={() => handleDownloadPdf(report)}
                 >
-                  {({ loading }) => (loading ? "Generating PDF" : "Download")}
-                </PDFDownloadLink>
+                  {downloadingId === report.id ? "Generating PDF" : "Download"}
+                </button>
               </div>
             ))
+          ) : allReports.length > 0 ? (
+            <EmptyState
+              title="No reports match your filters"
+              description="Try a different search term or risk level."
+              actionLabel="Clear filters"
+              onAction={clearReportFilters}
+            />
           ) : (
-            <div className="reports-empty">
-              {isLoadingIntegrations
-                ? "Loading backend core model records..."
-                : "No core model records returned yet."}
-            </div>
+            <EmptyState
+              title="No reports yet"
+              description="Run the URL/Text Risk Check above to generate your first report."
+            />
           )}
         </div>
       </section>

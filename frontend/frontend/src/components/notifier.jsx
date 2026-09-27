@@ -1,182 +1,92 @@
-import { useState } from "react";
-import "./notifier.css";
+import { useMemo } from "react";
+import NotificationList from "./NotificationList";
+import NotificationControls from "./NotificationControls";
+import useNotificationFeed from "./useNotificationFeed";
+import useNotificationQueryState from "./useNotificationQueryState";
+import { createApiNotificationProvider } from "../services/notificationApiProvider";
+import { createMockNotificationProvider } from "../services/mockNotificationProvider";
+import { NOTIFICATION_USE_MOCK } from "../config/environment";
 
 // ---------------------------------------------------------------------------
-// Frontend demonstration data.
-// The panel no longer depends on a hard-coded local notification server.
-// When a backend notification endpoint exists, replace DEMO_NOTIFICATIONS
-// with data fetched through services/phoenixApi.js.
+// Wiring only: choose a provider, own the filter state, hand both to the list.
+//
+// Everything the panel renders lives in NotificationList, which takes records
+// and callbacks and imports no API module. Search, read filter and page size
+// live in useNotificationQueryState, which keeps them in the URL. This file
+// composes the three, so a caller can pass its own provider or its own filters
+// and get the same panel against any data source.
 // ---------------------------------------------------------------------------
-const DEMO_NOTIFICATIONS = [
-  {
-    id: "demo-phishing-001",
-    title: "Phishing Attempt",
-    description: "Donation link phishing attack at www.example.com.",
-    severity: "High",
-    time: "10 minutes ago",
-    read: false,
-  },
-  {
-    id: "demo-donation-002",
-    title: "Fraudulent Donation Link",
-    description: "www.example.com contains fraudulent activity.",
-    severity: "Critical",
-    time: "1 hour ago",
-    read: false,
-  },
-  {
-    id: "demo-misinfo-003",
-    title: "Misinformation Alert",
-    description: "Misinformation is spreading about a fire in 'x' city.",
-    severity: "Medium",
-    time: "3 hours ago",
-    read: false,
-  },
-  {
-    id: "demo-footage-004",
-    title: "AI Generated Footage",
-    description:
-      "Manipulated footage of a fictional house fire, accompanied by a spam donation link.",
-    severity: "Medium",
-    time: "Yesterday",
-    read: true,
-  },
-];
 
-export default function NotificationPanel({ onClose }) {
-  const [notifications, setNotifications] = useState(DEMO_NOTIFICATIONS);
-  const [selected, setSelected] = useState(null);
-  const [toastMessage, setToastMessage] = useState("");
+// Search is filtered in the browser, over the notifications already loaded. The
+// gateway accepts no search parameter, so the box is kept off until it does
+// rather than implying it searches everything on the server.
+export const NOTIFICATION_SEARCH_ENABLED = false;
 
-  const unreadCount = notifications.filter((item) => !item.read).length;
+export default function NotificationPanel({
+  onClose,
+  onSignIn,
+  // Supplying filters takes over from the panel's own URL-backed controls,
+  // which is how a host that already has search controls drives the list.
+  filters: injectedFilters = null,
+  // Escape hatch for the component showcase, tests, and demos.
+  provider: injectedProvider = null,
+}) {
+  const provider = useMemo(
+    () =>
+      injectedProvider ||
+      (NOTIFICATION_USE_MOCK
+        ? createMockNotificationProvider()
+        : createApiNotificationProvider()),
+    [injectedProvider],
+  );
 
-  // Show a short-lived confirmation message.
-  function showToast(message) {
-    setToastMessage(message);
-    setTimeout(() => setToastMessage(""), 3000);
-  }
+  const {
+    notifications,
+    status,
+    error,
+    actions,
+    refresh,
+    retry,
+    provider: providerInfo,
+  } = useNotificationFeed({ provider });
 
-  // Selecting a notification marks it as read and opens the confirmation modal.
-  function handleSelect(notification) {
-    setNotifications(
-      notifications.map((item) =>
-        item.id === notification.id ? { ...item, read: true } : item
-      )
-    );
-    setSelected(notification);
-  }
+  const queryState = useNotificationQueryState();
 
-  function handleDismiss(id) {
-    setNotifications(notifications.filter((item) => item.id !== id));
-    showToast("Notification dismissed");
-  }
+  const ownFilters = useMemo(
+    () => ({ query: queryState.search, read: queryState.read }),
+    [queryState.search, queryState.read],
+  );
 
-  function handleClearAll() {
-    setNotifications([]);
-    showToast("All notifications cleared");
-  }
-
-  // No alert is sent anywhere. This only prepares a demonstration alert.
-  function handleConfirm() {
-    setSelected(null);
-    showToast("Demo alert prepared - no real alert was sent");
-  }
+  const filters = injectedFilters ?? ownFilters;
 
   return (
-    <div className="notif-panel" role="dialog" aria-label="Notifications">
-      <div className="notif-header">
-        <h3 className="notif-heading">
-          Notifications
-          {unreadCount > 0 && (
-            <span className="notif-count">{unreadCount} unread</span>
-          )}
-        </h3>
-        <div className="notif-header-actions">
-          <span className="demo-badge">Demo data</span>
-          {onClose && (
-            <button
-              className="notif-close"
-              onClick={onClose}
-              aria-label="Close notifications"
-            >
-              &times;
-            </button>
-          )}
-        </div>
-      </div>
-
-      {notifications.length === 0 ? (
-        <p className="notif-empty">No notifications.</p>
-      ) : (
-        <ul className="notif-list">
-          {notifications.map((item) => (
-            <li
-              key={item.id}
-              className={`notif-item ${item.read ? "read" : "unread"} ${
-                selected && selected.id === item.id ? "selected" : ""
-              }`}
-            >
-              <button
-                className="notif-item-main"
-                onClick={() => handleSelect(item)}
-              >
-                <span className="notif-title">
-                  {!item.read && <span className="notif-dot" aria-hidden="true" />}
-                  {item.title}
-                  <span className="demo-badge small">Demo</span>
-                </span>
-                <p className="notif-description">{item.description}</p>
-                <span className="notif-meta">
-                  {item.severity} &middot; {item.time}
-                </span>
-              </button>
-              <button
-                className="notif-dismiss"
-                onClick={() => handleDismiss(item.id)}
-                aria-label={`Dismiss ${item.title}`}
-              >
-                &times;
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {notifications.length > 0 && (
-        <button className="notif-clear" onClick={handleClearAll}>
-          Clear all
-        </button>
-      )}
-
-      {selected && (
-        <div className="notif-modal-backdrop">
-          <div className="notif-modal" role="dialog" aria-modal="true">
-            <h4 className="notif-modal-title">Prepare demo alert</h4>
-            <p className="notif-modal-body">{selected.title}</p>
-            <p className="notif-modal-note">
-              This is demonstration data. No alert will be sent to any real
-              recipient.
-            </p>
-            <div className="notif-modal-actions">
-              <button
-                className="notif-btn-secondary"
-                onClick={() => setSelected(null)}
-              >
-                Cancel
-              </button>
-              <button className="notif-btn-primary" onClick={handleConfirm}>
-                Prepare demo alert
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {toastMessage && (
-        <div className="notif-toast" role="status">
-          {toastMessage}
-        </div>
-      )}
-    </div>
+    <NotificationList
+      notifications={notifications}
+      status={status}
+      error={error}
+      provider={providerInfo}
+      actions={actions}
+      filters={filters}
+      pagination={{
+        page: queryState.page,
+        limit: queryState.limit,
+        onPageChange: queryState.changePage,
+      }}
+      controls={
+        <NotificationControls
+          searchEnabled={NOTIFICATION_SEARCH_ENABLED}
+          searchValue={queryState.searchInput}
+          onSearchChange={queryState.changeSearch}
+          read={queryState.read}
+          onReadChange={queryState.changeRead}
+          limit={queryState.limit}
+          onLimitChange={queryState.changeLimit}
+        />
+      }
+      onRefresh={refresh}
+      onRetry={retry}
+      onSignIn={onSignIn}
+      onClose={onClose}
+    />
   );
 }

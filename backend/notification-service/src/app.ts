@@ -4,11 +4,7 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import dotenv from "dotenv";
 import { notificationHandler } from "./grpc/notification.handler";
-import { config, initDatabase } from "@phoenix/common";
-import { logger } from "@phoenix/common";
-import { connectNotificationRabbitMQ } from "./rabbitmq/notification-connection";
-import { startNotificationConsumer } from "./rabbitmq/notification-consumer";
-import { createNotificationEventProcessor } from "./services/notification.service";
+import { config, initDatabase, logger } from "@phoenix/common";
 
 dotenv.config();
 
@@ -33,48 +29,32 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const grpcObject = grpc.loadPackageDefinition(packageDefinition) as any;
 const notificationPackage = grpcObject.notification;
 
-const startGrpcServer = (): grpc.Server => {
-  const server = new grpc.Server();
-
-  server.addService(
-    notificationPackage.NotificationService.service,
-    notificationHandler,
-  );
-
-  server.bindAsync(
-    `0.0.0.0:${config.NOTIFICATION_SERVICE_PORT}`,
-    grpc.ServerCredentials.createInsecure(),
-    (error, boundPort) => {
-      if (error) {
-        console.error("Failed to start notification-service:", error);
-        return;
-      }
-
-      console.log(`Notification service gRPC running on port ${boundPort}`);
-    },
-  );
-
-  return server;
-};
-
-const startNotificationService = async (): Promise<void> => {
+const startGrpcServer = async (): Promise<void> => {
   try {
-    const rabbitMQUrl = process.env.RABBITMQ_URL;
-    if (!rabbitMQUrl) {
-      throw new Error("RABBITMQ_URL is required");
-    }
-
     await initDatabase();
-    const { channel } = await connectNotificationRabbitMQ(rabbitMQUrl);
-    await startNotificationConsumer(
-      channel,
-      createNotificationEventProcessor(channel),
+
+    const server = new grpc.Server();
+    server.addService(
+      notificationPackage.NotificationService.service,
+      notificationHandler,
     );
-    startGrpcServer();
+
+    server.bindAsync(
+      `0.0.0.0:${config.NOTIFICATION_SERVICE_PORT}`,
+      grpc.ServerCredentials.createInsecure(),
+      (error, boundPort) => {
+        if (error) {
+          logger.error(`Failed to start notification-service: ${error}`);
+          return;
+        }
+
+        logger.info(`Notification service gRPC running on port ${boundPort}`);
+      },
+    );
   } catch (error) {
-    logger.error(`Notification service startup failed: ${error}`);
-    process.exitCode = 1;
+    logger.error(`Failed to initialize notification-service: ${error}`);
+    process.exit(1);
   }
 };
 
-void startNotificationService();
+startGrpcServer();

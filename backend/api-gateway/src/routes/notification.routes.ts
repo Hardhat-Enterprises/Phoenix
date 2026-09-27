@@ -1,11 +1,7 @@
 import { Router } from "express";
 import {
-  getHealth,
-  getNotifications,
-  getUnreadCount,
-  markAsRead,
-  markAllAsRead,
-  deleteNotification,
+    getHealth,
+    getNotifications,
 } from "../controllers/notification.controller";
 import { authenticate, authorize } from "../middleware/auth.middleware";
 import {
@@ -145,158 +141,60 @@ router.get("/", authenticate, validatePagination, validateReadStatusFilter, getN
  * @swagger
  * /api/notifications/unread-count:
  *   get:
- *     summary: Get unread notification count
- *     description: Retrieves the count of unread notifications for the authenticated user.
+ *     summary: Search and filter notifications
+ *     description: Returns a paginated notification list derived from Phoenix hazard and cyber-threat records. Results are sorted deterministically by created_at descending, then event_type and id.
  *     tags:
  *       - Notifications
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Unread count retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: integer
- *                   example: 200
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     unreadCount:
- *                       type: integer
- *       401:
- *         description: Unauthorized - no valid token provided
- *       500:
- *         description: Internal server error
- */
-router.get("/unread-count", authenticate, getUnreadCount);
-
-/**
- * @swagger
- * /api/notifications/{notificationId}/read:
- *   patch:
- *     summary: Mark notification as read
- *     description: Marks a single notification as read for the authenticated user.
- *     tags:
- *       - Notifications
- *     security:
- *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: notificationId
- *         required: true
+ *       - in: query
+ *         name: keyword
  *         schema:
  *           type: string
- *           format: uuid
- *         description: The notification ID to mark as read
- *     responses:
- *       200:
- *         description: Notification marked as read successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: integer
- *                   example: 200
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     notification:
- *                       type: object
- *       400:
- *         description: Bad request - notification ID is required
- *       401:
- *         description: Unauthorized - no valid token provided
- *       404:
- *         description: Notification not found
- *       500:
- *         description: Internal server error
- */
-router.patch("/:notificationId/read", authenticate, markAsRead);
-
-/**
- * @swagger
- * /api/notifications/read-all:
- *   patch:
- *     summary: Mark all notifications as read
- *     description: Marks all unread notifications as read for the authenticated user.
- *     tags:
- *       - Notifications
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: All notifications marked as read successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: integer
- *                   example: 200
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     updatedCount:
- *                       type: integer
- *       401:
- *         description: Unauthorized - no valid token provided
- *       500:
- *         description: Internal server error
- */
-router.patch("/read-all", authenticate, markAllAsRead);
-
-/**
- * @swagger
- * /api/notifications/{notificationId}:
- *   delete:
- *     summary: Delete a notification
- *     description: Deletes a notification for the authenticated user. Only the notification owner can delete it.
- *     tags:
- *       - Notifications
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: notificationId
- *         required: true
+ *         description: Case-insensitive keyword search across notification content.
+ *       - in: query
+ *         name: severity
  *         schema:
  *           type: string
- *           format: uuid
- *         description: The notification ID to delete
+ *           enum: [low, medium, high, critical]
+ *         description: Filter by normalized severity.
+ *       - in: query
+ *         name: event_type
+ *         schema:
+ *           type: string
+ *           enum: [hazard, cyber]
+ *         description: Filter by the source event type.
+ *       - in: query
+ *         name: date_from
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Inclusive start date/date-time in ISO-8601 format.
+ *       - in: query
+ *         name: date_to
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Inclusive end date/date-time in ISO-8601 format.
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
  *     responses:
  *       200:
- *         description: Notification deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: integer
- *                   example: 200
- *                 message:
- *                   type: string
+ *         description: Notifications fetched successfully.
  *       400:
- *         description: Bad request - notification ID is required
- *       401:
- *         description: Unauthorized - no valid token provided
- *       404:
- *         description: Notification not found
+ *         description: Invalid filter or pagination value.
  *       500:
- *         description: Internal server error
+ *         description: Notification service or database error.
  */
 router.delete("/:notificationId", authenticate, deleteNotification);
 

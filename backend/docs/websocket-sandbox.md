@@ -641,6 +641,88 @@ repeatable. Scenarios 2 and 3 are verified with captured output; the remaining
 ten have a written procedure and need only a login to execute.
 
 ---
+---
+
+## 12. Update — verification with a test account (27 September, 23:20)
+
+Admin credentials from the Frontend Handover Document (`admin1`) were used to
+re-run verification. Results change the status of four scenarios.
+
+### Verified
+
+| # | Scenario | Result |
+|---|---|---|
+| 1 | Valid authentication | **Verified.** `POST /api/users/auth/login` with `{username, password}` returns `access_token`. Sending `{"type":"authenticate","token":"Bearer <redacted>"}` returns `{"type":"notification:authenticated"}`. |
+| 2 | Invalid authentication | Verified (section 8.1) |
+| 3 | Authentication timeout | Verified (section 8.1) |
+
+### Failed — backend defect
+
+| # | Scenario | Result |
+|---|---|---|
+| 4 | Initial snapshot | **Fails.** The socket authenticates, then receives `{"type":"error","message":"Unable to retrieve notifications"}` instead of a snapshot. |
+
+Captured output:
+
+```
+user_id: 6ff7f377-…
+open — sending authenticate
+received: {"type":"notification:authenticated"}
+received: {"type":"error","message":"Unable to retrieve notifications"}
+```
+
+Scenarios 5 through 12 could not be reached, because every one of them depends
+on a working snapshot.
+
+### 12.1 Root cause
+
+`notification-service` fails during startup:
+
+```
+[info]  Notification service connected to RabbitMQ
+[error] Notification service startup failed: Error: Missing value for mandatory field 'exchange'
+```
+
+Its gRPC server therefore never listens, and the gateway reports:
+
+```
+[error] Unable to retrieve notification WebSocket snapshot:
+        Error: 14 UNAVAILABLE: No connection established.
+        Last error: connect ECONNREFUSED 172.19.0.6:50052
+```
+
+**The container still reports as `Up`.** The Node process is alive; only the
+startup routine failed. `docker compose ps` therefore shows a healthy-looking
+stack while the notification path is entirely dead — which is why this has gone
+unnoticed.
+
+The error comes from amqplib and means an exchange name was `undefined` when a
+frame was encoded. It is not the declared topology: every value in
+`notification-service/src/rabbitmq/notification-topology.ts` has a fallback, and
+all constants in `libs/common/src/rabbitmq/notification-event.ts`
+(`NOTIFICATION_EXCHANGE`, `NOTIFICATION_QUEUE`, `NOTIFICATION_QUEUE_BINDING`)
+are defined. The undefined value originates elsewhere in the startup path and
+needs the notification-service owner to trace.
+
+### 12.2 Impact
+
+Until this is fixed, the notification WebSocket returns no data to anyone. That
+blocks every frontend notification task this sprint — the WebSocket client,
+unread counts, pagination and read filtering, error handling, and the data
+adapter — because none of them can be exercised against real snapshot or
+broadcast traffic.
+
+The authentication half of the socket works correctly and can be developed
+against now: connection, `authenticate`, `notification:authenticated`, the
+10-second timeout, close code 1008 and every error message in section 7.2 are
+all verified working.
+
+### 12.3 Recommended next step
+
+Owner: notification-service. Reproduce with
+`docker logs notification-service`, which shows the failure two lines after
+"connected to RabbitMQ". A service that fails startup should also exit
+non-zero so `docker compose ps` reports it, rather than appearing healthy.
 
 ## Appendix A — Evidence captured
 

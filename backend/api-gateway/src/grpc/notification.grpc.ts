@@ -4,13 +4,11 @@ import { logger } from "@phoenix/common";
 import path from "path";
 import fs from "fs";
 
-const distPath = path.resolve(
-  process.cwd(),
-  "dist/libs/proto/notification.proto",
-);
+const distPath = path.resolve(process.cwd(), "dist/libs/proto/notification.proto");
 const devPath = path.resolve(process.cwd(), "libs/proto/notification.proto");
 const PROTO_PATH = fs.existsSync(distPath) ? distPath : devPath;
 logger.info(`Loading gRPC proto file from: ${PROTO_PATH}`);
+
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -28,24 +26,40 @@ const grpcObject = grpc.loadPackageDefinition(packageDefinition) as unknown as {
   };
 };
 
-export interface GetNotificationHealthRequest {}
+export interface GetNotificationHealthRequest { }
+
 export interface GetNotificationHealthResponse {
   status: number;
   message: string;
 }
 
-export interface GetNotificationsRequest {}
+export interface GetNotificationsRequest {
+  keyword: string;
+  severity: string;
+  event_type: string;
+  date_from: string;
+  date_to: string;
+  page: number;
+  limit: number;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  body: string;
+  recipient: string;
+  severity: string;
+  event_type: string;
+  created_at: string;
+}
+
 export interface GetNotificationsResponse {
   status: number;
   message: string;
-  notifications: [
-    {
-      id: string;
-      title: string;
-      body: string;
-      recipient: string;
-    },
-  ];
+  notifications: Notification[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface NotificationServiceClient {
@@ -56,6 +70,7 @@ export interface NotificationServiceClient {
       response: GetNotificationHealthResponse,
     ) => void,
   ): void;
+
   GetNotifications(
     request: GetNotificationsRequest,
     callback: (

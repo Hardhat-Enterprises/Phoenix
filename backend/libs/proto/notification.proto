@@ -16,12 +16,22 @@ message GetNotificationHealthResponse {
 }
 
 message GetNotificationsRequest {
+    string keyword = 1;
+    string severity = 2;
+    string event_type = 3;
+    string date_from = 4;
+    string date_to = 5;
+    int32 page = 6;
+    int32 limit = 7;
 }
 
 message GetNotificationsResponse {
     int32 status = 1;
     string message = 2;
     repeated Notification notifications = 3;
+    int32 total = 4;
+    int32 page = 5;
+    int32 limit = 6;
 }
 
 message Notification {
@@ -29,4 +39,7 @@ message Notification {
     string title = 2;
     string body = 3;
     string recipient = 4;
+    string severity = 5;
+    string event_type = 6;
+    string created_at = 7;
 }

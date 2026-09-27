@@ -3,7 +3,7 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import dotenv from "dotenv";
 import { notificationHandler } from "./grpc/notification.handler";
-import { config } from "@phoenix/common";
+import { config, initDatabase, logger } from "@phoenix/common";
 
 dotenv.config();
 
@@ -20,26 +20,32 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const grpcObject = grpc.loadPackageDefinition(packageDefinition) as any;
 const notificationPackage = grpcObject.notification;
 
-const startGrpcServer = () => {
-  const server = new grpc.Server();
+const startGrpcServer = async (): Promise<void> => {
+  try {
+    await initDatabase();
 
-  server.addService(
-    notificationPackage.NotificationService.service,
-    notificationHandler,
-  );
+    const server = new grpc.Server();
+    server.addService(
+      notificationPackage.NotificationService.service,
+      notificationHandler,
+    );
 
-  server.bindAsync(
-    `0.0.0.0:${config.NOTIFICATION_SERVICE_PORT}`,
-    grpc.ServerCredentials.createInsecure(),
-    (error, boundPort) => {
-      if (error) {
-        console.error("Failed to start notification-service:", error);
-        return;
-      }
+    server.bindAsync(
+      `0.0.0.0:${config.NOTIFICATION_SERVICE_PORT}`,
+      grpc.ServerCredentials.createInsecure(),
+      (error, boundPort) => {
+        if (error) {
+          logger.error(`Failed to start notification-service: ${error}`);
+          return;
+        }
 
-      console.log(`Notification service gRPC running on port ${boundPort}`);
-    },
-  );
+        logger.info(`Notification service gRPC running on port ${boundPort}`);
+      },
+    );
+  } catch (error) {
+    logger.error(`Failed to initialize notification-service: ${error}`);
+    process.exit(1);
+  }
 };
 
 startGrpcServer();

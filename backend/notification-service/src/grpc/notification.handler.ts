@@ -11,7 +11,7 @@ export const notificationHandler = {
   ) => {
     try {
       const response = getHealth(call.request);
-      logger.info(`Notification service GetHealth response:${response}`);
+      logger.info(`Notification service GetHealth response: ${response.message}`);
       callback(null, response);
     } catch (error) {
       callback({
@@ -20,13 +20,16 @@ export const notificationHandler = {
       });
     }
   },
-  GetNotifications: (
+
+  GetNotifications: async (
     call: ServerUnaryCall<GetNotificationsDto, GetNotificationsEntity>,
     callback: sendUnaryData<GetNotificationsEntity>,
   ) => {
     try {
-      const response = getNotifications(call.request);
-      logger.info(`Notification service GetNotifications response:${response}`);
+      const response = await getNotifications(call.request);
+      logger.info(
+        `Notification service GetNotifications status=${response.status}, total=${response.total}`,
+      );
       callback(null, response);
     } catch (error) {
       callback({

@@ -5,6 +5,7 @@ COPY package*.json ./
 COPY tsconfig.json ./
 COPY tsconfig.runtime.json ./
 
+RUN npm install -g @dotenvx/dotenvx
 
 COPY . .
 

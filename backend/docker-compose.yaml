@@ -91,13 +91,8 @@ services:
       context: ./
       dockerfile: notification-service/Dockerfile
     container_name: notification-service
-    ports:
-      - "50052:50052"
     env_file:
       - .env.docker
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+    ports:
+      - "50052:50052"
     command: sh -c "node -r tsconfig-paths/register dist/notification-service/src/app.js"

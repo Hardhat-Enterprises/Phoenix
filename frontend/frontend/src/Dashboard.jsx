@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { integrationPath, threatPath } from "./config/routes";
+import { safeTrim } from "./utils/textUtils";
 import {
+
   getApiHealth,
   getDashboardActivity,
   getDashboardCharts,
@@ -11,7 +15,12 @@ import {
   getThreats,
   postIngestionAnomaly,
 } from "./services/phoenixApi";
+import { LoadingState, ErrorState, EmptyState } from "./components/States";
+import { ANOMALY_DETECTION_ENABLED } from "./config/environment";
+import { usePreferences } from "./PreferencesContext";
+import { formatDisplayDate } from "./displayDate";
 import "./Dashboard.css";
+import "./dashboard-anomaly-styles.css";
 
 const formatLabel = (value) =>
   String(value || "Unknown")
@@ -21,8 +30,10 @@ const formatLabel = (value) =>
 const severityClassFor = (value) => {
   const normalized = String(value || "").toLowerCase();
 
-  if (normalized.includes("critical") || normalized.includes("high")) return "unsafe";
-  if (normalized.includes("medium") || normalized.includes("investigating")) return "unverified";
+  if (normalized.includes("critical") || normalized.includes("high"))
+    return "unsafe";
+  if (normalized.includes("medium") || normalized.includes("investigating"))
+    return "unverified";
   return "safe";
 };
 
@@ -35,17 +46,6 @@ const DEFAULT_MAP_BOUNDS = {
 
 const DEFAULT_MAP_ZOOM = 4;
 const OSM_TILE_URL = "https://tile.openstreetmap.org";
-
-const STATE_LOCATION_FALLBACKS = {
-  ACT: { label: "Australian Capital Territory", latitude: -35.2809, longitude: 149.13 },
-  NSW: { label: "New South Wales", latitude: -33.8688, longitude: 151.2093 },
-  NT: { label: "Northern Territory", latitude: -12.4634, longitude: 130.8456 },
-  QLD: { label: "Queensland", latitude: -27.4698, longitude: 153.0251 },
-  SA: { label: "South Australia", latitude: -34.9285, longitude: 138.6007 },
-  TAS: { label: "Tasmania", latitude: -42.8821, longitude: 147.3272 },
-  VIC: { label: "Victoria", latitude: -37.8136, longitude: 144.9631 },
-  WA: { label: "Western Australia", latitude: -31.9523, longitude: 115.8613 },
-};
 
 const STATE_ALIASES = {
   ACT: ["act", "australian capital territory", "canberra"],
@@ -116,9 +116,7 @@ const latitudeToTileY = (latitude, zoom) => {
 
   return (
     ((1 -
-      Math.log(
-        Math.tan(latitudeRadians) + 1 / Math.cos(latitudeRadians),
-      ) /
+      Math.log(Math.tan(latitudeRadians) + 1 / Math.cos(latitudeRadians)) /
         Math.PI) /
       2) *
     2 ** zoom
@@ -251,11 +249,7 @@ const stateCodeFor = (value) => {
 };
 
 const getLocationLabel = (location) =>
-  [
-    location?.suburb,
-    location?.local_government_area,
-    location?.state_region,
-  ]
+  [location?.suburb, location?.local_government_area, location?.state_region]
     .filter(Boolean)
     .join(", ");
 
@@ -288,9 +282,9 @@ const locationMatchesHazard = (location, hazardLocation, hazard) => {
 
   return Boolean(
     stateCode &&
-      candidates.some((candidate) =>
-        STATE_ALIASES[stateCode].includes(candidate),
-      ),
+    candidates.some((candidate) =>
+      STATE_ALIASES[stateCode].includes(candidate),
+    ),
   );
 };
 
@@ -315,30 +309,24 @@ const findHazardCoordinates = (hazard, locations) => {
     hazard.state_region ||
     hazard.suburb ||
     "";
+
   const matchedLocation = locations.find((location) =>
     locationMatchesHazard(location, hazardLocation, hazard),
   );
 
   if (matchedLocation) {
-    return {
-      latitude: readNumber(matchedLocation.latitude),
-      longitude: readNumber(matchedLocation.longitude),
-      label: getLocationLabel(matchedLocation) || hazardLocation,
-      source: "Backend location",
-      isApproximate: false,
-    };
-  }
+    const latitude = readNumber(matchedLocation.latitude);
+    const longitude = readNumber(matchedLocation.longitude);
 
-  const fallback = STATE_LOCATION_FALLBACKS[stateCodeFor(hazardLocation)];
-
-  if (fallback) {
-    return {
-      latitude: fallback.latitude,
-      longitude: fallback.longitude,
-      label: hazardLocation || fallback.label,
-      source: "Approximate from backend location",
-      isApproximate: true,
-    };
+    if (latitude !== null && longitude !== null) {
+      return {
+        latitude,
+        longitude,
+        label: getLocationLabel(matchedLocation) || hazardLocation,
+        source: "Backend location",
+        isApproximate: false,
+      };
+    }
   }
 
   return null;
@@ -377,8 +365,7 @@ const buildRiskMapPoints = (hazards, locations) =>
         tone: severityRankFor(severity),
       };
     })
-    .filter(Boolean)
-    .slice(0, 8);
+    .filter(Boolean);
 
 const groupRiskMapPoints = (points) => {
   const groups = new Map();
@@ -431,10 +418,8 @@ const riskValueFor = (riskLevel, confidenceScore) => {
     return Math.min(
       100,
       Math.round(
-        numericConfidence <= 1
-          ? numericConfidence * 100
-          : numericConfidence
-      )
+        numericConfidence <= 1 ? numericConfidence * 100 : numericConfidence,
+      ),
     );
   }
 
@@ -562,7 +547,9 @@ const getCurrentDateTimeLocal = () => {
 const toIsoTimestamp = (value) => {
   const date = new Date(value);
 
-  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+  return Number.isNaN(date.getTime())
+    ? new Date().toISOString()
+    : date.toISOString();
 };
 
 const toModelTimeWindow = (value) => {
@@ -608,25 +595,41 @@ const formatConfidence = (value) => {
     return "-";
   }
 
-  return number <= 1 ? `${Math.round(number * 100)}%` : `${Math.round(number)}%`;
+  return number <= 1
+    ? `${Math.round(number * 100)}%`
+    : `${Math.round(number)}%`;
 };
 
-const formatShortDate = (value) => {
-  if (!value) {
-    return "Recent";
-  }
+const formatShortDate = (value, dateFormat) => formatDisplayDate(
+  value,
+  dateFormat,
+  {
+    fallback: "Recent",
+    systemOptions: {
+      day: "2-digit",
+      month: "short",
+    },
+  },
+);
 
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Recent";
-  }
-
-  return date.toLocaleDateString(undefined, {
-    day: "2-digit",
-    month: "short",
-  });
-};
+// Formats the Threat Chart's "last updated" date using only the value
+// returned by the API. Never falls back to the browser's current date.
+const formatChartDate = (value, dateFormat) => formatDisplayDate(
+  value,
+  dateFormat,
+  {
+    fallback: "Date unavailable",
+    includeTime: true,
+    systemOptions: {
+      dateStyle: "medium",
+      timeStyle: "short",
+    },
+    timeOptions: {
+      hour: "numeric",
+      minute: "2-digit",
+    },
+  },
+);
 
 const buildAnomalyPayload = (region, timestamp) => ({
   time_window: toModelTimeWindow(timestamp),
@@ -663,17 +666,22 @@ const saveDashboardSnapshot = (snapshot) => {
 };
 
 const normalizeAnomalyResult = (result, fallbackRegion) => {
-  const data = result?.data && typeof result.data === "object" ? result.data : result || {};
+  const data =
+    result?.data && typeof result.data === "object"
+      ? result.data
+      : result || {};
   const input = data.input || data.input_payload || {};
   const output = data.output?.output || data.output || {};
   const metadata = data.metadata || data.output?.metadata || {};
 
   return {
     integrationId: data.integration_id || data.integration_event_id,
+    integrationEventId: safeTrim(data.integration_event_id),
     status: data.status || "completed",
     message: data.message || "",
     regionId: input.region_id || data.region_id || fallbackRegion?.id,
-    regionLabel: fallbackRegion?.label || formatLabel(input.region_id || data.region_id),
+    regionLabel:
+      fallbackRegion?.label || formatLabel(input.region_id || data.region_id),
     anomalyScore: output.anomaly_score ?? data.anomaly_score ?? data.score,
     isAnomaly: output.is_anomaly ?? data.is_anomaly,
     riskLevel: output.risk_level || data.risk_level,
@@ -717,18 +725,25 @@ const normalizeAnomalyIntegration = (integration) => {
 const isAnomalyIntegration = (integration) =>
   integration?.integration_type === "anomaly";
 
-const normalizeThreatRow = (threat, index) => {
+const normalizeThreatRow = (threat, index, dateFormat) => {
   const vulnerability = formatLabel(
-    threat.risk_level || threat.severity || "Unknown"
+    threat.risk_level || threat.severity || "Unknown",
   );
   const threatType = formatLabel(
-    threat.threat_type || threat.category || "Threat Signal"
+    threat.threat_type || threat.category || "Threat Signal",
   );
   const detectedAt = threat.detected_at || threat.created_at;
-  const region = threat.region || threat.location || "National feed";
+const region = threat.region || threat.location || threat.source || "Unknown source";  
 
   return {
-    id: threat.threat_id || threat.id || threat.title || `threat-${index}`,
+    //id: threat.threat_id || threat.id || threat.title || `threat-${index}`,
+    id:
+  threat.threat_id ??
+  threat.id ??
+  threat.event_id ??
+  threat.uuid ??
+  `threat-${index}`,
+    backendId: safeTrim(threat.threat_id),
     name: threat.title || threatType,
     vulnerability,
     status: formatLabel(threat.status || "In Review"),
@@ -738,7 +753,10 @@ const normalizeThreatRow = (threat, index) => {
       `${threatType} detected in the Phoenix backend activity feed.`,
     source: formatLabel(threat.category || threat.threat_type || "Phoenix API"),
     region,
-    meta: `${formatLabel(region)} | ${formatShortDate(detectedAt)}`,
+    //meta: `${formatLabel(region)} | ${formatShortDate(detectedAt)}`,
+    location: formatLabel(region),
+detectionDate: detectedAt,
+meta: `${formatLabel(region)} • ${formatShortDate(detectedAt, dateFormat)}`,
     riskValue: riskValueFor(
       vulnerability,
       threat.confidence_score
@@ -748,30 +766,42 @@ const normalizeThreatRow = (threat, index) => {
   };
 };
 
+// Always returns all four severity rows (critical, high, medium, low),
+// even when a level has zero threats, so the chart never hides a level.
+// Always returns all four severity rows (critical, high, medium, low).
+// A level with an explicit 0 renders as a real zero-width bar. A level
+// whose key is missing from the API response is marked unavailable and
+// is never silently treated as zero.
 const normalizeThreatChartRows = (threatsByRiskLevel = {}) => {
   const riskLevels = ["critical", "high", "medium", "low"];
-  const counts = riskLevels.map((riskLevel) =>
-    Number(threatsByRiskLevel[riskLevel] ?? 0)
+
+  const rawCounts = riskLevels.map((riskLevel) => {
+    const value = threatsByRiskLevel[riskLevel];
+    return value === undefined || value === null ? null : Number(value);
+  });
+
+  const availableCounts = rawCounts.filter(
+    (count) => count !== null && Number.isFinite(count)
   );
-  const maxCount = Math.max(...counts, 0);
+  const maxCount = availableCounts.length > 0 ? Math.max(...availableCounts) : 0;
 
-  return riskLevels
-    .map((riskLevel, index) => {
-      const count = counts[index];
-      const severity = formatLabel(riskLevel);
+  return riskLevels.map((riskLevel, index) => {
+    const count = rawCounts[index];
+    const isAvailable = count !== null && Number.isFinite(count);
+    const severity = formatLabel(riskLevel);
 
-      return {
-        id: `threat-chart-${riskLevel}`,
-        name: severity,
-        severity,
-        count,
-        riskValue:
-          maxCount > 0
-            ? Math.max(8, Math.round((count / maxCount) * 100))
-            : 0,
-      };
-    })
-    .filter((row) => row.count > 0);
+    return {
+      id: `threat-chart-${riskLevel}`,
+      name: severity,
+      severity,
+      count: isAvailable ? count : null,
+      isAvailable,
+      riskValue:
+        isAvailable && maxCount > 0
+          ? Math.round((count / maxCount) * 100)
+          : 0,
+    };
+  });
 };
 
 const normalizeHazardRow = (hazard, index) => ({
@@ -788,19 +818,100 @@ const normalizeHazardRow = (hazard, index) => ({
       "Unknown",
   ),
   status: formatLabel(
-    hazard.event_status ||
-      hazard.hazard_status ||
-      hazard.status ||
-      "Unknown",
+    hazard.event_status || hazard.hazard_status || hazard.status || "Unknown",
   ),
 });
 
-function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
+const getHazardSeverity = (hazard) =>
+  hazard.severity_level ||
+  hazard.hazard_severity ||
+  hazard.alert_level ||
+  hazard.risk_level ||
+  "";
 
+const getHazardStatus = (hazard) =>
+  hazard.event_status || hazard.hazard_status || hazard.status || "";
+
+const getHazardDate = (hazard) =>
+  hazard.hazard_timestamp ||
+  hazard.event_timestamp ||
+  hazard.detected_at ||
+  hazard.created_at ||
+  hazard.updated_at ||
+  "";
+
+// --- Location and Risk Map Controls helpers --------------------------------
+
+const ALL_SUBURBS_VALUE = "__ALL__";
+
+const locationKeyFor = (location) =>
+  location.geo_location_id ||
+  `${location.state_region}|${location.local_government_area}|${location.suburb}`.toLowerCase();
+
+const buildLocationOptions = (locations) => {
+  const seen = new Map();
+  let duplicateCount = 0;
+  let missingCoordCount = 0;
+
+  locations.forEach((location) => {
+    const key = locationKeyFor(location);
+    if (seen.has(key)) {
+      duplicateCount += 1;
+      return;
+    }
+    seen.set(key, location);
+    if (readNumber(location.latitude) === null || readNumber(location.longitude) === null) {
+      missingCoordCount += 1;
+    }
+  });
+
+  const uniqueLocations = [...seen.values()];
+  const tree = {};
+
+  uniqueLocations.forEach((location) => {
+    const state = location.state_region || "Unknown State";
+    const lga = location.local_government_area || "Unknown LGA";
+    if (!tree[state]) tree[state] = {};
+    if (!tree[state][lga]) tree[state][lga] = [];
+    tree[state][lga].push(location);
+  });
+
+  return {
+    tree,
+    uniqueLocations,
+    stats: { total: uniqueLocations.length, duplicateCount, missingCoordCount },
+  };
+};
+
+const hazardMatchesSelection = (hazard, locations, selection) => {
+  if (!selection.state) return true;
+
+  const hazardLocationText =
+    hazard.hazard_location || hazard.location || hazard.region || hazard.state_region || hazard.suburb || "";
+  const matchedLocation = locations.find((location) =>
+    locationMatchesHazard(location, hazardLocationText, hazard),
+  );
+
+  const state = matchedLocation?.state_region || hazard.state_region;
+  const lga = matchedLocation?.local_government_area || hazard.local_government_area;
+  const suburb = matchedLocation?.suburb || hazard.suburb;
+
+  if (selection.state && normalizeLookupText(state) !== normalizeLookupText(selection.state)) return false;
+  if (selection.lga && normalizeLookupText(lga) !== normalizeLookupText(selection.lga)) return false;
+  if (selection.suburb && normalizeLookupText(suburb) !== normalizeLookupText(selection.suburb)) return false;
+
+  return true;
+};
+
+function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
+  const navigate = useNavigate();
+  const { preferences } = usePreferences();
+  const dateFormat = preferences.dateFormat;
   const [apiStatus, setApiStatus] = useState("Checking");
   const [threats, setThreats] = useState([]);
   const [threatsByRiskLevel, setThreatsByRiskLevel] = useState({});
-  const [hazards, setHazards] = useState([]);
+  const [, setHazards] = useState([]);
+  const [riskMapHazards, setRiskMapHazards] = useState([]);
   const [locations, setLocations] = useState([]);
   const [integrations, setIntegrations] = useState([]);
   const [riskTotal, setRiskTotal] = useState("Checking");
@@ -808,20 +919,35 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
   const [hazardTotal, setHazardTotal] = useState("Checking");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [threatError, setThreatError] = useState("");
 
-  //Anomaly detection state
-  const [selectedRegionId, setSelectedRegionId] =
-    useState("VIC_GIPPSLAND");
-  const [selectedTimestamp, setSelectedTimestamp] =
-    useState(getCurrentDateTimeLocal);
+  // Threat Chart specific state: tracks the chart's own loading/error/empty/
+  // success state and the "last updated" timestamp as returned by the API.
+  const [chartsStatus, setChartsStatus] = useState("loading");
+  const [chartsLastUpdated, setChartsLastUpdated] = useState(null);
 
-  const [loadingDetection, setLoadingDetection] =
-    useState(false);
+  // Location and Risk Map Controls state
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedLga, setSelectedLga] = useState("");
+  const [selectedSuburb, setSelectedSuburb] = useState(ALL_SUBURBS_VALUE);
+  const [selectedSeverity, setSelectedSeverity] = useState("");
+  const [selectedHazardType, setSelectedHazardType] = useState("");
+  const [selectedHazardStatus, setSelectedHazardStatus] = useState("");
+  const [mapStartDate, setMapStartDate] = useState("");
+  const [mapEndDate, setMapEndDate] = useState("");
+  const [selectedMapPointId, setSelectedMapPointId] = useState("");
+
+  // Anomaly detection state
+  const [selectedRegionId, setSelectedRegionId] = useState("VIC_GIPPSLAND");
+  const [selectedTimestamp, setSelectedTimestamp] = useState(
+    getCurrentDateTimeLocal,
+  );
+
+  const [loadingDetection, setLoadingDetection] = useState(false);
 
   const [apiResult, setApiResult] = useState(null);
   const [detectionMessage, setDetectionMessage] = useState("");
-  const [detectionMessageTone, setDetectionMessageTone] =
-    useState("success");
+  const [detectionMessageTone, setDetectionMessageTone] = useState("success");
   const [detectionError, setDetectionError] = useState("");
 
   const showDetectionMessage = (message, tone = "success") => {
@@ -837,16 +963,16 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
     setHazards(snapshot?.hazards || []);
     setLocations(snapshot?.locations || []);
     setIntegrations(snapshot?.integrations || []);
-    setThreatTotal(totals.threats ?? 0);
-    setHazardTotal(totals.hazards ?? 0);
-    setRiskTotal(totals.risks ?? 0);
+    setThreatTotal(totals.threats);
+    setHazardTotal(totals.hazards);
+    setRiskTotal(totals.risks);
   };
 
   const selectedRegion = useMemo(
     () =>
       anomalyRegions.find((region) => region.id === selectedRegionId) ||
       anomalyRegions[0],
-    [selectedRegionId]
+    [selectedRegionId],
   );
 
   const loadIntegrations = async () => {
@@ -872,6 +998,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
     const loadDashboardData = async () => {
       setIsLoading(true);
       setLoadError("");
+      setChartsStatus("loading");
 
       const healthResult = await Promise.resolve(getApiHealth()).then(
         (value) => ({ status: "fulfilled", value }),
@@ -883,9 +1010,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
       }
 
       setApiStatus(
-        healthResult.status === "fulfilled"
-          ? "Online"
-          : "Unavailable"
+        healthResult.status === "fulfilled" ? "Online" : "Unavailable",
       );
 
       if (!isLoggedIn) {
@@ -917,6 +1042,11 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
         risksResult,
         integrationsResult,
       ] = results;
+      if (overviewResult.status === "rejected") {
+        setLoadError(
+          "Could not load the dashboard overview totals. Showing available fallback data.",
+        );
+      }
       const allDataRequestsFailed = [
         overviewResult,
         chartsResult,
@@ -926,16 +1056,16 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
         threatsResult,
         risksResult,
         integrationsResult,
-      ].every(
-        (result) => result.status === "rejected"
-      );
+      ].every((result) => result.status === "rejected");
 
       if (allDataRequestsFailed) {
         applyDashboardSnapshot(readDashboardSnapshot());
+        setChartsStatus("error");
+        setChartsLastUpdated(null);
 
         if (healthResult.status === "rejected") {
           setLoadError(
-            "Could not reach the Phoenix API gateway. Check that Docker is running and the gateway is available on localhost:3001."
+            "Could not reach the PHOENIX API gateway. Check the configured API gateway and try again.",
           );
         }
 
@@ -961,8 +1091,38 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
         threatsResult.status === "fulfilled"
           ? threatsResult.value.items || []
           : [];
-      const displayedThreats =
-        activityThreats.length > 0 ? activityThreats : listedThreats;
+      //const displayedThreats =
+        //activityThreats.length > 0 ? activityThreats : listedThreats;
+        const displayedThreats = (
+  activityThreats.length > 0
+    ? activityThreats
+    : listedThreats
+).sort((a, b) => {
+  const first = new Date(
+    b.detected_at ||
+    b.created_at ||
+    b.updated_at ||
+    0
+  ).getTime();
+
+  const second = new Date(
+    a.detected_at ||
+    a.created_at ||
+    a.updated_at ||
+    0
+  ).getTime();
+
+  return first - second;
+});
+
+if (
+  activityResult.status === "rejected" &&
+  threatsResult.status === "rejected"
+) {
+  setThreatError("Unable to load recent threat signals.");
+} else {
+  setThreatError("");
+}
 
       const hazardItems =
         hazardsResult.status === "fulfilled"
@@ -1002,6 +1162,22 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
       setHazardTotal(hazardTotalValue);
       setRiskTotal(riskTotalValue);
 
+      // Threat Chart status: distinguish a genuinely failed charts call from
+      // a successful call that simply returned zero threats at every level.
+      // The date is taken only from the API response and is never replaced
+      // with the browser's current date when it is missing.
+      if (chartsResult.status === "fulfilled") {
+        const counts = charts.threats_by_risk_level || {};
+        const anyCounts = Object.values(counts).some(
+          (count) => Number(count) > 0,
+        );
+       setChartsStatus(anyCounts ? "success" : "empty");
+       setChartsLastUpdated(charts.last_updated ?? null);
+      } else {
+        setChartsStatus("error");
+        setChartsLastUpdated(null);
+      }
+
       saveDashboardSnapshot({
         totals: {
           hazards: hazardTotalValue,
@@ -1015,12 +1191,9 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
         integrations: integrationItems,
       });
 
-      if (
-        healthResult.status === "rejected" &&
-        allDataRequestsFailed
-      ) {
+      if (healthResult.status === "rejected" && allDataRequestsFailed) {
         setLoadError(
-          "Could not reach the Phoenix API gateway. Check that Docker is running and the gateway is available on localhost:3001."
+          "Could not reach the PHOENIX API gateway. Check the configured API gateway and try again.",
         );
       }
 
@@ -1034,56 +1207,271 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
     };
   }, [isLoggedIn]);
 
+  useEffect(() => {
+    let isActive = true;
+
+    const loadRiskMapHazards = async () => {
+      if (!isLoggedIn) {
+        setRiskMapHazards([]);
+        return;
+      }
+
+      try {
+        const allHazards = [];
+        let page = 1;
+
+        while (isActive) {
+          const response = await getHazards({ page, limit: 100 });
+          const items = response.items || [];
+
+          allHazards.push(...items);
+
+          if (
+            items.length === 0 ||
+            items.length < 100 ||
+            (Number.isFinite(Number(response.total)) &&
+              allHazards.length >= Number(response.total))
+          ) {
+            break;
+          }
+
+          page += 1;
+        }
+
+        if (isActive) {
+          setRiskMapHazards(allHazards);
+        }
+      } catch (error) {
+        console.error("Failed to load Risk Map hazards:", error);
+
+        if (isActive) {
+          setRiskMapHazards([]);
+        }
+      }
+    };
+
+    loadRiskMapHazards();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isLoggedIn]);
+
   const overviewCards = useMemo(
-    () => [
-      { label: "API Status", value: apiStatus },
-      { label: "Total Hazards", value: hazardTotal },
-      { label: "Total Threats", value: threatTotal },
-      { label: "Total Risks", value: riskTotal },
-    ],
-    
-    [
-      apiStatus,
-      hazardTotal,
-      riskTotal,
-      threatTotal,
-    ]
-  );
+  () => [
+    {
+      label: "API Status",
+      value: apiStatus,
+      description: "Current PHOENIX service connection",
+    },
+    {
+      label: "Total Hazards",
+      value: hazardTotal,
+      description: "Hazard records currently monitored",
+    },
+    {
+      label: "Total Threats",
+      value: threatTotal,
+      description: "Threat signals currently tracked",
+    },
+    {
+      label: "Total Risks",
+      value: riskTotal,
+      description: "Risk records currently available",
+    },
+  ],
+  [apiStatus, hazardTotal, riskTotal, threatTotal],
+ );
 
   const itemRows = useMemo(
-    () => threats.map(normalizeThreatRow),
-    [threats]
+    () => threats.map((threat, index) => normalizeThreatRow(threat, index, dateFormat)),
+    [dateFormat, threats],
   );
 
+  const openThreatDetails = (threat) => {
+    if (!threat.backendId) return;
+    setSelectedThreat(threat);
+    navigate(threatPath(threat.backendId));
+  };
+
+  // Location and Risk Map Controls derived values
+  const locationOptions = useMemo(
+    () => buildLocationOptions(locations),
+    [locations],
+  );
+
+  const stateOptions = useMemo(
+    () => Object.keys(locationOptions.tree).sort(),
+    [locationOptions],
+  );
+
+  const lgaOptions = useMemo(
+    () =>
+      selectedState
+        ? Object.keys(locationOptions.tree[selectedState] || {}).sort()
+        : [],
+    [locationOptions, selectedState],
+  );
+
+  const suburbOptions = useMemo(() => {
+    if (!selectedState || !selectedLga) return [];
+
+    return (locationOptions.tree[selectedState]?.[selectedLga] || [])
+      .slice()
+      .sort((a, b) => (a.suburb || "").localeCompare(b.suburb || ""));
+  }, [locationOptions, selectedState, selectedLga]);
+
+    const severityOptions = useMemo(
+    () =>
+      [...new Set(riskMapHazards.map(getHazardSeverity).filter(Boolean))].sort(),
+    [riskMapHazards],
+  );
+
+  const hazardTypeOptions = useMemo(
+    () =>
+      [
+        ...new Set(
+          riskMapHazards.map((hazard) => hazard.hazard_type).filter(Boolean),
+        ),
+      ].sort(),
+    [riskMapHazards],
+  );
+
+  const hazardStatusOptions = useMemo(
+    () =>
+      [...new Set(riskMapHazards.map(getHazardStatus).filter(Boolean))].sort(),
+    [riskMapHazards],
+  );
+
+  const filteredHazards = useMemo(
+    () =>
+      riskMapHazards.filter((hazard) => {
+        if (
+          !hazardMatchesSelection(hazard, locations, {
+            state: selectedState,
+            lga: selectedLga,
+            suburb:
+              selectedSuburb === ALL_SUBURBS_VALUE ? "" : selectedSuburb,
+          })
+        ) {
+          return false;
+        }
+
+        if (
+          selectedSeverity &&
+          normalizeLookupText(getHazardSeverity(hazard)) !==
+            normalizeLookupText(selectedSeverity)
+        ) {
+          return false;
+        }
+
+        if (
+          selectedHazardType &&
+          normalizeLookupText(hazard.hazard_type) !==
+            normalizeLookupText(selectedHazardType)
+        ) {
+          return false;
+        }
+
+        if (
+          selectedHazardStatus &&
+          normalizeLookupText(getHazardStatus(hazard)) !==
+            normalizeLookupText(selectedHazardStatus)
+        ) {
+          return false;
+        }
+
+        const hazardDate = getHazardDate(hazard);
+
+        if (
+          mapStartDate &&
+          (!hazardDate ||
+            new Date(hazardDate) < new Date(`${mapStartDate}T00:00:00`))
+        ) {
+          return false;
+        }
+
+        if (
+          mapEndDate &&
+          (!hazardDate ||
+            new Date(hazardDate) > new Date(`${mapEndDate}T23:59:59`))
+        ) {
+          return false;
+        }
+
+        return true;
+      }),
+    [
+      riskMapHazards,
+      locations,
+      selectedState,
+      selectedLga,
+      selectedSuburb,
+      selectedSeverity,
+      selectedHazardType,
+      selectedHazardStatus,
+      mapStartDate,
+      mapEndDate,
+    ],
+  );
+
+  const unresolvedHazardCount = useMemo(
+    () =>
+      filteredHazards.filter(
+        (hazard) => !findHazardCoordinates(hazard, locations),
+      ).length,
+    [filteredHazards, locations],
+  );
+
+  const handleStateChange = (event) => {
+    setSelectedState(event.target.value);
+    setSelectedLga("");
+    setSelectedSuburb(ALL_SUBURBS_VALUE);
+  };
+
+  const handleLgaChange = (event) => {
+    setSelectedLga(event.target.value);
+    setSelectedSuburb(ALL_SUBURBS_VALUE);
+  };
+
+const handleResetMapControls = () => {
+  setSelectedState("");
+  setSelectedLga("");
+  setSelectedSuburb(ALL_SUBURBS_VALUE);
+  setSelectedSeverity("");
+  setSelectedHazardType("");
+  setSelectedHazardStatus("");
+  setMapStartDate("");
+  setMapEndDate("");
+  setSelectedMapPointId("");
+};
+
   const hazardRows = useMemo(
-    () => hazards.map(normalizeHazardRow),
-    [hazards]
+    () => filteredHazards.map(normalizeHazardRow),
+    [filteredHazards],
   );
 
   const riskMapPoints = useMemo(
-    () => buildRiskMapPoints(hazards, locations),
-    [hazards, locations]
+    () => buildRiskMapPoints(filteredHazards, locations),
+    [filteredHazards, locations],
   );
 
   const riskMapGroups = useMemo(
     () => groupRiskMapPoints(riskMapPoints),
-    [riskMapPoints]
+    [riskMapPoints],
   );
 
   const riskMapBounds = useMemo(
     () => buildMapBounds(riskMapPoints),
-    [riskMapPoints]
+    [riskMapPoints],
   );
 
   const riskMapView = useMemo(
     () => buildTileView(riskMapBounds),
-    [riskMapBounds]
+    [riskMapBounds],
   );
 
-  const riskMapTiles = useMemo(
-    () => buildMapTiles(riskMapView),
-    [riskMapView]
-  );
+  const riskMapTiles = useMemo(() => buildMapTiles(riskMapView), [riskMapView]);
 
   const projectedRiskMapGroups = useMemo(
     () =>
@@ -1100,7 +1488,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
           top: position.top,
         };
       }),
-    [riskMapGroups, riskMapView]
+    [riskMapGroups, riskMapView],
   );
 
   const anomalyRows = useMemo(
@@ -1109,32 +1497,21 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
         .filter(isAnomalyIntegration)
         .map(normalizeAnomalyIntegration)
         .slice(0, 5),
-    [integrations]
+    [integrations],
   );
 
   const latestAnomalyResult = useMemo(
     () =>
-      anomalyRows.find((item) => item.status === "completed") ||
-      anomalyRows[0],
-    [anomalyRows]
+      anomalyRows.find((item) => item.status === "completed") || anomalyRows[0],
+    [anomalyRows],
   );
 
-  const chartRows = useMemo(() => {
-    const rows = normalizeThreatChartRows(threatsByRiskLevel);
-
-    if (rows.length > 0) {
-      return rows;
-    }
-
-    return itemRows.map((threat) => ({
-      id: threat.id,
-      name: threat.name,
-      severity: threat.vulnerability,
-      riskValue: threat.riskValue,
-    }));
-  }, [itemRows, threatsByRiskLevel]);
-
-  const hasThreatData = chartRows.length > 0;
+  // Always the four severity rows (critical/high/medium/low), each with a
+  // count (possibly zero) and a bar width proportional to that count.
+  const chartRows = useMemo(
+    () => normalizeThreatChartRows(threatsByRiskLevel),
+    [threatsByRiskLevel],
+  );
 
   //Detection API call
   const pollForAnomalyResult = async (regionId, submittedAt) => {
@@ -1163,6 +1540,16 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
   };
 
   const runDetection = async () => {
+    if (!ANOMALY_DETECTION_ENABLED) {
+      // Defense in depth: the form/button are already hidden when this flag
+      // is off, but this guard means the known-missing endpoint is never
+      // called even if something else manages to trigger this function.
+      setDetectionError(
+        "Anomaly detection is not available in this environment.",
+      );
+      return;
+    }
+
     setDetectionError("");
     showDetectionMessage("");
     setApiResult(null);
@@ -1171,10 +1558,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
     let payload;
 
     try {
-      payload = buildAnomalyPayload(
-        selectedRegion,
-        selectedTimestamp
-      );
+      payload = buildAnomalyPayload(selectedRegion, selectedTimestamp);
       const submittedAt = new Date();
       const response = await postIngestionAnomaly(payload);
       const immediateResult = normalizeAnomalyResult(
@@ -1183,7 +1567,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
           input: response.input || payload,
           status: response.status || "processing",
         },
-        selectedRegion
+        selectedRegion,
       );
 
       setApiResult(immediateResult);
@@ -1201,13 +1585,10 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
       showDetectionMessage(
         immediateResult.integrationId
           ? "Anomaly request submitted to the backend. Waiting for the result..."
-          : "Anomaly request submitted to the backend."
+          : "Anomaly request submitted to the backend.",
       );
 
-      const result = await pollForAnomalyResult(
-        selectedRegion.id,
-        submittedAt
-      );
+      const result = await pollForAnomalyResult(selectedRegion.id, submittedAt);
 
       if (result) {
         const normalizedResult = normalizeAnomalyIntegration(result);
@@ -1215,7 +1596,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
 
         if (normalizedResult.status === "error") {
           setDetectionError(
-            result.note || "The anomaly model returned an error."
+            result.note || "The anomaly model returned an error.",
           );
           showDetectionMessage("");
           return;
@@ -1224,24 +1605,22 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
         showDetectionMessage("Anomaly model output received.");
       } else {
         showDetectionMessage(
-          "Anomaly request submitted. Refresh later if it is still processing."
+          "Anomaly request submitted. Refresh later if it is still processing.",
         );
       }
-
     } catch (error) {
       console.error("Detection error:", error);
 
       if (error.code === "ANOMALY_ENDPOINT_UNAVAILABLE") {
         setDetectionError(
-          "The backend does not expose /api/ingestion/anomaly yet, so the frontend cannot show live anomaly output."
+          "The backend does not expose /api/ingestion/anomaly yet, so the frontend cannot show live anomaly output.",
         );
         showDetectionMessage("");
         return;
       }
 
       setDetectionError(
-        error.message ||
-          "Could not submit the anomaly detection request."
+        error.message || "Could not submit the anomaly detection request.",
       );
     } finally {
       setLoadingDetection(false);
@@ -1251,107 +1630,196 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
   const displayedDetection = apiResult || latestAnomalyResult;
 
   return (
-    <div className="dashboard-page">
-      <main className="dashboard-content">
-        <div className="dashboard-main-area">
+  <div className="dashboard-page">
+    <main className="dashboard-content">
+      <div className="dashboard-main-area">
+        <header className="dashboard-page-header">
+          <div className="dashboard-page-heading">
+            <span className="dashboard-eyebrow">
+              PHOENIX Risk Monitoring
+            </span>
 
-          {loadError && (
-            <div
-              className="backend-status-message"
-              role="alert"
-            >
+            <h1>Dashboard</h1>
+
+            <p>
+              Monitor current disaster, hazard, threat, and risk activity
+              across PHOENIX.
+            </p>
+          </div>
+
+          <div
+            className={`dashboard-status-badge ${apiStatus.toLowerCase()}`}
+            aria-live="polite"
+          >
+            <span className="dashboard-status-dot" aria-hidden="true" />
+            <span>
+              System status: {isLoading ? "Checking" : apiStatus}
+            </span>
+          </div>
+        </header>
+          {/* {loadError && (
+            <div className="backend-status-message" role="alert">
               {loadError}
             </div>
+          )} */}
+          {loadError && (
+            <ErrorState
+              title="Unable to load dashboard data"
+              description={loadError}
+              onRetry={() => window.location.reload()}
+              retryLabel="Refresh"
+            />
           )}
 
-          <section
-            className="overview-grid"
-            aria-label="Dashboard overview"
-          >
-            {overviewCards.map((card) => {
-              const cardValue =
-                isLoading && card.value === undefined
-                  ? "..."
-                  : card.value ?? "-";
-              const isLongValue = String(cardValue).length > 8;
+          {isLoading && !loadError && (
+            <LoadingState
+              title="Loading dashboard data"
+              description="Refreshing risk, hazard, and threat information."
+            />
+          )}
 
-              return (
-                <div
-                  className="overview-card"
-                  key={card.label}
-                >
-                  <span className="overview-label">
-                    {card.label}
-                  </span>
+          {!isLoading && !loadError && !threats.length && (
+            <EmptyState
+              title="No threat data available"
+              description="There are no active threat records to display right now."
+              actionLabel="Refresh"
+              onAction={() => window.location.reload()}
+            />
+          )}
 
-                  <strong
-                    className={`overview-value ${
-                      isLongValue ? "long-value" : ""
-                    }`}
-                  >
-                    {cardValue}
-                  </strong>
-                </div>
-              );
-            })}
-          </section>
+ <section className="overview-grid" aria-label="Dashboard overview">
+  {overviewCards.map((card) => {
+    const cardValue =
+      isLoading && card.value === undefined
+        ? "..."
+        : (card.value ?? "-");
 
-          {/* Regional Anomaly Detection Section (Jack)*/}
+    const isLongValue = String(cardValue).length > 8;
+
+    return (
+      <article
+        className="overview-card"
+        key={card.label}
+      >
+        <span className="overview-label">
+          {card.label}
+        </span>
+
+        <strong
+          className={`overview-value ${
+            isLongValue ? "long-value" : ""
+          }`}
+        >
+          {cardValue}
+        </strong>
+
+        <span className="overview-description">
+          {card.description}
+        </span>
+      </article>
+     );
+    })}
+ </section>
+
+<nav
+  className="dashboard-quick-links"
+  aria-label="Dashboard related pages"
+>
+  <div>
+    <strong>Continue monitoring</strong>
+    <span>
+      Open detailed views for current threats and alerts.
+    </span>
+  </div>
+
+  <div className="dashboard-quick-link-actions">
+    <Link
+      to="/threats"
+      className="dashboard-link-button"
+   >
+      View threats
+    </Link>
+
+    <Link
+      to="/alerts"
+      className="dashboard-link-button secondary"
+    >
+      View alerts
+    </Link>
+  </div>
+</nav>
+
+          {/* Regional Anomaly Detection Section (Jack) - Sprint 2: gated behind
+              ANOMALY_DETECTION_ENABLED per "Risk and Anomaly Feature Control"
+              (Varun). The backend does not currently expose the anomaly
+              endpoint, so submission is disabled rather than left to fail on
+              click, and any displayed model output is explicitly labelled as
+              unvalidated. */}
           <section className="ai-detection-card">
-
             {/* Left Side Input */}
             <div className="ai-detection-input">
               <h2>Regional Anomaly Detection</h2>
 
               <p>
-                Run the AI anomaly detection model
-                against a selected Australian region.
+                Run the AI anomaly detection model against a selected Australian
+                region.
               </p>
 
-              <div className="anomaly-form-grid">
-                <label className="anomaly-field">
-                  <span>Region</span>
+              {!ANOMALY_DETECTION_ENABLED ? (
+                <div className="anomaly-unavailable-panel" role="status">
+                  <h3>Not available in this environment</h3>
+                  <p>
+                    The backend does not currently expose the anomaly-detection
+                    endpoint. This form is disabled until that becomes available.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="anomaly-form-grid">
+                    <label className="anomaly-field label-required">
+                      <span>Region</span>
 
-                  <select
-                    value={selectedRegionId}
-                    onChange={(event) =>
-                      setSelectedRegionId(event.target.value)
-                    }
-                  >
-                    {anomalyRegions.map((region) => (
-                      <option
-                        key={region.id}
-                        value={region.id}
+                      <select
+                        value={selectedRegionId}
+                        onChange={(event) =>
+                          setSelectedRegionId(event.target.value)
+                        }
+                        aria-required="true"
+                        aria-describedby={detectionError ? "detection-error" : undefined}
                       >
-                        {region.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                        {anomalyRegions.map((region) => (
+                          <option key={region.id} value={region.id}>
+                            {region.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
 
-                <label className="anomaly-field">
-                  <span>Timestamp</span>
+                    <label className="anomaly-field label-required">
+                      <span>Timestamp</span>
 
-                  <input
-                    type="datetime-local"
-                    value={selectedTimestamp}
-                    onChange={(event) =>
-                      setSelectedTimestamp(event.target.value)
-                    }
-                  />
-                </label>
-              </div>
+                      <input
+                        type="datetime-local"
+                        value={selectedTimestamp}
+                        onChange={(event) =>
+                          setSelectedTimestamp(event.target.value)
+                        }
+                        aria-required="true"
+                        aria-describedby={detectionError ? "detection-error" : undefined}
+                      />
+                    </label>
+                  </div>
 
-              <button
-                type="button"
-                className="anomaly-run-button"
-                onClick={runDetection}
-                disabled={loadingDetection}
-              >
-                {loadingDetection
-                  ? "Running Detection..."
-                  : "Run Detection"}
-              </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={runDetection}
+                    disabled={loadingDetection}
+                  >
+                    {loadingDetection ? "Running Detection..." : "Run Detection"}
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Right side output */}
@@ -1367,20 +1835,20 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
               )}
 
               {detectionError && (
-                <div
-                  className="detection-error-message"
-                  role="alert"
-                >
+                <div id="detection-error" className="detection-error-message" role="alert">
                   {detectionError}
                 </div>
               )}
 
               {!displayedDetection ? (
-                <p>
-                  No detection has been run yet.
-                </p>
+                <p>No detection has been run yet.</p>
               ) : (
                 <>
+                  <p className="anomaly-model-disclaimer">
+                    The values below are raw, severity-derived model output.
+                    They are not a validated phishing or hazard correlation.
+                  </p>
+
                   <div className="detection-output-grid">
                     <div>
                       <span>Region</span>
@@ -1392,13 +1860,11 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
 
                     <div>
                       <span>Status</span>
-                      <strong>
-                        {formatLabel(displayedDetection.status)}
-                      </strong>
+                      <strong>{formatLabel(displayedDetection.status)}</strong>
                     </div>
 
                     <div>
-                      <span>Risk Level</span>
+                      <span>Risk Level (unvalidated)</span>
                       <strong>
                         {displayedDetection.riskLevel || "Pending"}
                       </strong>
@@ -1414,23 +1880,33 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                     <div>
                       <span>Confidence</span>
                       <strong>
-                        {formatConfidence(
-                          displayedDetection.confidenceScore
-                        )}
+                        {formatConfidence(displayedDetection.confidenceScore)}
                       </strong>
                     </div>
 
                     <div>
                       <span>Processed</span>
                       <strong>
-                        {displayedDetection.processedAt
-                          ? new Date(
-                              displayedDetection.processedAt
-                            ).toLocaleString()
-                          : "-"}
+                        {formatDisplayDate(
+                          displayedDetection.processedAt,
+                          dateFormat,
+                          {
+                            fallback: "-",
+                            includeTime: true,
+                          },
+                        )}
                       </strong>
                     </div>
                   </div>
+
+                  {displayedDetection.integrationEventId && (
+                    <Link
+                      className="btn btn-secondary"
+                      to={integrationPath(displayedDetection.integrationEventId)}
+                    >
+                      View integration details
+                    </Link>
+                  )}
 
                   {displayedDetection.drivers?.length > 0 && (
                     <div className="anomaly-driver-list">
@@ -1441,7 +1917,6 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                       ))}
                     </div>
                   )}
-
                 </>
               )}
             </div>
@@ -1450,12 +1925,173 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
           {/* Risk Map Section (Jack) */}
           <section className="map-card">
             <div className="map-header">
-              <h2>Risk Map</h2>
-              <p>
-                Hazard data is now loaded from the Phoenix backend. The map
-                component can use these hazard records when it is ready.
-              </p>
+              <div>
+                <span className="map-eyebrow">Regional overview</span>
+                <h2>Risk Map</h2>
+                <p>
+  Explore backend hazard records by location, severity, hazard type, status,
+  and date.
+</p>
+              </div>
+              <span className="map-result-badge">
+                {filteredHazards.length} hazard{filteredHazards.length === 1 ? "" : "s"}
+              </span>
             </div>
+
+{/* Location and Risk Map Controls */}
+<div className="map-controls">
+  <label>
+    <div>State / Region</div>
+    <select value={selectedState} onChange={handleStateChange}>
+      <option value="">All states</option>
+      {stateOptions.map((state) => (
+        <option key={state} value={state}>
+          {state}
+        </option>
+      ))}
+    </select>
+  </label>
+
+  <label>
+    <div>Local Government Area</div>
+    <select
+      value={selectedLga}
+      onChange={handleLgaChange}
+      disabled={!selectedState}
+    >
+      <option value="">All LGAs</option>
+      {lgaOptions.map((lga) => (
+        <option key={lga} value={lga}>
+          {lga}
+        </option>
+      ))}
+    </select>
+  </label>
+
+  <label>
+    <div>Suburb</div>
+    <select
+      value={selectedSuburb}
+      onChange={(event) => setSelectedSuburb(event.target.value)}
+      disabled={!selectedLga}
+    >
+      <option value={ALL_SUBURBS_VALUE}>All locations</option>
+      {suburbOptions.map((location) => (
+        <option key={locationKeyFor(location)} value={location.suburb}>
+          {location.suburb}
+          {readNumber(location.latitude) === null
+            ? " (no coordinates)"
+            : ""}
+        </option>
+      ))}
+    </select>
+  </label>
+
+  <label>
+    <div>Severity</div>
+    <select
+      value={selectedSeverity}
+      onChange={(event) => setSelectedSeverity(event.target.value)}
+    >
+      <option value="">All severities</option>
+      {severityOptions.map((severity) => (
+        <option key={severity} value={severity}>
+          {formatLabel(severity)}
+        </option>
+      ))}
+    </select>
+  </label>
+
+  <label>
+    <div>Hazard Type</div>
+    <select
+      value={selectedHazardType}
+      onChange={(event) => setSelectedHazardType(event.target.value)}
+    >
+      <option value="">All hazard types</option>
+      {hazardTypeOptions.map((hazardType) => (
+        <option key={hazardType} value={hazardType}>
+          {formatLabel(hazardType)}
+        </option>
+      ))}
+    </select>
+  </label>
+
+  <label>
+    <div>Status</div>
+    <select
+      value={selectedHazardStatus}
+      onChange={(event) => setSelectedHazardStatus(event.target.value)}
+    >
+      <option value="">All statuses</option>
+      {hazardStatusOptions.map((status) => (
+        <option key={status} value={status}>
+          {formatLabel(status)}
+        </option>
+      ))}
+    </select>
+  </label>
+
+  <label>
+    <div>Start Date</div>
+    <input
+      type="date"
+      value={mapStartDate}
+      max={mapEndDate || undefined}
+      onChange={(event) => setMapStartDate(event.target.value)}
+    />
+  </label>
+
+  <label>
+    <div>End Date</div>
+    <input
+      type="date"
+      value={mapEndDate}
+      min={mapStartDate || undefined}
+      onChange={(event) => setMapEndDate(event.target.value)}
+    />
+  </label>
+
+  <button
+    className="map-reset-button"
+    type="button"
+    onClick={handleResetMapControls}
+  >
+    Reset map
+  </button>
+</div>
+
+<div className="map-selection-summary" role="status">
+  <strong>Active filters:</strong>{" "}
+  {[
+    selectedState || "All states",
+    selectedLga || "All LGAs",
+    selectedSuburb === ALL_SUBURBS_VALUE
+      ? "All locations"
+      : selectedSuburb,
+    selectedSeverity && `Severity: ${formatLabel(selectedSeverity)}`,
+    selectedHazardType && `Type: ${formatLabel(selectedHazardType)}`,
+    selectedHazardStatus && `Status: ${formatLabel(selectedHazardStatus)}`,
+    mapStartDate && `From: ${mapStartDate}`,
+    mapEndDate && `To: ${mapEndDate}`,
+  ]
+    .filter(Boolean)
+    .join(" | ")}
+  {" | "}
+  <strong>{filteredHazards.length}</strong> matching hazard
+  {filteredHazards.length === 1 ? "" : "s"}
+
+  {locationOptions.stats.duplicateCount > 0 &&
+    ` | ${locationOptions.stats.duplicateCount} duplicate locations removed`}
+
+  {locationOptions.stats.missingCoordCount > 0 &&
+    ` | ${locationOptions.stats.missingCoordCount} locations missing coordinates`}
+
+  {unresolvedHazardCount > 0 &&
+    ` | ${unresolvedHazardCount} hazard${
+      unresolvedHazardCount === 1 ? "" : "s"
+    } not mapped because backend coordinates are unavailable`}
+</div>
 
             <div className="risk-map-layout">
               <div className="risk-map-canvas">
@@ -1478,7 +2114,7 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                 {projectedRiskMapGroups.length > 0 ? (
                   projectedRiskMapGroups.map((point) => (
                     <button
-                      className={`risk-map-marker ${point.tone}`}
+                      className={`risk-map-marker ${point.tone} ${selectedMapPointId === point.id ? "selected" : ""}`}
                       key={point.id}
                       style={{
                         left: `${point.left}%`,
@@ -1486,6 +2122,9 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                       }}
                       title={`${point.type} | ${point.location} | ${point.latitude.toFixed(4)}, ${point.longitude.toFixed(4)}`}
                       type="button"
+                      aria-label={`${point.type}, ${point.severity} risk at ${point.location}; ${point.count} mapped item${point.count === 1 ? "" : "s"}`}
+                      aria-pressed={selectedMapPointId === point.id}
+                      onClick={() => setSelectedMapPointId((current) => current === point.id ? "" : point.id)}
                     >
                       <span>{point.count > 1 ? point.count : ""}</span>
                     </button>
@@ -1518,27 +2157,43 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                     <span>Shown on map</span>
                     <strong>{riskMapPoints.length}</strong>
                   </div>
+
+                  <div className="risk-map-summary">
+                    <span>Mapped groups</span>
+                    <strong>{riskMapGroups.length}</strong>
+                  </div>
+
+                  <div className="risk-map-summary">
+                    <span>Unmapped</span>
+                    <strong>{unresolvedHazardCount}</strong>
+                  </div>
                 </div>
 
                 <div className="risk-map-list">
                   {projectedRiskMapGroups.length > 0 ? (
                     projectedRiskMapGroups.map((point) => (
-                      <div
-                        className="risk-map-list-item"
+                      <button
+                        type="button"
+                        className={`risk-map-list-item ${selectedMapPointId === point.id ? "selected" : ""}`}
                         key={`detail-${point.id}`}
+                        aria-pressed={selectedMapPointId === point.id}
+                        onClick={() => setSelectedMapPointId((current) => current === point.id ? "" : point.id)}
                       >
-                        <span className={`map-severity-dot ${point.tone}`}></span>
+                        <span
+                          className={`map-severity-dot ${point.tone}`}
+                        ></span>
 
                         <div>
                           <strong>{point.type}</strong>
                           <small>{point.location}</small>
                           <small>{point.count} mapped items</small>
+                          <small>{point.status} · {point.source}</small>
                         </div>
 
                         <span className={`map-risk-pill ${point.tone}`}>
                           {point.severity}
                         </span>
-                      </div>
+                      </button>
                     ))
                   ) : (
                     <div className="map-detail-empty">
@@ -1560,35 +2215,66 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
               <div>
                 <h2>Threat Chart</h2>
 
-                <p>
-                  Loaded from the Phoenix dashboard
-                  charts endpoint.
-                </p>
+                <p>Loaded from the Phoenix dashboard charts endpoint.</p>
               </div>
 
-              <span className="backend-ready-badge">
-                {isLoading
-                  ? "Loading"
-                  : apiStatus}
-              </span>
+              <div className="threat-chart-header-meta">
+                <span className="backend-ready-badge">
+                  {isLoading ? "Loading" : apiStatus}
+                </span>
+
+                <span className="threat-chart-updated">
+                  Last updated: {formatChartDate(chartsLastUpdated, dateFormat)}
+                </span>
+              </div>
             </div>
 
             <div className="threat-chart-body">
-              {hasThreatData ? (
+              {chartsStatus === "loading" && (
+                <div className="empty-chart-placeholder">
+                  <div className="empty-chart-text">
+                    <strong>Loading threat data</strong>
+                    <span>
+                      Fetching the latest severity counts from the backend.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {chartsStatus === "error" && (
+                <div className="empty-chart-placeholder" role="alert">
+                  <div className="empty-chart-text">
+                    <strong>Couldn't load threat chart data</strong>
+                    <span>
+                      The dashboard could not reach the charts endpoint. Check
+                      that the backend is running and try again.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {chartsStatus === "empty" && (
+                <div className="empty-chart-placeholder">
+                  <div className="empty-chart-text">
+                    <strong>No threats recorded</strong>
+                    <span>All severity levels are currently at zero.</span>
+                  </div>
+                </div>
+              )}
+
+              {chartsStatus === "success" && (
                 <div className="threat-chart-list">
                   {chartRows.map((threat) => (
                     <div
                       className={`threat-row ${barClassFor(threat.severity)}`}
                       key={threat.id}
                     >
-                      <span className="threat-name">
-                        {threat.name}
-                      </span>
+                      <span className="threat-name">{threat.name}</span>
 
                       <div className="threat-bar-track">
                         <div
                           className={`threat-bar ${barClassFor(
-                            threat.severity
+                            threat.severity,
                           )}`}
                           style={{
                             width: `${threat.riskValue}%`,
@@ -1597,53 +2283,24 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                       </div>
 
                       <span className="threat-value">
-                        {threat.count
-                          ? `${threat.count}`
-                          : `${threat.riskValue}%`}
+                        {threat.isAvailable ? threat.count : "Unavailable"}
                       </span>
                     </div>
                   ))}
-                </div>
-              ) : (
-                <div className="empty-chart-placeholder">
-                  <div className="chart-area">
-                    <div className="chart-grid-line line-1"></div>
-                    <div className="chart-grid-line line-2"></div>
-                    <div className="chart-grid-line line-3"></div>
-                    <div className="chart-bar high-bar"></div>
-                    <div className="chart-bar medium-bar"></div>
-                    <div className="chart-bar low-bar"></div>
-                  </div>
-
-                  <div className="empty-chart-text">
-                    <strong>
-                      {isLoading
-                        ? "Loading threat data"
-                        : "No threat data returned yet"}
-                    </strong>
-                    <span>
-                      The frontend is connected to
-                      the backend endpoint and will
-                      display records as soon as the
-                      API returns them.
-                    </span>
-                  </div>
                 </div>
               )}
             </div>
             <div className="threat-chart-footer">
               <div>
-                <strong>
-                  Data source:
-                </strong>
+                <strong>Data source:</strong>
 
-                <span>
-                  {" "}
-                  /api/users/dashboard/charts
-                </span>
+                <span> /api/users/dashboard/charts</span>
               </div>
 
               <div className="severity-legend">
+                <span className="legend-dot critical"></span>
+                <span>Critical</span>
+
                 <span className="legend-dot high"></span>
                 <span>High</span>
 
@@ -1662,21 +2319,19 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
                 <span className="item-list-kicker">Backend activity</span>
                 <h2>Recent Threat Signals</h2>
                 <p>
-                  Latest cyber and anomaly indicators linked to hazard monitoring.
+                  Latest cyber-threat indicators.
                 </p>
               </div>
 
               <div className="item-list-actions">
                 <span className="item-count-pill">
-                  {itemRows.length} shown
+                  {itemRows.length} Threats
                 </span>
 
                 <button
                   type="button"
-                  className="view-all-button"
-                  onClick={() =>
-                    setPage("alerts")
-                  }
+                  className="btn btn-primary"
+                  onClick={() => setPage("alerts")}
                 >
                   View All
                 </button>
@@ -1684,75 +2339,78 @@ function Dashboard({ setPage, setSelectedThreat, isLoggedIn }) {
             </div>
 
             <div className="item-list-table">
+
+               {threatError && (
+  <div className="item-list-error" role="alert">
+    {threatError}
+  </div>
+)}
+
               <div className="item-list-table-head">
-                <span>Signal</span>
-                <span>Risk</span>
-                <span>Status</span>
+              <span>Threat</span>
+              <span>Location / Source</span>
+              <span>Detected</span>
+              <span>Risk</span>
+              <span>Status</span>
               </div>
 
               {itemRows.length > 0 ? (
                 itemRows.map((item) => (
-                  <div
-                    className="item-list-row"
-                    key={item.id}
-                    onClick={() => {
-                      setSelectedThreat(item);
-                      setPage("threatdetails");
-                    }}
-                    role="button"
-                    tabIndex={0}
+                <div
+                   className="item-list-row"
+                   key={item.id}
+                   onClick={() => openThreatDetails(item)}
+                   role="button"
+                   tabIndex={item.backendId ? 0 : -1}
+                   aria-disabled={!item.backendId}
+                   aria-label={
+                     item.backendId
+                        ? `Open details for ${item.name}`
+                        : `${item.name}; threat details unavailable`
+                   }
                     onKeyDown={(event) => {
-                      if (
-                        event.key === "Enter" ||
-                        event.key === " "
-                      ) {
-                        setSelectedThreat(item);
-                        setPage("threatdetails");
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openThreatDetails(item);
                       }
                     }}
-                  >
+                >
                     <div className="item-name-cell">
-                      <span
-                        className={`item-signal-dot ${item.className}`}
-                        aria-hidden="true"
-                      ></span>
+  <span
+    className={`item-signal-dot ${item.className}`}
+    aria-hidden="true"
+  />
 
-                      <div className="item-copy">
-                        <strong>{item.name}</strong>
-                        <small>{item.meta}</small>
-                      </div>
-                    </div>
+  <strong>{item.name}{!item.backendId && " (details unavailable)"}</strong>
+</div>
 
-                    <div
-                      className={`status-pill ${item.className}`}
-                    >
-                      {item.vulnerability}
-                    </div>
+<span>{item.location}</span>
 
-                    <div className="status-right-cell">
-                      <div
-                        className={`status-pill ${item.className}`}
-                      >
-                        {item.status}
-                      </div>
+<span>
+  {formatShortDate(item.detectionDate, dateFormat)}
+</span>
 
-                      <span className="row-arrow">
-                        &gt;
-                      </span>
-                    </div>
+<div className={`status-pill ${item.className}`}>
+  {item.vulnerability}
+</div>
+
+<div className={`status-pill ${item.className}`}>
+  {item.status}
+</div>
+
                   </div>
                 ))
               ) : (
                 <div className="item-list-empty">
                   {isLoading
-                    ? "Loading backend threats..."
-                    : "No threat records returned yet."}
+                    ? "Loading recent threat signals..."
+                    : "No recent threat signals available."}
                 </div>
               )}
             </div>
           </section>
-
         </div>
+
       </main>
     </div>
   );

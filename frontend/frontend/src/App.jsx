@@ -1,53 +1,401 @@
-import { useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  Routes,
+  Route,
+  Navigate,
+  Link,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import "./App.css";
+import "./components/design.css";
 import LoginForm from "./components/LoginForm";
 import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer";
-import AboutUs from "./AboutUs";
-import Dashboard from "./Dashboard";
 import ForgotPassword from "./ForgotPassword";
-import SettingsPage from "./SettingsPage";
-import Alerts from "./Alerts";
-import ReportsPage from "./ReportsPage";
-import ThreatDetails from "./ThreatDetails";
-import { getAuthSession, logoutUser } from "./services/authApi";
+import {
+  getAuthSession,
+  logoutUser,
+  PASSWORD_RESET_SUPPORTED,
+  requestPasswordReset,
+  restoreAuthSession,
+} from "./services/authApi";
 import NotificationPanel from "./components/notifier";
+import GlobalSearch from "./components/GlobalSearch";
+import { usePreferences } from "./PreferencesContext";
+import { LoadingState } from "./components/States";
+import {
+  HOME_PATH,
+  pathForKey,
+  routeForPath,
+  APP_NAME,
+} from "./config/routes";
+
+// Keep public entry screens in the initial bundle. Feature pages are fetched
+// only when their routes are visited, which reduces login and startup cost.
+const AboutUs = lazy(() => import("./AboutUs"));
+const Dashboard = lazy(() => import("./Dashboard"));
+const SettingsPage = lazy(() => import("./SettingsPage"));
+const Alerts = lazy(() => import("./Alerts"));
+const ReportsPage = lazy(() => import("./ReportsPage"));
+const RiskAssessmentPage = lazy(() => import("./RiskAssessmentPage"));
+const HelpSupportPage = lazy(() => import("./HelpSupportPage"));
+const CreateUser = lazy(() => import("./CreateUser"));
+const ComponentShowcase = lazy(
+  () => import("./components/ComponentShowcase"),
+);
+const IntegrationHealthPanel = lazy(
+  () => import("./components/IntegrationHealthPanel"),
+);
+const ThreatDetails = lazy(() => import("./ThreatDetails"));
+const IntegrationDetails = lazy(() => import("./IntegrationDetails"));
+const HazardDetails = lazy(() => import("./HazardDetails"));
+
+function RouteLoadingState() {
+  return (
+    <LoadingState
+      title="Loading page"
+      description="Preparing this section of Phoenix."
+    />
+  );
+}
+
+// Pages that show the header search and notification bell.
+const MAIN_PATHS = [
+  "/dashboard",
+  "/alerts",
+  "/reports",
+  "/about",
+  "/settings",
+  "/threats",
+  "/risk-assessment",
+  "/help",
+  "/admin/integration-health",
+  "/admin/component-showcase",
+];
+
+const UNSAVED_SETTINGS_MESSAGE =
+  "You have unsaved theme changes. Leave Settings without saving them?";
 
 function App() {
-  const [page, setPage] = useState("dashboard");
-  const [authSession, setAuthSession] = useState(() => getAuthSession());
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { preferences } = usePreferences();
+
+  const [authSession, setAuthSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [selectedThreat, setSelectedThreat] = useState(null);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [hasUnsavedSettings, setHasUnsavedSettings] = useState(false);
+  const adminMenuRef = useRef(null);
+  const notifBellRef = useRef(null);
+  const menuButtonRef = useRef(null);
+  const hasUnsavedSettingsRef = useRef(false);
+  useEffect(() => {
+  let mounted = true;
 
-  const mainPages = [
-    "about",
-    "dashboard",
-    "reports",
-    "alerts",
-    "threats",
-    "settings",
-  ];
+  const restoreSession = async () => {
+    const storedSession = getAuthSession();
+
+    if (!storedSession) {
+      if (mounted) {
+        setAuthLoading(false);
+      }
+      return;
+    }
+
+    const restoredSession = await restoreAuthSession();
+
+    if (!mounted) {
+      return;
+    }
+
+    setAuthSession(restoredSession);
+    setAuthLoading(false);
+  };
+
+  restoreSession();
+
+  return () => {
+    mounted = false;
+  };
+ }, []);
 
   const isLoggedIn = Boolean(authSession?.accessToken);
+  const isAdmin = authSession?.user?.role?.toLowerCase() === "admin";
+  const showChrome =
+    MAIN_PATHS.includes(location.pathname) ||
+    location.pathname.startsWith("/threats/") ||
+    location.pathname.startsWith("/integrations/");
+
+  const updateUnsavedSettings = useCallback((hasUnsavedChanges) => {
+    const nextValue = Boolean(hasUnsavedChanges);
+    hasUnsavedSettingsRef.current = nextValue;
+    setHasUnsavedSettings(nextValue);
+  }, []);
+
+  const confirmSettingsNavigation = useCallback((nextPath) => {
+    if (
+      !hasUnsavedSettingsRef.current
+      || nextPath === location.pathname
+    ) {
+      return true;
+    }
+
+    if (!window.confirm(UNSAVED_SETTINGS_MESSAGE)) return false;
+
+    updateUnsavedSettings(false);
+    return true;
+  }, [location.pathname, updateUnsavedSettings]);
+
+  // Compatibility shim: teammates' pages still call setPage("dashboard").
+  // Translate those keys into real navigation so their code keeps working.
+  const goToPage = (key) => {
+    const nextPath = pathForKey(key);
+    if (!confirmSettingsNavigation(nextPath)) return false;
+
+    navigate(nextPath);
+    return true;
+  };
+
+  // Browser tab title follows the current route.
+  useEffect(() => {
+    const route = routeForPath(location.pathname);
+
+    document.title = `${
+      route ? route.title : "Page not found"
+    } | ${APP_NAME}`;
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const browserNavigation = window.navigation;
+    if (!hasUnsavedSettings || !browserNavigation?.addEventListener) {
+      return undefined;
+    }
+
+    const warnBeforeSameDocumentNavigation = (event) => {
+      if (!event.destination?.sameDocument) return;
+
+      const destinationPath = new URL(event.destination.url).pathname;
+      if (
+        !confirmSettingsNavigation(destinationPath)
+        && event.cancelable
+      ) {
+        event.preventDefault();
+      }
+    };
+
+    browserNavigation.addEventListener(
+      "navigate",
+      warnBeforeSameDocumentNavigation,
+    );
+    return () => browserNavigation.removeEventListener(
+      "navigate",
+      warnBeforeSameDocumentNavigation,
+    );
+  }, [confirmSettingsNavigation, hasUnsavedSettings]);
+
+  // Escape closes the mobile menu and returns focus to the menu button.
+  useEffect(() => {
+    if (!sidebarOpen) {
+      return undefined;
+    }
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setSidebarOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    if (!showAdminMenu) {
+      return undefined;
+    }
+
+    const closeMenu = (event) => {
+      if (!adminMenuRef.current?.contains(event.target)) {
+        setShowAdminMenu(false);
+      }
+    };
+
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") {
+        setShowAdminMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", closeMenu);
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", closeMenu);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [showAdminMenu]);
+
+  // Closing the panel hands focus back to the bell that opened it.
+  const closeNotificationPanel = () => {
+    setShowNotifPanel(false);
+    notifBellRef.current?.focus();
+  };
+
+  // The notification panel reports an expired session. There is nothing to
+  // confirm — the session is already gone — so this clears it and goes
+  // straight to the sign-in form.
+  const handleNotificationSignIn = async () => {
+    setShowNotifPanel(false);
+    await logoutUser();
+    setAuthSession(null);
+    navigate(pathForKey("login"));
+  };
+
+  const handleBackFromThreatDetails = () => {
+    setSelectedThreat(null);
+
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(HOME_PATH);
+    }
+  };
 
   const handleLogin = (session) => {
     setAuthSession(session);
-    setPage("dashboard");
+    navigate(HOME_PATH);
   };
 
   const handleLogout = async (nextPage = "dashboard") => {
+    if (
+      preferences.confirmImportantActions
+      && !window.confirm(
+        nextPage === "login"
+          ? "Change user and end the current session?"
+          : "Sign out and end the current session?",
+      )
+    ) {
+      return false;
+    }
+
+    if (!confirmSettingsNavigation(pathForKey(nextPage))) return false;
+
+    setShowAdminMenu(false);
     await logoutUser();
     setAuthSession(null);
-    setPage(nextPage);
+    goToPage(nextPage);
+    return true;
   };
+
+  // Closes the mobile drawer and returns focus to the button that opened it.
+  // Sidebar calls this after every link click, so the drawer closes on
+  // navigation without needing an effect that watches the route.
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+    menuButtonRef.current?.focus();
+  };
+
+  // The shared shell: header, Sidebar, page content, Footer.
+  // Replaces the repeated display:flex wrappers.
+  const withShell = (content) => (
+    <div className={`app-body${sidebarOpen ? " sidebar-open" : ""}`}>
+      <Sidebar
+        isAdmin={isAdmin}
+        onNavigate={closeSidebar}
+        onBeforeNavigate={confirmSettingsNavigation}
+      />
+      {sidebarOpen && (
+        <button
+          type="button"
+          className="sidebar-overlay"
+          aria-label="Close navigation menu"
+          onClick={closeSidebar}
+        />
+      )}
+
+      <main id="main-content" className="app-content" tabIndex={-1}>
+        <Suspense fallback={<RouteLoadingState />}>
+          {content}
+        </Suspense>
+      </main>
+    </div>
+  );
+
+
+  const protectedPage = (content) =>
+  isLoggedIn ? content : <Navigate to="/login" replace />;
+
+  if (authLoading) {
+   return (
+    <div className="login-page">
+      <main
+        id="main-content"
+        className="page-content"
+        style={{
+          display: "grid",
+          placeItems: "center",
+          minHeight: "100vh",
+        }}
+      >
+        Restoring your session...
+      </main>
+    </div>
+   );
+  }
 
   return (
     <div className="login-page">
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
+
       <div className="temp-header">
         <div className="temp-header-left">
-          <div className="temp-logo">
+          <button
+            type="button"
+            ref={menuButtonRef}
+            className="menu-button"
+            aria-expanded={sidebarOpen}
+            aria-label={
+              sidebarOpen
+                ? "Close navigation menu"
+                : "Open navigation menu"
+            }
+            onClick={() => setSidebarOpen((open) => !open)}
+          >
+            <span aria-hidden="true">
+              {sidebarOpen ? "\u2715" : "\u2630"}
+            </span>
+          </button>
+
+          <Link
+            to={HOME_PATH}
+            className="temp-logo logo-home-button"
+            aria-label="Phoenix home, go to Dashboard"
+            title="Go to Dashboard"
+            onClick={(event) => {
+              if (!confirmSettingsNavigation(HOME_PATH)) {
+                event.preventDefault();
+              }
+            }}
+          >
             <img src="/logo.png" alt="Phoenix logo" />
-          </div>
+          </Link>
 
           <div>
             <h2>Phoenix</h2>
@@ -56,119 +404,378 @@ function App() {
         </div>
 
         <div className="temp-header-right">
-          {mainPages.includes(page) && (
+          {showChrome && (
             <>
-              <input
-                type="text"
-                placeholder="Search in site"
-                className="temp-search"
-              />
+              <GlobalSearch isAdmin={isAdmin} />
 
-              <button className="temp-bell" aria-label="Notifications" onClick={() => setShowNotifPanel(!showNotifPanel)}>
-                !
+              <button
+                type="button"
+                className="temp-bell"
+                aria-label="Notifications"
+                aria-haspopup="dialog"
+                aria-expanded={showNotifPanel}
+                onClick={() =>
+                  showNotifPanel
+                    ? closeNotificationPanel()
+                    : setShowNotifPanel(true)
+                }
+                ref={notifBellRef}
+              >
+                <svg
+                  className="temp-bell-icon"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M12 3a5.5 5.5 0 0 0-5.5 5.5v3.2L5 15.2a.8.8 0 0 0 .7 1.2h12.6a.8.8 0 0 0 .7-1.2l-1.5-3.5V8.5A5.5 5.5 0 0 0 12 3Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M10 18.4a2.1 2.1 0 0 0 4 0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  />
+                </svg>
               </button>
             </>
           )}
 
           {isLoggedIn ? (
             <div className="header-auth-summary">
-              <span className="header-role">
-                {authSession?.user?.role || "user"}
-              </span>
+              {isAdmin ? (
+                <div
+                  className="admin-menu-container"
+                  ref={adminMenuRef}
+                >
+                  <button
+                    type="button"
+                    className="header-role header-role-button"
+                    aria-haspopup="menu"
+                    aria-expanded={showAdminMenu}
+                    onClick={() =>
+                      setShowAdminMenu((visible) => !visible)
+                    }
+                  >
+                    Admin{" "}
+                    <span aria-hidden="true">
+                      {"\u2304"}
+                    </span>
+                  </button>
 
-              <button
-                type="button"
-                className="header-auth-button"
-                onClick={() => handleLogout()}
-              >
-                Logout
-              </button>
+                  {showAdminMenu && (
+                    <div className="admin-menu" role="menu">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowAdminMenu(false);
+                          goToPage("createUser");
+                        }}
+                      >
+                        <span className="admin-menu-icon" aria-hidden="true">
+                          {"\uFF0B"}
+                        </span>
+
+                        <span>
+                          <strong>Create user</strong>
+                          <small>
+                            Add a dashboard or app account
+                          </small>
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowAdminMenu(false);
+                          goToPage("integrationHealth");
+                        }}
+                      >
+                        <span
+                          className="admin-menu-icon"
+                          aria-hidden="true"
+                        >
+                          ◉
+                        </span>
+
+                        <span>
+                          <strong>Integration health</strong>
+                          <small>
+                            Check backend service availability
+                          </small>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowAdminMenu(false);
+                          goToPage("componentShowcase");
+                        }}
+                      >
+                        <span className="admin-menu-icon" aria-hidden="true">
+                          ◇
+                        </span>
+
+                        <span>
+                          <strong>Component showcase</strong>
+                          <small>Internal design tokens and examples</small>
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="admin-menu-logout"
+                        onClick={() => handleLogout()}
+                      >
+                        <span className="admin-menu-icon" aria-hidden="true">
+                          ↪
+                        </span>
+
+                        <span>
+                          <strong>Logout</strong>
+                          <small>End your current session</small>
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <span className="header-role">
+                    {authSession?.user?.role || "user"}
+                  </span>
+
+                  <button
+                    type="button"
+                    className="header-auth-button"
+                    onClick={() => handleLogout()}
+                  >
+                    Logout
+                  </button>
+                </>
+              )}
             </div>
           ) : (
-            <button
-              type="button"
-              className="header-auth-button"
-              onClick={() => setPage("login")}
-            >
+            <Link to={pathForKey("login")} className="header-auth-button">
               Login
-            </button>
+            </Link>
           )}
         </div>
       </div>
+
       {showNotifPanel && (
-        <NotificationPanel onClose={() => setShowNotifPanel(false)} />
+        <NotificationPanel
+          onClose={closeNotificationPanel}
+          onSignIn={handleNotificationSignIn}
+        />
       )}
 
-
-
       <div className="page-content">
-        {page === "login" && (
-          <LoginForm
-            setPage={setPage}
-            onLogin={handleLogin}
+        <Suspense fallback={<RouteLoadingState />}>
+          <Routes>
+          <Route
+            path="/"
+            element={<Navigate to={HOME_PATH} replace />}
           />
-        )}
 
-        {page === "forgotPassword" && (
-          <ForgotPassword setPage={setPage} />
-        )}
+          <Route
+            path="/login"
+            element={
+              <LoginForm
+                setPage={goToPage}
+                onLogin={handleLogin}
+              />
+            }
+          />
 
-        {page === "dashboard" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
+          <Route
+            path="/forgot-password"
+            element={
+              <ForgotPassword
+                setPage={goToPage}
+                // Supplied only when the gateway can actually accept it. Left
+                // undefined, the page reports recovery as unavailable rather
+                // than failing a request that was never sent.
+                requestPasswordReset={
+                  PASSWORD_RESET_SUPPORTED ? requestPasswordReset : undefined
+                }
+              />
+            }
+          />
 
-            <Dashboard
-              setPage={setPage}
-              setSelectedThreat={setSelectedThreat}
-              isLoggedIn={isLoggedIn}
-            />
-          </div>
-        )}
+          <Route
+            path="/admin/create-user"
+            element={
+             isLoggedIn && isAdmin ? (
+               <CreateUser setPage={goToPage} />
+             ) : (
+               <Navigate
+                  to={isLoggedIn ? HOME_PATH : "/login"}
+                  replace
+               />
+             )
+            }
+          />
 
-        {page === "alerts" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
+          <Route
+            path="/admin/component-showcase"
+            element={
+              isLoggedIn && isAdmin ? (
+                withShell(<ComponentShowcase />)
+              ) : (
+                <Navigate
+                   to={isLoggedIn ? HOME_PATH : "/login"}
+                   replace
+                />
+              )
+            }
+          />
 
-            <Alerts
-              setPage={setPage}
-              setSelectedThreat={setSelectedThreat}
-            />
-          </div>
-        )}
+          {/* Admin-only backend integration diagnostics */}
+          <Route
+             path="/admin/integration-health"
+             element={
+               isLoggedIn && isAdmin ? (
+                  withShell(<IntegrationHealthPanel />)
+               ) : (
+                 <Navigate
+                    to={isLoggedIn ? HOME_PATH : "/login"}
+                    replace
+                 />
+               )
+             }
+          />
 
-        {page === "about" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
-            <AboutUs />
-          </div>
-        )}
+        <Route
+            path="/dashboard"
+            element={withShell(
+                <Dashboard
+                    setPage={goToPage}
+                    setSelectedThreat={setSelectedThreat}
+                    isLoggedIn={isLoggedIn}
+                />,
+              )}
+        />
 
-        {page === "reports" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
-            <ReportsPage />
-          </div>
-        )}
+         <Route
+           path="/alerts"
+           element={protectedPage(
+             withShell(
+               <Alerts
+                  setPage={goToPage}
+                  setSelectedThreat={setSelectedThreat}
+               />,
+             ),
+          )}
+         />
 
-        {page === "threats" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
-            <ThreatDetails selectedThreat={selectedThreat} />
-          </div>
-        )}
+          <Route
+            path="/about"
+            element={protectedPage(
+                withShell(<AboutUs />),
+            )}
+          />
 
-        {page === "settings" && (
-          <div style={{ display: "flex" }}>
-            <Sidebar setPage={setPage} page={page} />
-            <SettingsPage
-              setPage={setPage}
-              authSession={authSession}
-              onLogout={handleLogout}
-            />
-          </div>
-        )}
+          <Route
+            path="/reports"
+            element={protectedPage(
+                 withShell(<ReportsPage />),
+            )}
+          />
 
-       </div>
+          <Route
+            path="/integrations/:integrationId"
+            element={withShell(<IntegrationDetails />)}
+          />
+
+          <Route
+            path="/risk-assessment"
+            element={withShell(<RiskAssessmentPage />)}
+          />
+
+          <Route
+              path="/threats"
+              element={protectedPage(
+                 withShell(
+                   <ThreatDetails
+                     selectedThreat={selectedThreat}
+                     onBack={handleBackFromThreatDetails}
+                   />,
+                 ),
+              )}
+          />
+
+         <Route
+            path="/threats/:threatId"
+            element={protectedPage(
+               withShell(
+                 <ThreatDetails
+                    selectedThreat={selectedThreat}
+                    onBack={handleBackFromThreatDetails}
+                 />,
+               ),
+            )}
+          />
+                    <Route
+            path="/hazards/:hazardId"
+            element={withShell(<HazardDetails />)}
+          />
+
+          <Route
+            path="/settings"
+            element={protectedPage(
+               withShell(
+                <SettingsPage
+                   setPage={goToPage}
+                   authSession={authSession}
+                   onLogout={handleLogout}
+                   onUnsavedChanges={updateUnsavedSettings}
+                />,
+               ),
+            )}
+          />
+
+          <Route
+            path="/help"
+            element={protectedPage(
+               withShell(
+                 <HelpSupportPage setPage={goToPage} />,
+               ),
+            )}
+          />
+
+          <Route
+            path="*"
+            element={
+              <div className="not-found">
+                <h1>Page not found</h1>
+
+                <p>
+                  The address you entered does not match any Phoenix
+                  page.
+                </p>
+
+                <Link
+                  to={HOME_PATH}
+                  className="header-auth-button"
+                >
+                  Return to Dashboard
+                </Link>
+              </div>
+            }
+          />
+          </Routes>
+        </Suspense>
+      </div>
 
       <Footer />
     </div>

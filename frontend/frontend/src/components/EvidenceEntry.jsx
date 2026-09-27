@@ -1,0 +1,1314 @@
+import { useEffect, useRef, useState } from "react";
+import "./EvidenceEntry.css";
+import "./evidence-upload-styles.css";
+import { uploadEvidenceFile } from "../services/storageApi";
+
+/*
+ * ============================================================
+ * CONFIGURATION
+ * ============================================================
+ *
+ * Change this value if the project requires a different
+ * maximum size for an individual evidence file.
+ */
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+/*
+ * Supported file extensions and MIME types.
+ *
+ * The extension and MIME type are both checked.
+ */
+const ALLOWED_FILE_TYPES = {
+  ".pdf": ["application/pdf"],
+
+  ".doc": ["application/msword"],
+
+  ".docx": [
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ],
+
+  ".txt": ["text/plain"],
+
+  ".csv": [
+    "text/csv",
+    "application/csv",
+    "application/vnd.ms-excel",
+  ],
+
+  ".xls": ["application/vnd.ms-excel"],
+
+  ".xlsx": [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ],
+
+  ".ppt": ["application/vnd.ms-powerpoint"],
+
+  ".pptx": [
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ],
+
+  ".jpg": ["image/jpeg"],
+  ".jpeg": ["image/jpeg"],
+  ".png": ["image/png"],
+  ".gif": ["image/gif"],
+  ".webp": ["image/webp"],
+};
+
+/*
+ * Explicitly reject potentially executable or dangerous files.
+ *
+ * This is intentionally separate from ALLOWED_FILE_TYPES so
+ * the application can give a security-specific error.
+ */
+const DANGEROUS_EXTENSIONS = new Set([
+  ".exe",
+  ".dll",
+  ".bat",
+  ".cmd",
+  ".com",
+  ".msi",
+  ".scr",
+  ".ps1",
+  ".psm1",
+  ".vbs",
+  ".vbe",
+  ".js",
+  ".jse",
+  ".jar",
+  ".apk",
+  ".app",
+  ".dmg",
+  ".pkg",
+  ".sh",
+  ".bash",
+]);
+
+const INITIAL_FORM = {
+  incidentTitle: "",
+  incidentDescription: "",
+  sourceContext: "",
+  observedDateTime: "",
+  reporterNotes: "",
+  suspiciousUrl: "",
+};
+
+function getExtension(fileName) {
+  const lastDot = fileName.lastIndexOf(".");
+
+  if (lastDot === -1) {
+    return "";
+  }
+
+  return fileName.slice(lastDot).toLowerCase();
+}
+
+function formatFileSize(bytes) {
+  if (bytes === 0) {
+    return "0 Bytes";
+  }
+
+  const units = ["Bytes", "KB", "MB", "GB"];
+
+  const unitIndex = Math.floor(
+    Math.log(bytes) / Math.log(1024)
+  );
+
+  return `${(bytes / Math.pow(1024, unitIndex)).toFixed(
+    unitIndex === 0 ? 0 : 2
+  )} ${units[unitIndex]}`;
+}
+
+function isImageFile(file) {
+  return file.type.startsWith("image/");
+}
+
+function validateUrl(value) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return "Enter a suspicious URL.";
+  }
+
+  try {
+    const parsedUrl = new URL(trimmedValue);
+
+    /*
+     * Only web URLs are supported.
+     *
+     * This rejects:
+     * javascript:
+     * file:
+     * data:
+     * ftp:
+     * and other unsupported protocols.
+     */
+    if (
+      parsedUrl.protocol !== "http:" &&
+      parsedUrl.protocol !== "https:"
+    ) {
+      return "Only HTTP and HTTPS URLs are supported.";
+    }
+
+    if (!parsedUrl.hostname) {
+      return "Enter a valid URL.";
+    }
+  } catch {
+    return "Enter a valid URL.";
+  }
+
+  return "";
+}
+
+function validateFile(file) {
+  const extension = getExtension(file.name);
+
+  if (!extension) {
+    return "File must have a supported extension.";
+  }
+
+  /*
+   * Dangerous extensions are rejected first.
+   */
+  if (DANGEROUS_EXTENSIONS.has(extension)) {
+    return `${extension} files are not allowed for security reasons.`;
+  }
+
+  /*
+   * Check whether the extension is supported.
+   */
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      ALLOWED_FILE_TYPES,
+      extension
+    )
+  ) {
+    return `${extension} files are not supported.`;
+  }
+
+  /*
+   * Check the configured size limit.
+   */
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return `File exceeds the ${MAX_FILE_SIZE_MB} MB size limit.`;
+  }
+
+  const allowedMimeTypes = ALLOWED_FILE_TYPES[extension];
+
+  /*
+   * Browser File objects normally provide a MIME type.
+   *
+   * Reject an empty MIME type because the task explicitly
+   * requires MIME validation.
+   */
+  if (!file.type) {
+    return "The file MIME type could not be determined.";
+  }
+
+  /*
+   * Ensure MIME type matches the extension.
+   */
+  if (!allowedMimeTypes.includes(file.type)) {
+    return `The MIME type does not match the ${extension} extension.`;
+  }
+
+  return "";
+}
+
+function filesAreDuplicates(existingFile, newFile) {
+  return (
+    existingFile.name === newFile.name &&
+    existingFile.size === newFile.size &&
+    existingFile.lastModified === newFile.lastModified &&
+    existingFile.type === newFile.type
+  );
+}
+
+export default function EvidenceEntry({
+  onPrepareReport,
+}) {
+  const [form, setForm] = useState(INITIAL_FORM);
+
+  /*
+   * Each evidence item has one of these shapes:
+   *
+   * URL:
+   * {
+   *   id,
+   *   kind: "url",
+   *   value
+   * }
+   *
+   * File:
+   * {
+   *   id,
+   *   kind: "file",
+   *   file,
+   *   name,
+   *   type,
+   *   size,
+   *   previewUrl
+   * }
+   */
+  const [evidenceItems, setEvidenceItems] = useState([]);
+
+  /*
+   * Sprint 2 Week 3 (Varun) — "Evidence upload and backend integrity".
+   *
+   * Upload state per file evidence item, keyed by item id:
+   *   {
+   *     status: "uploading" | "uploaded" | "error" | "cancelled",
+   *     progress: 0-100,
+   *     error: string,
+   *     meta: { fileId, originalName, mimeType, size } // once uploaded
+   *   }
+   *
+   * URL evidence items never appear here — only "file" kind items are
+   * actually uploaded to the backend.
+   */
+  const [uploadState, setUploadState] = useState({});
+
+  /*
+   * AbortControllers for in-flight uploads, keyed by item id, so a single
+   * upload can be cancelled (Cancel button) or the whole set can be
+   * aborted on unmount/clear without leaving requests running in the
+   * background.
+   */
+  const uploadControllersRef = useRef(new Map());
+
+  const [errors, setErrors] = useState({});
+
+  const [generalError, setGeneralError] = useState("");
+
+  const [dragActive, setDragActive] = useState(false);
+
+  const [prepared, setPrepared] = useState(false);
+
+  const fileInputRef = useRef(null);
+
+  /*
+   * Keep track of every object URL created for image previews.
+   *
+   * This lets us safely revoke URLs when files are removed
+   * and when the component is unmounted.
+   */
+  const previewUrlsRef = useRef(new Set());
+
+  /*
+   * Release all remaining object URLs when the component
+   * is removed from the page.
+   */
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+
+      previewUrlsRef.current.clear();
+
+      /*
+       * Abort any uploads still in flight when the component unmounts,
+       * rather than leaving requests running for a page the user has
+       * already left.
+       */
+      uploadControllersRef.current.forEach((controller) => {
+        controller.abort();
+      });
+
+      uploadControllersRef.current.clear();
+    };
+  }, []);
+
+  /*
+   * ------------------------------------------------------------
+   * UPLOAD (Sprint 2 Week 3 — connects evidence files to the real
+   * POST /api/storage/upload backend endpoint)
+   * ------------------------------------------------------------
+   *
+   * Starts automatically once a file passes validation, so the person
+   * sees real upload progress rather than a form that silently does
+   * nothing until "Prepare Report" is clicked.
+   */
+  function uploadFileItem(item) {
+    const controller = new AbortController();
+    uploadControllersRef.current.set(item.id, controller);
+
+    setUploadState((previous) => ({
+      ...previous,
+      [item.id]: { status: "uploading", progress: 0, error: "" },
+    }));
+
+    uploadEvidenceFile(item.file, {
+      signal: controller.signal,
+      onProgress: (percent) => {
+        setUploadState((previous) => {
+          // Don't resurrect progress updates for an upload that was
+          // cancelled or removed while a progress event was in flight.
+          if (!previous[item.id] || previous[item.id].status !== "uploading") {
+            return previous;
+          }
+
+          return {
+            ...previous,
+            [item.id]: { ...previous[item.id], progress: percent },
+          };
+        });
+      },
+    })
+      .then((meta) => {
+        uploadControllersRef.current.delete(item.id);
+
+        setUploadState((previous) => ({
+          ...previous,
+          [item.id]: { status: "uploaded", progress: 100, error: "", meta },
+        }));
+      })
+      .catch((error) => {
+        uploadControllersRef.current.delete(item.id);
+
+        // A cancellation isn't a failure — cancelUpload() already set the
+        // "cancelled" status itself, so don't overwrite it with an error.
+        if (error.code === "UPLOAD_CANCELLED") {
+          return;
+        }
+
+        setUploadState((previous) => ({
+          ...previous,
+          [item.id]: {
+            status: "error",
+            progress: 0,
+            error: error.message || "Upload failed.",
+          },
+        }));
+      });
+  }
+
+  function cancelUpload(id) {
+    const controller = uploadControllersRef.current.get(id);
+
+    if (controller) {
+      controller.abort();
+      uploadControllersRef.current.delete(id);
+    }
+
+    setUploadState((previous) => ({
+      ...previous,
+      [id]: { status: "cancelled", progress: 0, error: "" },
+    }));
+  }
+
+  function retryUpload(id) {
+    const item = evidenceItems.find((evidenceItem) => evidenceItem.id === id);
+
+    if (item) {
+      uploadFileItem(item);
+    }
+  }
+
+  function updateField(field, value) {
+    setForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+
+    setErrors((previous) => ({
+      ...previous,
+      [field]: "",
+    }));
+
+    setPrepared(false);
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * URL EVIDENCE
+   * ------------------------------------------------------------
+   */
+
+  function addUrl() {
+    const urlError = validateUrl(form.suspiciousUrl);
+
+    if (urlError) {
+      setErrors((previous) => ({
+        ...previous,
+        suspiciousUrl: urlError,
+      }));
+
+      return;
+    }
+
+    const normalizedUrl = form.suspiciousUrl.trim();
+
+    const duplicate = evidenceItems.some(
+      (item) =>
+        item.kind === "url" &&
+        item.value === normalizedUrl
+    );
+
+    if (duplicate) {
+      setErrors((previous) => ({
+        ...previous,
+        suspiciousUrl:
+          "This URL has already been added.",
+      }));
+
+      return;
+    }
+
+    setEvidenceItems((previous) => [
+      ...previous,
+      {
+        id: crypto.randomUUID(),
+        kind: "url",
+        value: normalizedUrl,
+      },
+    ]);
+
+    setForm((previous) => ({
+      ...previous,
+      suspiciousUrl: "",
+    }));
+
+    setErrors((previous) => ({
+      ...previous,
+      suspiciousUrl: "",
+      evidence: "",
+    }));
+
+    setPrepared(false);
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * FILE EVIDENCE
+   * ------------------------------------------------------------
+   */
+
+  function addFiles(fileList) {
+    try {
+      setGeneralError("");
+
+      const selectedFiles = Array.from(fileList || []);
+
+      if (selectedFiles.length === 0) {
+        return;
+      }
+
+      const newErrors = {};
+      const validFiles = [];
+
+      selectedFiles.forEach((file) => {
+        const validationError = validateFile(file);
+
+        if (validationError) {
+          newErrors[file.name] = validationError;
+          return;
+        }
+
+        /*
+         * Check against files that are already in the evidence list.
+         */
+        const duplicateInExisting = evidenceItems.some(
+          (item) =>
+            item.kind === "file" &&
+            filesAreDuplicates(item.file, file)
+        );
+
+        /*
+         * Also check against other files selected in the
+         * same upload operation.
+         */
+        const duplicateInNewFiles = validFiles.some(
+          (existingFile) =>
+            filesAreDuplicates(existingFile, file)
+        );
+
+        if (
+          duplicateInExisting ||
+          duplicateInNewFiles
+        ) {
+          newErrors[file.name] =
+            "This file has already been added.";
+
+          return;
+        }
+
+        validFiles.push(file);
+      });
+
+      /*
+       * Create evidence objects for valid files.
+       */
+      const newItems = validFiles.map((file) => {
+        let previewUrl = null;
+
+        if (isImageFile(file)) {
+          previewUrl = URL.createObjectURL(file);
+
+          previewUrlsRef.current.add(previewUrl);
+        }
+
+        return {
+          id: crypto.randomUUID(),
+          kind: "file",
+          file,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          previewUrl,
+        };
+      });
+
+      setEvidenceItems((previous) => [
+        ...previous,
+        ...newItems,
+      ]);
+
+      // Sprint 2 Week 3 (Varun) — start each valid file uploading right
+      // away, rather than waiting for "Prepare Report", so upload
+      // progress/failure is visible while the person is still filling in
+      // the rest of the form.
+      newItems.forEach((item) => uploadFileItem(item));
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors((previous) => ({
+          ...previous,
+          files: Object.entries(newErrors)
+            .map(
+              ([fileName, message]) =>
+                `${fileName}: ${message}`
+            )
+            .join(" "),
+        }));
+      } else {
+        setErrors((previous) => ({
+          ...previous,
+          files: "",
+          evidence: "",
+        }));
+      }
+
+      if (newItems.length > 0) {
+        setPrepared(false);
+      }
+
+      /*
+       * Reset the file input.
+       *
+       * This allows a user to select the same file again after
+       * removing it.
+       */
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch {
+      setGeneralError(
+        "The selected files could not be processed. Please try again."
+      );
+    }
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * REMOVE EVIDENCE
+   * ------------------------------------------------------------
+   */
+
+  function removeEvidence(id) {
+    // Cancel the upload if it's still in flight, rather than letting a
+    // removed item's request keep running in the background.
+    const controller = uploadControllersRef.current.get(id);
+
+    if (controller) {
+      controller.abort();
+      uploadControllersRef.current.delete(id);
+    }
+
+    setUploadState((previous) => {
+      const next = { ...previous };
+      delete next[id];
+      return next;
+    });
+
+    setEvidenceItems((previous) => {
+      const itemToRemove = previous.find(
+        (item) => item.id === id
+      );
+
+      /*
+       * Release image preview memory immediately.
+       */
+      if (itemToRemove?.previewUrl) {
+        URL.revokeObjectURL(
+          itemToRemove.previewUrl
+        );
+
+        previewUrlsRef.current.delete(
+          itemToRemove.previewUrl
+        );
+      }
+
+      return previous.filter(
+        (item) => item.id !== id
+      );
+    });
+
+    setPrepared(false);
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * REORDER EVIDENCE
+   * ------------------------------------------------------------
+   */
+
+  function moveEvidence(draggedId, targetId) {
+    if (draggedId === targetId) {
+      return;
+    }
+
+    setEvidenceItems((previous) => {
+      const draggedIndex = previous.findIndex(
+        (item) => item.id === draggedId
+      );
+
+      const targetIndex = previous.findIndex(
+        (item) => item.id === targetId
+      );
+
+      if (
+        draggedIndex === -1 ||
+        targetIndex === -1
+      ) {
+        return previous;
+      }
+
+      const reordered = [...previous];
+
+      const [draggedItem] =
+        reordered.splice(draggedIndex, 1);
+
+      reordered.splice(
+        targetIndex,
+        0,
+        draggedItem
+      );
+
+      return reordered;
+    });
+
+    setPrepared(false);
+  }
+
+  /*
+   * Keyboard-accessible alternative to drag-and-drop.
+   *
+   * offset = -1 moves the item up.
+   * offset = 1 moves the item down.
+   */
+  function moveEvidenceByOffset(id, offset) {
+    setEvidenceItems((previous) => {
+      const currentIndex = previous.findIndex(
+        (item) => item.id === id
+      );
+
+      const targetIndex =
+        currentIndex + offset;
+
+      if (
+        currentIndex === -1 ||
+        targetIndex < 0 ||
+        targetIndex >= previous.length
+      ) {
+        return previous;
+      }
+
+      const reordered = [...previous];
+
+      [
+        reordered[currentIndex],
+        reordered[targetIndex],
+      ] = [
+        reordered[targetIndex],
+        reordered[currentIndex],
+      ];
+
+      return reordered;
+    });
+
+    setPrepared(false);
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * FORM VALIDATION
+   * ------------------------------------------------------------
+   */
+
+  function validateForm() {
+    const validationErrors = {};
+
+    if (!form.incidentTitle.trim()) {
+      validationErrors.incidentTitle =
+        "Incident title is required.";
+    }
+
+    if (!form.incidentDescription.trim()) {
+      validationErrors.incidentDescription =
+        "Incident description is required.";
+    }
+
+    if (!form.sourceContext.trim()) {
+      validationErrors.sourceContext =
+        "Source context is required.";
+    }
+
+    if (!form.observedDateTime) {
+      validationErrors.observedDateTime =
+        "Observed date and time is required.";
+    }
+
+    if (evidenceItems.length === 0) {
+      validationErrors.evidence =
+        "Add at least one URL or file as evidence.";
+    } else {
+      // Sprint 2 Week 3 (Varun) — the report is only meaningful once every
+      // file it references actually exists in backend storage. A file
+      // still uploading, cancelled, or failed means the report would
+      // reference evidence the backend doesn't actually have.
+      const unfinishedFile = evidenceItems.find(
+        (item) =>
+          item.kind === "file" &&
+          uploadState[item.id]?.status !== "uploaded"
+      );
+
+      if (unfinishedFile) {
+        validationErrors.evidence =
+          "Wait for every file to finish uploading (or remove/retry it) before preparing the report.";
+      }
+    }
+
+    setErrors(validationErrors);
+
+    return Object.keys(validationErrors).length === 0;
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * PREPARE REPORT
+   * ------------------------------------------------------------
+   *
+   * This does NOT upload anything.
+   *
+   * It only creates a browser-side report object.
+   */
+  function handlePrepareReport() {
+    setGeneralError("");
+
+    const isValid = validateForm();
+
+    if (!isValid) {
+      setPrepared(false);
+      return;
+    }
+
+    const reportData = {
+      incidentTitle: form.incidentTitle.trim(),
+
+      incidentDescription:
+        form.incidentDescription.trim(),
+
+      sourceContext:
+        form.sourceContext.trim(),
+
+      observedDateTime:
+        form.observedDateTime,
+
+      reporterNotes:
+        form.reporterNotes.trim(),
+
+      evidence: evidenceItems.map((item) => {
+        if (item.kind === "url") {
+          return {
+            id: item.id,
+            kind: "url",
+            value: item.value,
+          };
+        }
+
+        // Sprint 2 Week 3 (Varun) — include the backend-issued file ID and
+        // confirmed metadata (not just the local File object), since this
+        // is the "usable backend metadata" the report is meant to persist.
+        // validateForm() already guarantees every file item has finished
+        // uploading before this point is reached.
+        const uploaded = uploadState[item.id]?.meta;
+
+        return {
+          id: item.id,
+          kind: "file",
+          fileId: uploaded?.fileId,
+          name: uploaded?.originalName || item.name,
+          type: uploaded?.mimeType || item.type,
+          size: uploaded?.size ?? item.size,
+        };
+      }),
+    };
+
+    /*
+     * The callback is optional.
+     *
+     * If ReportsPage provides it, the prepared browser-side
+     * data is passed upward.
+     *
+     * No API request is made here.
+     */
+    if (onPrepareReport) {
+      onPrepareReport(reportData);
+    }
+
+    setPrepared(true);
+  }
+
+  /*
+   * ------------------------------------------------------------
+   * CLEAR FORM
+   * ------------------------------------------------------------
+   */
+
+  function clearForm() {
+    const confirmed = window.confirm(
+      "Clear the entire evidence form? All entered information and selected evidence will be removed."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    /*
+     * Release every image preview URL.
+     */
+    previewUrlsRef.current.forEach((url) => {
+      URL.revokeObjectURL(url);
+    });
+
+    previewUrlsRef.current.clear();
+
+    uploadControllersRef.current.forEach((controller) => {
+      controller.abort();
+    });
+
+    uploadControllersRef.current.clear();
+
+    setForm(INITIAL_FORM);
+
+    setEvidenceItems([]);
+
+    setUploadState({});
+
+    setErrors({});
+
+    setGeneralError("");
+
+    setPrepared(false);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  return (
+    <section
+      className="evidence-entry-card"
+      aria-labelledby="evidence-entry-title"
+    >
+      {/* ======================================================
+          HEADER
+          ====================================================== */}
+
+      <div className="evidence-entry-header">
+        <div>
+          <span className="evidence-entry-kicker">
+            Evidence collection
+          </span>
+
+          <h2 id="evidence-entry-title">
+            Incident Evidence
+          </h2>
+
+          <p>
+            Upload incident documents and images to backend storage.
+          </p>
+        </div>
+      </div>
+
+      {/* ======================================================
+          UNCONNECTED SERVICE NOTICE
+          ====================================================== */}
+
+      <div
+        className="evidence-status-notice"
+        role="status"
+      >
+        <strong>
+          Files are uploaded to backend storage
+        </strong>
+
+        <p>
+          Each file is uploaded to the storage service as soon as it's
+          added. The backend-issued file ID and confirmed metadata are
+          retained after a successful upload.
+        </p>
+      </div>
+
+      {/* ======================================================
+          GENERAL ERROR
+          ====================================================== */}
+
+      {generalError && (
+        <div
+          className="form-error-banner"
+          role="alert"
+        >
+          {generalError}
+        </div>
+      )}
+
+      {/* ======================================================
+          FILE UPLOAD
+          ====================================================== */}
+
+      <div className="evidence-form-section">
+        <h3>Files</h3>
+
+        <div
+          className={`file-drop-zone ${
+            dragActive ? "drag-active" : ""
+          }`}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setDragActive(true);
+          }}
+          onDragLeave={(event) => {
+            event.preventDefault();
+            setDragActive(false);
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+
+            setDragActive(false);
+
+            addFiles(event.dataTransfer.files);
+          }}
+        >
+          <p className="drop-zone-title">
+            Drag and drop evidence files here
+          </p>
+
+          <p className="drop-zone-subtitle">
+            or choose files using the standard file selector
+          </p>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp"
+            onChange={(event) =>
+              addFiles(event.target.files)
+            }
+          />
+
+          <p className="field-help">
+            Supported documents and images only.
+            Maximum size: {MAX_FILE_SIZE_MB} MB per file.
+          </p>
+        </div>
+
+        {errors.files && (
+          <p
+            className="field-error file-error"
+            role="alert"
+          >
+            {errors.files}
+          </p>
+        )}
+      </div>
+
+      {/* ======================================================
+          EVIDENCE COUNT
+          ====================================================== */}
+
+      <div
+        className="evidence-summary"
+        aria-live="polite"
+      >
+        <strong>{evidenceItems.length}</strong>
+
+        <span>
+          {evidenceItems.length === 1
+            ? " evidence item"
+            : " evidence items"}
+        </span>
+      </div>
+
+      {/* ======================================================
+          FORM-LEVEL EVIDENCE ERROR
+          ====================================================== */}
+
+      {errors.evidence && (
+        <p
+          className="field-error evidence-count-error"
+          role="alert"
+        >
+          {errors.evidence}
+        </p>
+      )}
+
+      {/* ======================================================
+          EMPTY STATE
+          ====================================================== */}
+
+      {evidenceItems.length === 0 && (
+        <div className="evidence-empty-state">
+          <strong>No evidence added yet</strong>
+
+          <p>
+            Upload a supported document or image.
+          </p>
+        </div>
+      )}
+
+      {/* ======================================================
+          EVIDENCE LIST
+          ====================================================== */}
+
+      {evidenceItems.length > 0 && (
+        <div className="evidence-list">
+          <h3>Added evidence</h3>
+
+          <p className="field-help">
+            Drag an item to reorder it, or use the move
+            buttons for keyboard-accessible reordering.
+          </p>
+
+          {evidenceItems.map((item, index) => {
+            const displayName =
+              item.kind === "url"
+                ? item.value
+                : item.name;
+
+            return (
+              <div
+                key={item.id}
+                className="evidence-item"
+                draggable
+                onDragStart={(event) => {
+                  event.dataTransfer.setData(
+                    "text/plain",
+                    item.id
+                  );
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+
+                  const draggedId =
+                    event.dataTransfer.getData(
+                      "text/plain"
+                    );
+
+                  moveEvidence(
+                    draggedId,
+                    item.id
+                  );
+                }}
+              >
+                {/* Drag handle */}
+
+                <div
+                  className="evidence-item-drag"
+                  aria-hidden="true"
+                >
+                  ⣿⣿
+                </div>
+
+                {/* Thumbnail/type icon */}
+
+                {item.kind === "file" &&
+                item.previewUrl ? (
+                  <img
+                    src={item.previewUrl}
+                    alt={`Preview of ${item.name}`}
+                    className="evidence-thumbnail"
+                  />
+                ) : (
+                  <div
+                    className="evidence-type-icon"
+                    aria-hidden="true"
+                  >
+                    {item.kind === "url"
+                      ? "URL"
+                      : "FILE"}
+                  </div>
+                )}
+
+                {/* Information */}
+
+                <div className="evidence-item-details">
+                  <strong title={displayName}>
+                    {displayName}
+                  </strong>
+
+                  <span>
+                    {item.kind === "url"
+                      ? "Suspicious URL"
+                      : `${item.type} • ${formatFileSize(
+                          item.size
+                        )}`}
+                  </span>
+
+                  {/* Sprint 2 Week 3 (Varun) — per-file upload status */}
+                  {item.kind === "file" && (
+                    <div
+                      className={`evidence-upload-status evidence-upload-status--${
+                        uploadState[item.id]?.status || "uploading"
+                      }`}
+                    >
+                      {uploadState[item.id]?.status === "uploading" && (
+                        <>
+                          <div
+                            className="evidence-upload-progress-track"
+                            role="progressbar"
+                            aria-valuenow={uploadState[item.id]?.progress || 0}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          >
+                            <div
+                              className="evidence-upload-progress-fill"
+                              style={{
+                                width: `${uploadState[item.id]?.progress || 0}%`,
+                              }}
+                            />
+                          </div>
+                          <span>
+                            Uploading… {uploadState[item.id]?.progress || 0}%
+                          </span>
+                          <button
+                            type="button"
+                            className="evidence-upload-cancel"
+                            onClick={() => cancelUpload(item.id)}
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      )}
+
+                      {uploadState[item.id]?.status === "uploaded" && (
+                        <span className="evidence-upload-success">
+                          Uploaded to storage
+                        </span>
+                      )}
+
+                      {(uploadState[item.id]?.status === "error" ||
+                        uploadState[item.id]?.status === "cancelled") && (
+                        <div role="alert">
+                          <span className="evidence-upload-error">
+                            {uploadState[item.id]?.status === "cancelled"
+                              ? "Upload cancelled."
+                              : uploadState[item.id]?.error || "Upload failed."}
+                          </span>
+                          <button
+                            type="button"
+                            className="evidence-upload-retry"
+                            onClick={() => retryUpload(item.id)}
+                          >
+                            Retry upload
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Position */}
+
+                <span
+                  className="evidence-position"
+                  aria-label={`Evidence position ${
+                    index + 1
+                  }`}
+                >
+                  #{index + 1}
+                </span>
+
+                {/* Keyboard reordering */}
+
+                <div className="evidence-reorder-actions">
+                  <button
+                    type="button"
+                    className="reorder-button"
+                    onClick={() =>
+                      moveEvidenceByOffset(
+                        item.id,
+                        -1
+                      )
+                    }
+                    disabled={index === 0}
+                    aria-label={`Move ${displayName} up`}
+                  >
+                    ↑
+                  </button>
+
+                  <button
+                    type="button"
+                    className="reorder-button"
+                    onClick={() =>
+                      moveEvidenceByOffset(
+                        item.id,
+                        1
+                      )
+                    }
+                    disabled={
+                      index ===
+                      evidenceItems.length - 1
+                    }
+                    aria-label={`Move ${displayName} down`}
+                  >
+                    ↓
+                  </button>
+                </div>
+
+                {/* Remove */}
+
+                <button
+                  type="button"
+                  className="remove-button"
+                  onClick={() =>
+                    removeEvidence(item.id)
+                  }
+                  aria-label={`Remove ${displayName}`}
+                >
+                  Remove
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ======================================================
+          SECURITY NOTICE
+          ====================================================== */}
+
+      <p className="evidence-security-note">
+        <strong>Uploaded, not yet verified:</strong>{" "}
+        files are sent to the backend storage service and stored there.
+        Uploading a file does not mean its contents have been scanned,
+        verified, or confirmed as genuine evidence — that review still
+        happens separately.
+      </p>
+    </section>
+  );
+}

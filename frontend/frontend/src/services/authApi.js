@@ -1,9 +1,14 @@
+import {
+  API_GATEWAY_URL,
+  buildApiUrl,
+} from "../config/environment";
+import { DEFAULT_USER_ROLE } from "../config/roles";
+
 export const AUTH_STORAGE_KEY = "phoenixAuth";
 
-export const API_GATEWAY_URL =
-  import.meta.env.VITE_API_GATEWAY_URL?.replace(/\/$/, "") || "";
+export { API_GATEWAY_URL };
 
-const buildApiUrl = (path) => `${API_GATEWAY_URL}${path}`;
+let refreshPromise = null;
 
 const readJson = async (response) => {
   const text = await response.text();
@@ -17,6 +22,20 @@ const readJson = async (response) => {
   } catch {
     return { message: text };
   }
+};
+
+const getAbortError = (error, signal) => {
+  if (error?.name === "AbortError") {
+    return error;
+  }
+
+  if (signal?.aborted && error === signal.reason) {
+    const abortError = new Error("The request was aborted.");
+    abortError.name = "AbortError";
+    return abortError;
+  }
+
+  return null;
 };
 
 export const getAuthSession = () => {
@@ -41,8 +60,8 @@ export const clearAuthSession = () => {
 export const getAccessToken = () => getAuthSession()?.accessToken || "";
 
 const getApiErrorMessage = (data, response) =>
-  data.message ||
-  `Backend request failed (${response.status} ${response.statusText}). Confirm the Phoenix API gateway is running on localhost:3001.`;
+  data?.message ||
+  `Backend request failed (${response.status} ${response.statusText}). Check the configured PHOENIX API gateway and try again.`;
 
 const unwrapAuthPayload = (payload) => {
   if (Array.isArray(payload?.data)) {
@@ -62,9 +81,135 @@ const unwrapAuthPayload = (payload) => {
   return payload;
 };
 
-export const apiRequest = async (
+const getAuthError = (message = "Your session has expired. Please sign in again.") => {
+  const error = new Error(message);
+  error.status = 401;
+  error.code = "AUTH_SESSION_EXPIRED";
+  return error;
+};
+
+const saveRefreshedSession = (payload) => {
+  const authPayload = unwrapAuthPayload(payload);
+
+  const accessToken =
+    authPayload.access_token ||
+    authPayload.accessToken ||
+    authPayload.token;
+
+  const refreshToken =
+    authPayload.refresh_token ||
+    authPayload.refreshToken ||
+    getAuthSession()?.refreshToken;
+
+  if (!accessToken) {
+    throw getAuthError();
+  }
+
+  const currentSession = getAuthSession();
+
+  const refreshedSession = {
+    ...currentSession,
+    accessToken,
+    refreshToken,
+    user: currentSession?.user,
+    authenticatedAt:
+      currentSession?.authenticatedAt || new Date().toISOString(),
+  };
+
+  localStorage.setItem(
+    AUTH_STORAGE_KEY,
+    JSON.stringify(refreshedSession),
+  );
+
+  return refreshedSession;
+};
+
+export const refreshAccessToken = async () => {
+  const currentSession = getAuthSession();
+  const refreshToken = currentSession?.refreshToken;
+
+  if (!refreshToken) {
+    clearAuthSession();
+    throw getAuthError();
+  }
+
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(
+        buildApiUrl(API_GATEWAY_URL, "/api/users/auth/refresh"),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            refresh_token: refreshToken,
+          }),
+        },
+      );
+
+      const data = await readJson(response);
+
+      if (!response.ok || Number(data.status) >= 400) {
+        clearAuthSession();
+        throw getAuthError(
+          data.message || "Your session could not be refreshed. Please sign in again.",
+        );
+      }
+
+      return saveRefreshedSession(data);
+    } catch (error) {
+      clearAuthSession();
+
+      if (error?.code === "AUTH_SESSION_EXPIRED") {
+        throw error;
+      }
+
+      throw getAuthError(
+        "Your session could not be refreshed. Please sign in again.",
+      );
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+};
+
+export const restoreAuthSession = async () => {
+  const session = getAuthSession();
+
+  if (!session) {
+    return null;
+  }
+
+  if (!session.refreshToken) {
+    clearAuthSession();
+    return null;
+  }
+
+  try {
+    return await refreshAccessToken();
+  } catch {
+    clearAuthSession();
+    return null;
+  }
+};
+
+const performApiRequest = async (
   path,
-  { method = "GET", body, headers = {}, requiresAuth = false, signal } = {},
+  {
+    method = "GET",
+    body,
+    headers = {},
+    requiresAuth = false,
+    signal,
+  } = {},
 ) => {
   const requestHeaders = {
     ...headers,
@@ -77,7 +222,7 @@ export const apiRequest = async (
   const accessToken = getAccessToken();
 
   if (requiresAuth && !accessToken) {
-    throw new Error("Please sign in before loading backend data.");
+    throw getAuthError("Please sign in before loading backend data.");
   }
 
   if (requiresAuth && accessToken) {
@@ -87,25 +232,91 @@ export const apiRequest = async (
   let response;
 
   try {
-    response = await fetch(buildApiUrl(path), {
+    response = await fetch(buildApiUrl(API_GATEWAY_URL, path), {
       method,
       headers: requestHeaders,
       credentials: "include",
       body: body === undefined ? undefined : JSON.stringify(body),
       signal,
     });
-  } catch {
+  } catch (error) {
+    const abortError = getAbortError(error, signal);
+
+    if (abortError) {
+      throw abortError;
+    }
+
     throw new Error(
-      "Could not reach the Phoenix API gateway. Check that Docker is running and the gateway is available on localhost:3001.",
+      "Could not reach the PHOENIX API gateway. Check the configured API gateway and try again.",
     );
   }
 
-  const data = await readJson(response);
+  let data;
+
+  try {
+    data = await readJson(response);
+  } catch (error) {
+    const abortError = getAbortError(error, signal);
+
+    if (abortError) {
+      throw abortError;
+    }
+
+    if (signal?.aborted || response.ok) {
+      throw error;
+    }
+
+    data = {};
+  }
+
+  return { response, data };
+};
+
+export const apiRequest = async (
+  path,
+  {
+    method = "GET",
+    body,
+    headers = {},
+    requiresAuth = false,
+    signal,
+    retryOnAuthFailure = true,
+  } = {},
+) => {
+  const { response, data } = await performApiRequest(path, {
+    method,
+    body,
+    headers,
+    requiresAuth,
+    signal,
+  });
 
   if (!response.ok) {
     if (
+      requiresAuth &&
       response.status === 401 &&
-      ["Invalid token", "Logged out"].includes(data.message)
+      retryOnAuthFailure
+    ) {
+      try {
+        await refreshAccessToken();
+      } catch {
+        clearAuthSession();
+        throw getAuthError();
+      }
+
+      return await apiRequest(path, {
+        method,
+        body,
+        headers,
+        requiresAuth,
+        signal,
+        retryOnAuthFailure: false,
+      });
+    }
+
+    if (
+      response.status === 401 &&
+      ["Invalid token", "Logged out"].includes(data?.message)
     ) {
       clearAuthSession();
     }
@@ -117,7 +328,7 @@ export const apiRequest = async (
     throw error;
   }
 
-  if (data.status >= 400) {
+  if (data?.status >= 400) {
     const error = new Error(getApiErrorMessage(data, response));
     error.status = data.status;
     error.data = data;
@@ -129,52 +340,118 @@ export const apiRequest = async (
 };
 
 export const loginUser = async ({ username, password }) => {
+  const identifier = username.trim();
+
   const data = await apiRequest("/api/users/auth/login", {
     method: "POST",
-    body: { username, password },
+    body: identifier.includes("@")
+      ? { email: identifier, password }
+      : { username: identifier, password },
   });
 
   const authPayload = unwrapAuthPayload(data);
 
-  if (!authPayload.access_token) {
+  const accessToken =
+    authPayload.access_token ||
+    authPayload.accessToken ||
+    authPayload.token;
+
+  if (!accessToken) {
     throw new Error(
       authPayload.message ||
         "Login succeeded but no access token was returned by the backend.",
     );
   }
 
-  return authPayload;
+  return {
+    ...authPayload,
+    access_token: accessToken,
+  };
 };
 
 export const saveAuthSession = (session) => {
+  const user = session.user || {};
+
   const authSession = {
     accessToken: session.access_token || session.accessToken,
     refreshToken: session.refresh_token || session.refreshToken,
     user: {
-      id: session.user_id || session.userId,
-      username: session.username,
-      role: session.role,
+      id: session.user_id || session.userId || user.user_id || user.id,
+      username: session.username || user.username || user.email,
+      email: session.email || user.email,
+      role: session.role || user.role || DEFAULT_USER_ROLE,
     },
     authenticatedAt: new Date().toISOString(),
   };
 
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authSession));
+  localStorage.setItem(
+    AUTH_STORAGE_KEY,
+    JSON.stringify(authSession),
+  );
+
   return authSession;
 };
+
+export const registerUser = async ({
+  username,
+  email,
+  password,
+  role,
+}) => {
+  const response = await apiRequest("/api/users/auth/register", {
+    method: "POST",
+    body: {
+      username,
+      email,
+      password,
+      role,
+    },
+    requiresAuth: true,
+  });
+
+  const payload = unwrapAuthPayload(response);
+
+  return {
+    message: response.message || "User registered successfully",
+    user: {
+      id: payload.user_id || payload.userId,
+      username: payload.username || username,
+      email: payload.email || email,
+      role: payload.role || role,
+      createdAt: payload.created_at || payload.createdAt,
+    },
+  };
+};
+
+// Password recovery.
+//
+// The gateway exposes no reset endpoint: user.routes.ts has register, login,
+// refresh and logout only. The request below is written against the
+// conventional path so that switching recovery on is one flag, and the flag
+// keeps the UI from sending a request that can only 404 in the meantime.
+//
+// When the backend adds the endpoint: confirm the path, then set
+// PASSWORD_RESET_SUPPORTED to true. Nothing else needs to change.
+export const PASSWORD_RESET_SUPPORTED = false;
+
+export const requestPasswordReset = async (email) =>
+  apiRequest("/api/users/auth/forgot-password", {
+    method: "POST",
+    body: { email: String(email ?? "").trim() },
+  });
 
 export const logoutUser = async () => {
   const userId = getAuthSession()?.user?.id;
 
-  if (!userId) {
-    clearAuthSession();
-    return;
-  }
-
   try {
-    await apiRequest(`/api/users/auth/logout/${userId}`, {
-      method: "POST",
-      requiresAuth: true,
-    });
+    if (userId) {
+      await apiRequest(`/api/users/auth/logout/${userId}`, {
+        method: "POST",
+        requiresAuth: true,
+      });
+    }
+  } catch {
+    // Session cleanup must still happen even when the backend logout fails.
   } finally {
     clearAuthSession();
   }

@@ -1,0 +1,675 @@
+.evidence-entry-card {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px;
+  box-sizing: border-box;
+
+  border: 1px solid #e2e6ea;
+  border-radius: 16px;
+
+  background: #ffffff;
+}
+
+.evidence-entry-header {
+  margin-bottom: 24px;
+}
+
+.evidence-entry-kicker {
+  display: block;
+  margin-bottom: 6px;
+
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  color: #667085;
+}
+
+.evidence-entry-header h2 {
+  margin: 0 0 8px;
+
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.evidence-entry-header p {
+  max-width: 760px;
+  margin: 0;
+
+  line-height: 1.6;
+  color: #667085;
+}
+
+/* ============================================================
+   STATUS / NOT CONNECTED
+   ============================================================ */
+
+.evidence-status-notice {
+  margin-bottom: 24px;
+  padding: 14px 16px;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+
+  background: #f8fafc;
+}
+
+.evidence-status-notice strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.evidence-status-notice p {
+  margin: 0;
+
+  font-size: 14px;
+  line-height: 1.5;
+
+  color: #667085;
+}
+
+/* ============================================================
+   GENERAL ERROR
+   ============================================================ */
+
+.form-error-banner {
+  margin-bottom: 20px;
+  padding: 12px 14px;
+
+  border: 1px solid #fecdca;
+  border-radius: 8px;
+
+  background: #fef3f2;
+
+  color: #b42318;
+}
+
+/* ============================================================
+   FORM SECTIONS
+   ============================================================ */
+
+.evidence-form-section {
+  margin-bottom: 28px;
+  padding-bottom: 28px;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.evidence-form-section h3,
+.evidence-list h3 {
+  margin: 0 0 18px;
+
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.evidence-form-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 18px;
+}
+
+/* ============================================================
+   FORM FIELDS
+   ============================================================ */
+
+.form-field {
+  margin-bottom: 18px;
+}
+
+.form-field label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form-field label span {
+  color: #b42318;
+}
+
+.form-field input,
+.form-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 11px 13px;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  font: inherit;
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-field input:hover,
+.form-field textarea:hover {
+  border-color: #98a2b3;
+}
+
+/*
+ * Visible keyboard focus state.
+ */
+.form-field input:focus-visible,
+.form-field textarea:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.25);
+  outline-offset: 2px;
+
+  border-color: #2563eb;
+}
+
+.form-field input[aria-invalid="true"],
+.form-field textarea[aria-invalid="true"] {
+  border-color: #b42318;
+}
+
+/* ============================================================
+   VALIDATION
+   ============================================================ */
+
+.field-error {
+  margin: 6px 0 0;
+
+  font-size: 13px;
+  line-height: 1.4;
+
+  color: #b42318;
+}
+
+.field-help {
+  margin: 6px 0 0;
+
+  font-size: 13px;
+  line-height: 1.4;
+
+  color: #667085;
+}
+
+/* ============================================================
+   URL
+   ============================================================ */
+
+.url-entry-row {
+  display: grid;
+
+  grid-template-columns: minmax(0, 1fr) auto;
+
+  gap: 12px;
+
+  align-items: end;
+}
+
+/* ============================================================
+   FILE DROP AREA
+   ============================================================ */
+
+.file-drop-zone {
+  padding: 32px;
+
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+
+  text-align: center;
+
+  background: #f8fafc;
+
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.file-drop-zone.drag-active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.drop-zone-title {
+  margin: 0 0 6px;
+
+  font-weight: 700;
+}
+
+.drop-zone-subtitle {
+  margin: 0 0 18px;
+
+  color: #667085;
+}
+
+.file-drop-zone input[type="file"] {
+  display: block;
+
+  max-width: 100%;
+
+  margin: 0 auto;
+}
+
+.file-drop-zone input[type="file"]:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.25);
+  outline-offset: 3px;
+}
+
+.file-error {
+  margin-top: 12px;
+}
+
+/* ============================================================
+   EVIDENCE SUMMARY
+   ============================================================ */
+
+.evidence-summary {
+  display: flex;
+
+  align-items: baseline;
+
+  gap: 6px;
+
+  margin-bottom: 16px;
+  padding: 14px 16px;
+
+  border-radius: 8px;
+
+  background: #f2f4f7;
+}
+
+.evidence-summary strong {
+  font-size: 20px;
+}
+
+.evidence-summary span {
+  color: #667085;
+}
+
+.evidence-count-error {
+  margin-bottom: 16px;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+
+.evidence-empty-state {
+  margin-bottom: 28px;
+  padding: 28px;
+
+  border: 1px dashed #d0d5dd;
+  border-radius: 10px;
+
+  text-align: center;
+
+  background: #f9fafb;
+}
+
+.evidence-empty-state strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.evidence-empty-state p {
+  margin: 0;
+
+  font-size: 14px;
+  color: #667085;
+}
+
+/* ============================================================
+   EVIDENCE LIST
+   ============================================================ */
+
+.evidence-list {
+  margin-bottom: 28px;
+}
+
+.evidence-list > .field-help {
+  margin-top: -8px;
+  margin-bottom: 14px;
+}
+
+/* ============================================================
+   EVIDENCE ITEM
+   ============================================================ */
+
+.evidence-item {
+  display: grid;
+
+  grid-template-columns:
+    32px
+    56px
+    minmax(0, 1fr)
+    auto
+    auto
+    auto;
+
+  gap: 12px;
+
+  align-items: center;
+
+  margin-bottom: 10px;
+  padding: 12px;
+
+  border: 1px solid #e2e6ea;
+  border-radius: 10px;
+
+  background: #ffffff;
+}
+
+.evidence-item:hover {
+  background: #f8fafc;
+}
+
+.evidence-item-drag {
+  cursor: grab;
+
+  font-size: 18px;
+  text-align: center;
+
+  color: #98a2b3;
+}
+
+.evidence-item-drag:active {
+  cursor: grabbing;
+}
+
+/* ============================================================
+   THUMBNAILS / FILE ICON
+   ============================================================ */
+
+.evidence-thumbnail,
+.evidence-type-icon {
+  width: 52px;
+  height: 52px;
+
+  border-radius: 8px;
+}
+
+.evidence-thumbnail {
+  display: block;
+
+  object-fit: cover;
+}
+
+.evidence-type-icon {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  background: #eef2f6;
+
+  color: #475467;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ============================================================
+   EVIDENCE INFORMATION
+   ============================================================ */
+
+.evidence-item-details {
+  min-width: 0;
+}
+
+.evidence-item-details strong {
+  display: block;
+
+  overflow: hidden;
+
+  margin-bottom: 4px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.evidence-item-details span {
+  display: block;
+
+  font-size: 13px;
+
+  color: #667085;
+}
+
+.evidence-position {
+  font-size: 13px;
+
+  color: #667085;
+}
+
+/* ============================================================
+   REORDER BUTTONS
+   ============================================================ */
+
+.evidence-reorder-actions {
+  display: flex;
+
+  gap: 4px;
+}
+
+.reorder-button {
+  width: 32px;
+  height: 32px;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+
+  background: #ffffff;
+
+  color: #344054;
+
+  font-size: 16px;
+
+  cursor: pointer;
+}
+
+.reorder-button:hover:not(:disabled) {
+  background: #f2f4f7;
+}
+
+.reorder-button:disabled {
+  cursor: not-allowed;
+
+  opacity: 0.4;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.primary-button,
+.secondary-button,
+.remove-button {
+  border: 0;
+  border-radius: 8px;
+
+  padding: 10px 16px;
+
+  font: inherit;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.primary-button {
+  background: #111827;
+
+  color: #ffffff;
+}
+
+.primary-button:hover {
+  background: #1f2937;
+}
+
+.secondary-button {
+  background: #eef2f6;
+
+  color: #344054;
+}
+
+.secondary-button:hover {
+  background: #e4e7ec;
+}
+
+.remove-button {
+  padding: 8px 10px;
+
+  background: transparent;
+
+  color: #b42318;
+}
+
+.remove-button:hover {
+  background: #fef3f2;
+}
+
+/*
+ * Visible keyboard focus for ALL interactive controls.
+ */
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.remove-button:focus-visible,
+.reorder-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   PREPARED NOTICE
+   ============================================================ */
+
+.prepared-notice {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+
+  background: #f8fafc;
+}
+
+.prepared-notice strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.prepared-notice p {
+  margin: 0;
+
+  font-size: 14px;
+  line-height: 1.5;
+
+  color: #667085;
+}
+
+/* ============================================================
+   FORM ACTIONS
+   ============================================================ */
+
+.evidence-form-actions {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 12px;
+}
+
+/* ============================================================
+   SECURITY NOTICE
+   ============================================================ */
+
+.evidence-security-note {
+  margin: 18px 0 0;
+
+  padding: 12px;
+
+  border-radius: 8px;
+
+  background: #f9fafb;
+
+  font-size: 13px;
+  line-height: 1.5;
+
+  color: #667085;
+}
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  .evidence-entry-card {
+    max-width: 95%;
+  }
+
+  .evidence-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .evidence-entry-card {
+    padding: 20px;
+  }
+
+  .evidence-entry-header h2 {
+    font-size: 24px;
+  }
+
+  .url-entry-row {
+    grid-template-columns: 1fr;
+  }
+
+  .evidence-item {
+    grid-template-columns:
+      28px
+      48px
+      minmax(0, 1fr);
+  }
+
+  .evidence-position,
+  .evidence-reorder-actions,
+  .remove-button {
+    grid-column: 3;
+  }
+
+  .evidence-reorder-actions {
+    justify-content: flex-start;
+  }
+
+  .evidence-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .primary-button,
+  .secondary-button {
+    width: 100%;
+  }
+
+  .file-drop-zone {
+    padding: 24px 16px;
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .file-drop-zone {
+    transition: none;
+  }
+}

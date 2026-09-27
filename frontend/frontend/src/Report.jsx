@@ -113,13 +113,28 @@ function Report() {
           {urls.map((url, index) => (
             <div className="url-input-row" key={index}>
               <input
+                id={`report-url-${index}`}
                 type="url"
                 placeholder="https://example.com"
                 value={url}
                 onChange={(event) => updateUrl(index, event.target.value)}
+                aria-describedby={
+                  verificationResult?.risk === "Missing Evidence"
+                    ? "report-verification-error"
+                    : undefined
+                }
+                aria-invalid={
+                  verificationResult?.risk === "Missing Evidence" && !url.trim()
+                    ? "true"
+                    : undefined
+                }
               />
 
-              <button type="button" onClick={() => removeUrlField(index)}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => removeUrlField(index)}
+              >
                 Remove
               </button>
             </div>
@@ -154,6 +169,11 @@ function Report() {
               multiple
               accept=".pdf,.doc,.docx,.txt,.csv,.xlsx"
               onChange={handleFileUpload}
+              aria-describedby={
+                verificationResult?.risk === "Missing Evidence"
+                  ? "report-verification-error"
+                  : undefined
+              }
             />
           </div>
 
@@ -165,6 +185,11 @@ function Report() {
               multiple
               accept="image/*"
               onChange={handleImageUpload}
+              aria-describedby={
+                verificationResult?.risk === "Missing Evidence"
+                  ? "report-verification-error"
+                  : undefined
+              }
             />
           </div>
         </div>
@@ -179,7 +204,11 @@ function Report() {
                   <div className="evidence-item" key={`${file.name}-${index}`}>
                     <span>{file.name}</span>
 
-                    <button type="button" onClick={() => removeFile(index)}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => removeFile(index)}
+                    >
                       Remove
                     </button>
                   </div>
@@ -195,7 +224,11 @@ function Report() {
                   <div className="evidence-item" key={`${image.name}-${index}`}>
                     <span>{image.name}</span>
 
-                    <button type="button" onClick={() => removeImage(index)}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => removeImage(index)}
+                    >
                       Remove
                     </button>
                   </div>
@@ -208,7 +241,7 @@ function Report() {
         <div className="report-action-buttons">
           <button
             type="button"
-            className="primary-btn"
+            className="btn btn-primary primary-btn"
             onClick={runVerification}
           >
             Run Verification
@@ -224,7 +257,7 @@ function Report() {
 
           <button
             type="button"
-            className="secondary-btn"
+            className="btn btn-primary"
             onClick={generateReport}
           >
             Generate Report

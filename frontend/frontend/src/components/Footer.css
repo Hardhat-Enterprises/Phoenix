@@ -20,3 +20,8 @@
   
 }
 
+:root[data-theme="dark"] .footer-container {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+

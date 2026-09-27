@@ -27,49 +27,60 @@ const styles = StyleSheet.create({
   },
 });
 
+// A field the backend did not send is "Unavailable". A field it sent as an
+// empty string is "(empty)". A real 0 stays "0".
 const asText = (value) => {
-  if (value === undefined || value === null || value === "") {
-    return "-";
+  if (value === undefined || value === null) return "Unavailable";
+  if (typeof value === "object") return "Unavailable";
+  if (typeof value === "number" && !Number.isFinite(value)) {
+    return "Unavailable";
   }
 
-  return String(value);
+  const text = String(value);
+  return text.trim() === "" ? "(empty)" : text;
 };
 
+// wrap={false}: a label and its value always stay on the same page.
 function Field({ label, value }) {
   return (
-    <View style={styles.section}>
+    <View style={styles.section} wrap={false}>
       <Text style={styles.label}>{label}:</Text>
       <Text style={styles.value}>{asText(value)}</Text>
     </View>
   );
 }
 
+function SectionTitle({ children }) {
+  return (
+    <Text style={styles.title} minPresenceAhead={80}>
+      {children}
+    </Text>
+  );
+}
+
 export default function ReportPDF({ report }) {
-  const input = report.input || {};
-  const output = report.output || {};
+  const input = report?.input || {};
+  const output = report?.output || {};
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        <SectionTitle>Cybersecurity Verification Report</SectionTitle>
 
-        <Text style={styles.title}>
-          Cybersecurity Verification Report
-        </Text>
+        <Field label="Evidence" value={report?.title} />
+        <Field label="Description" value={report?.description} />
+        <Field label="Input Type" value={report?.evidenceType} />
+        <Field label="Risk Level" value={report?.risk} />
+        <Field label="Status" value={report?.status} />
+        <Field label="Processed" value={report?.date} />
 
-        <Field label="Evidence" value={report.title} />
-        <Field label="Description" value={report.description} />
-        <Field label="Input Type" value={report.evidenceType} />
-        <Field label="Risk Level" value={report.risk} />
-        <Field label="Status" value={report.status} />
-        <Field label="Processed" value={report.date} />
-
-        <Text style={styles.title}>Core Model Output</Text>
+        <SectionTitle>Core Model Output</SectionTitle>
 
         <Field label="Risk Score" value={output.risk_score} />
         <Field label="Confidence Score" value={output.confidence_score} />
         <Field label="Predicted Class" value={output.predicted_class} />
 
-        <Text style={styles.title}>Backend Payload</Text>
+        <SectionTitle>Backend Payload</SectionTitle>
 
         <Field label="URL" value={input.url} />
         <Field label="Text" value={input.text} />
@@ -79,7 +90,6 @@ export default function ReportPDF({ report }) {
         <Field label="Hazard Status" value={input.hazard_status} />
         <Field label="Alert Level" value={input.alert_level} />
         <Field label="Source" value={input.source} />
-
       </Page>
     </Document>
   );

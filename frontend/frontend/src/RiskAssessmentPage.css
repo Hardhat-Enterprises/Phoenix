@@ -4,38 +4,65 @@
 
 .risk-assessment-page {
   width: 100%;
-  padding: 32px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: clamp(16px, 3vw, 32px);
   background: #f3f6fb;
   min-height: 100%;
+  overflow-x: hidden;
 }
 
 .risk-assessment-title-section {
   margin-bottom: 18px;
+  width: min(100%, 1200px);
 }
 
 .risk-assessment-title-section h1 {
   margin: 0;
   color: #0f172a;
-  font-size: 28px;
+  font-size: clamp(24px, 3vw, 32px);
+  line-height: 1.2;
 }
 
 .risk-assessment-title-section p {
   margin: 6px 0 0;
   color: #64748b;
-  font-size: 14px;
+  font-size: clamp(14px, 1.5vw, 16px);
+  line-height: 1.6;
+  max-width: 720px;
 }
 
 .risk-assessment-card {
+  width: min(100%, 1200px);
+  min-width: 0;
+  box-sizing: border-box;
   background: #ffffff;
   border: 1px solid #dbe4f0;
   border-radius: 14px;
   padding: 20px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-  max-width: 900px;
 }
 
-@media (max-width: 720px) {
-  .risk-assessment-page { padding: 20px 16px; }
+@media (max-width: 900px) {
+  .risk-assessment-card {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .risk-assessment-page {
+    padding: 16px 12px;
+  }
+
+  .risk-assessment-title-section {
+    margin-bottom: 14px;
+  }
+
+  .risk-assessment-card {
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
+  }
 }
 
 :root[data-theme="dark"] .risk-assessment-page {

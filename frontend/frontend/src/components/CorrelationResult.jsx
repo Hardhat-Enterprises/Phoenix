@@ -55,6 +55,7 @@ const formatScore = (score) => {
 export default function CorrelationResult({
   result,
   source = "demonstration",
+  showSource = true,
 }) {
   const titleId = useId();
   const detailId = useId();
@@ -96,18 +97,20 @@ export default function CorrelationResult({
           <h2 id={titleId}>{state.title}</h2>
         </div>
 
-        <span
-          className="correlation-result__source"
-          aria-label={
-            correlation.source === "live"
-              ? "Live correlation result"
-              : "Demonstration correlation result"
-          }
-        >
-          {correlation.source === "live"
-            ? "Live result"
-            : "Demonstration result"}
-        </span>
+        {showSource && (
+          <span
+            className="correlation-result__source"
+            aria-label={
+              correlation.source === "live"
+                ? "Live correlation result"
+                : "Demonstration correlation result"
+            }
+          >
+            {correlation.source === "live"
+              ? "Live result"
+              : "Demonstration result"}
+          </span>
+        )}
       </div>
 
       <p

@@ -936,8 +936,7 @@ export default function EvidenceEntry({
           </h2>
 
           <p>
-            Add suspicious URLs, documents, images and
-            supporting incident context.
+            Upload incident documents and images to backend storage.
           </p>
         </div>
       </div>
@@ -956,10 +955,8 @@ export default function EvidenceEntry({
 
         <p>
           Each file is uploaded to the storage service as soon as it's
-          added, and its backend file ID is kept with the form. The
-          incident report itself (title, description, and evidence list
-          together) is not yet submitted anywhere — "Prepare Report" only
-          assembles it for now.
+          added. The backend-issued file ID and confirmed metadata are
+          retained after a successful upload.
         </p>
       </div>
 
@@ -975,259 +972,6 @@ export default function EvidenceEntry({
           {generalError}
         </div>
       )}
-
-      {/* ======================================================
-          INCIDENT DETAILS
-          ====================================================== */}
-
-      <div className="evidence-form-section">
-        <h3>Incident details</h3>
-
-        <div className="evidence-form-grid">
-          {/* Incident title */}
-
-          <div className="form-field">
-            <label htmlFor="incident-title">
-              Incident title <span aria-hidden="true">*</span>
-            </label>
-
-            <input
-              id="incident-title"
-              type="text"
-              value={form.incidentTitle}
-              onChange={(event) =>
-                updateField(
-                  "incidentTitle",
-                  event.target.value
-                )
-              }
-              aria-invalid={
-                Boolean(errors.incidentTitle)
-              }
-              aria-describedby={
-                errors.incidentTitle
-                  ? "incident-title-error"
-                  : undefined
-              }
-              placeholder="e.g. Suspicious login page"
-            />
-
-            {errors.incidentTitle && (
-              <p
-                id="incident-title-error"
-                className="field-error"
-                role="alert"
-              >
-                {errors.incidentTitle}
-              </p>
-            )}
-          </div>
-
-          {/* Observed date/time */}
-
-          <div className="form-field">
-            <label htmlFor="observed-date-time">
-              Observed date and time{" "}
-              <span aria-hidden="true">*</span>
-            </label>
-
-            <input
-              id="observed-date-time"
-              type="datetime-local"
-              value={form.observedDateTime}
-              onChange={(event) =>
-                updateField(
-                  "observedDateTime",
-                  event.target.value
-                )
-              }
-              aria-invalid={
-                Boolean(errors.observedDateTime)
-              }
-              aria-describedby={
-                errors.observedDateTime
-                  ? "observed-date-time-error"
-                  : undefined
-              }
-            />
-
-            {errors.observedDateTime && (
-              <p
-                id="observed-date-time-error"
-                className="field-error"
-                role="alert"
-              >
-                {errors.observedDateTime}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Incident description */}
-
-        <div className="form-field">
-          <label htmlFor="incident-description">
-            Incident description{" "}
-            <span aria-hidden="true">*</span>
-          </label>
-
-          <textarea
-            id="incident-description"
-            rows="5"
-            value={form.incidentDescription}
-            onChange={(event) =>
-              updateField(
-                "incidentDescription",
-                event.target.value
-              )
-            }
-            aria-invalid={
-              Boolean(errors.incidentDescription)
-            }
-            aria-describedby={
-              errors.incidentDescription
-                ? "incident-description-error"
-                : undefined
-            }
-            placeholder="Describe what was observed and why it is suspicious."
-          />
-
-          {errors.incidentDescription && (
-            <p
-              id="incident-description-error"
-              className="field-error"
-              role="alert"
-            >
-              {errors.incidentDescription}
-            </p>
-          )}
-        </div>
-
-        {/* Source context */}
-
-        <div className="form-field">
-          <label htmlFor="source-context">
-            Source context{" "}
-            <span aria-hidden="true">*</span>
-          </label>
-
-          <textarea
-            id="source-context"
-            rows="3"
-            value={form.sourceContext}
-            onChange={(event) =>
-              updateField(
-                "sourceContext",
-                event.target.value
-              )
-            }
-            aria-invalid={
-              Boolean(errors.sourceContext)
-            }
-            aria-describedby={
-              errors.sourceContext
-                ? "source-context-error"
-                : undefined
-            }
-            placeholder="Where did this evidence come from?"
-          />
-
-          {errors.sourceContext && (
-            <p
-              id="source-context-error"
-              className="field-error"
-              role="alert"
-            >
-              {errors.sourceContext}
-            </p>
-          )}
-        </div>
-
-        {/* Reporter notes */}
-
-        <div className="form-field">
-          <label htmlFor="reporter-notes">
-            Reporter notes
-          </label>
-
-          <textarea
-            id="reporter-notes"
-            rows="3"
-            value={form.reporterNotes}
-            onChange={(event) =>
-              updateField(
-                "reporterNotes",
-                event.target.value
-              )
-            }
-            placeholder="Optional additional observations."
-          />
-        </div>
-      </div>
-
-      {/* ======================================================
-          SUSPICIOUS URL
-          ====================================================== */}
-
-      <div className="evidence-form-section">
-        <h3>Suspicious URL</h3>
-
-        <div className="url-entry-row">
-          <div className="form-field">
-            <label htmlFor="suspicious-url">
-              URL
-            </label>
-
-            <input
-              id="suspicious-url"
-              type="url"
-              value={form.suspiciousUrl}
-              onChange={(event) =>
-                updateField(
-                  "suspiciousUrl",
-                  event.target.value
-                )
-              }
-              aria-invalid={
-                Boolean(errors.suspiciousUrl)
-              }
-              aria-describedby={
-                errors.suspiciousUrl
-                  ? "suspicious-url-error"
-                  : "suspicious-url-help"
-              }
-              placeholder="https://example.com/suspicious-page"
-            />
-
-            {errors.suspiciousUrl && (
-              <p
-                id="suspicious-url-error"
-                className="field-error"
-                role="alert"
-              >
-                {errors.suspiciousUrl}
-              </p>
-            )}
-
-            {!errors.suspiciousUrl && (
-              <p
-                id="suspicious-url-help"
-                className="field-help"
-              >
-                Only HTTP and HTTPS URLs are accepted.
-              </p>
-            )}
-          </div>
-
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={addUrl}
-          >
-            Add URL
-          </button>
-        </div>
-      </div>
 
       {/* ======================================================
           FILE UPLOAD
@@ -1329,8 +1073,7 @@ export default function EvidenceEntry({
           <strong>No evidence added yet</strong>
 
           <p>
-            Add a suspicious URL or upload a supported
-            document or image.
+            Upload a supported document or image.
           </p>
         </div>
       )}
@@ -1554,48 +1297,6 @@ export default function EvidenceEntry({
           })}
         </div>
       )}
-
-      {/* ======================================================
-          PREPARED STATE
-          ====================================================== */}
-
-      {prepared && (
-        <div
-          className="prepared-notice"
-          role="status"
-        >
-          <strong>Report ready for submission</strong>
-
-          <p>
-            The required fields are complete and every file has finished
-            uploading to backend storage. The full incident report is not
-            yet submitted anywhere — no report-submission endpoint exists
-            yet.
-          </p>
-        </div>
-      )}
-
-      {/* ======================================================
-          ACTIONS
-          ====================================================== */}
-
-      <div className="evidence-form-actions">
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={clearForm}
-        >
-          Clear Form
-        </button>
-
-        <button
-          type="button"
-          className="primary-button"
-          onClick={handlePrepareReport}
-        >
-          Prepare Report
-        </button>
-      </div>
 
       {/* ======================================================
           SECURITY NOTICE

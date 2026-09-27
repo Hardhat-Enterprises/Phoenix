@@ -63,6 +63,63 @@ const readBackendThreat = (selectedThreat) =>
   selectedThreat ||
   {};
 
+const getFirstValue = (values, fallback = "Not provided") =>
+  values.find(hasValue) ?? fallback;
+
+const buildThreatDescription = (selectedThreat) => {
+  const backendThreat = readBackendThreat(selectedThreat);
+
+  if (hasValue(selectedThreat?.description)) {
+    return selectedThreat.description;
+  }
+
+  if (hasValue(backendThreat.description)) {
+    return backendThreat.description;
+  }
+
+  const facts = [
+    hasValue(backendThreat.threat_type) &&
+      `Threat type is ${formatLabel(backendThreat.threat_type)}`,
+    hasValue(backendThreat.severity) &&
+      `severity is ${formatLabel(backendThreat.severity)}`,
+    hasValue(backendThreat.event_type) &&
+      `event type is ${formatLabel(backendThreat.event_type)}`,
+    hasValue(backendThreat.source) && `source is ${backendThreat.source}`,
+    hasValue(backendThreat.confidence_score) &&
+      `confidence is ${formatConfidence(backendThreat.confidence_score)}`,
+  ].filter(Boolean);
+
+  return facts.length > 0
+    ? `${facts.join(", ")}.`
+    : "No detailed threat description was provided for this record.";
+};
+
+const getEvidenceItems = (selectedThreat, backendThreat) => {
+  const evidence = getFirstValue(
+    [
+      selectedThreat?.evidence,
+      backendThreat.evidence,
+      selectedThreat?.evidence_url,
+      backendThreat.evidence_url,
+      selectedThreat?.evidenceUrl,
+      backendThreat.evidenceUrl,
+    ],
+    null,
+  );
+
+  if (!evidence) return [];
+  if (Array.isArray(evidence)) return evidence;
+
+  if (typeof evidence === "object") {
+    return Object.entries(evidence).map(([key, value]) => ({
+      label: formatLabel(key),
+      value,
+    }));
+  }
+
+  return [evidence];
+};
+
 function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
   const { threatId } = useParams();
   const navigate = useNavigate();
@@ -80,26 +137,7 @@ function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
   useEffect(() => {
     if (!threatId) return undefined;
 
-  if (hasValue(backendThreat.description)) {
-    return backendThreat.description;
-  }
-
-  const facts = [
-    hasValue(backendThreat.threat_type) &&
-      `Threat type is ${formatLabel(backendThreat.threat_type)}`,
-    hasValue(backendThreat.severity) &&
-      `severity is ${formatLabel(backendThreat.severity)}`,
-    hasValue(backendThreat.event_type) &&
-      `event type is ${formatLabel(backendThreat.event_type)}`,
-    hasValue(backendThreat.source) &&
-      `source is ${backendThreat.source}`,
-    hasValue(backendThreat.confidence_score) &&
-      `confidence is ${formatConfidence(backendThreat.confidence_score)}`,
-  ].filter(Boolean);
-
-  if (facts.length === 0) {
-    return "No detailed threat description was provided for this record.";
-  }
+    const controller = new AbortController();
 
     getThreatById(threatId, { signal: controller.signal })
       .then((threat) => {
@@ -136,90 +174,7 @@ function ThreatDetails({ selectedThreat: threatFromState, onBack }) {
     return navigate(HOME_PATH);
   };
 
-const getEvidenceItems = (selectedThreat, backendThreat) => {
-  const evidence = getFirstValue(
-    [
-      selectedThreat?.evidence,
-      backendThreat.evidence,
-      selectedThreat?.evidence_url,
-      backendThreat.evidence_url,
-      selectedThreat?.evidenceUrl,
-      backendThreat.evidenceUrl,
-    ],
-    null
-  );
-
-  if (!evidence) {
-    return [];
-  }
-
-  if (Array.isArray(evidence)) {
-    return evidence;
-  }
-
-  if (typeof evidence === "object") {
-    return Object.entries(evidence).map(([key, value]) => ({
-      label: formatLabel(key),
-      value,
-    }));
-  }
-
-  return [evidence];
-};
-
-function ThreatDetails({ selectedThreat }) {
   const backendThreat = readBackendThreat(selectedThreat);
-
-  if (!selectedThreat) {
-    return (
-      <div className="threat-details-page">
-        <div className="threat-legend-card">
-          <h3 className="threat-legend-title">HUB LEGEND</h3>
-
-          {threatLevels.map((level) => (
-            <div className="threat-legend-row" key={level.label}>
-              <span className={`legend-dot ${level.className}`} />
-              <span>{level.label}</span>
-            </div>
-          ))}
-        </div>
-
-        <main className="threat-details-main">
-          <div className="threat-details-card">
-            <div className="threat-details-header">
-              <h1>Threat Details</h1>
-              <p>
-                Detailed cybersecurity threat intelligence and incident
-                overview
-              </p>
-            </div>
-
-            <div className="no-threat-selected-box">
-              <div className="empty-state-icon">!</div>
-
-              <h2>No Threat Selected</h2>
-
-              <p>
-                No valid threat has been selected for investigation. Return to
-                the Alerts or Dashboard page and select a threat to view its
-                details.
-              </p>
-
-              <div className="threat-navigation-actions">
-                <button
-                  type="button"
-                  className="threat-navigation-button"
-                  onClick={() => window.history.back()}
-                >
-                  ← Back
-                </button>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   const threatName =
     safeTrim(selectedThreat?.name) ||
@@ -227,23 +182,23 @@ function ThreatDetails({ selectedThreat }) {
     "Selected Threat";
 
   const threatSeverity =
-    selectedThreat.vulnerability ||
+    selectedThreat?.vulnerability ||
     formatLabel(backendThreat.severity) ||
     "Not provided";
 
   // Do not use severity as a status fallback.
   const threatStatus =
-    selectedThreat.status ||
+    selectedThreat?.status ||
     backendThreat.status ||
     "Not provided";
 
   const threatSource =
-    selectedThreat.source ||
+    selectedThreat?.source ||
     backendThreat.source ||
     "Not provided";
 
   const threatLocation = getFirstValue([
-    selectedThreat.location,
+    selectedThreat?.location,
     backendThreat.location,
     backendThreat.location_name,
     backendThreat.address,
@@ -252,8 +207,8 @@ function ThreatDetails({ selectedThreat }) {
   ]);
 
   const detectedAt = getFirstValue([
-    selectedThreat.detectedAt,
-    selectedThreat.detected_at,
+    selectedThreat?.detectedAt,
+    selectedThreat?.detected_at,
     backendThreat.detected_at,
     backendThreat.detectedAt,
     backendThreat.created_at,
@@ -286,12 +241,10 @@ function ThreatDetails({ selectedThreat }) {
     threatDescription = selectedThreat.description;
   }
 
-  const threatDescription = buildThreatDescription(selectedThreat);
-
   const recommendedResponse = getFirstValue(
     [
-      selectedThreat.recommendedResponse,
-      selectedThreat.recommended_response,
+      selectedThreat?.recommendedResponse,
+      selectedThreat?.recommended_response,
       backendThreat.recommended_response,
       backendThreat.recommendedResponse,
       backendThreat.response,
@@ -469,7 +422,7 @@ function ThreatDetails({ selectedThreat }) {
               <button
                 type="button"
                 className="threat-navigation-button"
-                onClick={() => window.history.back()}
+                onClick={handleBack}
               >
                 ← Back
               </button>
@@ -623,7 +576,7 @@ function ThreatDetails({ selectedThreat }) {
             <button
               type="button"
               className="threat-navigation-button"
-              onClick={() => window.history.back()}
+              onClick={handleBack}
             >
               ← Return to previous page
             </button>

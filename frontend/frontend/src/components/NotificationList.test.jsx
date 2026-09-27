@@ -754,6 +754,118 @@ describe("keyboard and focus", () => {
   });
 });
 
+describe("pagination", () => {
+  // Twelve records, so ten-per-page leaves a second page.
+  const many = () =>
+    records(
+      Array.from({ length: 12 }, (_, index) => ({
+        id: `p${index}`,
+        title: `Notification ${index}`,
+        created_at: new Date(Date.parse("2026-09-14T12:00:00.000Z") - index * 60000).toISOString(),
+        read: false,
+      })),
+    );
+
+  const paged = (page, onPageChange = vi.fn()) => ({
+    notifications: many(),
+    pagination: { page, limit: 10, onPageChange },
+  });
+
+  it("shows nothing but the current page, and says what it is showing", () => {
+    renderList(paged(1));
+
+    expect(screen.getAllByRole("listitem")).toHaveLength(10);
+    expect(screen.getByText("Showing 1 to 10 of 12 results")).toBeTruthy();
+    expect(screen.getByText("Page 1 of 2")).toBeTruthy();
+  });
+
+  it("shows the remainder on the last page", () => {
+    renderList(paged(2));
+
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.getByText("Showing 11 to 12 of 12 results")).toBeTruthy();
+  });
+
+  it("asks the host to change page", async () => {
+    const onPageChange = vi.fn();
+    const { user } = renderList(paged(1, onPageChange));
+
+    await user.click(screen.getByRole("button", { name: "Next page" }));
+
+    expect(onPageChange).toHaveBeenCalledWith(2);
+  });
+
+  it("offers no way off either end of the list", () => {
+    const { rerender } = renderList(paged(1));
+
+    expect(screen.getByRole("button", { name: "Previous page" }).disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Next page" }).disabled).toBe(false);
+
+    rerender(
+      <NotificationList
+        notifications={many()}
+        status="ready"
+        provider={MOCK_PROVIDER}
+        now={NOW}
+        pagination={{ page: 2, limit: 10, onPageChange: vi.fn() }}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Previous page" }).disabled).toBe(false);
+    expect(screen.getByRole("button", { name: "Next page" }).disabled).toBe(true);
+  });
+
+  it("clamps a page past the end rather than showing a blank one", () => {
+    renderList(paged(99));
+
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.getByText("Page 2 of 2")).toBeTruthy();
+  });
+
+  it("pages the filtered list, not the whole one", () => {
+    renderList({
+      ...paged(1),
+      filters: { query: "Notification 1" },
+    });
+
+    // Notification 1, 10 and 11 match.
+    expect(screen.getByText("Showing 1 to 3 of 3 results")).toBeTruthy();
+    expect(screen.getByText("Page 1 of 1")).toBeTruthy();
+  });
+
+  it("keeps the arrow keys inside the visible page", async () => {
+    const { user } = renderList(paged(2));
+
+    const first = row("Notification 10");
+    first.focus();
+    await user.keyboard("{End}");
+
+    expect(document.activeElement).toBe(row("Notification 11"));
+  });
+
+  it("shows no pager at all when the host does not page", () => {
+    renderList({ notifications: many() });
+
+    expect(screen.getAllByRole("listitem")).toHaveLength(12);
+    expect(screen.queryByRole("group", { name: "Pagination" })).toBeNull();
+  });
+
+  it("shows no pager while the list is empty", () => {
+    renderList({ notifications: [], status: "ready", pagination: { page: 1, limit: 10 } });
+
+    expect(screen.getByText("No notifications.")).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "Pagination" })).toBeNull();
+  });
+});
+
+describe("controls slot", () => {
+  it("renders what the host puts between the header and the list", () => {
+    renderList({ controls: <p>Injected controls</p> });
+
+    expect(screen.getByText("Injected controls")).toBeTruthy();
+  });
+});
+
 describe("independence from its host", () => {
   it("renders with no actions at all, offering nothing that cannot work", () => {
     render(

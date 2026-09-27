@@ -75,19 +75,36 @@ const matchesOneOf = (value, allowed) => {
   return list.includes(String(value || "").trim().toLowerCase());
 };
 
-// Filters are injected by the host (the search and filter controls are someone
-// else's component), so an absent or partial filter object means "no filter".
+// A record the backend reported as read. Distinct from "not unread", because a
+// record with no read state at all is neither.
+export const isRead = (item) => Boolean(item?.hasReadState) && Boolean(item.read);
+
+// read is tri-state: null or undefined means "any", true means read, false
+// means unread. unreadOnly is kept as the older spelling of read: false.
+const matchesReadState = (item, read, unreadOnly) => {
+  if (unreadOnly) {
+    return isUnread(item);
+  }
+
+  if (read === true) return isRead(item);
+  if (read === false) return isUnread(item);
+
+  return true;
+};
+
+// Filters are injected by the host, so an absent or partial filter object means
+// "no filter".
 export const filterNotifications = (items = [], filters = null) => {
   if (!filters) {
     return items;
   }
 
-  const { query, unreadOnly, severity, eventType } = filters;
+  const { query, read, unreadOnly, severity, eventType } = filters;
 
   return items.filter(
     (item) =>
       matchesQuery(item, query) &&
-      (!unreadOnly || isUnread(item)) &&
+      matchesReadState(item, read, unreadOnly) &&
       matchesOneOf(item?.severity, severity) &&
       matchesOneOf(item?.eventType, eventType),
   );
@@ -98,13 +115,15 @@ export const hasActiveFilters = (filters = null) => {
     return false;
   }
 
-  const { query, unreadOnly, severity, eventType } = filters;
+  const { query, read, unreadOnly, severity, eventType } = filters;
   const hasList = (value) =>
     Array.isArray(value) ? value.length > 0 : Boolean(value);
 
   return (
     Boolean(String(query || "").trim()) ||
     Boolean(unreadOnly) ||
+    read === true ||
+    read === false ||
     hasList(severity) ||
     hasList(eventType)
   );
@@ -154,3 +173,21 @@ export const deriveListView = ({
 // record is refused.
 export const mutationKey = (action, id) =>
   id === undefined || id === null ? action : `${action}:${id}`;
+
+// Clamps a requested page to what the filtered list can actually show, so a
+// delete that empties the last page cannot leave the reader on a blank one.
+export const derivePage = ({ page = 1, limit = 10, total = 0 }) => {
+  const safeLimit = Math.max(1, Number(limit) || 1);
+  const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+  const currentPage = Math.min(Math.max(1, Number(page) || 1), totalPages);
+  const startIndex = (currentPage - 1) * safeLimit;
+
+  return {
+    page: currentPage,
+    limit: safeLimit,
+    totalPages,
+    startIndex,
+    endIndex: Math.min(startIndex + safeLimit, total),
+    total,
+  };
+};

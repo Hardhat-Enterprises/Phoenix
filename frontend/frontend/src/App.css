@@ -86,6 +86,49 @@ body {
 }
 
 .temp-bell {
+  position: relative;
+  overflow: visible;
+}
+
+.notification-unread-badge {
+  align-items: center;
+  background: var(--unsafe, #dc2626);
+  border: 2px solid var(--page-bg, #ffffff);
+  border-radius: 999px;
+  box-sizing: border-box;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 900;
+  justify-content: center;
+  line-height: 1;
+  min-height: 18px;
+  min-width: 18px;
+  padding: 2px 5px;
+  pointer-events: none;
+  position: absolute;
+  right: -6px;
+  top: -6px;
+  white-space: nowrap;
+}
+
+.temp-bell:focus-visible {
+  outline: 3px solid color-mix(
+    in srgb,
+    var(--primary, #2563eb) 35%,
+    transparent
+  );
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .notification-unread-badge {
+    right: -4px;
+    top: -4px;
+  }
+}
+
+.temp-bell {
   display: inline-flex;
   align-items: center;
   justify-content: center;

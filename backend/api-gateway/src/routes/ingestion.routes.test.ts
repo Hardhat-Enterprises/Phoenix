@@ -4,7 +4,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 
 // Security regression tests for the RBAC checks on the ingestion routes.
-// Finding SVC-03 in threat-analysis-integration/sprint-2/Implementation_Validation_Report_Vipul.md:
+// Finding SVC-03 in cyber/threat-analysis-integration/sprint-2/Implementation_Validation_Report_Vipul.md:
 // the routes checked for the role "ingestion service" (with a space), but the only role
 // a user can be registered with is UserRole.INGESTION_SERVICE = "ingestion_service".
 

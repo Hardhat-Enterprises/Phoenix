@@ -5,7 +5,9 @@ import {
   ingestHazardData,
   ingestCyberData,
 } from "../controllers/ingestion.controller";
+import { UserRole } from "@phoenix/common";
 import { authenticate, authorize } from "../middleware/auth.middleware";
+import { validateCoreIntegrationPayload } from "../middleware/core-integration.middleware";
 
 const router = Router();
 
@@ -150,7 +152,7 @@ router.get("/health", getHealth);
 router.post(
   "/hazard",
   authenticate,
-  authorize(["ingestion service"]),
+  authorize([UserRole.INGESTION_SERVICE, UserRole.ADMIN]),
   ingestHazardData,
 );
 
@@ -257,7 +259,7 @@ router.post(
 router.post(
   "/cyber",
   authenticate,
-  authorize(["ingestion service"]),
+  authorize([UserRole.INGESTION_SERVICE, UserRole.ADMIN]),
   ingestCyberData,
 );
 
@@ -352,6 +354,12 @@ router.post(
  *       500:
  *         description: Internal server error
  */
-router.post("/core", authenticate, coreModelIntegration);
+router.post(
+  "/core",
+  authenticate,
+  authorize([UserRole.INGESTION_SERVICE, UserRole.ADMIN]),
+  validateCoreIntegrationPayload,
+  coreModelIntegration,
+);
 
 export default router;

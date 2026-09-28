@@ -6,6 +6,10 @@ import {
   ingestCyberData,
 } from "../controllers/ingestion.controller";
 import { authenticate, authorize } from "../middleware/auth.middleware";
+import {
+  validateCyberIngestion,
+  validateHazardIngestion,
+} from "../middleware/ingestion-validation.middleware";
 
 const router = Router();
 
@@ -151,6 +155,7 @@ router.post(
   "/hazard",
   authenticate,
   authorize(["ingestion service"]),
+  validateHazardIngestion,
   ingestHazardData,
 );
 
@@ -258,6 +263,7 @@ router.post(
   "/cyber",
   authenticate,
   authorize(["ingestion service"]),
+  validateCyberIngestion,
   ingestCyberData,
 );
 

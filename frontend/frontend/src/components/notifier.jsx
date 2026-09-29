@@ -5,6 +5,7 @@ import useNotificationFeed from "./useNotificationFeed";
 import useNotificationQueryState from "./useNotificationQueryState";
 import { createApiNotificationProvider } from "../services/notificationApiProvider";
 import { createMockNotificationProvider } from "../services/mockNotificationProvider";
+import { adaptNotifications } from "../services/notificationAdapter";
 import { NOTIFICATION_USE_MOCK } from "../config/environment";
 
 // ---------------------------------------------------------------------------
@@ -40,6 +41,26 @@ export default function NotificationPanel({
     [injectedProvider],
   );
 
+  const adapt = useMemo(
+    () => (records) => {
+      const adapted = adaptNotifications(records);
+      if (!provider.persists) return adapted;
+
+      return adapted.map((item) => {
+        const rawId = records[item.sourceIndex]?.id;
+        const validId =
+          (typeof rawId === "string" && rawId.trim() !== "") ||
+          (typeof rawId === "number" && Number.isFinite(rawId));
+
+        return {
+          ...item,
+          hasServerId: validId && String(rawId) === item.id,
+        };
+      });
+    },
+    [provider.persists],
+  );
+
   const {
     notifications,
     status,
@@ -48,7 +69,7 @@ export default function NotificationPanel({
     refresh,
     retry,
     provider: providerInfo,
-  } = useNotificationFeed({ provider });
+  } = useNotificationFeed({ provider, adapt });
 
   const queryState = useNotificationQueryState();
 
@@ -65,6 +86,7 @@ export default function NotificationPanel({
       status={status}
       error={error}
       provider={providerInfo}
+      requireServerId={providerInfo.persists}
       actions={actions}
       filters={filters}
       pagination={{

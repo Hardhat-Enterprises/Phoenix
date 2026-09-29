@@ -77,6 +77,7 @@ export default function NotificationList({
   status = "ready",
   error = null,
   provider = DEFAULT_PROVIDER,
+  requireServerId = false,
   // Search and filter controls live outside this component; it only reads the
   // result of them.
   filters = null,
@@ -259,9 +260,24 @@ export default function NotificationList({
     [provider.persists, setWorking],
   );
 
+  const reportMissingServerId = useCallback((action) => {
+    const what =
+      action === "markRead"
+        ? "mark that notification as read"
+        : "delete that notification";
+    const message = `Could not ${what}: no server ID was provided. Nothing was changed.`;
+    setMutationFailure({ message });
+    setAnnouncement(message);
+  }, []);
+
   const handleMarkRead = useCallback(
     (item) => {
       if (!markReadAction || !isUnread(item)) {
+        return;
+      }
+
+      if (requireServerId && item.hasServerId !== true) {
+        reportMissingServerId("markRead");
         return;
       }
 
@@ -272,7 +288,7 @@ export default function NotificationList({
         optimistic: (list) => markReadInList(list, item.id),
       });
     },
-    [markReadAction, runMutation],
+    [markReadAction, requireServerId, reportMissingServerId, runMutation],
   );
 
   const handleMarkAllRead = useCallback(() => {
@@ -290,6 +306,11 @@ export default function NotificationList({
   const handleDelete = useCallback(
     (item) => {
       if (!deleteAction) {
+        return;
+      }
+
+      if (requireServerId && item.hasServerId !== true) {
+        reportMissingServerId("delete");
         return;
       }
 
@@ -311,7 +332,14 @@ export default function NotificationList({
         setSelectedId(null);
       }
     },
-    [deleteAction, runMutation, selectedId, pagedItems],
+    [
+      deleteAction,
+      requireServerId,
+      reportMissingServerId,
+      runMutation,
+      selectedId,
+      pagedItems,
+    ],
   );
 
   const handleSelect = useCallback(

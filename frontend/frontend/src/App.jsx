@@ -23,6 +23,8 @@ import ForgotPassword from "./ForgotPassword";
 import {
   getAuthSession,
   logoutUser,
+  PASSWORD_RESET_SUPPORTED,
+  requestPasswordReset,
   restoreAuthSession,
 } from "./services/authApi";
 import NotificationPanel from "./components/notifier";
@@ -598,7 +600,15 @@ function App() {
           <Route
             path="/forgot-password"
             element={
-              <ForgotPassword setPage={goToPage} />
+              <ForgotPassword
+                setPage={goToPage}
+                // Supplied only when the gateway can actually accept it. Left
+                // undefined, the page reports recovery as unavailable rather
+                // than failing a request that was never sent.
+                requestPasswordReset={
+                  PASSWORD_RESET_SUPPORTED ? requestPasswordReset : undefined
+                }
+              />
             }
           />
 

@@ -1,4 +1,7 @@
 .correlation-result {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   border: 1px solid var(--border-color, #d6d9df);
   border-radius: 14px;
   padding: 1.25rem;
@@ -23,6 +26,8 @@
 
 .correlation-result__header h2 {
   margin: 0;
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
+  line-height: 1.25;
 }
 
 .correlation-result__source {
@@ -74,11 +79,27 @@
 }
 
 @media (max-width: 640px) {
+  .correlation-result {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+
   .correlation-result__header {
     flex-direction: column;
+    gap: 0.65rem;
   }
 
   .correlation-result__grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 380px) {
+  .correlation-result {
+    padding: 0.75rem;
+  }
+
+  .correlation-result__grid div {
+    padding: 0.7rem;
   }
 }

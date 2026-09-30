@@ -1,0 +1,13 @@
+# Never commit these
+data/*.json
+data/*.db
+data/hazards/
+data/domains.json
+.env
+*.pyc
+__pycache__/
+.DS_Store
+
+# API keys must never be committed. Use an environment variable:
+#   PowerShell: $env:DATAQUOLL_API_KEY="..."
+#   bash:       export DATAQUOLL_API_KEY="..."

@@ -2,6 +2,15 @@ import { Request, Response } from "express";
 
 import { HttpStatusCode, logger } from "@phoenix/common";
 import { notificationGrpcClient } from "../grpc/notification.grpc";
+import { NotificationWebSocketGateway } from "../realtime/notification-websocket";
+
+let notificationWebSocketGateway: NotificationWebSocketGateway | undefined;
+
+export const setNotificationWebSocketGateway = (
+  gateway: NotificationWebSocketGateway,
+): void => {
+  notificationWebSocketGateway = gateway;
+};
 
 const getAuthenticatedUserId = (req: Request): string | undefined =>
   (req as any).user?.user_id;
@@ -37,7 +46,6 @@ export const getNotifications = async (
       });
     }
 
-    // Pagination
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, parseInt(req.query.limit as string) || 10);
     const isReadFilter = req.query.read;
@@ -179,6 +187,13 @@ export const markAsRead = async (
           `Mark notification as read response received: ${JSON.stringify(response)}`,
         );
 
+        if (response?.notification) {
+          notificationWebSocketGateway?.broadcastUpdated(
+            userId,
+            response.notification,
+          );
+        }
+
         return res
           .status(response?.status || HttpStatusCode.HTTP_STATUS_OK)
           .json({
@@ -228,6 +243,13 @@ export const markAllAsRead = async (
         logger.info(
           `Mark all notifications as read response received: ${JSON.stringify(response)}`,
         );
+
+        if ((response?.updated_count || 0) > 0) {
+          notificationWebSocketGateway?.broadcastAllRead(
+            userId,
+            response.updated_count,
+          );
+        }
 
         return res
           .status(response?.status || HttpStatusCode.HTTP_STATUS_OK)
@@ -296,6 +318,15 @@ export const deleteNotification = async (
         logger.info(
           `Delete notification response received: ${JSON.stringify(response)}`,
         );
+
+        if (
+          response?.status === HttpStatusCode.HTTP_STATUS_OK
+        ) {
+          notificationWebSocketGateway?.broadcastDeleted(
+            userId,
+            notificationId,
+          );
+        }
 
         return res
           .status(response?.status || HttpStatusCode.HTTP_STATUS_OK)

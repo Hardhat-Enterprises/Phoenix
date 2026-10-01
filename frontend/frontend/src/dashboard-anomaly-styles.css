@@ -1,0 +1,39 @@
+/* Sprint 2 — Risk and Anomaly Feature Control (Varun)
+   Matches the existing .backend-status-message warning pattern already
+   used in this file, rather than introducing a new color scheme. */
+
+.anomaly-unavailable-panel {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  color: #9a3412;
+  padding: 14px 16px;
+  margin-top: 4px;
+}
+
+.anomaly-unavailable-panel h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #9a3412;
+}
+
+.anomaly-unavailable-panel p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #9a3412;
+}
+
+.anomaly-model-disclaimer {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  color: #9a3412;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  margin: 0 0 14px;
+  padding: 9px 12px;
+}

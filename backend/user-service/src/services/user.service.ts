@@ -25,6 +25,7 @@ import {
   GetUserDashboardChartsDto,
   GetUserDashboardActivityDto,
   RegisterUserDto,
+  CreateAdminDto,
   LoginUserDto,
   RefreshTokenDto,
   LogoutUserDto,
@@ -399,6 +400,51 @@ export const registerUser = async (
   } catch (error) {
     logger.error(`Register error: ${error}`);
     throw new Error("Register failed");
+  }
+};
+
+export const createAdmin = async (
+  dto: CreateAdminDto,
+): Promise<AuthEntity> => {
+  try {
+    if (!dto.username || !dto.password) {
+      return {
+        status: HttpStatusCode.HTTP_STATUS_BAD_REQUEST,
+        message: "Username and password are required",
+      };
+    }
+
+    const existingUser = await UserAccount.findOne({
+      where: { username: dto.username },
+    });
+
+    if (existingUser) {
+      return {
+        status: HttpStatusCode.HTTP_STATUS_BAD_REQUEST,
+        message: "Username already exists",
+      };
+    }
+
+    const password_hashed = await bcrypt.hash(dto.password, 10);
+
+    const newAdmin = await UserAccount.create({
+      username: dto.username,
+      password_hashed,
+      role: UserRole.ADMIN,
+    });
+
+    logger.info(`New admin account created: ${newAdmin.username}`);
+
+    return {
+      status: HttpStatusCode.HTTP_STATUS_CREATED,
+      message: "Administrator account created successfully",
+      user_id: newAdmin.user_id,
+      username: newAdmin.username,
+      role: newAdmin.role,
+    };
+  } catch (error) {
+    logger.error(`Create admin error: ${error}`);
+    throw new Error("Create admin failed");
   }
 };
 

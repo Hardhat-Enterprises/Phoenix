@@ -4,6 +4,90 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <script>
+      (() => {
+        const root = document.documentElement
+        const colorSchemeMeta = document.querySelector('meta[name="color-scheme"]')
+        let theme = 'system'
+        let reducedMotion = false
+        let density = 'comfortable'
+        let largerText = false
+        let highContrast = false
+        let sidebarCollapsed = false
+
+        try {
+          const storedValue = window.localStorage.getItem('phoenixSettings')
+          const storedPreferences = storedValue === null ? null : JSON.parse(storedValue)
+          const isPreferenceRecord = storedPreferences !== null
+            && typeof storedPreferences === 'object'
+            && !Array.isArray(storedPreferences)
+          const hasUnsupportedVersion = isPreferenceRecord
+            && Number.isInteger(storedPreferences.version)
+            && storedPreferences.version > 1
+
+          if (
+            !hasUnsupportedVersion
+            && isPreferenceRecord
+            && ['light', 'dark', 'system'].includes(storedPreferences.theme)
+          ) {
+            theme = storedPreferences.theme
+          }
+
+          if (
+            !hasUnsupportedVersion
+            && isPreferenceRecord
+            && typeof storedPreferences.reducedMotion === 'boolean'
+          ) {
+            reducedMotion = storedPreferences.reducedMotion
+          }
+
+          if (
+            !hasUnsupportedVersion
+            && isPreferenceRecord
+            && ['comfortable', 'compact'].includes(storedPreferences.density)
+          ) {
+            density = storedPreferences.density
+          }
+
+          if (!hasUnsupportedVersion && isPreferenceRecord) {
+            largerText = typeof storedPreferences.largerText === 'boolean'
+              ? storedPreferences.largerText
+              : false
+            highContrast = typeof storedPreferences.highContrast === 'boolean'
+              ? storedPreferences.highContrast
+              : false
+            sidebarCollapsed = typeof storedPreferences.sidebarCollapsed === 'boolean'
+              ? storedPreferences.sidebarCollapsed
+              : false
+          }
+        } catch {
+          theme = 'system'
+          reducedMotion = false
+          density = 'comfortable'
+          largerText = false
+          highContrast = false
+          sidebarCollapsed = false
+        }
+
+        const resolvedTheme = theme === 'system'
+          && window.matchMedia
+          && window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : theme === 'dark'
+            ? 'dark'
+            : 'light'
+
+        root.dataset.theme = resolvedTheme
+        root.dataset.reducedMotion = String(reducedMotion)
+        root.dataset.density = density
+        root.dataset.largerText = String(largerText)
+        root.dataset.highContrast = String(highContrast)
+        root.dataset.sidebarCollapsed = String(sidebarCollapsed)
+        root.style.colorScheme = resolvedTheme
+        colorSchemeMeta?.setAttribute('content', resolvedTheme)
+      })()
+    </script>
     <title>frontend</title>
   </head>
   <body>

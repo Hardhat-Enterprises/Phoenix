@@ -1,0 +1,39 @@
+.not-found {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #f5f7fa;
+}
+
+.not-found__content {
+  width: 100%;
+  max-width: 560px;
+  text-align: center;
+}
+
+.not-found__code {
+  margin: 0;
+  font-size: 4rem;
+  font-weight: 700;
+}
+
+.not-found__content p {
+  line-height: 1.6;
+}
+
+.not-found__content button {
+  min-height: 44px;
+  margin-top: 1rem;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid #333;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.not-found__content button:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}

@@ -1,6 +1,7 @@
 // app.ts
 
 import express from "express";
+import { createServer } from "http";
 import cors from "cors";
 import dotenv from "dotenv";
 import {
@@ -18,12 +19,18 @@ import storageRoutes from "./routes/storage.routes";
 
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "@phoenix/common";
+import { setNotificationWebSocketGateway } from "./controllers/notification.controller";
+import { startNotificationRealtimeConsumer } from "./realtime/notification-realtime-consumer";
+import { NotificationWebSocketGateway } from "./realtime/notification-websocket";
 
 // import authRoutes from "./routes/auth.routes";
 
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
+const notificationWebSocketGateway = new NotificationWebSocketGateway(server);
+setNotificationWebSocketGateway(notificationWebSocketGateway);
 
 app.use(cors());
 app.use(express.json());
@@ -47,7 +54,11 @@ app.use("/api/storage", storageRoutes);
 const startServer = async () => {
   try {
     // Required dependency
-    await connectRabbitMQ(process.env.RABBITMQ_URL!);
+    const channel = await connectRabbitMQ(process.env.RABBITMQ_URL!);
+    await startNotificationRealtimeConsumer(
+      channel,
+      (notification) => notificationWebSocketGateway.broadcastCreated(notification),
+    );
 
     // Optional dependency
     const redisAvailable = await connectRedis();
@@ -60,7 +71,7 @@ const startServer = async () => {
       );
     }
 
-    app.listen(config.PORT, () => {
+    server.listen(config.PORT, () => {
       logger.info(
         `${config.SERVICE_NAME} running on port ${config.PORT}`,
       );

@@ -4,8 +4,7 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import dotenv from "dotenv";
 import { notificationHandler } from "./grpc/notification.handler";
-import { config, initDatabase } from "@phoenix/common";
-import { logger } from "@phoenix/common";
+import { config, initDatabase, logger } from "@phoenix/common";
 import { connectNotificationRabbitMQ } from "./rabbitmq/notification-connection";
 import { startNotificationConsumer } from "./rabbitmq/notification-consumer";
 import { createNotificationEventProcessor } from "./services/notification.service";
@@ -16,7 +15,10 @@ const distProtoPath = path.resolve(
   process.cwd(),
   "dist/libs/proto/notification.proto",
 );
-const devProtoPath = path.resolve(process.cwd(), "libs/proto/notification.proto");
+const devProtoPath = path.resolve(
+  process.cwd(),
+  "libs/proto/notification.proto",
+);
 const PROTO_PATH =
   process.env.NODE_ENV === "production" && fs.existsSync(distProtoPath)
     ? distProtoPath
@@ -46,11 +48,13 @@ const startGrpcServer = (): grpc.Server => {
     grpc.ServerCredentials.createInsecure(),
     (error, boundPort) => {
       if (error) {
-        console.error("Failed to start notification-service:", error);
+        logger.error(`Failed to start notification-service: ${error}`);
         return;
       }
 
-      console.log(`Notification service gRPC running on port ${boundPort}`);
+      logger.info(
+        `Notification service gRPC running on port ${boundPort}`,
+      );
     },
   );
 
@@ -60,16 +64,20 @@ const startGrpcServer = (): grpc.Server => {
 const startNotificationService = async (): Promise<void> => {
   try {
     const rabbitMQUrl = process.env.RABBITMQ_URL;
+
     if (!rabbitMQUrl) {
       throw new Error("RABBITMQ_URL is required");
     }
 
     await initDatabase();
+
     const { channel } = await connectNotificationRabbitMQ(rabbitMQUrl);
+
     await startNotificationConsumer(
       channel,
       createNotificationEventProcessor(channel),
     );
+
     startGrpcServer();
   } catch (error) {
     logger.error(`Notification service startup failed: ${error}`);

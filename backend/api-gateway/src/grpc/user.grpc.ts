@@ -52,6 +52,11 @@ export interface RegisterUserRequest {
   role?: string;
 }
 
+export interface CreateAdminRequest {
+  username: string;
+  password: string;
+}
+
 export interface LoginUserRequest {
   username: string;
   password: string;
@@ -360,6 +365,11 @@ export interface UserServiceClient {
 
   RegisterUser(
     request: RegisterUserRequest,
+    callback: (error: grpc.ServiceError | null, response: AuthResponse) => void,
+  ): void;
+
+    CreateAdmin(
+    request: CreateAdminRequest,
     callback: (error: grpc.ServiceError | null, response: AuthResponse) => void,
   ): void;
 

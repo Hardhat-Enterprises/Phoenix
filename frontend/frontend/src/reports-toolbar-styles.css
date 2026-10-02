@@ -1,0 +1,90 @@
+/* Sprint 3 Week 2 — Reports page ownership (Varun)
+   Report library search/filter/sort toolbar and per-row action stacking.
+   Appended to the existing ReportsPage.css — reuses the same input styling
+   already established for .url-form-group so the toolbar matches the rest
+   of the page rather than introducing a new visual style. */
+
+.reports-toolbar {
+  align-items: flex-end;
+  border-bottom: 1px solid #e8eef6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 0 28px 20px;
+}
+
+.reports-toolbar-field {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+}
+
+.reports-toolbar-field label {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.reports-toolbar-field input,
+.reports-toolbar-field select {
+  background: var(--color-input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--color-text);
+  color-scheme: inherit;
+  font: inherit;
+  font-size: 14px;
+  min-height: 40px;
+  outline: none;
+  padding: 8px 12px;
+}
+
+.reports-toolbar-field input:focus-visible,
+.reports-toolbar-field select:focus-visible {
+  border-color: var(--interactive, #2563eb);
+  box-shadow: var(--focus-ring);
+}
+
+.reports-toolbar-clear {
+  flex-shrink: 0;
+  height: 40px;
+}
+
+.reports-row-actions {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reports-row-actions .btn {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.reports-preview-unavailable {
+  color: #94a3b8;
+  font-size: 12px;
+  font-style: italic;
+}
+
+@media (max-width: 900px) {
+  .reports-toolbar {
+    padding: 0 22px 18px;
+  }
+
+  .reports-row-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+:root[data-theme="dark"] .reports-toolbar {
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] .reports-preview-unavailable {
+  color: var(--color-text-muted);
+}

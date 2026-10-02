@@ -76,6 +76,33 @@ const normalizeIntegration = (integration) => ({
   output: parseJsonField(integration.output),
 });
 
+const invalidDetailResponse = () => {
+  const error = new Error("The requested record is unavailable or malformed.");
+  error.code = "INVALID_DETAIL_RESPONSE";
+  return error;
+};
+
+const validateDetailId = (id) => {
+  if (typeof id !== "string" || !id.trim()) {
+    throw invalidDetailResponse();
+  }
+};
+
+const readDetailRecord = (record, id, idKey) => {
+  if (record === undefined || record === null) return null;
+
+  if (
+    typeof record !== "object" ||
+    Array.isArray(record) ||
+    typeof record[idKey] !== "string" ||
+    record[idKey].toLowerCase() !== id.toLowerCase()
+  ) {
+    throw invalidDetailResponse();
+  }
+
+  return record;
+};
+
 export const getDashboardOverview = async () => {
   const payload = await apiRequest("/api/users/dashboard/overview", {
     requiresAuth: true,
@@ -97,8 +124,139 @@ export const getDashboardActivity = async () => {
     requiresAuth: true,
   });
 
+  // Return the activity list, not just first item
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+  if (Array.isArray(payload)) {
+    return payload;
+  }
   return unwrapData(payload);
 };
+
+// The gateway exposes GET /api/notifications only. While this is false the
+// notification provider substitutes a local no-op for every mutation and the
+// panel words its confirmations accordingly, so nothing claims to have been
+// saved. See src/services/notificationApiProvider.js.
+export const NOTIFICATION_MUTATIONS_SUPPORTED = false;
+
+// Sending an alert needs a backend send endpoint. None exists yet, so no part
+// of the UI may offer to forward or deliver a notification.
+export const NOTIFICATION_SEND_SUPPORTED = false;
+
+const toNotificationQueryString = (params = {}, searchOption = {}) => {
+  const query = new URLSearchParams();
+
+  for (const key of ["page", "limit", "read"]) {
+    const value = params[key];
+
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, value);
+    }
+  }
+
+  const searchParameter = searchOption.parameterName?.trim();
+
+  if (
+    searchOption.enabled === true &&
+    searchParameter &&
+    params.search !== undefined &&
+    params.search !== null &&
+    params.search !== ""
+  ) {
+    query.set(searchParameter, params.search);
+  }
+
+  const queryString = query.toString();
+  return queryString ? `?${queryString}` : "";
+};
+
+const normalizeNotificationList = (payload) => {
+  const notifications = payload?.data?.notifications;
+  const pagination = payload?.data?.pagination;
+  const hasValidPagination =
+    pagination &&
+    ["total", "page", "limit", "totalPages"].every((key) =>
+      Number.isFinite(pagination[key]),
+    );
+
+  if (!Array.isArray(notifications) || !hasValidPagination) {
+    throw new Error("Notification list response is malformed.");
+  }
+
+  const normalizedPagination = {
+    total: pagination.total,
+    page: pagination.page,
+    limit: pagination.limit,
+    totalPages: pagination.totalPages,
+  };
+
+  return {
+    notifications,
+    pagination: normalizedPagination,
+    // Compatibility fields used by the current notifier.
+    items: notifications,
+    total: normalizedPagination.total,
+    totalPages: normalizedPagination.totalPages,
+  };
+};
+
+const notificationRequest = (path, options = {}) =>
+  apiRequest(path, {
+    ...options,
+    requiresAuth: true,
+  });
+
+export const getNotificationHealth = async ({ signal } = {}) =>
+  apiRequest("/api/notifications/health", {
+    requiresAuth: false,
+    signal,
+  });
+
+export const getNotifications = async (
+  params = {},
+  {
+    signal,
+    search: searchOption = { enabled: false, parameterName: null },
+  } = {},
+) => {
+  const payload = await notificationRequest(
+    `/api/notifications${toNotificationQueryString(params, searchOption)}`,
+    { signal },
+  );
+
+  return normalizeNotificationList(payload);
+};
+
+export const getNotificationUnreadCount = async ({ signal } = {}) => {
+  const payload = await notificationRequest(
+    "/api/notifications/unread-count",
+    { signal },
+  );
+
+  return payload?.data?.unreadCount;
+};
+
+export const markNotificationRead = async (notificationId, { signal } = {}) =>
+  notificationRequest(
+    `/api/notifications/${encodeURIComponent(notificationId)}/read`,
+    { method: "PATCH", signal },
+  );
+
+export const markAllNotificationsRead = async ({ signal } = {}) =>
+  notificationRequest("/api/notifications/read-all", {
+    method: "PATCH",
+    signal,
+  });
+
+export const deleteNotification = async (notificationId, { signal } = {}) =>
+  notificationRequest(
+    `/api/notifications/${encodeURIComponent(notificationId)}`,
+    {
+      method: "DELETE",
+      signal,
+    },
+  );
 
 export const getApiHealth = async () => {
   return apiRequest("/api/users/health", {
@@ -120,12 +278,41 @@ export const getThreats = async (params = {}) => {
   return withListMeta(payload, ["threats"]);
 };
 
+export const getThreat = async (threatId, { signal } = {}) => {
+  validateDetailId(threatId);
+
+  const payload = await apiRequest(
+    `/api/users/threats/${encodeURIComponent(threatId)}`,
+    {
+      requiresAuth: true,
+      signal,
+    },
+  );
+
+  return readDetailRecord(payload?.threat, threatId, "threat_id");
+};
+
+export const getThreatById = getThreat;
+
 export const getHazards = async (params = {}) => {
   const payload = await apiRequest(`/api/users/hazards${toQueryString(params)}`, {
     requiresAuth: true,
   });
 
   return withListMeta(payload, ["hazards"]);
+};
+
+// Fetch a single hazard by id.
+// Path assumed to follow the list route — confirm with the backend team.
+export const getHazardById = async (hazardId) => {
+  const payload = await apiRequest(
+    `/api/users/hazards/${encodeURIComponent(hazardId)}`,
+    {
+      requiresAuth: true,
+    },
+  );
+
+  return unwrapData(payload);
 };
 
 export const getLocations = async () => {
@@ -186,6 +373,26 @@ export const getIntegrations = async (params = {}) => {
     ...meta,
     items: meta.items.map(normalizeIntegration),
   };
+};
+
+export const getIntegrationById = async (integrationId, { signal } = {}) => {
+  validateDetailId(integrationId);
+
+  const payload = await apiRequest(
+    `/api/users/integration/${encodeURIComponent(integrationId)}`,
+    {
+      requiresAuth: true,
+      signal,
+    },
+  );
+
+  const integration = readDetailRecord(
+    payload?.integration,
+    integrationId,
+    "integration_event_id",
+  );
+
+  return integration ? normalizeIntegration(integration) : null;
 };
 
 

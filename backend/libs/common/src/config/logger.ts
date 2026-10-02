@@ -1,14 +1,46 @@
+import * as fs from "fs";
 import * as winston from "winston";
 import { config } from "./config";
+
+// CY017: security records arrive as fully-formed structured objects, flagged
+// with a global-registry symbol. They are emitted as NDJSON so they stay
+// machine-readable; every other line keeps the existing plaintext format.
+const SECURITY_EVENT = Symbol.for("phoenix.security_event");
+
+// CY017: persist security records to a dedicated audit file so they survive a
+// container restart (console output does not). Only records carrying the
+// security-event marker are written here; a format returning `false` tells
+// winston to skip everything else, keeping the file a clean audit trail.
+const SECURITY_LOG_PATH = process.env.SECURITY_LOG_PATH || "logs/security.log";
+fs.mkdirSync("logs", { recursive: true });
+
+const securityOnly = winston.format((info) =>
+  (info as Record<symbol, unknown>)[SECURITY_EVENT] ? info : false,
+);
 
 export const logger = winston.createLogger({
   level: config.LOG_LEVEL,
   defaultMeta: { service: config.SERVICE_NAME },
   format: winston.format.combine(
     winston.format.timestamp(),
-    winston.format.printf(({ level, message, timestamp, service }) => {
+    winston.format.printf((info) => {
+      if ((info as Record<symbol, unknown>)[SECURITY_EVENT]) {
+        return JSON.stringify(info);
+      }
+
+      const { level, message, timestamp, service } = info;
       return `[${timestamp}] [${level}] [${service}]: ${message}`;
     }),
   ),
-  transports: [new winston.transports.Console()],
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({
+      filename: SECURITY_LOG_PATH,
+      format: winston.format.combine(
+        securityOnly(),
+        winston.format.timestamp(),
+        winston.format.printf((info) => JSON.stringify(info)),
+      ),
+    }),
+  ],
 });

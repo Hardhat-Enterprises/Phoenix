@@ -16,3 +16,6 @@ Thumbs.db
 *.key
 api_keys/
 secrets/
+
+# CY017 security audit log output
+logs/

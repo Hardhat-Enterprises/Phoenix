@@ -22,7 +22,13 @@ class TestFeatureEngineer(unittest.TestCase):
                 "2025-01-04 13:00:00"
             ]),
             "location": ["Melbourne", "Sydney", "Brisbane", "Perth"],
-            "duration_hours": [6, 8, 10, 12]
+            "duration_hours": [6, 8, 10, 12],
+            "url": [
+                "https://www.google.com/search?q=test",
+                "http://paypal-secure-login.verify-account.co.uk/login.php?id=8834",
+                "not_available",
+                "https://bit.ly/3xF9kLp",
+            ]
         })
         self.engineer = FeatureEngineer(self.sample_df.copy())
 
@@ -87,6 +93,42 @@ class TestFeatureEngineer(unittest.TestCase):
         ]
         for col in expected_columns:
             self.assertIn(col, self.engineer.df.columns)
+
+    def test_url_features_created(self):
+        self.engineer.create_url_features()
+        expected_columns = [
+            "url_is_missing",
+            "url_length",
+            "hostname_length",
+            "path_length",
+            "num_dots",
+            "num_hyphens",
+            "num_at_symbols",
+            "num_digits",
+        ]
+        for col in expected_columns:
+            self.assertIn(col, self.engineer.df.columns)
+
+        # Row 2 ("not_available") should be flagged missing, with every
+        # numeric URL feature set to -1, not 0 or NaN
+        result = self.engineer.df
+        self.assertEqual(result.loc[2, "url_is_missing"], 1)
+        self.assertEqual(result.loc[2, "url_length"], -1)
+        self.assertEqual(result.loc[2, "hostname_length"], -1)
+        self.assertEqual(result.loc[2, "num_dots"], -1)
+        self.assertEqual(result.loc[2, "num_at_symbols"], -1)
+        self.assertEqual(result.loc[2, "num_digits"], -1)
+
+        # A real URL (row 0) should not be flagged missing and should have feature values
+        self.assertEqual(result.loc[0, "url_is_missing"], 0)
+        self.assertGreater(result.loc[0, "url_length"], 0)
+        self.assertEqual(result.loc[0, "num_dots"], 2)  # www.google.com
+        self.assertEqual(result.loc[0, "num_at_symbols"], 0)
+        self.assertEqual(result.loc[0, "num_digits"], 0)
+
+        # Row 1 has a numeric query param (id=8834), 4 digits, no '@'
+        self.assertEqual(result.loc[1, "num_digits"], 4)
+        self.assertEqual(result.loc[1, "num_at_symbols"], 0)
 
     def test_validate_passes_for_valid_data(self):
         self.engineer.handle_missing_values()

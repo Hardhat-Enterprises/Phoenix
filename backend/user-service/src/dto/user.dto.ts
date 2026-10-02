@@ -1,3 +1,5 @@
+import { doesNotMatch } from "assert";
+
 export class GetHealthDto {}
 
 export class GetUsersDto {}
@@ -12,6 +14,11 @@ export class RegisterUserDto {
   username: string;
   password: string;
   role?: string;
+}
+
+export class CreateAdminDto {
+  username: string;
+  password: string;
 }
 
 export class LoginUserDto {

@@ -21,6 +21,10 @@ import {
 import { GetHealthDto } from "../dto/ingestion.dto";
 import { GetHealthEntity } from "../entity/ingestion.entity";
 import { DataIngestionStreamingLog } from "@phoenix/common";
+import {
+  publishCriticalCyberNotification,
+  publishCriticalHazardNotification,
+} from "../rabitmq/notification-publisher";
 
 export const getHealth = (_getHealthDto: GetHealthDto): GetHealthEntity => {
   return {
@@ -63,12 +67,21 @@ export const createHazardData = async (content: any) => {
       },
     });
 
-    await HazardEvent.create(parsedContent);
+    const hazardEvent = await HazardEvent.create(parsedContent);
 
     await ingestionLog.update({
       processing_status: ProcessingStatus.PROCESSED,
       source_id: source.source_id,
     });
+
+    try {
+      await publishCriticalHazardNotification(
+        parsedContent,
+        hazardEvent.hazard_event_id,
+      );
+    } catch (error) {
+      logger.error(`Critical hazard notification publish failed: ${error}`);
+    }
 
     console.log(
       `Hazard data processed successfully with payload: ${parsedContent}`,
@@ -126,6 +139,12 @@ export const createCyberData = async (content: any) => {
       processing_status: ProcessingStatus.PROCESSED,
       source_id: source.source_id,
     });
+
+    try {
+      await publishCriticalCyberNotification(parsedContent);
+    } catch (error) {
+      logger.error(`Critical cyber notification publish failed: ${error}`);
+    }
 
     console.log(
       `Cyber data processed successfully with payload: ${parsedContent}`,

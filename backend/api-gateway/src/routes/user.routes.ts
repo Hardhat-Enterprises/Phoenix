@@ -32,6 +32,8 @@ import {
   authorizeSelfOrRoles,
 } from "../middleware/auth.middleware";
 
+import { loginRateLimiter } from "../middleware/rateLimit.middleware";
+
 const router = Router();
 
 /**
@@ -314,6 +316,7 @@ router.get("/training-models/:file_id", authenticate, getOneTrainingModel);
  */
 router.post("/auth/register", authenticate, authorize(["admin"]), register);
 
+
 /**
  * @swagger
  * /api/users/admin:
@@ -390,7 +393,13 @@ router.post("/admin", authenticate, authorize(["admin"]), createAdmin);
  *       500:
  *         description: Internal server error
  */
-router.post("/auth/login", login);
+
+router.post(
+  "/auth/login",
+  loginRateLimiter,
+  login,
+);
+
 
 /**
  * @swagger

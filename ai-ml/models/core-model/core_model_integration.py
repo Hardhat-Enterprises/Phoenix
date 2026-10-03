@@ -46,10 +46,17 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
+import logging
+import uuid
 import joblib
 import numpy as np
 import pandas as pd
+
+MODEL_CACHE: dict[str, Any] = {}
+
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_MODEL_PATH = "final_core_xgb_xgboost_trey_xgb_core_v2_epoch_100.joblib"
@@ -183,6 +190,7 @@ def _alias_lookup(value: Any, aliases: dict[str, str]) -> str:
 
 def validate_input(input_data: dict) -> list[str]:
     """Return a list of validation errors. Empty list means valid enough to run."""
+
     errors = []
 
     if not isinstance(input_data, dict):
@@ -192,6 +200,32 @@ def validate_input(input_data: dict) -> list[str]:
         if field not in input_data or input_data[field] in (None, ""):
             errors.append(f"Missing required field: '{field}'")
 
+    # M11-02: Enforce payload limits
+    text = input_data.get("text")
+    url = input_data.get("url")
+
+    if text is not None:
+        if not isinstance(text, str):
+            errors.append("Field 'text' must be a string")
+        elif len(text) > 5000:
+            errors.append("Field 'text' exceeds the maximum length of 5000 characters")
+
+    if url is not None:
+        if not isinstance(url, str):
+            errors.append("Field 'url' must be a string")
+        elif len(url) > 2048:
+            errors.append("Field 'url' exceeds the maximum length of 2048 characters")
+
+        # M11-03: Validate URL format and allowed schemes
+        elif url:
+            parsed_url = urlparse(url)
+
+            if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+                errors.append(
+                    "Field 'url' must be a valid HTTP or HTTPS URL"
+                )
+
+    # Existing hazard severity validation
     if "hazard_severity" in input_data and input_data["hazard_severity"] not in (None, ""):
         try:
             severity = float(input_data["hazard_severity"])
@@ -201,7 +235,6 @@ def validate_input(input_data: dict) -> list[str]:
             errors.append("hazard_severity must be numeric")
 
     return errors
-
 
 def _set_one_hot(row: dict[str, float], column: str) -> None:
     """Set one-hot column to 1 if the model contains that column."""
@@ -276,8 +309,11 @@ def _risk_level(score: float) -> str:
 def predict(
     input_data: dict,
     model_path: str = DEFAULT_MODEL_PATH,
+    request_id: str | None = None,
 ) -> dict:
     """Run Prediction using the saved core XCBoost model."""
+    request_id = request_id or str(uuid.uuid4())
+    logger.info("Prediction request received | request_id=%s", request_id)
     errors = validate_input(input_data)
     if errors:
         raise ValueError(f"Invalid input: {errors}")
@@ -298,12 +334,13 @@ def predict(
     risk_score = _class_to_risk_score(predicted_class, probabilities)
 
     return {
-        "risk_score": risk_score,
-        "confidence_score": confidence_score,
-        "predicted_class": predicted_class,
-        "risk_level": _risk_level(risk_score),
-        "processed_at": datetime.now(timezone.utc).isoformat(),
-    }
+    "request_id": request_id,
+    "risk_score": risk_score,
+    "confidence_score": confidence_score,
+    "predicted_class": predicted_class,
+    "risk_level": _risk_level(risk_score),
+    "processed_at": datetime.now(timezone.utc).isoformat(),
+     }
 
 
 def predict_batch(
@@ -316,13 +353,13 @@ def predict_batch(
     for record in records:
         try:
             results.append(predict(record, model_path=model_path))
-        except Exception as exc:
+        except Exception:
+            logger.error("Prediction failed")
             results.append({
-                "error": str(exc),
+                "error": "Prediction could not be completed.",
                 "risk_score": None,
                 "confidence_score": None,
             })
-
     return {
         "results": results,
         "total": len(records),

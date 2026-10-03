@@ -13,6 +13,12 @@ import {
   validateReadStatusFilter,
 } from "../middleware/notification.validation.middleware";
 
+import { rateLimit } from "../middleware/rateLimit.middleware";
+import {
+  rateLimitStore,
+  standardReadRateLimit,
+} from "../middleware/rateLimit.store";
+
 const router = Router();
 
 /**
@@ -298,6 +304,14 @@ router.patch("/read-all", authenticate, markAllAsRead);
  *       500:
  *         description: Internal server error
  */
+
+router.get(
+  "/",
+  rateLimit(standardReadRateLimit, rateLimitStore), 
+  getNotifications,
+);
+
 router.delete("/:notificationId", authenticate, deleteNotification);
+
 
 export default router;

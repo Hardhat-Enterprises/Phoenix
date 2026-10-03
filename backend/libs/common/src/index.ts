@@ -6,6 +6,9 @@ export * from "./rabbitmq";
 export * from "./redis";
 export * from "./databases";
 export * from "./helper";
+
+export * from "./rate-limit";
+
 export * from "./security-logging";
 export {
   redisClient,
@@ -24,3 +27,4 @@ export {
 } from "./redis/cacheMetrics";
 
 export * from "./redis";
+

@@ -1,3 +1,4 @@
+
 import { Router } from "express";
 import {
   getHealth,
@@ -31,6 +32,14 @@ import {
   authorize,
   authorizeSelfOrRoles,
 } from "../middleware/auth.middleware";
+
+// middleware integration 
+import { rateLimit } from "../middleware/rateLimit.middleware";
+import {
+  rateLimitStore,
+  loginRateLimit,
+  authenticatedUserRateLimit,
+} from "../middleware/rateLimit.store";
 
 const router = Router();
 
@@ -66,7 +75,12 @@ router.get("/health", getHealth);
  *       500:
  *         description: Internal server error
  */
-router.get("/meta/locations", authenticate, getLocations);
+router.get(
+  "/meta/locations", 
+  authenticate, 
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getLocations,
+);
 
 /**
  * @swagger
@@ -86,7 +100,12 @@ router.get("/meta/locations", authenticate, getLocations);
  *       500:
  *         description: Internal server error
  */
-router.get("/meta/event-statuses", authenticate, getEventStatuses);
+router.get(
+  "/meta/event-statuses", 
+  authenticate, 
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getEventStatuses,
+);
 
 /**
  * @swagger
@@ -106,7 +125,12 @@ router.get("/meta/event-statuses", authenticate, getEventStatuses);
  *       500:
  *         description: Internal server error
  */
-router.get("/meta/linked-event-types", authenticate, getLinkedEventTypes);
+router.get(
+  "/meta/linked-event-types", 
+  authenticate, 
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getLinkedEventTypes,
+);
 
 /**
  * @swagger
@@ -126,7 +150,12 @@ router.get("/meta/linked-event-types", authenticate, getLinkedEventTypes);
  *       500:
  *         description: Internal server error
  */
-router.get("/meta/seasons", authenticate, getSeasons);
+router.get(
+  "/meta/seasons", 
+  authenticate, 
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getSeasons,
+);
 
 /**
  * @swagger
@@ -146,7 +175,12 @@ router.get("/meta/seasons", authenticate, getSeasons);
  *       500:
  *         description: Internal server error
  */
-router.get("/meta/reference-days", authenticate, getReferenceDays);
+router.get(
+  "/meta/reference-days", 
+  authenticate, 
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getReferenceDays,
+);
 
 /**
  * @swagger
@@ -166,7 +200,12 @@ router.get("/meta/reference-days", authenticate, getReferenceDays);
  *       500:
  *         description: Internal server error
  */
-router.get("/meta/reference-times", authenticate, getReferenceTimes);
+router.get(
+  "/meta/reference-times", 
+  authenticate, 
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getReferenceTimes,
+);
 
 /**
  * @swagger
@@ -215,7 +254,12 @@ router.get("/integration", authenticate, getIntegrations);
  *       500:
  *         description: Internal server error
  */
-router.get("/integration/:integrationId", authenticate, getIntegration);
+router.get(
+  "/integration/:integrationId", 
+  authenticate, 
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getIntegration,
+);
 
 /**
  * @swagger
@@ -235,7 +279,12 @@ router.get("/integration/:integrationId", authenticate, getIntegration);
  *       500:
  *         description: Internal server error
  */
-router.get("/training-models", authenticate, getTrainingModels);
+router.get(
+  "/training-models", 
+  authenticate,
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getTrainingModels,
+);
 
 /**
  * @swagger
@@ -264,7 +313,12 @@ router.get("/training-models", authenticate, getTrainingModels);
  *       500:
  *         description: Internal server error
  */
-router.get("/training-models/:file_id", authenticate, getOneTrainingModel);
+router.get(
+  "/training-models/:file_id",
+   authenticate, 
+   rateLimit(authenticatedUserRateLimit, rateLimitStore),
+   getOneTrainingModel,
+  );
 /**
  * Authentication Routes
  */
@@ -390,7 +444,11 @@ router.post("/admin", authenticate, authorize(["admin"]), createAdmin);
  *       500:
  *         description: Internal server error
  */
-router.post("/auth/login", login);
+router.post(
+  "/auth/login", 
+  rateLimit(loginRateLimit, rateLimitStore),
+  login,
+);
 
 /**
  * @swagger
@@ -450,6 +508,7 @@ router.post("/auth/refresh", refresh);
 router.post(
   "/auth/logout/:userId",
   authenticate,
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
   authorizeSelfOrRoles(["admin"]),
   logout,
 );
@@ -507,7 +566,12 @@ router.get("/user", authenticate, authorize(["admin"]), getUser);
  *       500:
  *         description: Internal server error
  */
-router.get("/dashboard/overview", authenticate, getUserDashboard);
+router.get(
+  "/dashboard/overview", 
+  authenticate, 
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getUserDashboard,
+);
 
 /**
  * @swagger
@@ -527,7 +591,12 @@ router.get("/dashboard/overview", authenticate, getUserDashboard);
  *       500:
  *         description: Internal server error
  */
-router.get("/dashboard/charts", authenticate, getUserDashboardCharts);
+router.get(
+  "/dashboard/charts", 
+  authenticate, 
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getUserDashboardCharts,
+);
 
 /**
  * @swagger
@@ -547,7 +616,12 @@ router.get("/dashboard/charts", authenticate, getUserDashboardCharts);
  *       500:
  *         description: Internal server error
  */
-router.get("/dashboard/activity", authenticate, getUserDashboardActivity);
+router.get(
+  "/dashboard/activity", 
+  authenticate, 
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getUserDashboardActivity,
+);
 
 /**
  * @swagger
@@ -567,7 +641,12 @@ router.get("/dashboard/activity", authenticate, getUserDashboardActivity);
  *       500:
  *         description: Internal server error
  */
-router.get("/hazards", authenticate, getHazards);
+router.get(
+  "/hazards", 
+  authenticate, 
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getHazards,
+);
 
 /**
  * @swagger
@@ -596,6 +675,11 @@ router.get("/hazards", authenticate, getHazards);
  *       500:
  *         description: Internal server error
  */
-router.get("/hazards/:hazardId", authenticate, getHazard);
+router.get(
+  "/hazards/:hazardId", 
+  authenticate, 
+  rateLimit(authenticatedUserRateLimit, rateLimitStore),
+  getHazard,
+);
 
 export default router;

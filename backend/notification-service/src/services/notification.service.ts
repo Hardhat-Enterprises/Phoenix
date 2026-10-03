@@ -1,4 +1,5 @@
 import { ConfirmChannel } from "amqplib";
+import { Op, Sequelize, WhereOptions } from "sequelize";
 import { HttpStatusCode, logger, Notification } from "@phoenix/common";
 import { NotificationEvent } from "@phoenix/common/rabbitmq/notification-event";
 import { NotificationRealtimePayload } from "@phoenix/common/rabbitmq/notification-realtime-event";
@@ -49,12 +50,69 @@ export const getHealth = (_dto: GetHealthDto): GetHealthEntity => ({
 export const getNotifications = async (
   dto: GetNotificationsDto,
 ): Promise<GetNotificationsEntity> => {
-  const where: { user_id: string; is_read?: boolean } = { user_id: dto.user_id };
-  if (dto.has_is_read) where.is_read = dto.is_read;
+  const keyword = (dto.keyword || "").trim();
+  const severity = (dto.severity || "").trim().toLowerCase();
+  const eventType = (dto.event_type || "").trim();
+  const dateFrom = (dto.date_from || "").trim();
+  const dateTo = (dto.date_to || "").trim();
+
+  const parseFilterDate = (value: string, endOfDay = false): Date => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}Z`);
+    }
+    return new Date(value);
+  };
+
+  const andConditions: any[] = [];
+
+  if (dto.has_is_read) {
+    andConditions.push({ is_read: dto.is_read });
+  }
+
+  if (keyword) {
+    andConditions.push({
+      [Op.or]: [
+        { title: { [Op.iLike]: `%${keyword}%` } },
+        { message: { [Op.iLike]: `%${keyword}%` } },
+        { event_type: { [Op.iLike]: `%${keyword}%` } },
+      ],
+    });
+  }
+
+  if (severity) {
+    andConditions.push(
+      Sequelize.where(
+        Sequelize.fn(
+          "LOWER",
+          Sequelize.cast(Sequelize.json("metadata.severity"), "text"),
+        ),
+        severity,
+      ),
+    );
+  }
+
+  if (eventType) {
+    andConditions.push({ event_type: eventType });
+  }
+
+  if (dateFrom || dateTo) {
+    const createdAt: Record<symbol, Date> = {};
+    if (dateFrom) createdAt[Op.gte] = parseFilterDate(dateFrom);
+    if (dateTo) createdAt[Op.lte] = parseFilterDate(dateTo, true);
+    andConditions.push({ created_at: createdAt });
+  }
+
+  const where: WhereOptions = {
+    user_id: dto.user_id,
+    ...(andConditions.length > 0 ? { [Op.and]: andConditions } : {}),
+  };
 
   const { count, rows } = await Notification.findAndCountAll({
     where,
-    order: [["created_at", "DESC"]],
+    order: [
+      ["created_at", "DESC"],
+      ["id", "DESC"],
+    ],
     limit: dto.limit,
     offset: (dto.page - 1) * dto.limit,
   });

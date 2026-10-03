@@ -31,7 +31,7 @@ const grpcObject = grpc.loadPackageDefinition(packageDefinition) as unknown as {
   };
 };
 
-export interface GetNotificationHealthRequest {}
+export interface GetNotificationHealthRequest { }
 export interface GetNotificationHealthResponse {
   status: number;
   message: string;
@@ -58,6 +58,11 @@ export interface GetNotificationsRequest {
   limit: number;
   has_is_read: boolean;
   is_read: boolean;
+  keyword: string;
+  severity: string;
+  event_type: string;
+  date_from: string;
+  date_to: string;
 }
 export interface GetNotificationsResponse {
   status: number;

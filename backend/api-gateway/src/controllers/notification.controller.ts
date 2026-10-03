@@ -49,6 +49,22 @@ export const getNotifications = async (
       limit,
       has_is_read: isReadFilter !== undefined && isReadFilter !== "",
       is_read: isReadFilter === "true",
+      keyword:
+        typeof req.query.keyword === "string" ? req.query.keyword.trim() : "",
+      severity:
+        typeof req.query.severity === "string"
+          ? req.query.severity.trim().toLowerCase()
+          : "",
+      event_type:
+        typeof req.query.event_type === "string"
+          ? req.query.event_type.trim()
+          : "",
+      date_from:
+        typeof req.query.date_from === "string"
+          ? req.query.date_from.trim()
+          : "",
+      date_to:
+        typeof req.query.date_to === "string" ? req.query.date_to.trim() : "",
     }, (error, response) => {
       if (error) return sendGrpcError(res, "Error fetching notifications", error);
       return res.status(response.status).json({

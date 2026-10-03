@@ -25,6 +25,11 @@ message GetNotificationsRequest {
     int32 limit = 3;
     bool has_is_read = 4;
     bool is_read = 5;
+    string keyword = 6;
+    string severity = 7;
+    string event_type = 8;
+    string date_from = 9;
+    string date_to = 10;
 }
 
 message GetNotificationsResponse {

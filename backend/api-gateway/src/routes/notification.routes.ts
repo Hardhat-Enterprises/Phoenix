@@ -11,6 +11,7 @@ import { authenticate, authorize } from "../middleware/auth.middleware";
 import {
   validatePagination,
   validateReadStatusFilter,
+  validateNotificationFilters,
 } from "../middleware/notification.validation.middleware";
 
 const router = Router();
@@ -47,7 +48,7 @@ router.get("/health", getHealth);
  * /api/notifications:
  *   get:
  *     summary: Retrieve authenticated user's notifications
- *     description: Retrieves paginated notifications for the authenticated user with optional filtering by read status.
+ *     description: Retrieves paginated notifications for the authenticated user with keyword search, read status, severity, event-type and date filters. Results use deterministic created_at/id descending order.
  *     tags:
  *       - Notifications
  *     security:
@@ -71,6 +72,34 @@ router.get("/health", getHealth);
  *         schema:
  *           type: boolean
  *         description: Filter by read status (true/false)
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive search in title, message and event type
+ *       - in: query
+ *         name: severity
+ *         schema:
+ *           type: string
+ *           enum: [low, medium, high, critical]
+ *         description: Filter by metadata severity
+ *       - in: query
+ *         name: event_type
+ *         schema:
+ *           type: string
+ *         description: Filter by exact event type
+ *       - in: query
+ *         name: date_from
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Inclusive created-at start date/time
+ *       - in: query
+ *         name: date_to
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Inclusive created-at end date/time
  *     responses:
  *       200:
  *         description: Notifications retrieved successfully
@@ -139,7 +168,7 @@ router.get("/health", getHealth);
  *       500:
  *         description: Internal server error
  */
-router.get("/", authenticate, validatePagination, validateReadStatusFilter, getNotifications);
+router.get("/", authenticate, validatePagination, validateReadStatusFilter, validateNotificationFilters, getNotifications);
 
 /**
  * @swagger

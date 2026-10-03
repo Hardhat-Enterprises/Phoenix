@@ -87,6 +87,14 @@ const getNotifications = (
         limit: subscription.limit,
         has_is_read: subscription.read !== undefined,
         is_read: subscription.read ?? false,
+
+        // Search and filtering fields are not used by
+        // websocket subscriptions, so send empty values.
+        keyword: "",
+        severity: "",
+        event_type: "",
+        date_from: "",
+        date_to: "",
       },
       (error, response) => (error ? reject(error) : resolve(response)),
     );

@@ -1,4 +1,4 @@
-export class GetHealthDto {}
+export class GetHealthDto { }
 
 export interface GetNotificationsDto {
   user_id: string;
@@ -6,6 +6,11 @@ export interface GetNotificationsDto {
   limit: number;
   has_is_read: boolean;
   is_read: boolean;
+  keyword: string;
+  severity: string;
+  event_type: string;
+  date_from: string;
+  date_to: string;
 }
 
 export interface GetUnreadNotificationCountDto {

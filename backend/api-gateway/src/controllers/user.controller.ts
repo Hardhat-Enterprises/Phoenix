@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
+import { Metadata } from "@grpc/grpc-js";
 import { userGrpcClient } from "../grpc/user.grpc";
-import { HttpStatusCode, logger } from "@phoenix/common";
+import { HttpStatusCode, fromRequest, logger, logTokenIssued, SECURITY_CONTEXT_HEADERS } from "@phoenix/common";
 
 const REFRESH_COOKIE_NAME = "refresh_token";
 
@@ -123,35 +124,68 @@ export const createAdmin = (req: Request, res: Response) => {
 
 export const login = (req: Request, res: Response) => {
   const { username, password } = req.body;
+  const requestContext = fromRequest(req);
+  const metadata = new Metadata();
 
-  userGrpcClient.LoginUser({ username, password }, (error, response) => {
-    if (error) {
-      logger.error(`Error calling LoginUser: ${error}`);
+  metadata.set(SECURITY_CONTEXT_HEADERS.ip, requestContext.ip_address);
+  metadata.set(SECURITY_CONTEXT_HEADERS.endpoint, requestContext.endpoint);
+  metadata.set(SECURITY_CONTEXT_HEADERS.method, requestContext.method);
 
-      return res
-        .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
-        .json({ message: "Error logging in" });
-    }
+  if (requestContext.request_id) {
+    metadata.set(
+      SECURITY_CONTEXT_HEADERS.requestId,
+      requestContext.request_id,
+    );
+  }
 
-    if (response?.refresh_token) {
-      res.cookie(REFRESH_COOKIE_NAME, response.refresh_token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+  userGrpcClient.LoginUser(
+    { username, password },
+    metadata,
+    (error, response) => {
+      if (error) {
+        logger.error(`Error calling LoginUser: ${error}`);
+
+        return res
+          .status(HttpStatusCode.HTTP_STATUS_INTERNAL_SERVER_ERROR)
+          .json({ message: "Error logging in" });
+      }
+
+      if (response?.refresh_token) {
+        res.cookie(REFRESH_COOKIE_NAME, response.refresh_token, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "strict",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+      }
+
+      if (
+        response?.status === HttpStatusCode.HTTP_STATUS_OK &&
+        response?.access_token
+      ) {
+        logTokenIssued({
+          ...requestContext,
+          user_id: response.user_id,
+          role: response.role,
+          response_code: response.status,
+          details: {
+            grant_type: "password",
+            username: response.username,
+          },
+        });
+      }
+
+      return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
+        status: response?.status,
+        message: response?.message,
+        user_id: response?.user_id,
+        username: response?.username,
+        role: response?.role,
+        access_token: response?.access_token,
+        refresh_token: response?.refresh_token,
       });
-    }
-
-    return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({
-      status: response?.status,
-      message: response?.message,
-      user_id: response?.user_id,
-      username: response?.username,
-      role: response?.role,
-      access_token: response?.access_token,
-      refresh_token: response?.refresh_token,
-    });
-  });
+    },
+  );
 };
 
 export const refresh = (req: Request, res: Response) => {
@@ -170,6 +204,21 @@ export const refresh = (req: Request, res: Response) => {
       return res
         .status(HttpStatusCode.HTTP_STATUS_UNAUTHORIZED)
         .json({ message: "Invalid or expired refresh token" });
+    }
+
+    if (
+      response?.status === HttpStatusCode.HTTP_STATUS_OK &&
+      response?.access_token
+    ) {
+      logTokenIssued({
+        ...fromRequest(req),
+        user_id: response.user_id,
+        role: response.role,
+        response_code: response.status,
+        details: {
+          grant_type: "refresh_token",
+        },
+      });
     }
 
     return res.status(response?.status || HttpStatusCode.HTTP_STATUS_OK).json({

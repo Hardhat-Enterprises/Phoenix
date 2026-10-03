@@ -9,6 +9,7 @@ export * from "./helper";
 
 export * from "./rate-limit";
 
+export * from "./security-logging";
 export {
   redisClient,
   connectRedis,

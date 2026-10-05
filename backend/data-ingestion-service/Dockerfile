@@ -1,4 +1,4 @@
-FROM node:25 AS builder
+FROM node:25-bookworm AS builder
 WORKDIR /app
 
 COPY package*.json ./
@@ -17,15 +17,17 @@ RUN npm run build:ingestion-service
 RUN echo "=== DIST ===" && ls -R dist
 
 
-FROM node:25 AS runner
+FROM python:3.14-slim-bookworm AS runner
 WORKDIR /app
 
-# Install Python for inference runtime
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-venv \
-    && rm -rf /var/lib/apt/lists/*
+# Copy the Node 25 runtime from the builder image.
+COPY --from=builder /usr/local/bin/node /usr/local/bin/node
+
+# Node requires the C++ runtime library.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+libstdc++6 \
+libatomic1 \
+&& rm -rf /var/lib/apt/lists/*
 
 ENV INGESTION_PROTO_PATH=/app/dist/libs/proto/ingestion.proto
 

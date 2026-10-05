@@ -1,0 +1,64 @@
+{
+  "schema_version": "phoenix.m7.pipeline-config.v1",
+  "model_version": "m7-xgb-legacy-baseline-v1",
+  "purpose": "Leakage-safe packaging proof for the inherited hazard-severity baseline; not the final phishing model.",
+  "dataset_path": "ai-ml/datasets/phoenix_combined_dataset_large.csv",
+  "target_column": "hazard_severity",
+  "group_column": "text",
+  "feature_columns": [
+    "text",
+    "hazard_type",
+    "hazard_location",
+    "hazard_status",
+    "source"
+  ],
+  "prohibited_features": [
+    "alert_level",
+    "hazard_severity",
+    "severity",
+    "duration_hours",
+    "disaster_severity_score",
+    "event_intensity_index",
+    "hazard_normalized",
+    "severity_change_rate",
+    "hazard_trend_index",
+    "severity_volatility",
+    "multi_event_overlap_flag",
+    "geo_risk_zone_score",
+    "combined_risk_index",
+    "adaptive_risk_index"
+  ],
+  "split": {
+    "train": 0.70,
+    "validation": 0.15,
+    "test": 0.15,
+    "random_seed": 42
+  },
+  "preprocessing": {
+    "text_max_features": 600,
+    "text_ngram_range": [1, 2],
+    "url_max_features": 400,
+    "url_ngram_range": [3, 5]
+  },
+  "model": {
+    "n_estimators": 80,
+    "learning_rate": 0.08,
+    "max_depth": 3,
+    "subsample": 0.9,
+    "colsample_bytree": 0.9,
+    "random_state": 42,
+    "n_jobs": 1,
+    "tree_method": "hist",
+    "eval_metric": "mlogloss"
+  },
+  "decision_thresholds": {
+    "low": 0.0,
+    "medium": 0.25,
+    "high": 0.50,
+    "critical": 0.75
+  },
+  "outputs": {
+    "bundle_path": "ai-ml/models/core-model/xgb/m7_pipeline/artifacts/m7_xgb_legacy_baseline.joblib",
+    "report_path": "ai-ml/models/core-model/xgb/m7_pipeline/reports/m7_week2_verification.json"
+  }
+}

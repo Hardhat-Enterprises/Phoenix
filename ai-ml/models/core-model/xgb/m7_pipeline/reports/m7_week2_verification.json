@@ -1,0 +1,204 @@
+{
+  "task": "M7 Week 2 - repaired training/inference pipeline and package",
+  "status": "engineering_acceptance_passed",
+  "model_version": "m7-xgb-legacy-baseline-v1",
+  "purpose": "Leakage-safe packaging proof for the inherited hazard-severity baseline; not the final phishing model.",
+  "dataset": {
+    "path": "ai-ml/datasets/phoenix_combined_dataset_large.csv",
+    "rows": 2000,
+    "unique_groups": 250,
+    "target": "hazard_severity"
+  },
+  "leakage_controls": {
+    "explicit_feature_allowlist": [
+      "text",
+      "hazard_type",
+      "hazard_location",
+      "hazard_status",
+      "source"
+    ],
+    "prohibited_features": [
+      "alert_level",
+      "hazard_severity",
+      "severity",
+      "duration_hours",
+      "disaster_severity_score",
+      "event_intensity_index",
+      "hazard_normalized",
+      "severity_change_rate",
+      "hazard_trend_index",
+      "severity_volatility",
+      "multi_event_overlap_flag",
+      "geo_risk_zone_score",
+      "combined_risk_index",
+      "adaptive_risk_index"
+    ],
+    "split_before_preprocessing": true,
+    "preprocessing_fit_scope": "training_split_only",
+    "group_column": "text",
+    "group_overlap_counts": {
+      "train_validation": 0,
+      "train_test": 0,
+      "validation_test": 0
+    }
+  },
+  "split_rows": {
+    "train": 1414,
+    "validation": 288,
+    "test": 298
+  },
+  "split_unique_groups": {
+    "train": 175,
+    "validation": 37,
+    "test": 38
+  },
+  "labels": [
+    "critical",
+    "high",
+    "low",
+    "medium"
+  ],
+  "metrics": {
+    "validation": {
+      "accuracy": 0.298611,
+      "per_class": {
+        "critical": {
+          "precision": 0.2653061224489796,
+          "recall": 0.2653061224489796,
+          "f1-score": 0.2653061224489796,
+          "support": 98.0
+        },
+        "high": {
+          "precision": 0.35294117647058826,
+          "recall": 0.4329896907216495,
+          "f1-score": 0.3888888888888889,
+          "support": 97.0
+        },
+        "low": {
+          "precision": 0.15384615384615385,
+          "recall": 0.07692307692307693,
+          "f1-score": 0.10256410256410256,
+          "support": 26.0
+        },
+        "medium": {
+          "precision": 0.27586206896551724,
+          "recall": 0.23880597014925373,
+          "f1-score": 0.256,
+          "support": 67.0
+        },
+        "accuracy": 0.2986111111111111,
+        "macro avg": {
+          "precision": 0.26198888043280977,
+          "recall": 0.25350621506073995,
+          "f1-score": 0.25318977847549273,
+          "support": 288.0
+        },
+        "weighted avg": {
+          "precision": 0.28721546089700245,
+          "recall": 0.2986111111111111,
+          "f1-score": 0.29007253086419754,
+          "support": 288.0
+        }
+      }
+    },
+    "test": {
+      "accuracy": 0.291946,
+      "per_class": {
+        "critical": {
+          "precision": 0.3333333333333333,
+          "recall": 0.40229885057471265,
+          "f1-score": 0.3645833333333333,
+          "support": 87.0
+        },
+        "high": {
+          "precision": 0.189873417721519,
+          "recall": 0.22388059701492538,
+          "f1-score": 0.2054794520547945,
+          "support": 67.0
+        },
+        "low": {
+          "precision": 0.3333333333333333,
+          "recall": 0.16071428571428573,
+          "f1-score": 0.21686746987951808,
+          "support": 56.0
+        },
+        "medium": {
+          "precision": 0.3218390804597701,
+          "recall": 0.3181818181818182,
+          "f1-score": 0.32,
+          "support": 88.0
+        },
+        "accuracy": 0.29194630872483224,
+        "macro avg": {
+          "precision": 0.29459479121198895,
+          "recall": 0.2762688878714355,
+          "f1-score": 0.27673256381691147,
+          "support": 298.0
+        },
+        "weighted avg": {
+          "precision": 0.2976846467599604,
+          "recall": 0.29194630872483224,
+          "f1-score": 0.28788742147961155,
+          "support": 298.0
+        }
+      }
+    }
+  },
+  "package": {
+    "path": "ai-ml/models/core-model/xgb/m7_pipeline/artifacts/m7_xgb_legacy_baseline.joblib",
+    "sha256": "fa78f0944376b5a3886cea9677e4d27a5416ca1d563e8f4401b7a6471c5db675",
+    "contains": [
+      "preprocessing",
+      "xgboost_model",
+      "labels",
+      "thresholds",
+      "version",
+      "metadata"
+    ]
+  },
+  "round_trip_verification": {
+    "passed": true,
+    "sample_input": {
+      "text": "Storm surge model predicts 4.2m inundation for coastal Louisiana parishes.",
+      "hazard_type": "weather_hazard",
+      "hazard_location": "Maharashtra, India",
+      "hazard_status": "resolved",
+      "source": "NOAA"
+    },
+    "prediction_before_save": {
+      "predicted_label": "high",
+      "confidence_score": 0.318764,
+      "class_probabilities": {
+        "critical": 0.192683,
+        "high": 0.318764,
+        "low": 0.228937,
+        "medium": 0.259616
+      },
+      "model_version": "m7-xgb-legacy-baseline-v1",
+      "package_schema_version": "phoenix.m7.model-package.v1",
+      "target": "hazard_severity",
+      "production_eligible": false
+    },
+    "prediction_after_reload": {
+      "predicted_label": "high",
+      "confidence_score": 0.318764,
+      "class_probabilities": {
+        "critical": 0.192683,
+        "high": 0.318764,
+        "low": 0.228937,
+        "medium": 0.259616
+      },
+      "model_version": "m7-xgb-legacy-baseline-v1",
+      "package_schema_version": "phoenix.m7.model-package.v1",
+      "target": "hazard_severity",
+      "production_eligible": false
+    }
+  },
+  "limitations": [
+    "This is an engineering/package baseline for the inherited hazard_severity target, not the final phishing classifier.",
+    "Model accuracy must not be used as evidence that PHOENIX phishing detection is complete.",
+    "The final model must be retrained after approved is_phishing labels are obtained.",
+    "URL was excluded from this legacy package because the inherited dataset could not provide URL-disjoint validation and test partitions."
+  ],
+  "completed_at": "2026-09-02T12:25:12.727099+00:00"
+}

@@ -1,0 +1,271 @@
+# PHOENIX Correlation Rule Baseline
+# =================================
+# Defines how the system decides whether a cyber threat is connected to a
+# specific active hazard.
+#
+# This file is intentionally editable without touching code. Changing a weight,
+# a threshold, or enabling a check should never require a developer.
+#
+# See docs/SPECIFICATION.md for what each check means and why it exists.
+# See docs/DECISIONS.md for which values are provisional and awaiting sign-off.
+
+version: "1.0.0"
+
+# ---------------------------------------------------------------------------
+# Threshold
+# ---------------------------------------------------------------------------
+# PROVISIONAL. Requires M1 / Product Owner sign-off before this is treated as
+# settled. There is currently no labelled correlation data to tune against, so
+# this value is analyst judgement, not an empirical result.
+#
+
+threshold:
+  value: 0.20
+  status: "PROVISIONAL - requires M1 sign-off"
+  # Calibrated for the seven enabled checks (total weight 1.45), lowered from
+  # 0.25 when E7 was enabled so that all relationship types stay reachable.
+  #
+  # Lowering the threshold is only safe because
+  # require_hazard_specific_evidence now guards against non-specific
+  # correlation. The threshold no longer carries that job alone.
+  #
+  # DO NOT change this in isolation. Adding or enabling a check changes the
+  # denominator and therefore the reachability of every relationship type.
+  status: "PROVISIONAL - requires M1 sign-off"
+  # Calibration reasoning (see docs/DECISIONS.md, D-002):
+  #
+  # Total evaluable weight is 1.20, so a single high-weight check scores
+  # 0.208-0.250 once normalised. At the originally proposed 0.50, FOUR of the
+  # six relationship types became unreachable: mentions_hazard,
+  # impersonates_response_agency, exploits_hazard and fake_relief_or_donation
+  # could never be produced. They were dead branches.
+  #
+  # 0.25 was chosen because it draws a defensible line, not because it makes
+  # tests pass:
+  #     E1 alone (names this hazard type)      0.250  -> related
+  #     E4 alone (impersonates an agency)      0.250  -> related
+  #     E5 alone (generic solicitation only)   0.208  -> NOT related
+  #
+  # That boundary is correct: content referencing the hazard, or impersonating
+  # an emergency agency, is genuinely hazard-related. Content that merely asks
+  # for money with no disaster reference is ordinary phishing, and the
+  # phishing head's job.
+  #
+  # The require_high_weight_evidence constraint below is what prevents this
+  # lower threshold from admitting coincidence.
+
+# ---------------------------------------------------------------------------
+# Structural constraint
+# ---------------------------------------------------------------------------
+# At least one high-weight check must fire before correlation can be positive.
+# Supporting checks can raise a score but can never produce a positive result
+# on their own.
+#
+# This exists so that temporal coincidence alone never establishes hazard
+# relevance. A phishing message that merely arrives during a flood is not
+# hazard-related.
+require_high_weight_evidence: true
+
+# ---------------------------------------------------------------------------
+# Hazard-specificity requirement  (the K-0 fix)
+# ---------------------------------------------------------------------------
+# Not all high-tier checks verify that content relates to THIS hazard.
+#
+#   E1 (names the hazard type)     -> hazard-specific
+#   E2 (names the hazard location) -> hazard-specific
+#   E4 (agency impersonation)      -> NOT hazard-specific
+#   E5 (relief framing)            -> NOT hazard-specific
+#
+# E4 and E5 detect their patterns anywhere in a message. A relief-worded scam
+# fires E5 against every active hazard in the country, which is exactly the
+# 20-of-20 false positive found in live testing.
+#
+# When enabled, at least one check from require_one_of must fire before
+# correlation can be positive. Agency impersonation or relief language alone
+# is no longer sufficient; something must tie the content to THIS event.
+#
+# TRADE-OFF: content that impersonates an agency without naming a hazard type
+# or place is no longer correlated. That is arguably correct, it is phishing,
+# which the phishing head detects, but it is a judgement call.
+
+require_hazard_specific_evidence:
+  enabled: true
+  require_one_of: [E1, E2]
+  # E2 can match at four levels. A state-level match is NOT specific enough to
+  # tie content to a particular event: a hazard "in Victoria" plus a message
+  # mentioning Victoria covers most of the state's population.
+  #
+  # It is also unreliable. State abbreviations are short strings that appear
+  # inside URLs and unrelated words, e.g. the domain "vic-relief.example"
+  # matched "VIC" and produced a false correlation during testing.
+  accepted_location_levels: [suburb, street, lga]
+  # E1 fires on two kinds of match:
+  #   hazard_type: matched THIS hazard's type, e.g. "bushfire" vs a bushfire
+  #   generic:     matched a general word like "emergency" or "disaster"
+  #
+  # Generic words are not hazard-specific. A scam saying "emergency broadcasts"
+  # matches every active hazard in the country. Only a type match ties content
+  # to this particular event.
+  accepted_disaster_reference: [hazard_type]
+  status: "Addresses K-0. Enabled by default; set enabled: false to compare."
+
+# ---------------------------------------------------------------------------
+# Hard vetoes
+# ---------------------------------------------------------------------------
+# A veto overrides ALL evidence. If a veto fires, is_hazard_related is false
+# regardless of how many checks fired or how high the score is.
+#
+# Vetoes encode things that are logically impossible, not things that are
+# merely unlikely. Use them sparingly.
+
+vetoes:
+
+  message_predates_hazard:
+    enabled: true
+    # A message cannot exploit a hazard that has not happened yet.
+    #
+    # BUT: DataQuoll's start_time is when an incident was REPORTED, not when it
+    # was forecast. Scammers act on forecasts, registering domains and drafting
+    # content days ahead of a cyclone or fire-danger warning. A hard cutoff at
+    # exactly start_time would wrongly veto genuine forecast-driven scams.
+    #
+    # grace_hours allows content observed shortly BEFORE the reported start.
+    # PROVISIONAL: 72h is judgement, not measurement. It should be revisited
+    # against real examples. Anything observed earlier than this is vetoed.
+    grace_hours: 72
+    status: "PROVISIONAL - grace window needs validation against real examples"
+
+# ---------------------------------------------------------------------------
+# Evidence checks
+# ---------------------------------------------------------------------------
+# tier: "high"       -> can independently trigger a positive correlation
+# tier: "supporting" -> can raise the score, never trigger alone
+#
+# enabled: false     -> check is defined but not evaluated. The result records
+#                       it as "not_evaluated" rather than silently skipping it.
+
+checks:
+
+  E1:
+    name: "Explicit disaster reference"
+    description: >
+      Content names the hazard type, the event, or an affected place in a way
+      that matches the hazard record.
+    tier: high
+    weight: 0.30
+    enabled: true
+
+  E2:
+    name: "Location match"
+    description: >
+      Content references a location within, or administratively containing,
+      the hazard location.
+    tier: high
+    weight: 0.25
+    enabled: true
+
+  E3:
+    name: "Time window"
+    description: >
+      Observed time falls within the hazard's active window, or a defined tail
+      period after it. Supporting evidence only.
+    tier: supporting
+    weight: 0.10
+    enabled: true
+    # Hours after hazard end during which content may still be considered
+    # temporally relevant. Scams often follow an event rather than coincide.
+    tail_hours: 168   # 7 days
+
+  E4:
+    name: "Agency impersonation"
+    description: >
+      Content imitates an emergency or relief authority by name, branding or
+      lookalike domain.
+    tier: high
+    weight: 0.30
+    enabled: true
+
+  E5:
+    name: "Relief or donation framing"
+    description: >
+      Content solicits payment, donation, claim or account verification framed
+      around disaster relief.
+    tier: high
+    weight: 0.25
+    enabled: true
+
+  E7:
+    name: "Domain registered for this event"
+    description: >
+      The URL's domain was registered close to the hazard, suggesting it was
+      created to exploit this specific event rather than being pre-existing
+      infrastructure. Research on maliciously registered phishing domains
+      reports an average lifespan of roughly 8.6 days.
+      Requires domain_registered on the message; see src/domain_intel.py.
+    tier: high
+    weight: 0.25
+    enabled: true
+    # ENABLED. Was previously blocked by K-0: with E5 able to establish
+    # correlation alone, lowering the threshold to accommodate E7 made false
+    # positives worse. Now that require_hazard_specific_evidence provides that
+    # guard instead of the threshold, E7 is safe to enable and the threshold
+    # has been lowered to 0.20.
+    #
+    # Registered within this many days BEFORE the hazard start still counts:
+    # scammers act on forecasts, not only on reported incidents.
+    # PROVISIONAL, informed by the 8.6-day lifespan finding but not measured
+    # against our own data.
+    window_days_before: 14
+    # ...and any time after the hazard starts obviously counts.
+    # A domain older than this is treated as evidence AGAINST, reported in
+    # the evidence trail but not scored negatively (compromised legitimate
+    # domains exist, so age alone is not proof of innocence).
+    established_domain_days: 365
+
+  E6:
+    name: "Campaign burst"
+    description: >
+      Multiple similar submissions clustered near hazard onset.
+      DISABLED: requires submission history, which the current stateless
+      inference path does not provide. The data exists in Phoenix's
+      IntegrationLog table; wiring it is a future task, not a paid API need.
+      See docs/EXTENDING.md for how to supply a history provider.
+    tier: supporting
+    weight: 0.10
+    enabled: false
+
+# ---------------------------------------------------------------------------
+# Relationship type mapping
+# ---------------------------------------------------------------------------
+# Evaluated in order. The first rule whose conditions are met wins.
+# "requires" = all listed checks must have fired.
+# "any_of"   = at least one listed check must have fired.
+#
+# Taxonomy matches the Unified Core Model proposal.
+
+relationship_types:
+
+  - type: "fake_relief_or_donation"
+    requires: [E5]
+    any_of: [E1, E2]
+    description: "Solicits money, claims or account verification framed around relief."
+
+  - type: "impersonates_response_agency"
+    requires: [E4]
+    description: "Imitates an emergency or relief authority."
+
+  - type: "fake_emergency_update"
+    requires: [E1, E4]
+    description: "Presents false operational information as an official update."
+
+  - type: "exploits_hazard"
+    requires: [E1, E2]
+    description: "Uses the hazard as pretext without impersonation or solicitation."
+
+  - type: "mentions_hazard"
+    requires: [E1]
+    description: "References the hazard without exploiting it. Typically legitimate."
+
+  - type: "unrelated"
+    requires: []
+    description: "No high-weight evidence fired."

@@ -1,0 +1,86 @@
+# Keyword vocabularies
+# ====================
+# Used by E1 (disaster reference) and E5 (relief/donation framing).
+#
+# These are deliberately simple and legible. Semantic similarity is a
+# recommended improvement (see docs/EXTENDING.md) but is not implemented in
+# this baseline, because a keyword list can be reviewed and corrected by a
+# non-developer, which matters more at this stage than accuracy.
+
+version: "1.0.0"
+
+# ---------------------------------------------------------------------------
+# E1: hazard type vocabularies
+# ---------------------------------------------------------------------------
+# Maps DataQuoll eventType values to the words people actually use.
+# Keys must match DataQuoll's eventType enum.
+hazard_terms:
+  bushfire:      ["bushfire", "bush fire", "wildfire", "fire", "blaze", "burning"]
+  grass_fire:    ["grass fire", "grassfire", "fire"]
+  structure_fire: ["structure fire", "building fire", "house fire", "fire"]
+  flood:         ["flood", "flooding", "floodwater", "inundation", "deluge"]
+  storm:         ["storm", "severe weather", "hail", "damaging winds"]
+  cyclone:       ["cyclone", "tropical cyclone", "hurricane", "typhoon"]
+  earthquake:    ["earthquake", "quake", "tremor", "seismic"]
+  extreme_heat:  ["heatwave", "heat wave", "extreme heat", "heat emergency"]
+  tree_down:     ["tree down", "fallen tree", "tree fall"]
+  hazmat:        ["hazmat", "chemical spill", "hazardous material"]
+  rescue:        ["rescue", "trapped", "stranded", "search and rescue"]
+  other:         []   # deliberately empty — "other" is a catch-all DataQuoll
+                       # category with no consistent meaning; do not guess
+
+# Generic words that indicate a disaster context without naming a type.
+# These alone are weaker evidence than a specific type match.
+generic_disaster_terms:
+  - "disaster"
+  - "emergency"
+  - "evacuation"
+  - "evacuate"
+  - "natural disaster"
+  - "state of emergency"
+  - "affected area"
+  - "impacted residents"
+
+# ---------------------------------------------------------------------------
+# E5: relief and donation framing
+# ---------------------------------------------------------------------------
+# Grouped so that a match can be explained ("matched: payment_solicitation").
+
+relief_framing:
+
+  payment_solicitation:
+    - "relief payment"
+    - "disaster payment"
+    - "emergency payment"
+    - "claim your"
+    - "claim now"
+    - "compensation"
+    - "grant application"
+    - "financial assistance"
+
+  donation_appeal:
+    - "donate"
+    - "donation"
+    - "appeal"
+    - "fundraiser"
+    - "support victims"
+    - "help those affected"
+    - "contribute"
+
+  account_verification:
+    - "verify your account"
+    - "verify your identity"
+    - "account verification"
+    - "confirm your details"
+    - "update your details"
+    - "re-enter your"
+    - "validate your account"
+
+  urgency_pressure:
+    - "urgent"
+    - "immediately"
+    - "act now"
+    - "expires"
+    - "limited time"
+    - "within 24 hours"
+    - "final notice"

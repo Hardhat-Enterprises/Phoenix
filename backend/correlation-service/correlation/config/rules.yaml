@@ -1,0 +1,43 @@
+model:
+  version: correlation-1.0.0
+
+threshold: 0.2
+
+checks:
+  enabled:
+    - E1
+    - E2
+    - E3
+    - E4
+    - E5
+    - E7
+
+  disabled:
+    - E6
+
+weights:
+  E1: null
+  E2: null
+  E3: null
+  E4: null
+  E5: null
+  E7: null
+
+relationships:
+  fake_relief_or_donation:
+    description: "Asks for money or credentials, framed around disaster relief"
+
+  impersonates_response_agency:
+    description: "Imitates an emergency or relief authority"
+
+  fake_emergency_update:
+    description: "Presents false operational information as official"
+
+  exploits_hazard:
+    description: "Uses the hazard as pretext"
+
+  mentions_hazard:
+    description: "References the hazard without exploiting it"
+
+  unrelated:
+    description: "No hazard specific evidence found"

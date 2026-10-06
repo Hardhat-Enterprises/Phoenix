@@ -163,6 +163,7 @@ export const createCyberData = async (content: any) => {
 
 export const coreModelIntegration = async (payload: any) => {
   const integrationLog = await IntegrationLog.create({
+    integration_event_id: payload.integration_event_id,
     integration_type: IntegrationType.CORE,
     input: JSON.stringify(payload),
     status: IntegrationStatus.CREATED,

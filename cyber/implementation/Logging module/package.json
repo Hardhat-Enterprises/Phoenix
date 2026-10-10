@@ -1,0 +1,15 @@
+{
+  "name": "phoenix-cy017-security-logging-module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "demo": "tsc && node dist/security/logging/demo.js"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.30",
+    "typescript": "^5.4.0"
+  }
+}

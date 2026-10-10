@@ -1,0 +1,89 @@
+{
+  "status": "success",
+  "message": "Risk assessment completed successfully",
+  "data": {
+    "input_summary": {
+      "url": "http://fake-bom-alert.com",
+      "text": "Emergency flood warning. Click this link now to verify your location.",
+      "timestamp": "2026-05-16T10:30:00Z",
+      "hazard_type": "flood",
+      "hazard_severity": "high",
+      "hazard_timestamp": "2026-05-16T10:00:00Z",
+      "hazard_location": "Melbourne",
+      "hazard_status": "active",
+      "alert_level": "emergency",
+      "source": "unknown"
+    },
+    "model_output": {
+      "risk_score": 0.88,
+      "confidence_score": 0.91
+    },
+    "risk_assessment": {
+      "legitimacy": "malicious",
+      "likelihood": 5,
+      "impact": 5,
+      "final_risk_score": 25,
+      "risk_percentage": 100,
+      "risk_level": "Critical"
+    },
+    "threat_analysis": {
+      "matched_threats": [
+        {
+          "threat_type": "Fake URL",
+          "description": "The submitted URL appears suspicious or untrusted.",
+          "stride_category": "Spoofing"
+        },
+        {
+          "threat_type": "Phishing Message",
+          "description": "The message uses urgent wording and asks the user to click a link.",
+          "stride_category": "Spoofing"
+        },
+        {
+          "threat_type": "Fake Disaster Alert",
+          "description": "The message claims to be an emergency alert but comes from an unknown source.",
+          "stride_category": "Tampering"
+        },
+        {
+          "threat_type": "Unverified Source",
+          "description": "The source is unknown, which increases the chance of misinformation.",
+          "stride_category": "Spoofing"
+        }
+      ]
+    },
+    "recommended_controls": [
+      {
+        "control": "Input Validation",
+        "purpose": "Validate submitted URL, text, timestamp, hazard information, and source before processing."
+      },
+      {
+        "control": "JWT Authentication",
+        "purpose": "Ensure only authenticated users or trusted systems can access the risk assessment API."
+      },
+      {
+        "control": "RBAC",
+        "purpose": "Restrict access to risk assessment features based on user roles and permissions."
+      },
+      {
+        "control": "Rate Limiting",
+        "purpose": "Prevent API abuse, spam requests, brute-force attempts, and denial-of-service activity."
+      },
+      {
+        "control": "Source Verification",
+        "purpose": "Check whether the submitted alert comes from a trusted and verified source."
+      },
+      {
+        "control": "Digital Signature Verification",
+        "purpose": "Verify that disaster alerts have not been forged, modified, or injected by an attacker."
+      },
+      {
+        "control": "Audit Logging",
+        "purpose": "Record risk assessment requests and decisions for monitoring and investigation."
+      },
+      {
+        "control": "Content Filtering",
+        "purpose": "Detect phishing-style language, suspicious wording, and harmful message patterns."
+      }
+    ],
+    "explanation": "The input was classified as malicious because the AI model returned a high risk score, the message used urgent phishing-style wording, the alert was connected to an emergency disaster situation, and the source was unknown."
+  }
+}

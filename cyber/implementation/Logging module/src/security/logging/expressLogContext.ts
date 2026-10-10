@@ -6,14 +6,18 @@
  * does not depend on Express; only this helper imports Express types.
  */
 
-import type { Request } from 'express';
 import type {Role} from './securityLogTypes'
+
 interface AuthenticatedUser {
   user_id?: string;
   role?: Role;
 }
 
-interface RequestWithUser extends Request {
+interface RequestWithUser {
+  ip?: string;
+  method?: string;
+  path?: string;
+  route?: { path: string };
   user?: AuthenticatedUser;
 }
 
@@ -26,17 +30,17 @@ export interface ExpressLogContext {
 }
 
 export function fromRequest(req: Request): ExpressLogContext {
-  const user = (req as RequestWithUser).user;
+  const reqWithUser = req as RequestWithUser;
   return {
-    ip_address: req.ip ?? 'unknown',
-    endpoint: getEndpoint(req),
-    method: req.method,
-    user_id: user?.user_id,
-    role: user?.role,
+    ip_address: reqWithUser.ip ?? 'unknown',
+    endpoint: getEndpoint(reqWithUser),
+    method: reqWithUser.method ?? 'unknown',
+    user_id: reqWithUser.user?.user_id,
+    role: reqWithUser.user?.role,
   };
 }
 
-function getEndpoint(req: Request): string {
+function getEndpoint(req: RequestWithUser): string {
   // The matched route path (e.g. "/api/alerts/:id") is the most useful endpoint label,
   // but it is only set after Express finishes routing. Fall back to the raw path otherwise.
   const routePath = req.route?.path;

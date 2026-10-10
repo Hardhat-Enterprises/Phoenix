@@ -9,6 +9,7 @@
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "ignoreDeprecations": "6.0",
     "moduleResolution": "node",
     "skipLibCheck": true,
     "strictPropertyInitialization": false,

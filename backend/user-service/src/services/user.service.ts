@@ -18,6 +18,18 @@ import {
   UserRole,
 } from "@phoenix/common";
 
+const logging = (() => {
+  try {
+    return require("@phoenix/logging");
+  } catch {
+    return {
+      logTokenInvalid: () => undefined,
+    };
+  }
+})();
+
+const { logTokenInvalid } = logging;
+
 import {
   GetHealthDto,
   GetUsersDto,
@@ -274,14 +286,14 @@ export const getUserDashboardActivity = async (
 
     return {
       status: HttpStatusCode.HTTP_STATUS_OK,
-      message: "Dashboard activity data retrieved successfully",
+      message: "Dashboard activity retrieved successfully",
       recent_hazards: JSON.stringify(recentHazards),
       recent_threats: JSON.stringify(recentThreats),
       last_updated: new Date().toISOString(),
     };
   } catch (error) {
-    logger.error(`Error fetching dashboard activity data: ${error}`);
-    throw new Error("Error fetching dashboard activity data");
+    logger.error(`Error fetching dashboard activity: ${error}`);
+    throw new Error("Error fetching dashboard activity");
   }
 };
 
@@ -461,6 +473,12 @@ export const refreshToken = async (
       refresh_token: dto.refresh_token,
     };
   } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      logTokenInvalid({
+        reason: "refresh_expired",
+      });
+    }
+
     logger.error(`Refresh token error: ${error}`);
 
     return {
@@ -470,7 +488,9 @@ export const refreshToken = async (
   }
 };
 
-export const logoutUser = async (dto: LogoutUserDto): Promise<AuthEntity> => {
+export const logoutUser = async (
+  dto: LogoutUserDto,
+): Promise<AuthEntity> => {
   try {
     if (!dto.user_id) {
       return {
